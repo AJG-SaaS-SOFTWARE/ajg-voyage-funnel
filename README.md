@@ -2,38 +2,46 @@
 
 Landing page mobile-first pour qualifier des prospects intéressés par Travel Advantage et les orienter vers une présentation.
 
+## Production
+- Site : https://ajg-voyage.netlify.app/
+- Hébergement : Netlify
+- Collecte : Netlify Forms (`travel-presentation`)
+- Réservation : Calendly — Présentation Travel Advantage, 30 min
+- Dépôt : `AJG-SaaS-SOFTWARE/ajg-voyage-funnel`
+
 ## Inclus
 - landing page responsive
 - questionnaire en 4 étapes
 - scoring léger des leads
-- capture automatique des paramètres UTM
+- capture automatique UTM + URL d’entrée + référent
 - formulaire compatible Netlify Forms
 - honeypot anti-spam
-- consentement de contact + consentement marketing séparé
-- page de confirmation
-- pages confidentialité et mentions légales à finaliser avant publication
+- consentement marketing B2C séparé et facultatif
+- page de confirmation non indexable
+- réservation Calendly
+- notice de confidentialité et mentions légales
+- sitemap + robots.txt
+- métadonnées SEO et partage social
 - headers de sécurité Netlify
+- styles de focus clavier et prise en charge de `prefers-reduced-motion`
 
-## Déploiement Netlify
-1. Importer ce dépôt dans Netlify.
-2. Build command : laisser vide.
-3. Publish directory : `.`
-4. Déployer.
-5. Vérifier dans Netlify > Forms que `travel-presentation` est détecté.
+## Déploiement
+La branche de production est `main`. Netlify redéploie automatiquement après fusion sur `main`.
 
-## Avant mise en ligne publique
-- remplacer le bouton de réservation sur `merci.html` par votre URL Cal.com
-- compléter mentions légales + responsable de traitement + contact RGPD
-- valider le wording avec les règles de communication/compliance applicables à votre statut Travel Advantage
-- connecter le domaine choisi
-- effectuer un test réel de soumission Netlify
+Pour éviter des déploiements de production inutiles, développer sur une branche et fusionner après revue. Les Deploy Previews peuvent servir aux contrôles avant production.
 
 ## Structure
 - `index.html` : landing + questionnaire
-- `app.js` : logique multi-étapes, validation, scoring, UTM
-- `styles.css` : design responsive
-- `success.js` : interaction de la page de confirmation
-- `merci.html` : confirmation + futur CTA Cal.com
-- `confidentialite.html` : notice RGPD à finaliser
-- `mentions.html` : mentions légales à finaliser
-- `netlify.toml` : déploiement et headers de sécurité
+- `app.js` : logique multi-étapes, validation, scoring et attribution
+- `styles.css` : design responsive et accessibilité
+- `merci.html` : confirmation + CTA Calendly
+- `confidentialite.html` : notice RGPD
+- `mentions.html` : mentions légales
+- `robots.txt` / `sitemap.xml` : indexation
+- `netlify.toml` : publication et headers de sécurité
+
+## À mettre à jour lors de l’immatriculation
+- statut juridique
+- SIREN / RNE ou RCS selon le cas
+- éventuel nom commercial / raison sociale
+- mentions légales et responsable de traitement si les coordonnées changent
