@@ -4,7 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Découvrez une nouvelle façon de voyager et, si vous le souhaitez, l'activité de recommandation associée à Travel Advantage." />
+  <meta name="robots" content="index,follow" />
   <meta name="theme-color" content="#0c1720" />
+  <link rel="canonical" href="https://ajg-voyage.netlify.app/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:site_name" content="AJG Voyage" />
+  <meta property="og:title" content="AJG Voyage — Découvrir Travel Advantage" />
+  <meta property="og:description" content="Découvrez la plateforme Travel Advantage et demandez une présentation gratuite, sans engagement." />
+  <meta property="og:url" content="https://ajg-voyage.netlify.app/" />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80" />
+  <meta name="twitter:card" content="summary_large_image" />
   <title>AJG Voyage — Découvrir Travel Advantage</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://images.unsplash.com" />
@@ -103,6 +113,8 @@
             <input type="hidden" name="utm_content" id="utm_content" />
             <input type="hidden" name="utm_term" id="utm_term" />
             <input type="hidden" name="landing_url" id="landing_url" />
+            <input type="hidden" name="referrer_url" id="referrer_url" />
+            <input type="hidden" name="contact_request" value="oui" />
             <input type="hidden" name="lead_score" id="lead_score" value="0" />
             <p class="hidden"><label>Ne pas remplir : <input name="bot-field" /></label></p>
 
@@ -115,7 +127,7 @@
                   <label class="option-card"><input type="radio" name="interet_principal" value="Découvrir l'activité" data-score="3" /><span class="radio-ui"></span><span><b>Découvrir l’activité</b><small>Je suis curieux(se) du modèle de recommandation.</small></span></label>
                   <label class="option-card"><input type="radio" name="interet_principal" value="Les deux" data-score="4" /><span class="radio-ui"></span><span><b>Les deux</b><small>Voyage et activité peuvent m’intéresser.</small></span></label>
                 </div>
-                <div class="field-error" data-error-for="interet_principal"></div>
+                <div class="field-error" role="status" aria-live="polite" data-error-for="interet_principal"></div>
               </fieldset>
             </div>
 
@@ -129,7 +141,7 @@
                   <label class="option-card compact"><input type="radio" name="frequence_voyage" value="4 fois ou plus par an" data-score="3" /><span class="radio-ui"></span><span><b>4 fois ou +</b></span></label>
                   <label class="option-card compact"><input type="radio" name="frequence_voyage" value="Variable" data-score="1" /><span class="radio-ui"></span><span><b>Variable</b></span></label>
                 </div>
-                <div class="field-error" data-error-for="frequence_voyage"></div>
+                <div class="field-error" role="status" aria-live="polite" data-error-for="frequence_voyage"></div>
               </fieldset>
             </div>
 
@@ -142,7 +154,7 @@
                   <label class="option-card"><input type="radio" name="objectif_activite" value="Comprendre le fonctionnement" data-score="1" /><span class="radio-ui"></span><span><b>Comprendre le fonctionnement</b><small>Je veux d’abord savoir précisément de quoi il s’agit.</small></span></label>
                   <label class="option-card"><input type="radio" name="objectif_activite" value="Développer une activité indépendante" data-score="3" /><span class="radio-ui"></span><span><b>Développer une activité indépendante</b><small>Je suis prêt(e) à étudier le modèle plus sérieusement.</small></span></label>
                 </div>
-                <div class="field-error" data-error-for="objectif_activite"></div>
+                <div class="field-error" role="status" aria-live="polite" data-error-for="objectif_activite"></div>
               </fieldset>
             </div>
 
@@ -156,11 +168,10 @@
                   <label class="field full"><span>Email *</span><input type="email" name="email" autocomplete="email" inputmode="email" placeholder="alex@exemple.fr" aria-required="true" /></label>
                   <label class="field full"><span>Téléphone <small>(facultatif)</small></span><input type="tel" name="telephone" autocomplete="tel" inputmode="tel" placeholder="06 00 00 00 00" /></label>
                 </div>
-                <div class="field-error" data-error-for="coordonnees"></div>
-                <label class="consent"><input type="checkbox" name="consentement_contact" value="oui" aria-required="true" /><span>J’accepte d’être recontacté(e) au sujet de ma demande de présentation. <b>Obligatoire pour traiter la demande.</b> Je peux retirer mon consentement à tout moment.</span></label>
-                <div class="field-error" data-error-for="consentement_contact"></div>
-                <label class="consent secondary"><input type="checkbox" name="consentement_marketing" value="oui" /><span>J’accepte aussi de recevoir occasionnellement des informations commerciales liées à cette activité. <b>Facultatif.</b></span></label>
-                <p class="privacy-mini">Alex Gallet utilise ces informations pour traiter votre demande et vous recontacter avec votre accord. Conservation maximale : 3 ans à compter de la collecte ou du dernier contact émanant de vous. Pour exercer vos droits : <a href="mailto:gallet08@gmail.com">gallet08@gmail.com</a>. <a href="/confidentialite.html" target="_blank" rel="noopener">En savoir plus</a>.</p>
+                <div class="field-error" role="status" aria-live="polite" data-error-for="coordonnees"></div>
+                <p class="request-note">En envoyant ce formulaire, vous demandez à être recontacté(e) uniquement pour traiter cette demande de présentation.</p>
+                <label class="consent secondary"><input type="checkbox" name="consentement_marketing" value="oui" /><span>J’accepte de recevoir occasionnellement des informations commerciales par e-mail et, si j’ai fourni mon numéro, par SMS ou téléphone. <b>Facultatif.</b></span></label>
+                <p class="privacy-mini">Alexandre Gallet traite ces informations pour répondre à votre demande. Conservation maximale : 3 ans à compter de la collecte ou du dernier contact émanant de vous. Pour exercer vos droits : <a href="mailto:gallet08@gmail.com">gallet08@gmail.com</a>. <a href="/confidentialite.html" target="_blank" rel="noopener">En savoir plus</a>.</p>
               </fieldset>
             </div>
 
@@ -182,7 +193,7 @@
       <div class="faq-list">
         <details><summary>Est-ce une inscription payante ?</summary><p>Non. Ce formulaire sert uniquement à demander une présentation. Une éventuelle adhésion à Travel Advantage est une étape distincte, avec ses propres conditions et tarifs officiels.</p></details>
         <details><summary>Est-ce une promesse de revenus ?</summary><p>Non. La page ne promet aucun revenu. Elle permet simplement de découvrir le fonctionnement d’une activité indépendante de recommandation. Les résultats éventuels dépendent de nombreux facteurs individuels.</p></details>
-        <details><summary>Mes données sont-elles revendues ?</summary><p>Non. Le site collecte uniquement les informations nécessaires à la demande de présentation et au suivi que vous avez explicitement accepté.</p></details>
+        <details><summary>Mes données sont-elles revendues ?</summary><p>Non. Le site collecte uniquement les informations nécessaires à la demande de présentation et aux communications commerciales que vous avez, le cas échéant, explicitement acceptées.</p></details>
       </div>
     </section>
   </main>
