@@ -110,6 +110,21 @@
         throw new Error(`HTTP ${response.status}`);
       }
 
+      try {
+        sessionStorage.setItem('ajg_booking_prefill', JSON.stringify({
+          first_name: form.elements.prenom.value.trim(),
+          last_name: form.elements.nom.value.trim(),
+          email: form.elements.email.value.trim(),
+          utm_source: form.elements.utm_source.value,
+          utm_medium: form.elements.utm_medium.value,
+          utm_campaign: form.elements.utm_campaign.value,
+          utm_content: form.elements.utm_content.value,
+          utm_term: form.elements.utm_term.value
+        }));
+      } catch (storageError) {
+        console.warn('Booking prefill storage unavailable:', storageError);
+      }
+
       window.location.assign('/merci.html');
     } catch (error) {
       console.error('Form submission failed:', error);
