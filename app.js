@@ -92,14 +92,37 @@
     render();
   });
 
-  form.addEventListener('submit', (event) => {
-    if (!validateStep(3)) {
-      event.preventDefault();
-      return;
-    }
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (!validateStep(3)) return;
+
     updateScore();
     submit.disabled = true;
     submit.textContent = 'Envoi…';
+
+    try {
+      const formData = new FormData(form);
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(formData).toString()
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      window.location.assign('/merci.html');
+    } catch (error) {
+      console.error('Form submission failed:', error);
+      submit.disabled = false;
+      submit.textContent = 'Recevoir la présentation →';
+      showError(
+        'coordonnees',
+        'L’envoi a échoué. Vérifiez votre connexion puis réessayez.'
+      );
+    }
   });
 
   form.querySelectorAll('input[type="radio"]').forEach((input) => {
