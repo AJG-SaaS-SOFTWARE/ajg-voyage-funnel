@@ -149,18 +149,18 @@
             <div class="form-step" data-step="4">
               <fieldset>
                 <legend>Où puis-je vous envoyer les informations ?</legend>
-                <p class="field-help">Vos coordonnées servent à vous recontacter au sujet de cette demande.</p>
+                <p class="field-help">Vos coordonnées servent à vous recontacter au sujet de cette demande. Les champs marqués * sont obligatoires.</p>
                 <div class="field-grid">
-                  <label class="field"><span>Prénom</span><input type="text" name="prenom" autocomplete="given-name" placeholder="Alex" /></label>
-                  <label class="field"><span>Nom</span><input type="text" name="nom" autocomplete="family-name" placeholder="Martin" /></label>
-                  <label class="field full"><span>Email</span><input type="email" name="email" autocomplete="email" inputmode="email" placeholder="alex@exemple.fr" /></label>
+                  <label class="field"><span>Prénom *</span><input type="text" name="prenom" autocomplete="given-name" placeholder="Alex" aria-required="true" /></label>
+                  <label class="field"><span>Nom *</span><input type="text" name="nom" autocomplete="family-name" placeholder="Martin" aria-required="true" /></label>
+                  <label class="field full"><span>Email *</span><input type="email" name="email" autocomplete="email" inputmode="email" placeholder="alex@exemple.fr" aria-required="true" /></label>
                   <label class="field full"><span>Téléphone <small>(facultatif)</small></span><input type="tel" name="telephone" autocomplete="tel" inputmode="tel" placeholder="06 00 00 00 00" /></label>
                 </div>
                 <div class="field-error" data-error-for="coordonnees"></div>
-                <label class="consent"><input type="checkbox" name="consentement_contact" value="oui" /><span>J’accepte d’être recontacté(e) au sujet de ma demande de présentation. Je peux retirer mon consentement à tout moment.</span></label>
+                <label class="consent"><input type="checkbox" name="consentement_contact" value="oui" aria-required="true" /><span>J’accepte d’être recontacté(e) au sujet de ma demande de présentation. <b>Obligatoire pour traiter la demande.</b> Je peux retirer mon consentement à tout moment.</span></label>
                 <div class="field-error" data-error-for="consentement_contact"></div>
                 <label class="consent secondary"><input type="checkbox" name="consentement_marketing" value="oui" /><span>J’accepte aussi de recevoir occasionnellement des informations commerciales liées à cette activité. <b>Facultatif.</b></span></label>
-                <p class="privacy-mini">Voir notre <a href="/confidentialite.html" target="_blank" rel="noopener">notice de confidentialité</a>.</p>
+                <p class="privacy-mini">Alex Gallet utilise ces informations pour traiter votre demande et vous recontacter avec votre accord. Conservation maximale : 3 ans à compter de la collecte ou du dernier contact émanant de vous. Pour exercer vos droits : <a href="mailto:gallet08@gmail.com">gallet08@gmail.com</a>. <a href="/confidentialite.html" target="_blank" rel="noopener">En savoir plus</a>.</p>
               </fieldset>
             </div>
 
@@ -182,7 +182,7 @@
       <div class="faq-list">
         <details><summary>Est-ce une inscription payante ?</summary><p>Non. Ce formulaire sert uniquement à demander une présentation. Une éventuelle adhésion à Travel Advantage est une étape distincte, avec ses propres conditions et tarifs officiels.</p></details>
         <details><summary>Est-ce une promesse de revenus ?</summary><p>Non. La page ne promet aucun revenu. Elle permet simplement de découvrir le fonctionnement d’une activité indépendante de recommandation. Les résultats éventuels dépendent de nombreux facteurs individuels.</p></details>
-        <details><summary>Mes données sont-elles revendues ?</summary><p>Non. La V1 est conçue pour collecter uniquement les informations nécessaires à la demande de présentation et au suivi que vous avez explicitement accepté.</p></details>
+        <details><summary>Mes données sont-elles revendues ?</summary><p>Non. Le site collecte uniquement les informations nécessaires à la demande de présentation et au suivi que vous avez explicitement accepté.</p></details>
       </div>
     </section>
   </main>
