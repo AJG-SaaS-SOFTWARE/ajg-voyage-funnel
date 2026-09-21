@@ -19,6 +19,8 @@
   });
   const landing = document.getElementById('landing_url');
   if (landing) landing.value = window.location.href;
+  const referrer = document.getElementById('referrer_url');
+  if (referrer) referrer.value = document.referrer || '';
 
   function clearErrors() {
     form.querySelectorAll('.field-error').forEach((el) => (el.textContent = ''));
@@ -47,14 +49,9 @@
       const firstName = form.elements.prenom.value.trim();
       const lastName = form.elements.nom.value.trim();
       const email = form.elements.email.value.trim();
-      const consent = form.elements.consentement_contact.checked;
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       if (!firstName || !lastName || !emailOk) {
         showError('coordonnees', 'Renseignez votre prénom, votre nom et une adresse email valide.');
-        return false;
-      }
-      if (!consent) {
-        showError('consentement_contact', 'Votre accord est nécessaire pour pouvoir vous recontacter au sujet de cette demande.');
         return false;
       }
     }
