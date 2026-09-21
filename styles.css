@@ -74,6 +74,32 @@ summary:focus-visible {
 .benefit-card h3 { font-family: Georgia, 'Times New Roman', serif; font-size: 2rem; font-weight: 500; margin: 88px 0 10px; }
 .benefit-card p { color: var(--ink-soft); margin-bottom: 0; }
 .source-note { font-size: .78rem; color: #69737a; max-width: 850px; margin: 26px 0 0; }
+.travel-scope { padding: 110px 0; background: #eef4f1; }
+.travel-scope-heading { max-width: 830px; }
+.travel-category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.travel-category { min-height: 190px; border: 1px solid rgba(12,23,32,.1); border-radius: 22px; padding: 24px; background: rgba(255,255,255,.76); }
+.travel-category-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: #dff5f0; color: var(--aqua-dark); font-size: 1.15rem; font-weight: 800; margin-bottom: 26px; }
+.travel-category h3 { margin-bottom: 7px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; font-weight: 500; }
+.travel-category p { color: var(--ink-soft); font-size: .9rem; margin-bottom: 0; }
+.fit-section { padding: 110px 0; background: var(--paper); }
+.fit-heading { max-width: 850px; }
+.fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.fit-card { border: 1px solid var(--line); border-radius: 26px; padding: 30px; background: rgba(255,255,255,.62); }
+.fit-card-positive { background: var(--ink); color: white; border-color: transparent; }
+.fit-label { display: block; font-weight: 850; margin-bottom: 20px; font-size: 1rem; }
+.fit-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 13px; }
+.fit-card li { position: relative; padding-left: 28px; color: var(--ink-soft); }
+.fit-card li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--aqua-dark); font-weight: 900; }
+.fit-card-positive li { color: rgba(255,255,255,.76); }
+.fit-card-positive li::before { color: var(--aqua); }
+.presenter-section { padding: 0 0 110px; background: var(--paper); }
+.presenter-card { display: grid; grid-template-columns: 150px 1fr; gap: 42px; align-items: center; padding: 44px; border-radius: 30px; border: 1px solid var(--line); background: white; box-shadow: 0 18px 50px rgba(7,21,31,.08); }
+.presenter-badge { width: 126px; height: 126px; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, #0c1720, #1f4f56); color: #b8f5ec; font-family: Georgia, 'Times New Roman', serif; font-size: 2.25rem; letter-spacing: -.04em; }
+.presenter-copy h2 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.35rem, 4vw, 4rem); line-height: 1; letter-spacing: -.045em; font-weight: 500; margin: 14px 0 18px; }
+.presenter-copy p { max-width: 790px; color: var(--ink-soft); }
+.presenter-points { display: flex; gap: 16px; flex-wrap: wrap; margin: 22px 0; font-size: .85rem; font-weight: 750; color: #45555f; }
+.text-link { display: inline-flex; gap: 7px; align-items: center; color: var(--aqua-dark); text-decoration: none; font-weight: 850; border-bottom: 1px solid rgba(22,155,140,.3); padding-bottom: 3px; }
+.text-link:hover { border-color: var(--aqua-dark); }
 .funnel-section { background: white; padding: 110px 0; }
 .funnel-shell { display: grid; grid-template-columns: .8fr 1.2fr; gap: 70px; align-items: start; }
 .funnel-intro { position: sticky; top: 30px; }
@@ -163,6 +189,10 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .benefit-card.featured { transform: none; }
   .benefit-card { min-height: auto; }
   .benefit-card h3 { margin-top: 46px; }
+  .travel-category-grid { grid-template-columns: repeat(2, 1fr); }
+  .fit-grid { grid-template-columns: 1fr; }
+  .presenter-card { grid-template-columns: 110px 1fr; gap: 28px; }
+  .presenter-badge { width: 100px; height: 100px; }
   .funnel-shell { grid-template-columns: 1fr; gap: 38px; }
   .funnel-intro { position: static; }
 }
@@ -176,7 +206,14 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .hero-actions .button { width: 100%; }
   .hero-card { bottom: 20px; grid-template-columns: 1fr; gap: 8px; }
   .mini-card { padding: 12px 14px; }
-  .benefits, .funnel-section, .faq { padding: 72px 0; }
+  .benefits, .travel-scope, .fit-section, .funnel-section, .faq { padding: 72px 0; }
+  .presenter-section { padding-bottom: 72px; }
+  .travel-category-grid { grid-template-columns: 1fr; }
+  .travel-category { min-height: auto; }
+  .travel-category-icon { margin-bottom: 18px; }
+  .presenter-card { grid-template-columns: 1fr; padding: 26px 20px; gap: 22px; }
+  .presenter-badge { width: 82px; height: 82px; font-size: 1.65rem; }
+  .presenter-points { display: grid; gap: 8px; }
   .funnel-proof { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .form-card { padding: 22px 16px; border-radius: 22px; }
   .option-grid, .field-grid { grid-template-columns: 1fr; }
