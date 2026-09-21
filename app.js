@@ -25,7 +25,7 @@
   }
 
   function showError(name, message) {
-    const el = form.querySelector(\`[data-error-for="\${name}"]\`);
+    const el = form.querySelector(`[data-error-for="${name}"]`);
     if (el) el.textContent = message;
   }
 
@@ -64,9 +64,9 @@
   function render() {
     steps.forEach((step, idx) => step.classList.toggle('is-active', idx === current));
     const pct = Math.round(((current + 1) / steps.length) * 100);
-    progress.style.width = \`\${pct}%\`;
-    stepLabel.textContent = \`Étape \${current + 1} sur \${steps.length}\`;
-    percentLabel.textContent = \`\${pct} %\`;
+    progress.style.width = `${pct}%`;
+    stepLabel.textContent = `Étape ${current + 1} sur ${steps.length}`;
+    percentLabel.textContent = `${pct} %`;
     prev.classList.toggle('is-hidden', current === 0);
     next.classList.toggle('is-hidden', current === steps.length - 1);
     submit.classList.toggle('is-hidden', current !== steps.length - 1);
