@@ -6,7 +6,7 @@ Landing page mobile-first pour qualifier des prospects intéressés par Travel A
 - Site : https://ajg-voyage.netlify.app/
 - Hébergement : Netlify
 - Collecte : Netlify Forms (`travel-presentation`)
-- Réservation : Calendly — Présentation Travel Advantage, 30 min
+- Réservation : Google Calendar — présentation individuelle avec Benoit
 - Dépôt : `AJG-SaaS-SOFTWARE/ajg-voyage-funnel`
 
 ## Inclus
@@ -18,7 +18,7 @@ Landing page mobile-first pour qualifier des prospects intéressés par Travel A
 - honeypot anti-spam
 - consentement marketing B2C séparé et facultatif
 - page de confirmation non indexable
-- réservation Calendly
+- réservation Google Calendar
 - notice de confidentialité et mentions légales
 - sitemap + robots.txt
 - métadonnées SEO et partage social
@@ -34,7 +34,7 @@ Pour éviter des déploiements de production inutiles, développer sur une branc
 - `index.html` : landing + questionnaire
 - `app.js` : logique multi-étapes, validation, scoring et attribution
 - `styles.css` : design responsive et accessibilité
-- `merci.html` : confirmation + CTA Calendly
+- `merci.html` : confirmation + CTA Google Calendar
 - `confidentialite.html` : notice RGPD
 - `mentions.html` : mentions légales
 - `robots.txt` / `sitemap.xml` : indexation
