@@ -26,7 +26,7 @@ Noter :
 - formulaires reçus ;
 - score moyen ;
 - intérêt principal ;
-- nombre de réservations Calendly ;
+- nombre de réservations Google Calendar ;
 - commentaires / objections récurrentes.
 
 Ne pas modifier simultanément la landing et les contenus durant les 7 premiers jours sauf bug.
