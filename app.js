@@ -10,6 +10,54 @@
     } catch (_) {}
   });
 
+  document.querySelectorAll('[data-gallery]').forEach((gallery) => {
+    const slides = [...gallery.querySelectorAll('[data-gallery-slide]')];
+    const dots = [...gallery.querySelectorAll('[data-gallery-dot]')];
+    const prevButton = gallery.querySelector('[data-gallery-prev]');
+    const nextButton = gallery.querySelector('[data-gallery-next]');
+    let activeIndex = 0;
+    let touchStartX = null;
+
+    const showSlide = (index) => {
+      if (!slides.length) return;
+      activeIndex = (index + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle('is-active', slideIndex === activeIndex);
+      });
+      dots.forEach((dot, dotIndex) => {
+        const active = dotIndex === activeIndex;
+        dot.classList.toggle('is-active', active);
+        if (active) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
+      });
+    };
+
+    prevButton?.addEventListener('click', () => showSlide(activeIndex - 1));
+    nextButton?.addEventListener('click', () => showSlide(activeIndex + 1));
+    dots.forEach((dot, dotIndex) => {
+      dot.addEventListener('click', () => showSlide(dotIndex));
+    });
+
+    gallery.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') showSlide(activeIndex - 1);
+      if (event.key === 'ArrowRight') showSlide(activeIndex + 1);
+    });
+
+    gallery.addEventListener('touchstart', (event) => {
+      touchStartX = event.changedTouches[0]?.clientX ?? null;
+    }, { passive: true });
+
+    gallery.addEventListener('touchend', (event) => {
+      if (touchStartX === null) return;
+      const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX;
+      const delta = touchEndX - touchStartX;
+      if (Math.abs(delta) > 45) showSlide(activeIndex + (delta < 0 ? 1 : -1));
+      touchStartX = null;
+    }, { passive: true });
+
+    showSlide(0);
+  });
+
   if (!form) return;
 
   const copy = {
