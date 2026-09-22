@@ -6,7 +6,7 @@ Mettre le funnel devant une première audience qualifiée et mesurer les premier
 Le Jour 1 ne cherche pas à faire du volume. Il sert à obtenir les premiers signaux :
 - clics vers le site ;
 - formulaires envoyés ;
-- rendez-vous Calendly ;
+- rendez-vous ;
 - objections/questions reçues.
 
 ## Lien principal Jour 1
@@ -118,9 +118,9 @@ Dans Netlify :
 - lead_score ;
 - intérêt principal.
 
-Dans Calendly :
+Dans Google Calendar :
 - nombre de rendez-vous réservés ;
-- source UTM si disponible ;
+- source du rendez-vous si disponible ;
 - créneaux choisis.
 
 Sur les réseaux :
