@@ -5,7 +5,7 @@ Obtenir les premiers prospects qualifiés sans publicité payante, mesurer le tu
 
 Tunnel mesuré :
 
-`Visite → formulaire envoyé → clic Calendly → rendez-vous réservé → présentation réalisée → éventuelle inscription`
+`Visite → formulaire envoyé → clic Google Calendar → rendez-vous réservé → présentation réalisée → éventuelle inscription`
 
 La priorité V1 n’est pas la portée. C’est la qualité du trafic et le taux de passage d’une étape à l’autre.
 
@@ -27,7 +27,7 @@ Aucune publicité payante avant d’avoir suffisamment de données pour identifi
 | Indicateur | Formule | Signal à surveiller |
 | --- | --- | --- |
 | Taux formulaire | formulaires / visites | intérêt de la landing |
-| Taux réservation | RDV / formulaires | friction entre Merci et Calendly |
+| Taux réservation | RDV / formulaires | friction entre Merci et Google Calendar |
 | Taux de présence | présentations réalisées / RDV | qualité des leads + rappels |
 | Taux d’inscription | inscriptions / présentations | efficacité de la présentation |
 | Conversion visite → présentation | présentations / visites | KPI global V1 |
