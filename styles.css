@@ -96,6 +96,33 @@ summary:focus-visible {
 .fit-card li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--aqua-dark); font-weight: 900; }
 .fit-card-positive li { color: rgba(255,255,255,.76); }
 .fit-card-positive li::before { color: var(--aqua); }
+.booking-cta-section { padding: 0 0 110px; background: #eef4f1; }
+.booking-cta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, .42fr); gap: 34px; align-items: center; padding: 38px 42px; border-radius: 30px; background: var(--ink); color: white; box-shadow: 0 18px 50px rgba(7,21,31,.13); }
+.booking-cta .eyebrow.dark { color: var(--aqua); }
+.booking-cta h2 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.2rem, 4vw, 3.65rem); line-height: 1; letter-spacing: -.04em; font-weight: 500; margin: 14px 0 16px; }
+.booking-cta p { max-width: 760px; margin-bottom: 0; color: rgba(255,255,255,.76); }
+.booking-host-note { margin-top: 12px !important; font-size: .82rem; color: rgba(255,255,255,.56) !important; }
+.booking-cta-actions { display: grid; gap: 10px; }
+.booking-cta-actions .button { width: 100%; text-align: center; }
+.booking-cta-actions .button-secondary { color: white; border-color: rgba(255,255,255,.25); }
+.booking-cta-actions .button-secondary:hover { border-color: rgba(255,255,255,.55); }
+
+.presenter-card-with-gallery { grid-template-columns: minmax(280px, .78fr) minmax(0, 1.22fr); align-items: stretch; }
+.presenter-gallery { min-width: 0; align-self: stretch; display: flex; flex-direction: column; }
+.presenter-gallery-frame { position: relative; min-height: 100%; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 24px; background: #e9efec; }
+.presenter-slide { position: absolute; inset: 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity .28s ease, visibility .28s ease; }
+.presenter-slide.is-active { opacity: 1; visibility: visible; }
+.presenter-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.presenter-slide:first-child img { object-position: center 45%; }
+.presenter-slide:nth-child(2) img { object-position: center 32%; }
+.presenter-gallery-controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+.gallery-button { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: white; color: var(--ink); font-size: 1rem; }
+.gallery-button:hover { border-color: var(--aqua-dark); }
+.gallery-dots { display: flex; align-items: center; gap: 7px; }
+.gallery-dot { width: 9px; height: 9px; border: 0; border-radius: 50%; padding: 0; background: #c8d0cc; }
+.gallery-dot.is-active { background: var(--aqua-dark); transform: scale(1.2); }
+
+.mobile-booking-cta { display: none; }
 .presenter-section { padding: 0 0 110px; background: white; }
 .presenter-card { display: grid; grid-template-columns: 150px 1fr; gap: 42px; align-items: center; padding: 44px; border-radius: 30px; border: 1px solid var(--line); background: linear-gradient(135deg, #f8fbfa 0%, #ffffff 62%); box-shadow: 0 18px 50px rgba(7,21,31,.08); }
 .presenter-badge { width: 126px; height: 126px; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, #0c1720, #1f4f56); color: #b8f5ec; font-family: Georgia, 'Times New Roman', serif; font-size: 2.25rem; letter-spacing: -.04em; }
@@ -205,7 +232,11 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .travel-category-grid { grid-template-columns: repeat(2, 1fr); }
   .fit-grid { grid-template-columns: 1fr; }
   .presenter-card { grid-template-columns: 110px 1fr; gap: 28px; }
+  .presenter-card-with-gallery { grid-template-columns: minmax(250px, .82fr) minmax(0, 1.18fr); }
+  .presenter-gallery-frame { min-height: 440px; aspect-ratio: auto; }
   .presenter-badge { width: 100px; height: 100px; }
+  .booking-cta { grid-template-columns: 1fr; }
+  .booking-cta-actions { grid-template-columns: 1fr 1fr; }
   .travel-visual-media { min-height: 460px; }
   .travel-visual-copy { width: min(660px, 82%); padding: 56px 42px; }
   .funnel-shell { grid-template-columns: 1fr; gap: 38px; }
@@ -237,7 +268,15 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .travel-category { min-height: auto; }
   .travel-category-icon { margin-bottom: 18px; }
   .presenter-card { grid-template-columns: 1fr; padding: 26px 20px; gap: 22px; }
+  .presenter-card-with-gallery { grid-template-columns: 1fr; }
+  .presenter-gallery-frame { min-height: 0; aspect-ratio: 4 / 5; }
   .presenter-badge { width: 82px; height: 82px; font-size: 1.65rem; }
+  .booking-cta-section { padding: 0 0 72px; }
+  .booking-cta { padding: 28px 20px; gap: 24px; border-radius: 24px; }
+  .booking-cta-actions { grid-template-columns: 1fr; }
+  body { padding-bottom: 74px; }
+  .mobile-booking-cta { position: fixed; z-index: 45; left: 14px; right: 14px; bottom: 12px; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 18px; border-radius: 999px; background: var(--aqua); color: #092c2a; text-decoration: none; font-weight: 900; box-shadow: 0 14px 35px rgba(7,21,31,.28); }
+  .site-footer { padding-bottom: 92px; }
   .presenter-points { display: grid; gap: 8px; }
   .funnel-proof { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .form-card { padding: 22px 16px; border-radius: 22px; }
