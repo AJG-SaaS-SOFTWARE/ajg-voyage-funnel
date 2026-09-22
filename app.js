@@ -1,6 +1,35 @@
 (() => {
   const form = document.querySelector('#lead-form');
+  const lang = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'fr';
+
+  document.querySelectorAll('[data-lang-switch]').forEach((link) => {
+    try {
+      const url = new URL(link.getAttribute('href'), window.location.origin);
+      if (window.location.search) url.search = window.location.search;
+      link.href = url.toString();
+    } catch (_) {}
+  });
+
   if (!form) return;
+
+  const copy = {
+    fr: {
+      choose: 'Choisissez une réponse pour continuer.',
+      contact: 'Renseignez votre prénom, votre nom et une adresse email valide.',
+      step: (current, total) => `Étape ${current} sur ${total}`,
+      sending: 'Envoi…',
+      submit: 'Recevoir la présentation →',
+      submitError: 'L’envoi a échoué. Vérifiez votre connexion puis réessayez.'
+    },
+    en: {
+      choose: 'Please choose an answer to continue.',
+      contact: 'Please enter your first name, last name and a valid email address.',
+      step: (current, total) => `Step ${current} of ${total}`,
+      sending: 'Sending…',
+      submit: 'Get the presentation →',
+      submitError: 'Something went wrong. Please check your connection and try again.'
+    }
+  }[lang];
 
   const steps = [...form.querySelectorAll('.form-step')];
   const prev = document.querySelector('#prev-btn');
@@ -17,10 +46,13 @@
     const el = document.getElementById(key);
     if (el) el.value = params.get(key) || '';
   });
+
   const landing = document.getElementById('landing_url');
   if (landing) landing.value = window.location.href;
   const referrer = document.getElementById('referrer_url');
   if (referrer) referrer.value = document.referrer || '';
+  const language = document.getElementById('language');
+  if (language) language.value = lang;
 
   function clearErrors() {
     form.querySelectorAll('.field-error').forEach((el) => (el.textContent = ''));
@@ -33,28 +65,34 @@
 
   function validateStep(index) {
     clearErrors();
+
     if (index === 0 && !form.querySelector('[name="interet_principal"]:checked')) {
-      showError('interet_principal', 'Choisissez une réponse pour continuer.');
+      showError('interet_principal', copy.choose);
       return false;
     }
+
     if (index === 1 && !form.querySelector('[name="frequence_voyage"]:checked')) {
-      showError('frequence_voyage', 'Choisissez une réponse pour continuer.');
+      showError('frequence_voyage', copy.choose);
       return false;
     }
+
     if (index === 2 && !form.querySelector('[name="objectif_activite"]:checked')) {
-      showError('objectif_activite', 'Choisissez une réponse pour continuer.');
+      showError('objectif_activite', copy.choose);
       return false;
     }
+
     if (index === 3) {
       const firstName = form.elements.prenom.value.trim();
       const lastName = form.elements.nom.value.trim();
       const email = form.elements.email.value.trim();
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
       if (!firstName || !lastName || !emailOk) {
-        showError('coordonnees', 'Renseignez votre prénom, votre nom et une adresse email valide.');
+        showError('coordonnees', copy.contact);
         return false;
       }
     }
+
     return true;
   }
 
@@ -62,7 +100,7 @@
     steps.forEach((step, idx) => step.classList.toggle('is-active', idx === current));
     const pct = Math.round(((current + 1) / steps.length) * 100);
     progress.style.width = `${pct}%`;
-    stepLabel.textContent = `Étape ${current + 1} sur ${steps.length}`;
+    stepLabel.textContent = copy.step(current + 1, steps.length);
     percentLabel.textContent = `${pct} %`;
     prev.classList.toggle('is-hidden', current === 0);
     next.classList.toggle('is-hidden', current === steps.length - 1);
@@ -96,7 +134,7 @@
 
     updateScore();
     submit.disabled = true;
-    submit.textContent = 'Envoi…';
+    submit.textContent = copy.sending;
 
     try {
       const formData = new FormData(form);
@@ -106,19 +144,14 @@
         body: new URLSearchParams(formData).toString()
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-      window.location.assign('/merci.html');
+      window.location.assign(form.getAttribute('action') || (lang === 'en' ? '/en/thanks.html' : '/merci.html'));
     } catch (error) {
       console.error('Form submission failed:', error);
       submit.disabled = false;
-      submit.textContent = 'Recevoir la présentation →';
-      showError(
-        'coordonnees',
-        'L’envoi a échoué. Vérifiez votre connexion puis réessayez.'
-      );
+      submit.textContent = copy.submit;
+      showError('coordonnees', copy.submitError);
     }
   });
 
