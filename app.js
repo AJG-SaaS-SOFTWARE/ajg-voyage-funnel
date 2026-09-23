@@ -30,7 +30,6 @@
         if (active) dot.setAttribute('aria-current', 'true');
         else dot.removeAttribute('aria-current');
       });
-      if (countLabel) countLabel.textContent = `${activeIndex + 1} / ${slides.length}`;
     };
 
     prevButton?.addEventListener('click', () => showSlide(activeIndex - 1));
@@ -88,6 +87,7 @@
         if (active) dot.setAttribute('aria-current', 'true');
         else dot.removeAttribute('aria-current');
       });
+      if (countLabel) countLabel.textContent = `${activeIndex + 1} / ${slides.length}`;
     };
 
     const stopAuto = () => {
