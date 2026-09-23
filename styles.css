@@ -87,6 +87,26 @@ summary:focus-visible {
 .travel-category-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: #dff5f0; color: var(--aqua-dark); font-size: 1.15rem; font-weight: 800; margin-bottom: 26px; }
 .travel-category h3 { margin-bottom: 7px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; font-weight: 500; }
 .travel-category p { color: var(--ink-soft); font-size: .9rem; margin-bottom: 0; }
+.travel-category-ai { grid-column: 1 / -1; min-height: auto; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 18px; background: linear-gradient(120deg, rgba(255,255,255,.9), rgba(223,245,240,.78)); }
+.travel-category-ai .travel-category-icon { margin-bottom: 0; }
+.travel-category-icon-ai { width: 52px; height: 52px; border-radius: 16px; font-size: .82rem; letter-spacing: .04em; }
+.feature-chip { display: inline-block; margin-bottom: 7px; color: var(--aqua-dark); font-size: .72rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.travel-category-ai h3 { margin-bottom: 5px; }
+.ai-trip-planner-feature { margin-top: 26px; display: grid; grid-template-columns: minmax(0, .82fr) minmax(420px, 1.18fr); gap: clamp(30px, 5vw, 64px); align-items: center; padding: clamp(28px, 4vw, 50px); border: 1px solid rgba(12,23,32,.1); border-radius: 30px; background: #fff; box-shadow: 0 18px 48px rgba(7,21,31,.07); }
+.ai-trip-planner-copy h3 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.15rem, 3.7vw, 3.75rem); line-height: 1; letter-spacing: -.04em; font-weight: 500; margin: 14px 0 18px; }
+.ai-trip-planner-copy > p { color: var(--ink-soft); max-width: 650px; }
+.ai-trip-benefits { display: grid; gap: 10px; margin: 24px 0 26px; }
+.ai-trip-benefits > div { display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: start; padding: 13px 0; border-top: 1px solid var(--line); }
+.ai-trip-benefits > div:last-child { border-bottom: 1px solid var(--line); }
+.ai-trip-benefits strong { color: var(--aqua-dark); font-size: .78rem; letter-spacing: .08em; padding-top: 3px; }
+.ai-trip-benefits b, .ai-trip-benefits small { display: block; }
+.ai-trip-benefits b { font-size: .92rem; margin-bottom: 3px; }
+.ai-trip-benefits small { color: var(--ink-soft); line-height: 1.45; }
+.ai-trip-planner-media { margin: 0; min-width: 0; }
+.ai-trip-video-frame { position: relative; overflow: hidden; border-radius: 22px; background: #edf2f0; border: 1px solid rgba(12,23,32,.12); box-shadow: 0 16px 36px rgba(7,21,31,.10); }
+.ai-trip-video-frame video { width: 100%; height: auto; display: block; background: #f7faf9; aspect-ratio: 720 / 401; object-fit: contain; }
+.ai-trip-video-badge { position: absolute; top: 12px; right: 12px; pointer-events: none; padding: 7px 10px; border-radius: 999px; background: rgba(7,21,31,.82); color: white; font-size: .7rem; font-weight: 850; backdrop-filter: blur(8px); }
+.ai-trip-planner-media figcaption { margin-top: 10px; color: #6c777d; font-size: .74rem; line-height: 1.45; }
 .fit-section { padding: 100px 0 92px; background: white; }
 .fit-heading { max-width: 850px; }
 .fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -238,6 +258,8 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .benefit-card { min-height: auto; }
   .benefit-card h3 { margin-top: 46px; }
   .travel-category-grid { grid-template-columns: repeat(2, 1fr); }
+  .ai-trip-planner-feature { grid-template-columns: 1fr; }
+  .ai-trip-planner-media { width: min(100%, 720px); }
   .fit-grid { grid-template-columns: 1fr; }
   .presenter-card { grid-template-columns: 110px 1fr; gap: 28px; }
   .presenter-card-with-gallery { grid-template-columns: minmax(250px, .82fr) minmax(0, 1.18fr); }
@@ -275,6 +297,12 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .travel-category-grid { grid-template-columns: 1fr; }
   .travel-category { min-height: auto; }
   .travel-category-icon { margin-bottom: 18px; }
+  .travel-category-ai { grid-template-columns: 1fr; gap: 10px; }
+  .travel-category-ai .travel-category-icon { margin-bottom: 8px; }
+  .ai-trip-planner-feature { margin-top: 18px; padding: 24px 18px; border-radius: 24px; gap: 24px; }
+  .ai-trip-planner-copy h3 { font-size: clamp(2rem, 10vw, 2.8rem); }
+  .ai-trip-video-frame { border-radius: 17px; }
+  .ai-trip-video-badge { top: 8px; right: 8px; }
   .presenter-card { grid-template-columns: 1fr; padding: 26px 20px; gap: 22px; }
   .presenter-card-with-gallery { grid-template-columns: 1fr; }
   .presenter-gallery-frame { min-height: 0; aspect-ratio: 4 / 5; }
