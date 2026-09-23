@@ -585,3 +585,153 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   .proof-carousel-slide { transition: none; }
 }
+
+
+/* V3.1 — section Ambassadeur Lifestyle / transparence activité */
+.ambassador-section {
+  padding: 104px 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8f6 100%);
+  border-top: 1px solid rgba(12,23,32,.07);
+}
+.ambassador-shell { display: grid; gap: 34px; }
+.ambassador-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+  gap: 42px;
+  align-items: end;
+}
+.ambassador-heading h2 {
+  max-width: 880px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.55rem, 5vw, 4.65rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+  font-weight: 500;
+  margin: 18px 0 20px;
+}
+.ambassador-heading p {
+  max-width: 790px;
+  color: var(--ink-soft);
+  margin-bottom: 0;
+}
+.brand-relationship {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+}
+.brand-identity {
+  min-height: 86px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 12px 28px rgba(7,21,31,.05);
+}
+.brand-identity strong {
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+.brand-identity span {
+  color: #6f7b81;
+  font-size: .76rem;
+}
+.brand-relationship-arrow {
+  justify-self: center;
+  color: var(--aqua-dark);
+  font-weight: 900;
+}
+.ambassador-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.ambassador-card {
+  min-height: 250px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 16px 38px rgba(7,21,31,.055);
+}
+.ambassador-card-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e3f7f3;
+  color: var(--aqua-dark);
+  font-size: .72rem;
+  font-weight: 900;
+}
+.ambassador-card h3 {
+  margin: 34px 0 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.65rem;
+  font-weight: 500;
+}
+.ambassador-card p {
+  color: var(--ink-soft);
+  font-size: .88rem;
+  margin-bottom: 0;
+}
+.ambassador-support {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: center;
+  padding: 24px 26px;
+  border-radius: 20px;
+  background: var(--ink);
+  color: white;
+}
+.ambassador-support strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: .98rem;
+}
+.ambassador-support p {
+  max-width: 760px;
+  margin: 0;
+  color: rgba(255,255,255,.68);
+  font-size: .84rem;
+}
+.ambassador-support .text-link {
+  color: var(--aqua);
+  border-color: rgba(91,214,199,.35);
+  white-space: nowrap;
+}
+.income-disclaimer {
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(22,155,140,.18);
+  border-radius: 17px;
+  background: #eaf7f3;
+  color: #425860;
+  font-size: .8rem;
+  line-height: 1.55;
+}
+.income-disclaimer strong { color: var(--ink); }
+
+@media (max-width: 900px) {
+  .ambassador-heading { grid-template-columns: 1fr; gap: 28px; }
+  .brand-relationship {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+  }
+  .ambassador-grid { grid-template-columns: 1fr; }
+  .ambassador-card { min-height: auto; }
+  .ambassador-support { grid-template-columns: 1fr; }
+  .ambassador-support .text-link { white-space: normal; justify-self: start; }
+}
+@media (max-width: 620px) {
+  .ambassador-section { padding: 72px 0; }
+  .brand-relationship { grid-template-columns: 1fr; }
+  .brand-relationship-arrow { transform: rotate(90deg); }
+  .ambassador-card { padding: 22px; border-radius: 20px; }
+  .ambassador-card h3 { margin-top: 24px; }
+  .ambassador-support { padding: 20px; }
+}
