@@ -312,7 +312,7 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
 }
 .presenter-slide:first-child img { object-position: center 40%; }
 .presenter-slide:nth-child(2) img { object-position: center 30%; }
-.presenter-slide:nth-child(3) img { object-position: 70% center; }
+.presenter-slide:nth-child(3) img { object-position: center center; }
 .presenter-gallery:focus-visible {
   outline: 3px solid rgba(22,155,140,.35);
   outline-offset: 6px;
