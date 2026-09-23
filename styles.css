@@ -504,3 +504,72 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .proof-card { border-radius: 18px; }
   .product-first-note { padding: 16px; }
 }
+
+
+/* V2.8 — carrousel compact pour les exemples concrets */
+.proof-showcase-heading {
+  margin-inline: auto;
+  text-align: center;
+}
+.proof-showcase-heading p {
+  margin-inline: auto;
+}
+.proof-carousel {
+  width: min(100%, 540px);
+  margin: 0 auto;
+  outline: none;
+}
+.proof-carousel-stage {
+  display: grid;
+  align-items: start;
+}
+.proof-carousel-slide {
+  grid-area: 1 / 1;
+  width: 100%;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(10px);
+  transition: opacity .35s ease, transform .35s ease, visibility .35s ease;
+}
+.proof-carousel-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+  z-index: 1;
+}
+.proof-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+.proof-carousel-hint {
+  max-width: 430px;
+  margin: 10px auto 0;
+  color: #748087;
+  font-size: .72rem;
+  line-height: 1.45;
+  text-align: center;
+}
+.proof-carousel:focus-visible {
+  outline: 3px solid rgba(22,155,140,.32);
+  outline-offset: 7px;
+  border-radius: 24px;
+}
+.proof-showcase .proof-disclaimer-wide {
+  margin-inline: auto;
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  .proof-carousel { width: 100%; }
+  .proof-carousel-controls { margin-top: 12px; }
+  .proof-carousel-hint { padding-inline: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proof-carousel-slide { transition: none; }
+}
