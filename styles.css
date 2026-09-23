@@ -735,3 +735,23 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   .ambassador-card h3 { margin-top: 24px; }
   .ambassador-support { padding: 20px; }
 }
+
+
+/* V3.2 — parcours travel-first et double CTA après la preuve Paris */
+.comparison-proof-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 28px 0 18px;
+}
+.comparison-proof-actions .button {
+  margin: 0;
+}
+@media (max-width: 620px) {
+  .comparison-proof-actions {
+    display: grid;
+  }
+  .comparison-proof-actions .button {
+    width: 100%;
+  }
+}

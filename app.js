@@ -65,12 +65,17 @@
     const prevButton = carousel.querySelector('[data-proof-prev]');
     const nextButton = carousel.querySelector('[data-proof-next]');
     const countLabel = carousel.querySelector('[data-proof-count]');
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const reducedMotionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const touchQuery = window.matchMedia?.('(hover: none), (pointer: coarse), (max-width: 900px)');
     let activeIndex = 0;
     let touchStartX = null;
     let timer = null;
     let inView = true;
-    let pausedByInteraction = false;
+    let hoverPaused = false;
+    let userInteracted = false;
+
+    const prefersReducedMotion = () => reducedMotionQuery?.matches ?? false;
+    const isTouchOrMobile = () => touchQuery?.matches ?? false;
 
     const showSlide = (index) => {
       if (!slides.length) return;
@@ -97,68 +102,64 @@
 
     const startAuto = () => {
       stopAuto();
-      if (reducedMotion || slides.length < 2 || !inView || pausedByInteraction || document.hidden) return;
-      timer = window.setInterval(() => showSlide(activeIndex + 1), 6000);
+      if (
+        prefersReducedMotion() ||
+        isTouchOrMobile() ||
+        userInteracted ||
+        hoverPaused ||
+        slides.length < 2 ||
+        !inView ||
+        document.hidden
+      ) return;
+      timer = window.setInterval(() => showSlide(activeIndex + 1), 8000);
     };
 
-    const restartAuto = () => {
+    const lockManualMode = () => {
+      userInteracted = true;
       stopAuto();
-      startAuto();
     };
 
     prevButton?.addEventListener('click', () => {
+      lockManualMode();
       showSlide(activeIndex - 1);
-      restartAuto();
     });
 
     nextButton?.addEventListener('click', () => {
+      lockManualMode();
       showSlide(activeIndex + 1);
-      restartAuto();
     });
 
     dots.forEach((dot, dotIndex) => {
       dot.addEventListener('click', () => {
+        lockManualMode();
         showSlide(dotIndex);
-        restartAuto();
       });
     });
 
     carousel.addEventListener('keydown', (event) => {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
+        lockManualMode();
         showSlide(activeIndex - 1);
-        restartAuto();
       }
       if (event.key === 'ArrowRight') {
         event.preventDefault();
+        lockManualMode();
         showSlide(activeIndex + 1);
-        restartAuto();
       }
     });
 
     carousel.addEventListener('mouseenter', () => {
-      pausedByInteraction = true;
+      hoverPaused = true;
       stopAuto();
     });
 
     carousel.addEventListener('mouseleave', () => {
-      pausedByInteraction = false;
-      startAuto();
-    });
-
-    carousel.addEventListener('focusin', () => {
-      pausedByInteraction = true;
-      stopAuto();
-    });
-
-    carousel.addEventListener('focusout', (event) => {
-      if (carousel.contains(event.relatedTarget)) return;
-      pausedByInteraction = false;
+      hoverPaused = false;
       startAuto();
     });
 
     carousel.addEventListener('touchstart', (event) => {
-      pausedByInteraction = true;
       stopAuto();
       touchStartX = event.changedTouches[0]?.clientX ?? null;
     }, { passive: true });
@@ -167,11 +168,12 @@
       if (touchStartX !== null) {
         const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX;
         const delta = touchEndX - touchStartX;
-        if (Math.abs(delta) > 45) showSlide(activeIndex + (delta < 0 ? 1 : -1));
+        if (Math.abs(delta) > 45) {
+          lockManualMode();
+          showSlide(activeIndex + (delta < 0 ? 1 : -1));
+        }
       }
       touchStartX = null;
-      pausedByInteraction = false;
-      startAuto();
     }, { passive: true });
 
     if ('IntersectionObserver' in window) {
@@ -188,16 +190,20 @@
       else startAuto();
     });
 
+    reducedMotionQuery?.addEventListener?.('change', startAuto);
+    touchQuery?.addEventListener?.('change', startAuto);
+
     showSlide(0);
     startAuto();
   });
+
 
   if (!form) return;
 
   const copy = {
     fr: {
       choose: 'Choisissez une réponse pour continuer.',
-      contact: 'Renseignez votre prénom, votre nom et une adresse email valide.',
+      contact: 'Renseignez votre prénom et une adresse email valide.',
       step: (current, total) => `Étape ${current} sur ${total}`,
       sending: 'Envoi…',
       submit: 'Recevoir la présentation →',
@@ -205,7 +211,7 @@
     },
     en: {
       choose: 'Please choose an answer to continue.',
-      contact: 'Please enter your first name, last name and a valid email address.',
+      contact: 'Please enter your first name and a valid email address.',
       step: (current, total) => `Step ${current} of ${total}`,
       sending: 'Sending…',
       submit: 'Get the presentation →',
@@ -265,11 +271,10 @@
 
     if (index === 3) {
       const firstName = form.elements.prenom.value.trim();
-      const lastName = form.elements.nom.value.trim();
       const email = form.elements.email.value.trim();
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-      if (!firstName || !lastName || !emailOk) {
+      if (!firstName || !emailOk) {
         showError('coordonnees', copy.contact);
         return false;
       }
