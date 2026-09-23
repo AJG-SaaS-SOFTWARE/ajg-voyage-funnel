@@ -546,6 +546,14 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   gap: 14px;
   margin-top: 16px;
 }
+
+.proof-carousel-count {
+  min-width: 44px;
+  color: #667279;
+  font-size: .72rem;
+  font-weight: 800;
+  text-align: center;
+}
 .proof-carousel-hint {
   max-width: 430px;
   margin: 10px auto 0;

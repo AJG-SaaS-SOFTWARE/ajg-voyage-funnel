@@ -30,6 +30,7 @@
         if (active) dot.setAttribute('aria-current', 'true');
         else dot.removeAttribute('aria-current');
       });
+      if (countLabel) countLabel.textContent = `${activeIndex + 1} / ${slides.length}`;
     };
 
     prevButton?.addEventListener('click', () => showSlide(activeIndex - 1));
@@ -64,6 +65,7 @@
     const dots = [...carousel.querySelectorAll('[data-proof-dot]')];
     const prevButton = carousel.querySelector('[data-proof-prev]');
     const nextButton = carousel.querySelector('[data-proof-next]');
+    const countLabel = carousel.querySelector('[data-proof-count]');
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     let activeIndex = 0;
     let touchStartX = null;
