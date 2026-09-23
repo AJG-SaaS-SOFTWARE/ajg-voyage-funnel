@@ -41,7 +41,9 @@ h1,h2,h3,p { margin-top: 0; }
 h1 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(3.5rem, 7vw, 6.7rem); line-height: .92; max-width: 800px; margin: 22px 0 26px; letter-spacing: -.055em; font-weight: 500; }
 h1 em { color: #abeee5; font-weight: 500; }
 .hero-copy { max-width: 660px; color: rgba(255,255,255,.84); font-size: clamp(1.02rem, 2vw, 1.16rem); }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 34px 0 24px; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 34px 0 14px; }
+.hero-tertiary-link { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 24px; color: rgba(255,255,255,.84); text-decoration: none; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,.28); padding-bottom: 3px; }
+.hero-tertiary-link:hover { color: white; border-color: rgba(255,255,255,.72); }
 .button { min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 22px; border-radius: 999px; border: 1px solid transparent; text-decoration: none; font-weight: 800; transition: .2s ease; }
 .button:hover { transform: translateY(-1px); }
 a:focus-visible,
