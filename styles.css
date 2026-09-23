@@ -520,11 +520,13 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   outline: none;
 }
 .proof-carousel-stage {
-  display: grid;
+  position: relative;
+  display: block;
   align-items: start;
 }
 .proof-carousel-slide {
-  grid-area: 1 / 1;
+  position: absolute;
+  inset: 0 0 auto;
   width: 100%;
   opacity: 0;
   visibility: hidden;
@@ -533,6 +535,8 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   transition: opacity .35s ease, transform .35s ease, visibility .35s ease;
 }
 .proof-carousel-slide.is-active {
+  position: relative;
+  inset: auto;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
