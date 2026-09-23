@@ -104,7 +104,7 @@ summary:focus-visible {
 .ai-trip-benefits small { color: var(--ink-soft); line-height: 1.45; }
 .ai-trip-planner-media { margin: 0; min-width: 0; }
 .ai-trip-video-frame { position: relative; overflow: hidden; border-radius: 22px; background: #edf2f0; border: 1px solid rgba(12,23,32,.12); box-shadow: 0 16px 36px rgba(7,21,31,.10); }
-.ai-trip-video-frame video { width: 100%; height: auto; display: block; background: #f7faf9; aspect-ratio: 720 / 401; object-fit: contain; }
+.ai-trip-video-frame video { width: 100%; height: auto; display: block; background: #f7faf9; aspect-ratio: 720 / 400; object-fit: contain; }
 .ai-trip-video-badge { position: absolute; top: 12px; right: 12px; pointer-events: none; padding: 7px 10px; border-radius: 999px; background: rgba(7,21,31,.82); color: white; font-size: .7rem; font-weight: 850; backdrop-filter: blur(8px); }
 .ai-trip-planner-media figcaption { margin-top: 10px; color: #6c777d; font-size: .74rem; line-height: 1.45; }
 .fit-section { padding: 100px 0 92px; background: white; }
