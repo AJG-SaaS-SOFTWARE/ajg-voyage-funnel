@@ -58,6 +58,138 @@
     showSlide(0);
   });
 
+
+  document.querySelectorAll('[data-proof-carousel]').forEach((carousel) => {
+    const slides = [...carousel.querySelectorAll('[data-proof-slide]')];
+    const dots = [...carousel.querySelectorAll('[data-proof-dot]')];
+    const prevButton = carousel.querySelector('[data-proof-prev]');
+    const nextButton = carousel.querySelector('[data-proof-next]');
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    let activeIndex = 0;
+    let touchStartX = null;
+    let timer = null;
+    let inView = true;
+    let pausedByInteraction = false;
+
+    const showSlide = (index) => {
+      if (!slides.length) return;
+      activeIndex = (index + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        const active = slideIndex === activeIndex;
+        slide.classList.toggle('is-active', active);
+        if (active) slide.removeAttribute('aria-hidden');
+        else slide.setAttribute('aria-hidden', 'true');
+      });
+      dots.forEach((dot, dotIndex) => {
+        const active = dotIndex === activeIndex;
+        dot.classList.toggle('is-active', active);
+        if (active) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
+      });
+    };
+
+    const stopAuto = () => {
+      if (timer) window.clearInterval(timer);
+      timer = null;
+    };
+
+    const startAuto = () => {
+      stopAuto();
+      if (reducedMotion || slides.length < 2 || !inView || pausedByInteraction || document.hidden) return;
+      timer = window.setInterval(() => showSlide(activeIndex + 1), 6000);
+    };
+
+    const restartAuto = () => {
+      stopAuto();
+      startAuto();
+    };
+
+    prevButton?.addEventListener('click', () => {
+      showSlide(activeIndex - 1);
+      restartAuto();
+    });
+
+    nextButton?.addEventListener('click', () => {
+      showSlide(activeIndex + 1);
+      restartAuto();
+    });
+
+    dots.forEach((dot, dotIndex) => {
+      dot.addEventListener('click', () => {
+        showSlide(dotIndex);
+        restartAuto();
+      });
+    });
+
+    carousel.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        showSlide(activeIndex - 1);
+        restartAuto();
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        showSlide(activeIndex + 1);
+        restartAuto();
+      }
+    });
+
+    carousel.addEventListener('mouseenter', () => {
+      pausedByInteraction = true;
+      stopAuto();
+    });
+
+    carousel.addEventListener('mouseleave', () => {
+      pausedByInteraction = false;
+      startAuto();
+    });
+
+    carousel.addEventListener('focusin', () => {
+      pausedByInteraction = true;
+      stopAuto();
+    });
+
+    carousel.addEventListener('focusout', (event) => {
+      if (carousel.contains(event.relatedTarget)) return;
+      pausedByInteraction = false;
+      startAuto();
+    });
+
+    carousel.addEventListener('touchstart', (event) => {
+      pausedByInteraction = true;
+      stopAuto();
+      touchStartX = event.changedTouches[0]?.clientX ?? null;
+    }, { passive: true });
+
+    carousel.addEventListener('touchend', (event) => {
+      if (touchStartX !== null) {
+        const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX;
+        const delta = touchEndX - touchStartX;
+        if (Math.abs(delta) > 45) showSlide(activeIndex + (delta < 0 ? 1 : -1));
+      }
+      touchStartX = null;
+      pausedByInteraction = false;
+      startAuto();
+    }, { passive: true });
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        inView = entries[0]?.isIntersecting ?? true;
+        if (inView) startAuto();
+        else stopAuto();
+      }, { threshold: 0.35 });
+      observer.observe(carousel);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopAuto();
+      else startAuto();
+    });
+
+    showSlide(0);
+    startAuto();
+  });
+
   if (!form) return;
 
   const copy = {

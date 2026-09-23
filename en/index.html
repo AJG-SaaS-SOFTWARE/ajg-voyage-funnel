@@ -205,19 +205,31 @@
             <h3 id="proof-showcase-title">A few examples to make the platform easier to picture.</h3>
             <p>A complete family trip, a high-tech purchase or everyday products: the examples below show several sides of Travel Advantage without reducing the platform to a single use case.</p>
           </div>
-          <div class="proof-showcase-grid">
-            <figure class="proof-card proof-card-tall">
-              <img src="/assets/proof-minorca-en.webp" alt="Family trip comparison for Minorca between Booking.com and Travel Advantage" loading="lazy" decoding="async" />
-              <figcaption><strong>Complete trip</strong><span>An example combining accommodation and flights for a family.</span></figcaption>
-            </figure>
-            <figure class="proof-card">
-              <img src="/assets/proof-iphone-en.webp" alt="iPhone price comparison example on the Travel Advantage Lifestyle Mall" loading="lazy" decoding="async" />
-              <figcaption><strong>Lifestyle Mall</strong><span>A familiar product example that makes the potential member benefits easy to understand.</span></figcaption>
-            </figure>
-            <figure class="proof-card">
-              <img src="/assets/proof-fragrances-en.webp" alt="Fragrance examples shown at member prices on the Travel Advantage Lifestyle Mall" loading="lazy" decoding="async" />
-              <figcaption><strong>Everyday benefits</strong><span>Beauty, fashion, home and other categories can also form part of the experience.</span></figcaption>
-            </figure>
+          <div class="proof-carousel" data-proof-carousel tabindex="0" role="region" aria-roledescription="carousel" aria-label="Travel Advantage concrete examples">
+            <div class="proof-carousel-stage">
+              <figure class="proof-card proof-carousel-slide is-active" data-proof-slide>
+                <img src="/assets/proof-minorca-en.webp" alt="Family trip comparison for Minorca between Booking.com and Travel Advantage" loading="lazy" decoding="async" />
+                <figcaption><strong>Complete trip</strong><span>An example combining accommodation and flights for a family.</span></figcaption>
+              </figure>
+              <figure class="proof-card proof-carousel-slide" data-proof-slide aria-hidden="true">
+                <img src="/assets/proof-iphone-en.webp" alt="iPhone price comparison example on the Travel Advantage Lifestyle Mall" loading="lazy" decoding="async" />
+                <figcaption><strong>Lifestyle Mall</strong><span>A familiar product example that makes the potential member benefits easy to understand.</span></figcaption>
+              </figure>
+              <figure class="proof-card proof-carousel-slide" data-proof-slide aria-hidden="true">
+                <img src="/assets/proof-fragrances-en.webp" alt="Fragrance examples shown at member prices on the Travel Advantage Lifestyle Mall" loading="lazy" decoding="async" />
+                <figcaption><strong>Everyday benefits</strong><span>Beauty, fashion, home and other categories can also form part of the experience.</span></figcaption>
+              </figure>
+            </div>
+            <div class="proof-carousel-controls" aria-label="Example navigation">
+              <button class="gallery-button" type="button" data-proof-prev aria-label="Previous example">←</button>
+              <div class="gallery-dots">
+                <button class="gallery-dot is-active" type="button" data-proof-dot="0" aria-label="View example 1" aria-current="true"></button>
+                <button class="gallery-dot" type="button" data-proof-dot="1" aria-label="View example 2"></button>
+                <button class="gallery-dot" type="button" data-proof-dot="2" aria-label="View example 3"></button>
+              </div>
+              <button class="gallery-button" type="button" data-proof-next aria-label="Next example">→</button>
+            </div>
+            <p class="proof-carousel-hint">Examples rotate automatically. You can also use the arrows, dots or swipe on mobile.</p>
           </div>
           <p class="proof-disclaimer proof-disclaimer-wide">These visuals illustrate examples shared around Travel Advantage. Prices, savings, credits, points, brands, availability and conditions may change. They are not a promise that every booking or purchase will always be cheaper.</p>
         </div>
