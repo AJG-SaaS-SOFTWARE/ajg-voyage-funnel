@@ -1637,3 +1637,85 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   color: var(--aqua-dark);
   border-color: rgba(26,154,141,.55);
 }
+
+
+/* V4.4.3 — language selector beside AJG Voyage + precise header alignment */
+.header-brand-cluster {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  min-width: 0;
+}
+.site-header .header-language-link {
+  position: static;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 0 3px;
+  margin: 0;
+  border-bottom: 1px solid rgba(255,255,255,.3);
+  color: rgba(255,255,255,.82);
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+.site-header .header-language-link:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,.76);
+}
+.site-header .header-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding-top: 0;
+}
+.site-header .header-travel-link,
+.site-header .header-cta {
+  min-height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 0 4px;
+  box-sizing: border-box;
+  border-bottom: 1px solid transparent;
+  font-size: .78rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+.site-header .header-travel-link {
+  font-weight: 780;
+}
+.site-header .header-cta {
+  border-bottom-color: rgba(255,255,255,.5);
+  font-weight: 820;
+}
+.legal-header .header-language-link {
+  color: var(--ink);
+  border-color: rgba(12,23,32,.24);
+}
+.legal-header .header-language-link:hover {
+  color: var(--aqua-dark);
+  border-color: rgba(26,154,141,.55);
+}
+.legal-header .header-cta {
+  border-bottom-color: rgba(12,23,32,.28);
+}
+@media (max-width: 700px) {
+  .header-brand-cluster { gap: 10px; }
+  .site-header .header-language-link { font-size: .67rem; }
+  .site-header .header-actions-inline { gap: 13px; padding-top: 0; }
+  .site-header .header-travel-link,
+  .site-header .header-cta { font-size: .7rem; }
+}
+@media (max-width: 520px) {
+  .brand { gap: 8px; }
+  .brand-mark { width: 30px; height: 30px; }
+  .header-brand-cluster { gap: 8px; }
+  .site-header .header-language-link { font-size: .64rem; }
+}
