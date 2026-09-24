@@ -1,0 +1,100 @@
+name: Add AI Trip Planner background music
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/add-ai-trip-planner-music.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  mix-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Download the selected Vastness track
+        run: |
+          curl --fail --location --retry 3 \
+            "https://assets.mixkit.co/music/preview/mixkit-vastness-184.mp3" \
+            --output /tmp/vastness.mp3
+          echo "3ffae7ccd5ea6f612f75efdf9a8318ccce79a5e4f355b26e233631330a57660f  /tmp/vastness.mp3" | sha256sum --check -
+
+      - name: Preserve original video stream and add music
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INPUT="assets/ai-trip-planner-demo.mp4"
+          OUTPUT="/tmp/ai-trip-planner-demo-with-music.mp4"
+
+          ORIGINAL_VIDEO_HASH="$(ffmpeg -v error -i "$INPUT" -map 0:v:0 -c:v copy -f hash -hash sha256 - 2>/dev/null | tr -d '\r')"
+          DURATION="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$INPUT")"
+          FADE_START="$(awk -v d="$DURATION" 'BEGIN { s=d-2; if (s<0) s=0; printf "%.3f", s }')"
+
+          ffmpeg -y \
+            -i "$INPUT" \
+            -i /tmp/vastness.mp3 \
+            -filter_complex "[1:a]volume=0.09,afade=t=in:st=0:d=1.5,afade=t=out:st=${FADE_START}:d=2[a]" \
+            -map 0:v:0 \
+            -map "[a]" \
+            -c:v copy \
+            -c:a aac \
+            -b:a 192k \
+            -shortest \
+            -movflags +faststart \
+            "$OUTPUT"
+
+          NEW_VIDEO_HASH="$(ffmpeg -v error -i "$OUTPUT" -map 0:v:0 -c:v copy -f hash -hash sha256 - 2>/dev/null | tr -d '\r')"
+
+          echo "Original video stream: $ORIGINAL_VIDEO_HASH"
+          echo "New video stream:      $NEW_VIDEO_HASH"
+
+          test "$ORIGINAL_VIDEO_HASH" = "$NEW_VIDEO_HASH"
+
+          mv "$OUTPUT" "$INPUT"
+
+          ffprobe -v error \
+            -show_entries stream=index,codec_type,codec_name,width,height,r_frame_rate \
+            -show_entries format=duration,size \
+            -of json "$INPUT"
+
+      - name: Enable audio on French and English pages
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for filename in ("index.html", "en/index.html"):
+              path = Path(filename)
+              text = path.read_text(encoding="utf-8")
+              old = "<video controls muted playsinline preload=\"metadata\""
+              new = "<video controls playsinline preload=\"metadata\""
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{filename}: expected exactly one muted AI Trip Planner video, found {count}")
+              path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+
+      - name: Commit mixed video and page updates
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "AJG Voyage Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add assets/ai-trip-planner-demo.mp4 index.html en/index.html
+          git commit -m "Add Vastness music to AI Trip Planner demo"
+          git push origin main
