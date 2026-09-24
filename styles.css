@@ -785,3 +785,39 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
     width: 100%;
   }
 }
+
+
+/* V3.7 — section activité simplifiée, travel-first */
+.ambassador-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.ambassador-summary > div {
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 12px 28px rgba(7,21,31,.045);
+}
+.ambassador-summary strong {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ink);
+  font-size: .92rem;
+}
+.ambassador-summary span {
+  display: block;
+  color: var(--ink-soft);
+  font-size: .8rem;
+  line-height: 1.55;
+}
+.ambassador-activity-cta {
+  justify-self: start;
+}
+@media (max-width: 900px) {
+  .ambassador-summary { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .ambassador-summary > div { padding: 18px; }
+}
