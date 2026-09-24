@@ -1,0 +1,33 @@
+name: Site Builder CI
+
+on:
+  push:
+    branches:
+      - saas-site-builder-prototype
+    paths:
+      - "site-builder/**"
+      - ".github/workflows/site-builder-ci.yml"
+  pull_request:
+    paths:
+      - "site-builder/**"
+      - ".github/workflows/site-builder-ci.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site-builder
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN: voyage.ajgsolutionsgroup.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: site-builder/package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
