@@ -1,0 +1,186 @@
+import type { User } from "@supabase/supabase-js";
+import type { SiteConfig, SiteLanguage } from "./site-config";
+import { getSupabaseBrowserClient } from "./supabase-browser";
+
+export type RemoteSite = {
+  id: string;
+  ownerId: string;
+  slug: string;
+  status: "draft" | "published" | "suspended";
+  config: SiteConfig;
+  publishedAt: string | null;
+  updatedAt: string;
+};
+
+function languageFields(language: SiteLanguage) {
+  if (language === "both") {
+    return { primary_language: "fr", enabled_languages: ["fr", "en"] };
+  }
+  return { primary_language: language, enabled_languages: [language] };
+}
+
+function configFromRow(row: any): SiteConfig {
+  const enabled = Array.isArray(row.enabled_languages) ? row.enabled_languages : [row.primary_language];
+  const language: SiteLanguage =
+    enabled.includes("fr") && enabled.includes("en")
+      ? "both"
+      : row.primary_language === "en"
+        ? "en"
+        : "fr";
+
+  return {
+    slug: row.slug,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    brandName: row.brand_name,
+    language,
+    heroTitle: row.hero_title,
+    heroSubtitle: row.hero_subtitle,
+    aboutText: row.about_text,
+    bookingLabel: row.booking_label,
+    bookingUrl: row.booking_url,
+    profileImageUrl: row.profile_image_url,
+    showTravelJournals: row.show_travel_journals,
+    instagramUrl: row.instagram_url,
+    facebookUrl: row.facebook_url
+  };
+}
+
+function payload(user: User, config: SiteConfig, status: "draft" | "published") {
+  const language = languageFields(config.language);
+  return {
+    owner_id: user.id,
+    slug: config.slug,
+    status,
+    ...language,
+    brand_name: config.brandName,
+    first_name: config.firstName,
+    last_name: config.lastName,
+    hero_title: config.heroTitle,
+    hero_subtitle: config.heroSubtitle,
+    about_text: config.aboutText,
+    booking_label: config.bookingLabel,
+    booking_url: config.bookingUrl,
+    instagram_url: config.instagramUrl,
+    facebook_url: config.facebookUrl,
+    profile_image_url: config.profileImageUrl,
+    show_travel_journals: config.showTravelJournals,
+    compliance_profile: "mwr-life-independent-ambassador-v1",
+    published_at: status === "published" ? new Date().toISOString() : null
+  };
+}
+
+function toRemote(row: any): RemoteSite {
+  return {
+    id: row.id,
+    ownerId: row.owner_id,
+    slug: row.slug,
+    status: row.status,
+    config: configFromRow(row),
+    publishedAt: row.published_at,
+    updatedAt: row.updated_at
+  };
+}
+
+export async function getCurrentUser() {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return data.user;
+}
+
+export async function getMySite(): Promise<RemoteSite | null> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? toRemote(data) : null;
+}
+
+export async function saveMySite(config: SiteConfig, publish = false): Promise<RemoteSite> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Vous devez être connecté.");
+
+  const existing = await getMySite();
+  const nextPayload = payload(user, config, publish ? "published" : "draft");
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("sites")
+      .update(nextPayload)
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    return toRemote(data);
+  }
+
+  const { data, error } = await supabase
+    .from("sites")
+    .insert(nextPayload)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return toRemote(data);
+}
+
+export async function getPublishedSite(slug: string): Promise<RemoteSite | null> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? toRemote(data) : null;
+}
+
+export async function uploadProfileImage(file: File, siteId: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Vous devez être connecté.");
+
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const objectPath = `${user.id}/${siteId}/profile/profile.${extension}`;
+
+  const { error } = await supabase.storage
+    .from("site-media")
+    .upload(objectPath, file, {
+      upsert: true,
+      contentType: file.type || undefined
+    });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from("site-media").getPublicUrl(objectPath);
+  return data.publicUrl;
+}
+
+export async function signOut() {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return;
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
