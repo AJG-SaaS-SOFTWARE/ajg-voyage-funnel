@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ajg-voyage.netlify.app/sitemap.xml
+Sitemap: https://voyage.ajgsolutionsgroup.com/sitemap.xml
