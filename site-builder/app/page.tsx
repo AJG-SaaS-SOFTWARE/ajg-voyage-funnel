@@ -111,7 +111,7 @@ export default function Home() {
     <main className="shell premium-home">
       <section className="dashboard-hero">
         <div className="intro premium-intro">
-          <p className="eyebrow">AJG Site Builder · Prototype 0.4</p>
+          <p className="eyebrow">AJG Site Builder · Prototype 0.6</p>
           <h1>Votre site en quelques étapes</h1>
           <p>
             Un seul moteur pour créer et maintenir les sites des membres : identité, contenu,
@@ -119,19 +119,16 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="hero-art" aria-hidden="true">
+        <div className="hero-art hero-photo-art" aria-hidden="true">
+          <img
+            className="hero-photo"
+            src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=86"
+            alt=""
+          />
+          <span className="hero-photo-wash" />
           <span className="hero-orbit" />
           <span className="hero-star">✦</span>
-          <div className="hero-scene">
-            <span className="scene-sun" />
-            <span className="scene-mountain scene-mountain-back" />
-            <span className="scene-mountain scene-mountain-front" />
-            <span className="scene-sea" />
-            <span className="scene-shore" />
-            <span className="scene-villa" />
-            <span className="scene-foliage scene-foliage-one" />
-            <span className="scene-foliage scene-foliage-two" />
-          </div>
+          <span className="hero-photo-caption">Voyage · création · partage</span>
         </div>
       </section>
 
