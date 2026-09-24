@@ -21,11 +21,36 @@ import {
 } from "../../lib/supabase-site-repository";
 
 const steps = [
-  { key: "identity", label: "Identité" },
-  { key: "story", label: "Message" },
-  { key: "booking", label: "Rendez-vous" },
-  { key: "options", label: "Options" },
-  { key: "review", label: "Publication" }
+  {
+    key: "identity",
+    label: "Identité",
+    eyebrow: "Votre base",
+    description: "Nom, adresse, langue et photo : les éléments qui rendent le site immédiatement personnel."
+  },
+  {
+    key: "story",
+    label: "Message",
+    eyebrow: "Votre voix",
+    description: "Le titre, l'introduction et votre présentation. Le ton reste simple, humain et fidèle à vous."
+  },
+  {
+    key: "booking",
+    label: "Rendez-vous",
+    eyebrow: "Passer à l'action",
+    description: "Reliez votre agenda et vos réseaux pour transformer la visite en échange concret."
+  },
+  {
+    key: "options",
+    label: "Options",
+    eyebrow: "Votre contenu",
+    description: "Activez les modules utiles tout en gardant les éléments de conformité centralisés."
+  },
+  {
+    key: "review",
+    label: "Publication",
+    eyebrow: "Dernière vérification",
+    description: "Contrôlez l'adresse, la langue et les informations essentielles avant la mise en ligne."
+  }
 ] as const;
 
 type StepKey = (typeof steps)[number]["key"];
@@ -40,7 +65,7 @@ function Field({
   hint?: string;
 }) {
   return (
-    <label className="field">
+    <label className="field premium-field">
       <span>{label}</span>
       {children}
       {hint ? <small>{hint}</small> : null}
@@ -112,6 +137,7 @@ export default function BuilderPage() {
   }, [remoteMode, router]);
 
   const stepIndex = steps.findIndex((item) => item.key === step);
+  const currentStep = steps[stepIndex];
   const completion = Math.round(((stepIndex + 1) / steps.length) * 100);
 
   const update = <K extends keyof SiteConfig>(key: K, value: SiteConfig[K]) => {
@@ -213,269 +239,372 @@ export default function BuilderPage() {
 
   if (!ready) {
     return (
-      <main className="loading-page">
-        <div className="loading-dot" />
-        <p>Chargement de votre site…</p>
+      <main className="loading-page premium-loading-page">
+        <div className="loading-orbit"><span /></div>
+        <p>Chargement de votre espace…</p>
       </main>
     );
   }
 
   return (
-    <main className="builder-shell">
-      <header className="builder-topbar">
-        <Link href="/" className="brand-link">AJG Site Builder</Link>
-        <div className="progress">
+    <main className="builder-shell premium-builder-shell">
+      <header className="builder-topbar premium-builder-topbar">
+        <Link href="/" className="brand-link premium-brand-link">
+          <span className="brand-mark">A</span>
+          <span>
+            <strong>AJG Site Builder</strong>
+            <small>Prototype 0.6</small>
+          </span>
+        </Link>
+
+        <div className="progress premium-progress" aria-label={"Progression " + completion + "%"}>
           <span style={{ width: completion + "%" }} />
         </div>
-        <div className="topbar-account">
-          <span>{remoteMode ? "Cloud" : "Local"} · {completion}%</span>
-          {userEmail ? <button type="button" onClick={logout}>Déconnexion</button> : null}
+
+        <div className="topbar-account premium-topbar-account">
+          <Link className="preview-shortcut" href="/preview">Aperçu</Link>
+          <span className={"cloud-pill " + (remoteMode ? "online" : "local")}>
+            <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
+          </span>
+          {userEmail ? (
+            <button type="button" className="account-button" onClick={logout} title={userEmail}>
+              <span>{userEmail.charAt(0).toUpperCase()}</span>
+              <b>Déconnexion</b>
+            </button>
+          ) : null}
         </div>
       </header>
 
-      <div className="builder-layout">
-        <aside className="step-nav">
-          {steps.map((item, index) => (
-            <button
-              key={item.key}
-              type="button"
-              className={item.key === step ? "active" : ""}
-              onClick={() => setStep(item.key)}
-            >
-              <span>{index + 1}</span>{item.label}
-            </button>
-          ))}
+      <div className="builder-layout premium-builder-layout">
+        <aside className="step-nav premium-step-nav">
+          <div className="step-nav-heading">
+            <p className="eyebrow">Votre parcours</p>
+            <h2>Construire le site</h2>
+            <p>Avancez étape par étape. Vous pouvez revenir sur chaque section à tout moment.</p>
+          </div>
+
+          <div className="step-list">
+            {steps.map((item, index) => {
+              const isActive = item.key === step;
+              const isDone = index < stepIndex;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={(isActive ? "active " : "") + (isDone ? "done" : "")}
+                  onClick={() => setStep(item.key)}
+                >
+                  <span className="step-number">{isDone ? "✓" : index + 1}</span>
+                  <span className="step-label">
+                    <b>{item.label}</b>
+                    <small>{item.eyebrow}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="step-nav-footer">
+            <span>Site</span>
+            <strong>{config.brandName || "Nouveau site"}</strong>
+            <small>{config.slug}.voyage.ajgsolutionsgroup.com</small>
+          </div>
         </aside>
 
-        <section className="panel editor builder-panel">
-          <div className="panel-heading">
-            <div>
-              <p className="step">Étape {stepIndex + 1} sur {steps.length}</p>
-              <h2>{steps[stepIndex].label}</h2>
+        <section className="panel editor builder-panel premium-builder-panel">
+          <div className="panel-heading premium-panel-heading">
+            <div className="step-copy">
+              <p className="step">Étape {stepIndex + 1} sur {steps.length} · {currentStep.eyebrow}</p>
+              <h1>{currentStep.label}</h1>
+              <p className="step-description">{currentStep.description}</p>
             </div>
-            <span className="status">
+            <span className={"status premium-status " + (published ? "published" : saved ? "saved" : "draft")}>
+              <i />
               {busy ? "Synchronisation…" : published ? "Publié" : saved ? "Sauvegardé" : "Brouillon"}
             </span>
           </div>
 
-          {syncError ? <div className="error-card"><b>Synchronisation</b><p>{syncError}</p></div> : null}
+          <div className="editor-body">
+            {syncError ? <div className="error-card premium-error-card"><b>Synchronisation</b><p>{syncError}</p></div> : null}
 
-          {step === "identity" ? (
-            <>
-              <div className="grid two">
-                <Field label="Prénom">
-                  <input value={config.firstName} onChange={(e) => update("firstName", e.target.value)} />
-                </Field>
-                <Field label="Nom">
-                  <input value={config.lastName} onChange={(e) => update("lastName", e.target.value)} />
-                </Field>
-              </div>
+            {step === "identity" ? (
+              <>
+                <div className="section-kicker">
+                  <span>01</span>
+                  <div><b>Votre identité</b><p>Ces informations donnent le ton à tout le site.</p></div>
+                </div>
 
-              <Field label="Nom affiché du site">
-                <input value={config.brandName} onChange={(e) => update("brandName", e.target.value)} />
-              </Field>
+                <div className="grid two">
+                  <Field label="Prénom">
+                    <input value={config.firstName} onChange={(e) => update("firstName", e.target.value)} />
+                  </Field>
+                  <Field label="Nom">
+                    <input value={config.lastName} onChange={(e) => update("lastName", e.target.value)} />
+                  </Field>
+                </div>
 
-              <div className="grid two">
-                <Field label="Adresse souhaitée" hint="Exemple : julien-martin">
-                  <div className="slug-field">
-                    <input
-                      value={config.slug}
-                      onChange={(e) =>
-                        update(
-                          "slug",
-                          e.target.value
-                            .toLowerCase()
-                            .replace(/[^a-z0-9-]/g, "-")
-                            .replace(/-+/g, "-")
-                            .replace(/^-|-$/g, "")
-                        )
-                      }
-                    />
-                    <span>.voyage…</span>
-                  </div>
+                <Field label="Nom affiché du site">
+                  <input value={config.brandName} onChange={(e) => update("brandName", e.target.value)} />
                 </Field>
 
-                <Field label="Langue">
-                  <select
-                    value={config.language}
-                    onChange={(e) => update("language", e.target.value as SiteLanguage)}
+                <div className="grid two">
+                  <Field label="Adresse souhaitée" hint="Exemple : julien-martin">
+                    <div className="slug-field premium-slug-field">
+                      <input
+                        value={config.slug}
+                        onChange={(e) =>
+                          update(
+                            "slug",
+                            e.target.value
+                              .toLowerCase()
+                              .replace(/[^a-z0-9-]/g, "-")
+                              .replace(/-+/g, "-")
+                              .replace(/^-|-$/g, "")
+                          )
+                        }
+                      />
+                      <span>.voyage…</span>
+                    </div>
+                  </Field>
+
+                  <Field label="Langue">
+                    <select
+                      value={config.language}
+                      onChange={(e) => update("language", e.target.value as SiteLanguage)}
+                    >
+                      <option value="fr">Français</option>
+                      <option value="en">English</option>
+                      <option value="both">Français + English</option>
+                    </select>
+                  </Field>
+                </div>
+
+                <div className="section-kicker photo-kicker">
+                  <span>02</span>
+                  <div><b>Votre photo</b><p>Un visage réel renforce immédiatement la confiance.</p></div>
+                </div>
+
+                {remoteMode ? (
+                  <Field
+                    label="Photo de profil"
+                    hint="JPEG, PNG, WebP ou AVIF. La photo est stockée dans votre espace Supabase."
                   >
-                    <option value="fr">Français</option>
-                    <option value="en">English</option>
-                    <option value="both">Français + English</option>
-                  </select>
-                </Field>
-              </div>
+                    <input className="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
+                  </Field>
+                ) : (
+                  <Field label="Photo de profil — URL" hint="L'upload direct fonctionne dès que Supabase est configuré.">
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={config.profileImageUrl}
+                      onChange={(e) => update("profileImageUrl", e.target.value)}
+                    />
+                  </Field>
+                )}
 
-              {remoteMode ? (
-                <Field
-                  label="Photo de profil"
-                  hint="JPEG, PNG, WebP ou AVIF. La photo est stockée dans votre espace Supabase."
-                >
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
+                {config.profileImageUrl ? (
+                  <div className="uploaded-photo premium-uploaded-photo">
+                    <img src={config.profileImageUrl} alt="Aperçu de la photo de profil" />
+                    <div>
+                      <b>Photo chargée</b>
+                      <button type="button" onClick={() => update("profileImageUrl", "")}>Retirer la photo</button>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+            {step === "story" ? (
+              <>
+                <div className="section-kicker">
+                  <span>01</span>
+                  <div><b>Le premier message</b><p>Le visiteur doit comprendre en quelques secondes ce que vous lui proposez.</p></div>
+                </div>
+                <Field label="Titre principal">
+                  <textarea rows={2} value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
-              ) : (
-                <Field label="Photo de profil — URL" hint="L'upload direct fonctionne dès que Supabase est configuré.">
+                <Field label="Introduction">
+                  <textarea rows={5} value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
+                </Field>
+
+                <div className="section-kicker">
+                  <span>02</span>
+                  <div><b>Votre histoire</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
+                </div>
+                <Field label="Votre présentation">
+                  <textarea rows={7} value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
+                </Field>
+                <div className="helper-card premium-helper-card ai-helper">
+                  <span className="helper-icon">✦</span>
+                  <div>
+                    <b>Assistant rédactionnel — prochaine étape</b>
+                    <p>
+                      L'IA pourra transformer quelques réponses personnelles en proposition de texte,
+                      tout en vous laissant la validation finale.
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {step === "booking" ? (
+              <>
+                <div className="section-kicker">
+                  <span>01</span>
+                  <div><b>Votre rendez-vous</b><p>Un seul lien suffit pour transformer l'intérêt en échange.</p></div>
+                </div>
+                <Field label="Texte du bouton">
+                  <input value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
+                </Field>
+                <Field label="Lien de rendez-vous" hint="Calendly, Google Calendar ou autre lien HTTPS.">
                   <input
                     type="url"
                     placeholder="https://..."
-                    value={config.profileImageUrl}
-                    onChange={(e) => update("profileImageUrl", e.target.value)}
+                    value={config.bookingUrl}
+                    onChange={(e) => update("bookingUrl", e.target.value)}
                   />
                 </Field>
-              )}
 
-              {config.profileImageUrl ? (
-                <div className="uploaded-photo">
-                  <img src={config.profileImageUrl} alt="Aperçu de la photo de profil" />
-                  <button type="button" onClick={() => update("profileImageUrl", "")}>Retirer</button>
+                <div className="section-kicker">
+                  <span>02</span>
+                  <div><b>Vos réseaux</b><p>Optionnels, mais utiles pour prolonger la relation hors du site.</p></div>
                 </div>
-              ) : null}
-            </>
-          ) : null}
+                <div className="grid two">
+                  <Field label="Instagram">
+                    <input
+                      type="url"
+                      placeholder="https://instagram.com/..."
+                      value={config.instagramUrl}
+                      onChange={(e) => update("instagramUrl", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Facebook">
+                    <input
+                      type="url"
+                      placeholder="https://facebook.com/..."
+                      value={config.facebookUrl}
+                      onChange={(e) => update("facebookUrl", e.target.value)}
+                    />
+                  </Field>
+                </div>
+              </>
+            ) : null}
 
-          {step === "story" ? (
-            <>
-              <Field label="Titre principal">
-                <textarea rows={2} value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
-              </Field>
-              <Field label="Introduction">
-                <textarea rows={5} value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
-              </Field>
-              <Field label="Votre présentation">
-                <textarea rows={7} value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
-              </Field>
-              <div className="helper-card">
-                <b>Assistant rédactionnel — prochaine étape</b>
-                <p>
-                  Le bouton IA viendra ici pour transformer quelques réponses personnelles en proposition de texte,
-                  sans rendre la génération obligatoire.
-                </p>
-              </div>
-            </>
-          ) : null}
-
-          {step === "booking" ? (
-            <>
-              <Field label="Texte du bouton">
-                <input value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
-              </Field>
-              <Field label="Lien de rendez-vous" hint="Calendly, Google Calendar ou autre lien HTTPS.">
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={config.bookingUrl}
-                  onChange={(e) => update("bookingUrl", e.target.value)}
-                />
-              </Field>
-              <div className="grid two">
-                <Field label="Instagram">
+            {step === "options" ? (
+              <>
+                <div className="section-kicker">
+                  <span>01</span>
+                  <div><b>Modules du site</b><p>Gardez uniquement ce qui sert réellement votre présentation.</p></div>
+                </div>
+                <label className="option-card premium-option-card">
                   <input
-                    type="url"
-                    placeholder="https://instagram.com/..."
-                    value={config.instagramUrl}
-                    onChange={(e) => update("instagramUrl", e.target.value)}
+                    type="checkbox"
+                    checked={config.showTravelJournals}
+                    onChange={(e) => update("showTravelJournals", e.target.checked)}
                   />
-                </Field>
-                <Field label="Facebook">
-                  <input
-                    type="url"
-                    placeholder="https://facebook.com/..."
-                    value={config.facebookUrl}
-                    onChange={(e) => update("facebookUrl", e.target.value)}
-                  />
-                </Field>
-              </div>
-            </>
-          ) : null}
+                  <span className="option-toggle" aria-hidden="true"><i /></span>
+                  <div>
+                    <b>Mes voyages</b>
+                    <p>Ajouter une section permettant de publier des carnets personnels comme Marrakech ou l'Andalousie.</p>
+                  </div>
+                </label>
 
-          {step === "options" ? (
-            <>
-              <label className="option-card">
-                <input
-                  type="checkbox"
-                  checked={config.showTravelJournals}
-                  onChange={(e) => update("showTravelJournals", e.target.checked)}
-                />
-                <div>
-                  <b>Mes voyages</b>
-                  <p>Ajouter une section permettant de publier des carnets personnels comme Marrakech ou l'Andalousie.</p>
+                <div className="section-kicker">
+                  <span>02</span>
+                  <div><b>Conformité</b><p>Ces éléments restent protégés et communs à tous les sites.</p></div>
                 </div>
-              </label>
-              <div className="locked">
-                <span>Conformité verrouillée</span>
-                <p>{requiredDisclaimer}</p>
-              </div>
-              <div className="helper-card">
-                <b>Principe du produit</b>
-                <p>
-                  Les mentions obligatoires ne sont pas éditables par les membres. Elles sont gérées au niveau du
-                  template et pourront être mises à jour pour tous les sites.
-                </p>
-              </div>
-            </>
-          ) : null}
-
-          {step === "review" ? (
-            <>
-              {errors.length ? (
-                <div className="error-card">
-                  <b>À corriger avant publication</b>
-                  <ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul>
+                <div className="locked premium-locked">
+                  <span>Conformité verrouillée</span>
+                  <p>{requiredDisclaimer}</p>
                 </div>
-              ) : (
-                <div className="success-card">
-                  <b>{remoteMode ? "Le site est prêt à être publié dans Supabase." : "Le site est prêt pour le prototype local."}</b>
+                <div className="helper-card premium-helper-card">
+                  <b>Pourquoi c'est important</b>
                   <p>
-                    {remoteMode
-                      ? "Le contenu publié pourra être lu publiquement depuis le backend. Le raccordement du hostname réel vient ensuite."
-                      : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil."}
+                    Les mentions obligatoires ne sont pas éditables par les membres. Elles sont gérées au niveau du
+                    template et pourront être mises à jour pour tous les sites.
                   </p>
                 </div>
-              )}
-              <div className="publish-summary">
-                <span>Adresse prévue</span>
-                <strong>{config.slug}.voyage.ajgsolutionsgroup.com</strong>
-                <span>Langue</span>
-                <strong>{config.language === "both" ? "Français + English" : config.language.toUpperCase()}</strong>
-                <span>Stockage</span>
-                <strong>{remoteMode ? "Supabase" : "Navigateur local"}</strong>
-              </div>
-              <button
-                type="button"
-                className="primary publish-button"
-                disabled={errors.length > 0 || busy}
-                onClick={publish}
-              >
-                {busy ? "Publication…" : "Publier le site"}
-              </button>
-              {published ? (
-                <Link className="text-link" href={"/site/" + config.slug}>Ouvrir le site publié →</Link>
-              ) : null}
-            </>
-          ) : null}
+              </>
+            ) : null}
 
-          <div className="builder-actions">
+            {step === "review" ? (
+              <>
+                <div className="section-kicker">
+                  <span>✓</span>
+                  <div><b>Contrôle final</b><p>Une dernière vérification avant de rendre le site accessible.</p></div>
+                </div>
+                {errors.length ? (
+                  <div className="error-card premium-error-card">
+                    <b>À corriger avant publication</b>
+                    <ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul>
+                  </div>
+                ) : (
+                  <div className="success-card premium-success-card review-success">
+                    <div>
+                      <b>{remoteMode ? "Le site est prêt à être publié." : "Le site est prêt pour le prototype local."}</b>
+                      <p>
+                        {remoteMode
+                          ? "Les informations essentielles sont présentes. Vous pouvez lancer la publication."
+                          : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="publish-summary premium-publish-summary">
+                  <div><span>Adresse prévue</span><strong>{config.slug}.voyage.ajgsolutionsgroup.com</strong></div>
+                  <div><span>Langue</span><strong>{config.language === "both" ? "Français + English" : config.language.toUpperCase()}</strong></div>
+                  <div><span>Stockage</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
+                  <div><span>État</span><strong>{published ? "Publié" : "Prêt à publier"}</strong></div>
+                </div>
+
+                <button
+                  type="button"
+                  className="primary publish-button premium-publish-button"
+                  disabled={errors.length > 0 || busy}
+                  onClick={publish}
+                >
+                  {busy ? "Publication…" : published ? "Republier les modifications" : "Publier le site"}
+                  {!busy ? <span aria-hidden="true">→</span> : null}
+                </button>
+                {published ? (
+                  <Link className="text-link published-link" href={"/site/" + config.slug}>Ouvrir le site publié →</Link>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+
+          <div className="builder-actions premium-builder-actions">
             <button type="button" className="secondary" disabled={stepIndex === 0 || busy} onClick={() => go(-1)}>
               ← Retour
             </button>
-            <button type="button" className="secondary" disabled={busy} onClick={save}>
-              Sauvegarder
+            <button type="button" className="secondary save-button" disabled={busy} onClick={save}>
+              {saved && !busy ? "✓ Sauvegardé" : "Sauvegarder"}
             </button>
             {stepIndex < steps.length - 1 ? (
-              <button type="button" className="primary" disabled={busy} onClick={() => go(1)}>
-                Continuer →
+              <button type="button" className="primary premium-button" disabled={busy} onClick={() => go(1)}>
+                Continuer <span aria-hidden="true">→</span>
               </button>
             ) : null}
           </div>
         </section>
 
-        <aside className="preview-wrap builder-preview">
-          <div className="panel-heading">
-            <div><p className="step">Aperçu live</p><h2>{config.brandName}</h2></div>
-            <Link href="/preview">Plein écran</Link>
+        <aside className="preview-wrap builder-preview premium-builder-preview">
+          <div className="panel-heading preview-panel-heading">
+            <div>
+              <p className="step">Aperçu live</p>
+              <h2>{config.brandName}</h2>
+            </div>
+            <Link href="/preview">Plein écran ↗</Link>
           </div>
-          <SitePreview config={config} compact />
+          <div className="preview-device-frame">
+            <div className="device-dots"><i /><i /><i /></div>
+            <SitePreview config={config} compact />
+          </div>
+          <div className="preview-note">
+            <span>✦</span>
+            <p>Chaque modification apparaît ici avant la publication.</p>
+          </div>
         </aside>
       </div>
     </main>
