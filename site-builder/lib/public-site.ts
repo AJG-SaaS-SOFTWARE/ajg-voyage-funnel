@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 import type { SiteConfig, SiteLanguage } from "./site-config";
 
 export type PublicSiteRecord = {
@@ -41,7 +42,7 @@ export async function getPublicSite(slug: string): Promise<PublicSiteRecord | nu
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return null;
 
-  const supabase = createClient(url, key, {
+  const supabase = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
