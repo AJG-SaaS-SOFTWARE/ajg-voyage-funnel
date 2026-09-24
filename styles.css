@@ -1508,3 +1508,108 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
     font-size: .7rem;
   }
 }
+
+
+/* V4.4.2 — unified header across home and travel journals */
+.site-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 30;
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: var(--shell);
+  margin-inline: auto;
+  color: white;
+}
+.header-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-top: 10px;
+}
+.header-travel-link,
+.header-cta {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+.header-travel-link {
+  padding: 0 2px;
+  color: rgba(255,255,255,.9);
+  text-decoration: none;
+  font-size: .78rem;
+  font-weight: 780;
+  letter-spacing: .01em;
+}
+.header-cta {
+  padding: 0 1px 3px;
+  border-bottom: 1px solid rgba(255,255,255,.5);
+  color: white;
+  text-decoration: none;
+  font-size: .78rem;
+  font-weight: 820;
+}
+.header-travel-link:hover,
+.header-cta:hover {
+  color: white;
+}
+.header-language-link {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 0 3px;
+  border-bottom: 1px solid rgba(255,255,255,.34);
+  color: rgba(255,255,255,.88);
+  text-decoration: none;
+  font-size: .72rem;
+  font-weight: 740;
+  letter-spacing: .01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.header-language-link:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,.8);
+}
+.language-corner {
+  display: none !important;
+}
+.blog-header .header-actions-inline {
+  gap: 20px;
+}
+@media (max-width: 700px) {
+  .site-header {
+    height: 88px;
+  }
+  .header-actions-inline {
+    gap: 13px;
+    padding-top: 11px;
+  }
+  .header-travel-long { display: none; }
+  .header-travel-short { display: inline; }
+  .header-travel-link,
+  .header-cta {
+    font-size: .7rem;
+  }
+  .header-language-link {
+    top: 7px;
+    right: 0;
+    font-size: .68rem;
+  }
+}
+@media (max-width: 440px) {
+  .header-travel-link {
+    display: none;
+  }
+}
