@@ -3,6 +3,7 @@ name: Site Builder CI
 on:
   push:
     branches:
+      - main
       - saas-site-builder-prototype
     paths:
       - "site-builder/**"
