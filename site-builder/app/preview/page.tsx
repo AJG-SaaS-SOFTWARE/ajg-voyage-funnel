@@ -5,12 +5,34 @@ import { useEffect, useState } from "react";
 import SitePreview from "../../components/SitePreview";
 import { defaultSiteConfig, type SiteConfig } from "../../lib/site-config";
 import { loadDraft } from "../../lib/site-store";
+import { isSupabaseConfigured } from "../../lib/supabase-browser";
+import { getMySite } from "../../lib/supabase-site-repository";
 
 export default function PreviewPage() {
   const [config, setConfig] = useState<SiteConfig>(defaultSiteConfig);
 
   useEffect(() => {
-    setConfig(loadDraft().config);
+    let cancelled = false;
+
+    const load = async () => {
+      const local = loadDraft();
+      if (!isSupabaseConfigured()) {
+        setConfig(local.config);
+        return;
+      }
+
+      try {
+        const remote = await getMySite();
+        if (!cancelled) setConfig(remote?.config || local.config);
+      } catch {
+        if (!cancelled) setConfig(local.config);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
