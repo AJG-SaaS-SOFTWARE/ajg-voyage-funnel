@@ -821,3 +821,78 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
 @media (max-width: 620px) {
   .ambassador-summary > div { padding: 18px; }
 }
+
+
+/* V3.9 — authorized brand logos + visible independent ambassador disclosure */
+.independent-disclosure {
+  position: absolute;
+  z-index: 19;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 40px);
+  padding: 7px 13px;
+  border: 1px solid rgba(255,255,255,.20);
+  border-radius: 999px;
+  background: rgba(7,20,28,.68);
+  color: rgba(255,255,255,.88);
+  box-shadow: 0 8px 26px rgba(0,0,0,.10);
+  backdrop-filter: blur(10px);
+  font-size: .72rem;
+  line-height: 1.35;
+  text-align: center;
+}
+.independent-disclosure strong {
+  color: #fff;
+  font-weight: 850;
+}
+.official-brand-logo {
+  width: min(255px, 74%);
+  margin-top: 22px;
+  padding: 12px 14px;
+  border: 1px solid rgba(12,23,32,.10);
+  border-radius: 18px;
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 10px 26px rgba(7,21,31,.045);
+}
+.official-brand-logo img,
+.brand-identity-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.brand-relationship-logo {
+  display: block;
+  align-self: center;
+}
+.brand-identity-logo {
+  min-height: 0;
+  justify-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  text-align: center;
+}
+.brand-identity-logo img {
+  width: min(100%, 300px);
+}
+.brand-identity-logo span {
+  font-weight: 750;
+}
+
+@media (max-width: 620px) {
+  .independent-disclosure {
+    top: 74px;
+    max-width: calc(100% - 28px);
+    border-radius: 14px;
+    padding: 7px 10px;
+    font-size: .65rem;
+  }
+  .official-brand-logo {
+    width: min(240px, 82%);
+    margin-top: 18px;
+  }
+  .brand-relationship-logo {
+    transform: none;
+  }
+}
