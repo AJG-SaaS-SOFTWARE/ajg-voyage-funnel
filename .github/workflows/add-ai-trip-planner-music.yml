@@ -27,6 +27,9 @@ jobs:
       - name: Download the selected Vastness track
         run: |
           curl --fail --location --retry 3 \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36" \
+            --referer "https://mixkit.co/" \
+            --header "Accept: audio/mpeg,audio/*;q=0.9,*/*;q=0.5" \
             "https://assets.mixkit.co/music/preview/mixkit-vastness-184.mp3" \
             --output /tmp/vastness.mp3
           echo "3ffae7ccd5ea6f612f75efdf9a8318ccce79a5e4f355b26e233631330a57660f  /tmp/vastness.mp3" | sha256sum --check -
