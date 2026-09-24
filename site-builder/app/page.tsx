@@ -122,7 +122,7 @@ export default function Home() {
         <div className="hero-art hero-photo-art" aria-hidden="true">
           <img
             className="hero-photo"
-            src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=86"
+            src="https://images.pexels.com/photos/34851205/pexels-photo-34851205/free-photo-of-mediterranean-coastal-villa-with-scenic-mountain-view.jpeg?auto=compress&cs=tinysrgb&w=1600"
             alt=""
           />
           <span className="hero-photo-wash" />
