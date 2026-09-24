@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import SitePreview from "../../components/SitePreview";
 import {
   defaultSiteConfig,
@@ -10,6 +11,14 @@ import {
   type SiteLanguage
 } from "../../lib/site-config";
 import { loadDraft, publishDraft, saveDraft } from "../../lib/site-store";
+import { isSupabaseConfigured } from "../../lib/supabase-browser";
+import {
+  getCurrentUser,
+  getMySite,
+  saveMySite,
+  signOut,
+  uploadProfileImage
+} from "../../lib/supabase-site-repository";
 
 const steps = [
   { key: "identity", label: "Identité" },
@@ -21,7 +30,15 @@ const steps = [
 
 type StepKey = (typeof steps)[number]["key"];
 
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+function Field({
+  label,
+  children,
+  hint
+}: {
+  label: string;
+  children: React.ReactNode;
+  hint?: string;
+}) {
   return (
     <label className="field">
       <span>{label}</span>
@@ -32,16 +49,67 @@ function Field({ label, children, hint }: { label: string; children: React.React
 }
 
 export default function BuilderPage() {
+  const router = useRouter();
+  const remoteMode = isSupabaseConfigured();
+
   const [config, setConfig] = useState<SiteConfig>(defaultSiteConfig);
   const [step, setStep] = useState<StepKey>("identity");
   const [saved, setSaved] = useState(false);
   const [published, setPublished] = useState(false);
+  const [ready, setReady] = useState(!remoteMode);
+  const [busy, setBusy] = useState(false);
+  const [syncError, setSyncError] = useState("");
+  const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    const draft = loadDraft();
-    setConfig(draft.config);
-    setPublished(draft.status === "published");
-  }, []);
+    let cancelled = false;
+
+    const boot = async () => {
+      const local = loadDraft();
+
+      if (!remoteMode) {
+        setConfig(local.config);
+        setPublished(local.status === "published");
+        setReady(true);
+        return;
+      }
+
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+        if (cancelled) return;
+
+        setUserEmail(user.email || "");
+        const remote = await getMySite();
+        if (cancelled) return;
+
+        if (remote) {
+          setConfig(remote.config);
+          setRemoteSiteId(remote.id);
+          setPublished(remote.status === "published");
+        } else {
+          setConfig(local.config);
+          setPublished(false);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSyncError(error instanceof Error ? error.message : "Impossible de charger le site.");
+          setConfig(local.config);
+        }
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    };
+
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, [remoteMode, router]);
 
   const stepIndex = steps.findIndex((item) => item.key === step);
   const completion = Math.round(((stepIndex + 1) / steps.length) * 100);
@@ -49,6 +117,7 @@ export default function BuilderPage() {
   const update = <K extends keyof SiteConfig>(key: K, value: SiteConfig[K]) => {
     setSaved(false);
     setPublished(false);
+    setSyncError("");
     setConfig((current) => ({ ...current, [key]: value }));
   };
 
@@ -58,21 +127,82 @@ export default function BuilderPage() {
     if (!config.lastName.trim()) next.push("Nom manquant");
     if (!config.brandName.trim()) next.push("Nom du site manquant");
     if (!config.slug.trim()) next.push("Sous-domaine manquant");
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push("Sous-domaine invalide");
     if (!config.heroTitle.trim()) next.push("Titre principal manquant");
-    if (config.bookingUrl && !/^https?:\/\//i.test(config.bookingUrl)) next.push("Lien de rendez-vous invalide");
+    if (config.bookingUrl && !/^https?:\/\//i.test(config.bookingUrl)) {
+      next.push("Lien de rendez-vous invalide");
+    }
     return next;
   }, [config]);
 
-  const save = () => {
-    saveDraft(config);
-    setSaved(true);
+  const save = async () => {
+    setBusy(true);
+    setSyncError("");
+    try {
+      saveDraft(config);
+      if (remoteMode) {
+        const remote = await saveMySite(config, false);
+        setRemoteSiteId(remote.id);
+      }
+      setSaved(true);
+      setPublished(false);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Erreur de sauvegarde.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const publish = () => {
+  const publish = async () => {
     if (errors.length) return;
-    publishDraft(config);
-    setSaved(true);
-    setPublished(true);
+    setBusy(true);
+    setSyncError("");
+    try {
+      if (remoteMode) {
+        const remote = await saveMySite(config, true);
+        setRemoteSiteId(remote.id);
+      }
+      publishDraft(config);
+      setSaved(true);
+      setPublished(true);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Erreur de publication.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const uploadPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !remoteMode) return;
+
+    setBusy(true);
+    setSyncError("");
+    try {
+      const site = remoteSiteId
+        ? { id: remoteSiteId }
+        : await saveMySite(config, false);
+
+      if (!remoteSiteId) setRemoteSiteId(site.id);
+
+      const publicUrl = await uploadProfileImage(file, site.id);
+      const nextConfig = { ...config, profileImageUrl: publicUrl };
+      setConfig(nextConfig);
+      saveDraft(nextConfig);
+      const savedRemote = await saveMySite(nextConfig, false);
+      setRemoteSiteId(savedRemote.id);
+      setSaved(true);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Impossible d'envoyer la photo.");
+    } finally {
+      setBusy(false);
+      event.target.value = "";
+    }
+  };
+
+  const logout = async () => {
+    await signOut();
+    router.replace("/login");
   };
 
   const go = (direction: number) => {
@@ -81,6 +211,15 @@ export default function BuilderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  if (!ready) {
+    return (
+      <main className="loading-page">
+        <div className="loading-dot" />
+        <p>Chargement de votre site…</p>
+      </main>
+    );
+  }
+
   return (
     <main className="builder-shell">
       <header className="builder-topbar">
@@ -88,7 +227,10 @@ export default function BuilderPage() {
         <div className="progress">
           <span style={{ width: completion + "%" }} />
         </div>
-        <span>{completion}%</span>
+        <div className="topbar-account">
+          <span>{remoteMode ? "Cloud" : "Local"} · {completion}%</span>
+          {userEmail ? <button type="button" onClick={logout}>Déconnexion</button> : null}
+        </div>
       </header>
 
       <div className="builder-layout">
@@ -111,39 +253,84 @@ export default function BuilderPage() {
               <p className="step">Étape {stepIndex + 1} sur {steps.length}</p>
               <h2>{steps[stepIndex].label}</h2>
             </div>
-            <span className="status">{published ? "Publié" : saved ? "Sauvegardé" : "Brouillon"}</span>
+            <span className="status">
+              {busy ? "Synchronisation…" : published ? "Publié" : saved ? "Sauvegardé" : "Brouillon"}
+            </span>
           </div>
+
+          {syncError ? <div className="error-card"><b>Synchronisation</b><p>{syncError}</p></div> : null}
 
           {step === "identity" ? (
             <>
               <div className="grid two">
-                <Field label="Prénom"><input value={config.firstName} onChange={(e) => update("firstName", e.target.value)} /></Field>
-                <Field label="Nom"><input value={config.lastName} onChange={(e) => update("lastName", e.target.value)} /></Field>
+                <Field label="Prénom">
+                  <input value={config.firstName} onChange={(e) => update("firstName", e.target.value)} />
+                </Field>
+                <Field label="Nom">
+                  <input value={config.lastName} onChange={(e) => update("lastName", e.target.value)} />
+                </Field>
               </div>
+
               <Field label="Nom affiché du site">
                 <input value={config.brandName} onChange={(e) => update("brandName", e.target.value)} />
               </Field>
+
               <div className="grid two">
                 <Field label="Adresse souhaitée" hint="Exemple : julien-martin">
                   <div className="slug-field">
                     <input
                       value={config.slug}
-                      onChange={(e) => update("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-"))}
+                      onChange={(e) =>
+                        update(
+                          "slug",
+                          e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9-]/g, "-")
+                            .replace(/-+/g, "-")
+                            .replace(/^-|-$/g, "")
+                        )
+                      }
                     />
                     <span>.voyage…</span>
                   </div>
                 </Field>
+
                 <Field label="Langue">
-                  <select value={config.language} onChange={(e) => update("language", e.target.value as SiteLanguage)}>
+                  <select
+                    value={config.language}
+                    onChange={(e) => update("language", e.target.value as SiteLanguage)}
+                  >
                     <option value="fr">Français</option>
                     <option value="en">English</option>
                     <option value="both">Français + English</option>
                   </select>
                 </Field>
               </div>
-              <Field label="Photo de profil — URL pour le prototype" hint="L'upload direct sera ajouté avec Supabase Storage.">
-                <input type="url" placeholder="https://..." value={config.profileImageUrl} onChange={(e) => update("profileImageUrl", e.target.value)} />
-              </Field>
+
+              {remoteMode ? (
+                <Field
+                  label="Photo de profil"
+                  hint="JPEG, PNG, WebP ou AVIF. La photo est stockée dans votre espace Supabase."
+                >
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
+                </Field>
+              ) : (
+                <Field label="Photo de profil — URL" hint="L'upload direct fonctionne dès que Supabase est configuré.">
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={config.profileImageUrl}
+                    onChange={(e) => update("profileImageUrl", e.target.value)}
+                  />
+                </Field>
+              )}
+
+              {config.profileImageUrl ? (
+                <div className="uploaded-photo">
+                  <img src={config.profileImageUrl} alt="Aperçu de la photo de profil" />
+                  <button type="button" onClick={() => update("profileImageUrl", "")}>Retirer</button>
+                </div>
+              ) : null}
             </>
           ) : null}
 
@@ -160,7 +347,10 @@ export default function BuilderPage() {
               </Field>
               <div className="helper-card">
                 <b>Assistant rédactionnel — prochaine étape</b>
-                <p>Le bouton IA viendra ici pour transformer quelques réponses personnelles en proposition de texte, sans rendre la génération obligatoire.</p>
+                <p>
+                  Le bouton IA viendra ici pour transformer quelques réponses personnelles en proposition de texte,
+                  sans rendre la génération obligatoire.
+                </p>
               </div>
             </>
           ) : null}
@@ -171,11 +361,30 @@ export default function BuilderPage() {
                 <input value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
               </Field>
               <Field label="Lien de rendez-vous" hint="Calendly, Google Calendar ou autre lien HTTPS.">
-                <input type="url" placeholder="https://..." value={config.bookingUrl} onChange={(e) => update("bookingUrl", e.target.value)} />
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={config.bookingUrl}
+                  onChange={(e) => update("bookingUrl", e.target.value)}
+                />
               </Field>
               <div className="grid two">
-                <Field label="Instagram"><input type="url" placeholder="https://instagram.com/..." value={config.instagramUrl} onChange={(e) => update("instagramUrl", e.target.value)} /></Field>
-                <Field label="Facebook"><input type="url" placeholder="https://facebook.com/..." value={config.facebookUrl} onChange={(e) => update("facebookUrl", e.target.value)} /></Field>
+                <Field label="Instagram">
+                  <input
+                    type="url"
+                    placeholder="https://instagram.com/..."
+                    value={config.instagramUrl}
+                    onChange={(e) => update("instagramUrl", e.target.value)}
+                  />
+                </Field>
+                <Field label="Facebook">
+                  <input
+                    type="url"
+                    placeholder="https://facebook.com/..."
+                    value={config.facebookUrl}
+                    onChange={(e) => update("facebookUrl", e.target.value)}
+                  />
+                </Field>
               </div>
             </>
           ) : null}
@@ -183,8 +392,15 @@ export default function BuilderPage() {
           {step === "options" ? (
             <>
               <label className="option-card">
-                <input type="checkbox" checked={config.showTravelJournals} onChange={(e) => update("showTravelJournals", e.target.checked)} />
-                <div><b>Mes voyages</b><p>Ajouter une section permettant de publier des carnets personnels comme Marrakech ou l'Andalousie.</p></div>
+                <input
+                  type="checkbox"
+                  checked={config.showTravelJournals}
+                  onChange={(e) => update("showTravelJournals", e.target.checked)}
+                />
+                <div>
+                  <b>Mes voyages</b>
+                  <p>Ajouter une section permettant de publier des carnets personnels comme Marrakech ou l'Andalousie.</p>
+                </div>
               </label>
               <div className="locked">
                 <span>Conformité verrouillée</span>
@@ -192,7 +408,10 @@ export default function BuilderPage() {
               </div>
               <div className="helper-card">
                 <b>Principe du produit</b>
-                <p>Les mentions obligatoires ne seront pas éditables par les membres. Elles seront gérées au niveau du template et pourront être mises à jour pour tous les sites.</p>
+                <p>
+                  Les mentions obligatoires ne sont pas éditables par les membres. Elles sont gérées au niveau du
+                  template et pourront être mises à jour pour tous les sites.
+                </p>
               </div>
             </>
           ) : null}
@@ -206,8 +425,12 @@ export default function BuilderPage() {
                 </div>
               ) : (
                 <div className="success-card">
-                  <b>Le site est prêt pour le prototype.</b>
-                  <p>La publication ci-dessous est locale. Le branchement Supabase rendra ensuite cette URL accessible à d'autres personnes.</p>
+                  <b>{remoteMode ? "Le site est prêt à être publié dans Supabase." : "Le site est prêt pour le prototype local."}</b>
+                  <p>
+                    {remoteMode
+                      ? "Le contenu publié pourra être lu publiquement depuis le backend. Le raccordement du hostname réel vient ensuite."
+                      : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil."}
+                  </p>
                 </div>
               )}
               <div className="publish-summary">
@@ -215,18 +438,35 @@ export default function BuilderPage() {
                 <strong>{config.slug}.voyage.ajgsolutionsgroup.com</strong>
                 <span>Langue</span>
                 <strong>{config.language === "both" ? "Français + English" : config.language.toUpperCase()}</strong>
+                <span>Stockage</span>
+                <strong>{remoteMode ? "Supabase" : "Navigateur local"}</strong>
               </div>
-              <button type="button" className="primary publish-button" disabled={errors.length > 0} onClick={publish}>
-                Publier le prototype
+              <button
+                type="button"
+                className="primary publish-button"
+                disabled={errors.length > 0 || busy}
+                onClick={publish}
+              >
+                {busy ? "Publication…" : "Publier le site"}
               </button>
-              {published ? <Link className="text-link" href={"/site/" + config.slug}>Ouvrir le site publié →</Link> : null}
+              {published ? (
+                <Link className="text-link" href={"/site/" + config.slug}>Ouvrir le site publié →</Link>
+              ) : null}
             </>
           ) : null}
 
           <div className="builder-actions">
-            <button type="button" className="secondary" disabled={stepIndex === 0} onClick={() => go(-1)}>← Retour</button>
-            <button type="button" className="secondary" onClick={save}>Sauvegarder</button>
-            {stepIndex < steps.length - 1 ? <button type="button" className="primary" onClick={() => go(1)}>Continuer →</button> : null}
+            <button type="button" className="secondary" disabled={stepIndex === 0 || busy} onClick={() => go(-1)}>
+              ← Retour
+            </button>
+            <button type="button" className="secondary" disabled={busy} onClick={save}>
+              Sauvegarder
+            </button>
+            {stepIndex < steps.length - 1 ? (
+              <button type="button" className="primary" disabled={busy} onClick={() => go(1)}>
+                Continuer →
+              </button>
+            ) : null}
           </div>
         </section>
 
