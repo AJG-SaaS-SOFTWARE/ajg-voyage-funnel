@@ -637,7 +637,7 @@ input:focus,textarea:focus,select:focus{
   height:100%;
   object-fit:cover;
   object-position:center 54%;
-  filter:saturate(.86) contrast(.96) brightness(1.02);
+  filter:saturate(.82) contrast(.94) brightness(1.06) sepia(.04);
   transform:scale(1.015);
   z-index:1;
 }
@@ -686,7 +686,7 @@ input:focus,textarea:focus,select:focus{
   color:#fff;
   background:
     linear-gradient(180deg,rgba(10,30,37,.14),rgba(10,30,37,.52)),
-    url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=86") center/cover no-repeat;
+    url("https://images.pexels.com/photos/34851205/pexels-photo-34851205/free-photo-of-mediterranean-coastal-villa-with-scenic-mountain-view.jpeg?auto=compress&cs=tinysrgb&w=1600") center/cover no-repeat;
 }
 .auth-visual::after{
   content:"";
