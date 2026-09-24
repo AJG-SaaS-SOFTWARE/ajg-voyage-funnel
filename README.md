@@ -3,8 +3,8 @@
 Landing page mobile-first pour qualifier des prospects intéressés par Travel Advantage et les orienter vers une présentation.
 
 ## Production
-- Site FR : https://ajg-voyage.netlify.app/
-- Site EN : https://ajg-voyage.netlify.app/en/
+- Site FR : https://voyage.ajgsolutionsgroup.com/
+- Site EN : https://voyage.ajgsolutionsgroup.com/en/
 - Hébergement : Netlify
 - Collecte : Netlify Forms (`travel-presentation`)
 - Réservation FR : Google Calendar — présentation individuelle avec Benoit
