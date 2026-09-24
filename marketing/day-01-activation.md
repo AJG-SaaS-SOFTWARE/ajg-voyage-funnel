@@ -13,11 +13,11 @@ Le Jour 1 ne cherche pas à faire du volume. Il sert à obtenir les premiers sig
 
 Instagram / Facebook :
 
-https://ajg-voyage.netlify.app/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=launch_transparency
+https://voyage.ajgsolutionsgroup.com/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=launch_transparency
 
 Pour Facebook, utiliser :
 
-https://ajg-voyage.netlify.app/?utm_source=facebook&utm_medium=social&utm_campaign=launch_v1&utm_content=launch_transparency
+https://voyage.ajgsolutionsgroup.com/?utm_source=facebook&utm_medium=social&utm_campaign=launch_v1&utm_content=launch_transparency
 
 ## Publication principale
 
@@ -68,7 +68,7 @@ Sondage :
 
 Sticker lien :
 
-https://ajg-voyage.netlify.app/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=story_day1
+https://voyage.ajgsolutionsgroup.com/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=story_day1
 
 ## WhatsApp Status
 
@@ -78,7 +78,7 @@ Voyage, activité de recommandation ou les deux : vous choisissez ce que vous vo
 
 Présentation gratuite et sans engagement.
 
-https://ajg-voyage.netlify.app/?utm_source=whatsapp&utm_medium=status&utm_campaign=launch_v1&utm_content=day1
+https://voyage.ajgsolutionsgroup.com/?utm_source=whatsapp&utm_medium=status&utm_campaign=launch_v1&utm_content=day1
 
 ## Réponse privée uniquement si une personne demande des informations
 
@@ -86,7 +86,7 @@ Oui, je peux te montrer. J’ai créé une petite page qui explique d’abord le
 
 Ça prend environ 2 minutes :
 
-https://ajg-voyage.netlify.app/?utm_source=whatsapp&utm_medium=direct_requested&utm_campaign=launch_v1&utm_content=day1
+https://voyage.ajgsolutionsgroup.com/?utm_source=whatsapp&utm_medium=direct_requested&utm_campaign=launch_v1&utm_content=day1
 
 Ensuite tu peux réserver un créneau si tu veux aller plus loin.
 
@@ -101,11 +101,11 @@ Ne pas utiliser ce message comme prospection froide.
 
 Lien bio Instagram :
 
-https://ajg-voyage.netlify.app/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=bio
+https://voyage.ajgsolutionsgroup.com/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=bio
 
 Lien bio TikTok :
 
-https://ajg-voyage.netlify.app/?utm_source=tiktok&utm_medium=social&utm_campaign=launch_v1&utm_content=bio
+https://voyage.ajgsolutionsgroup.com/?utm_source=tiktok&utm_medium=social&utm_campaign=launch_v1&utm_content=bio
 
 ## Données à relever après 24 h
 
