@@ -82,6 +82,50 @@ function toRemote(row: any): RemoteSite {
   };
 }
 
+async function ensureManagedDomain(siteId: string, slug: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+
+  const root =
+    process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
+    "voyage.ajgsolutionsgroup.com";
+  const hostname = `${slug}.${root}`;
+
+  const { data: existing, error: readError } = await supabase
+    .from("domains")
+    .select("id")
+    .eq("site_id", siteId)
+    .eq("kind", "managed_subdomain")
+    .maybeSingle();
+
+  if (readError) throw readError;
+
+  if (existing) {
+    const { error } = await supabase
+      .from("domains")
+      .update({
+        hostname,
+        verification_status: "verified",
+        is_primary: true
+      })
+      .eq("id", existing.id);
+
+    if (error) throw error;
+    return hostname;
+  }
+
+  const { error } = await supabase.from("domains").insert({
+    site_id: siteId,
+    hostname,
+    kind: "managed_subdomain",
+    verification_status: "verified",
+    is_primary: true
+  });
+
+  if (error) throw error;
+  return hostname;
+}
+
 export async function getCurrentUser() {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return null;
@@ -127,7 +171,9 @@ export async function saveMySite(config: SiteConfig, publish = false): Promise<R
       .single();
 
     if (error) throw error;
-    return toRemote(data);
+    const remote = toRemote(data);
+    if (publish) await ensureManagedDomain(remote.id, remote.slug);
+    return remote;
   }
 
   const { data, error } = await supabase
@@ -137,7 +183,9 @@ export async function saveMySite(config: SiteConfig, publish = false): Promise<R
     .single();
 
   if (error) throw error;
-  return toRemote(data);
+  const remote = toRemote(data);
+  if (publish) await ensureManagedDomain(remote.id, remote.slug);
+  return remote;
 }
 
 export async function getPublishedSite(slug: string): Promise<RemoteSite | null> {
