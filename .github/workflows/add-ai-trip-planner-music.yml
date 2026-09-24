@@ -24,15 +24,36 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Download the selected Vastness track
+      - name: Retrieve the selected Vastness track
+        shell: bash
         run: |
-          curl --fail --location --retry 3 \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36" \
-            --referer "https://mixkit.co/" \
-            --header "Accept: audio/mpeg,audio/*;q=0.9,*/*;q=0.5" \
-            "https://assets.mixkit.co/music/preview/mixkit-vastness-184.mp3" \
-            --output /tmp/vastness.mp3
-          echo "3ffae7ccd5ea6f612f75efdf9a8318ccce79a5e4f355b26e233631330a57660f  /tmp/vastness.mp3" | sha256sum --check -
+          set -euo pipefail
+          python3 -m pip install --quiet yt-dlp
+          python3 -m yt_dlp \
+            --no-playlist \
+            --extract-audio \
+            --audio-format mp3 \
+            --audio-quality 0 \
+            --output "/tmp/vastness.%(ext)s" \
+            "https://soundcloud.com/tamaz-diakonidze/mixkit-vastness-184"
+
+          test -f /tmp/vastness.mp3
+
+          DURATION="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 /tmp/vastness.mp3)"
+          python3 - "$DURATION" <<'PY'
+          import sys
+          duration=float(sys.argv[1])
+          expected=229.851429
+          if abs(duration-expected) > 1.0:
+              raise SystemExit(f"Unexpected Vastness duration: {duration:.3f}s")
+          PY
+
+          ACTUAL_FP="$(ffmpeg -v error -i /tmp/vastness.mp3 -t 30 -f chromaprint -fp_format 2 - 2>/dev/null)"
+          EXPECTED_FP="AQAA3UqkPEqSJMZf9HBf7Dc-XmjyE1VyIswvHHpD_Eef6GigWkGcHG18eAwr4_iHF30qHHG2BTqaJUe-K4F_DfWWIP_RHlqiHhFTpsMF4_sxlP8QKV1oqIwGLnoQ5piO-3h05Fqg5kfs40GPxxrs4-iTGUnoBXF-MEW7fLhfXFHQD950XEf6QIpyfC3y4gKP-oHdR_hYOMmR5iX6G_pxPOGJPtByPBXi40eZjBU2P3hGXEV_PCZiE3qOZroS5PnwTXhW5DnKB2p8xC6mYPqJH_9RL3oQKb6hcke26GiO6Tuu4xliL5B_xH5woj3uwj5-IpJOqHmK_KCPB8_K4kGfD25i40IYHtLyIX5wGj_4oDcezca4_HjOIkyO37gPHeeJD1ouVHkQC384lMxX_PA99BfOoTODNA2hI8yC88E3Ufga5EFFJEvy4GE39GhwovmPNneQ5LWRLXuIJnixoxby7FDTRUJs0cODo69wmMpRfYjaKIV6ZD_aKDl6hscX_OgTHa6MIww7qDmyPcVxgjnMpDO-Uxj3I05OFj1-6Mdj1OIJP9A-YsyPWEe7LMfMyzgH9xP6BMezEcAEJgQhYIgCEhkEnECSMKWsAMgKAoQQhBnIAABGIIKMIgYwRaaBcDgjEEEWEYEIUFwygoQTCiqEEDEAEsFAIgAAYpBBVEBHjGGMOCAQEYgYhBBgihOkoAKCeMiYFAQKYphBGiJAhABNIWUYQgAYQJhSQgBCDCICMkOIAIIAJw4hRyErSFJGEIcUIFQZxjEiQghBnUQICQGAFEYDAAA"
+          if [ "$ACTUAL_FP" != "$EXPECTED_FP" ]; then
+            echo "Downloaded audio fingerprint does not match the user-supplied Vastness file."
+            exit 1
+          fi
 
       - name: Preserve original video stream and add music
         shell: bash
