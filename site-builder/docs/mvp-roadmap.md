@@ -1,56 +1,64 @@
 # Roadmap MVP — AJG Site Builder
 
-## Sprint 1 — configurateur utilisable
-État : en cours
+Dernière mise à jour : 25 septembre 2026.
 
-- [x] branche isolée du site AJG Voyage ;
-- [x] application Next.js ;
-- [x] parcours en 5 étapes ;
+## Sprint 1 — configurateur utilisable
+État : terminé pour le prototype bêta
+
+- [x] application Next.js isolée ;
+- [x] parcours guidé en 5 étapes ;
 - [x] aperçu en direct ;
-- [x] validation minimale des champs ;
-- [x] sauvegarde locale ;
-- [x] publication locale simulée ;
+- [x] validation des champs essentiels ;
+- [x] sauvegarde locale automatique des modifications ;
+- [x] sauvegarde distante Supabase ;
+- [x] upload réel de photo de profil ;
+- [x] publication partageable ;
 - [x] conformité verrouillée ;
-- [x] structure prête pour FR / EN ;
-- [ ] upload réel de photos ;
-- [ ] sauvegarde distante ;
-- [ ] publication partageable.
+- [x] base FR / EN.
 
 ## Sprint 2 — Supabase
+État : socle opérationnel
 
-- projet Supabase dédié ;
-- Auth email / magic link ;
-- tables sites, media, travel_journals, domains ;
-- RLS ;
-- Storage pour photos et vidéos ;
-- migration du stockage local vers le repository Supabase.
+- [x] projet Supabase dédié ;
+- [x] Auth email / Magic Link ;
+- [x] tables sites, media, travel_journals et domains ;
+- [x] RLS et relations principales ;
+- [x] Storage pour les médias ;
+- [x] repository Supabase côté application ;
+- [x] contrôle sécurité Supabase sans alerte active.
 
 ## Sprint 3 — publication multi-tenant
+État : largement opérationnel
 
-- résolution du site par hostname ;
-- sous-domaines gérés ;
-- rendu public SSR/SEO ;
-- statut brouillon / publié ;
-- page 404 et suspension ;
-- canonical / sitemap par site.
+- [x] résolution du site par hostname ;
+- [x] sous-domaines gérés ;
+- [x] rendu public SSR ;
+- [x] métadonnées SEO et canonical ;
+- [x] statuts brouillon / publié / suspendu côté données ;
+- [x] page introuvable pour un site non publié ;
+- [ ] sitemap par site ;
+- [ ] validation complète des sous-domaines en conditions réelles ;
+- [ ] domaine personnalisé en option.
 
 ## Sprint 4 — onboarding bêta
+État : prochaine priorité
 
-- questionnaire simplifié ;
-- assistant rédactionnel ;
-- création du premier site test ;
-- instrumentation des abandons ;
-- journal de retours utilisateur.
+- [ ] questionnaire de démarrage simplifié ;
+- [ ] assistant rédactionnel ;
+- [ ] création de plusieurs sites bêta réels ;
+- [ ] mesure des abandons du builder ;
+- [ ] journal de retours utilisateur ;
+- [ ] amélioration continue du template public.
 
 ## Sprint 5 — monétisation
 
-- plans ;
-- Stripe ;
-- quotas ;
-- domaine personnalisé ;
-- back-office administrateur ;
-- suspension automatique en cas d'impayé.
+- [ ] plans et droits par offre ;
+- [ ] Stripe ;
+- [ ] quotas stockage / IA ;
+- [ ] domaines personnalisés ;
+- [ ] back-office administrateur ;
+- [ ] suspension automatique en cas d'impayé.
 
 ## Principe de conformité
 
-Les mentions MWR Life / Travel Advantage, lorsqu'elles sont nécessaires, restent des blocs système non éditables par le membre. Les contenus marketing créés par l'utilisateur devront rester séparés des matériaux officiellement approuvés.
+Les mentions MWR Life / Travel Advantage nécessaires restent des blocs système non éditables par le membre. Les contenus personnels et marketing de l'utilisateur restent séparés des éléments officiels ou obligatoires.

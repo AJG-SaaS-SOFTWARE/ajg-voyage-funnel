@@ -144,7 +144,12 @@ export default function BuilderPage() {
     setSaved(false);
     setPublished(false);
     setSyncError("");
-    setConfig((current) => ({ ...current, [key]: value }));
+    setConfig((current) => {
+      const next = { ...current, [key]: value };
+      // Keep every edit safe locally, even before the user explicitly syncs to the cloud.
+      saveDraft(next);
+      return next;
+    });
   };
 
   const errors = useMemo(() => {
@@ -202,6 +207,18 @@ export default function BuilderPage() {
     const file = event.target.files?.[0];
     if (!file || !remoteMode) return;
 
+    if (!["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
+      setSyncError("Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      setSyncError("Cette image dépasse 8 Mo. Choisissez une photo plus légère avant l’envoi.");
+      event.target.value = "";
+      return;
+    }
+
     setBusy(true);
     setSyncError("");
     try {
@@ -253,7 +270,7 @@ export default function BuilderPage() {
           <span className="brand-mark">A</span>
           <span>
             <strong>AJG Site Builder</strong>
-            <small>Prototype 0.6</small>
+            <small>Prototype 0.6.2</small>
           </span>
         </Link>
 
@@ -318,7 +335,7 @@ export default function BuilderPage() {
               <h1>{currentStep.label}</h1>
               <p className="step-description">{currentStep.description}</p>
             </div>
-            <span className={"status premium-status " + (published ? "published" : saved ? "saved" : "draft")}>
+            <span aria-live="polite" className={"status premium-status " + (published ? "published" : saved ? "saved" : "draft")}>
               <i />
               {busy ? "Synchronisation…" : published ? "Publié" : saved ? "Sauvegardé" : "Brouillon"}
             </span>
@@ -387,7 +404,7 @@ export default function BuilderPage() {
                 {remoteMode ? (
                   <Field
                     label="Photo de profil"
-                    hint="JPEG, PNG, WebP ou AVIF. La photo est stockée dans votre espace Supabase."
+                    hint="JPEG, PNG, WebP ou AVIF · 8 Mo maximum. La photo est stockée dans votre espace Supabase."
                   >
                     <input className="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
                   </Field>

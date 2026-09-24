@@ -1,59 +1,35 @@
-# AJG Site Builder — prototype
+# AJG Site Builder
 
-Objectif : transformer AJG Voyage en un modèle de site paramétrable, puis en SaaS multi-utilisateur.
+AJG Site Builder est le prototype SaaS multi-tenant destiné à permettre aux membres du réseau de créer, personnaliser et publier leur propre site à partir d'un moteur commun.
 
-## Prototype 0.1
+## État actuel — Prototype 0.6.2
 
-Le prototype permet de :
-- renseigner l'identité du membre ;
-- choisir FR / EN / bilingue ;
-- personnaliser le titre, l'introduction et la présentation ;
-- renseigner un lien de réservation Calendly, Google ou autre ;
-- préparer un sous-domaine ;
-- activer ou non une section « Mes voyages » ;
-- conserver un bloc conformité non modifiable ;
-- prévisualiser le site en direct ;
-- sauvegarder le brouillon localement ;
-- exporter la configuration JSON.
+Le prototype comprend déjà :
 
-## Architecture cible
+- une interface premium et responsive ;
+- une connexion Supabase par Magic Link ;
+- un builder guidé en 5 étapes ;
+- une prévisualisation en direct ;
+- une sauvegarde locale automatique pour éviter la perte de saisie ;
+- une sauvegarde cloud Supabase ;
+- l'upload d'une photo de profil ;
+- une publication partageable ;
+- une résolution par sous-domaine géré ;
+- un rendu public SSR avec métadonnées SEO ;
+- des blocs de conformité centralisés et non éditables.
+
+## Architecture
 
 1. Frontend et rendu public : Next.js sur Vercel.
 2. Authentification, données et médias : Supabase.
-3. Multi-tenant : un seul code source, un enregistrement site par membre.
-4. Sous-domaines réseau : prenom.voyage.ajgsolutionsgroup.com.
-5. Domaines personnalisés : option payante plus tard.
-6. IA : couche facultative pour proposer des textes à partir du questionnaire.
-7. Conformité : blocs légaux et mentions obligatoires verrouillés dans le template.
+3. Multi-tenant : un seul moteur, un enregistrement de site par membre.
+4. Sous-domaines réseau : `prenom.voyage.ajgsolutionsgroup.com`.
+5. Domaines personnalisés : prévus dans une phase commerciale ultérieure.
+6. IA : couche future pour aider à rédiger les textes sans retirer le contrôle à l'utilisateur.
+7. Conformité : mentions obligatoires verrouillées dans le template.
 
-## Pourquoi un moteur multi-tenant
+## Principe produit
 
-On ne clone pas un dépôt par membre. Un seul moteur coûte moins cher, se maintient plus facilement et permet de corriger tous les sites d'un coup. Chaque client possède uniquement sa configuration, ses médias et son domaine.
+Le produit ne clone pas un dépôt ou une application par membre. Le code, le design et les corrections restent centralisés ; chaque client possède sa configuration, ses médias et son adresse publique.
 
-## Phases
-
-### Phase A — bêta réseau
-- wizard de création ;
-- aperçu en direct ;
-- sauvegarde Supabase ;
-- upload photos ;
-- publication sur sous-domaine ;
-- un template AJG Voyage paramétrable.
-
-### Phase B — produit commercial
-- comptes clients ;
-- abonnement ;
-- domaines personnalisés ;
-- modèles supplémentaires ;
-- analytics ;
-- génération assistée par IA ;
-- back-office administrateur.
-
-### Phase C — industrialisation
-- onboarding automatisé ;
-- facturation ;
-- quotas stockage / IA ;
-- gestion équipe / agence ;
-- bibliothèque de blocs approuvés.
-
-Le prototype est volontairement sans base de données : aucune ressource payante supplémentaire n'est créée à ce stade.
+Voir `docs/mvp-roadmap.md` pour la suite du développement.
