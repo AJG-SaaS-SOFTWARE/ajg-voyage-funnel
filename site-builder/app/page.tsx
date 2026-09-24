@@ -72,7 +72,7 @@ export default function Home() {
   return (
     <main className="shell">
       <section className="intro">
-        <p className="eyebrow">AJG Site Builder · Prototype 0.3</p>
+        <p className="eyebrow">AJG Site Builder · Prototype 0.4</p>
         <h1>Votre site en quelques étapes</h1>
         <p>
           Un seul moteur pour créer et maintenir les sites des membres : identité, contenu,
