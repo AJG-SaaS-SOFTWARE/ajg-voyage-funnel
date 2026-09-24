@@ -49,6 +49,7 @@ jobs:
           PY
 
           ACTUAL_FP="$(ffmpeg -v error -i /tmp/vastness.mp3 -t 30 -f chromaprint -fp_format 2 - 2>/dev/null)"
+          echo "Actual 30s Chromaprint: $ACTUAL_FP"
           EXPECTED_FP="AQAA3UqkPEqSJMZf9HBf7Dc-XmjyE1VyIswvHHpD_Eef6GigWkGcHG18eAwr4_iHF30qHHG2BTqaJUe-K4F_DfWWIP_RHlqiHhFTpsMF4_sxlP8QKV1oqIwGLnoQ5piO-3h05Fqg5kfs40GPxxrs4-iTGUnoBXF-MEW7fLhfXFHQD950XEf6QIpyfC3y4gKP-oHdR_hYOMmR5iX6G_pxPOGJPtByPBXi40eZjBU2P3hGXEV_PCZiE3qOZroS5PnwTXhW5DnKB2p8xC6mYPqJH_9RL3oQKb6hcke26GiO6Tuu4xliL5B_xH5woj3uwj5-IpJOqHmK_KCPB8_K4kGfD25i40IYHtLyIX5wGj_4oDcezca4_HjOIkyO37gPHeeJD1ouVHkQC384lMxX_PA99BfOoTODNA2hI8yC88E3Ufga5EFFJEvy4GE39GhwovmPNneQ5LWRLXuIJnixoxby7FDTRUJs0cODo69wmMpRfYjaKIV6ZD_aKDl6hscX_OgTHa6MIww7qDmyPcVxgjnMpDO-Uxj3I05OFj1-6Mdj1OIJP9A-YsyPWEe7LMfMyzgH9xP6BMezEcAEJgQhYIgCEhkEnECSMKWsAMgKAoQQhBnIAABGIIKMIgYwRaaBcDgjEEEWEYEIUFwygoQTCiqEEDEAEsFAIgAAYpBBVEBHjGGMOCAQEYgYhBBgihOkoAKCeMiYFAQKYphBGiJAhABNIWUYQgAYQJhSQgBCDCICMkOIAIIAJw4hRyErSFJGEIcUIFQZxjEiQghBnUQICQGAFEYDAAA"
           if [ "$ACTUAL_FP" != "$EXPECTED_FP" ]; then
             echo "Downloaded audio fingerprint does not match the user-supplied Vastness file."
