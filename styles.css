@@ -1320,3 +1320,162 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
     font-size: clamp(2.35rem, 7vw, 3.65rem);
   }
 }
+
+
+/* V4.4 — home travel journals and blog index */
+.header-travel-link {
+  color: rgba(255,255,255,.9);
+  text-decoration: none;
+  font-size: .78rem;
+  font-weight: 850;
+  letter-spacing: .02em;
+}
+.header-travel-link:hover { color: white; }
+.header-travel-short { display: none; }
+
+.home-journals {
+  padding: 104px 0;
+  background: #f7f4ec;
+  border-top: 1px solid rgba(12,23,32,.06);
+  border-bottom: 1px solid rgba(12,23,32,.06);
+}
+.home-journals-heading {
+  display: grid;
+  grid-template-columns: minmax(0,1.18fr) minmax(280px,.82fr);
+  gap: clamp(34px,7vw,88px);
+  align-items: end;
+  margin-bottom: 38px;
+}
+.home-journals-heading h2 {
+  max-width: 760px;
+  margin: 12px 0 0;
+  font-family: Georgia,'Times New Roman',serif;
+  font-size: clamp(2.7rem,5.4vw,5rem);
+  line-height: .96;
+  letter-spacing: -.045em;
+  font-weight: 500;
+}
+.home-journals-heading > p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.75;
+}
+.home-journal-grid,
+.blog-index-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 18px;
+}
+.home-journal-card,
+.blog-index-card {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: rgba(255,255,255,.82);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: 0 16px 38px rgba(7,21,31,.055);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.home-journal-card:hover,
+.blog-index-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 48px rgba(7,21,31,.09);
+}
+.home-journal-image,
+.blog-index-card-image { overflow: hidden; }
+.home-journal-image img,
+.blog-index-card-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  transition: transform .35s ease;
+}
+.home-journal-card:hover img,
+.blog-index-card:hover img { transform: scale(1.025); }
+.home-journal-copy,
+.blog-index-card-copy { padding: 25px 26px 28px; }
+.home-journal-copy > span,
+.blog-index-card-copy > span,
+.blog-index-coming > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--aqua-dark);
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.home-journal-copy h3,
+.blog-index-card-copy h2 {
+  margin: 0 0 10px;
+  font-family: Georgia,'Times New Roman',serif;
+  font-size: clamp(2rem,3vw,2.7rem);
+  line-height: 1;
+  font-weight: 500;
+}
+.home-journal-copy p,
+.blog-index-card-copy p {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+.home-journal-copy strong,
+.blog-index-card-copy strong {
+  color: var(--aqua-dark);
+  font-size: .82rem;
+}
+.home-journals-footer { margin-top: 28px; }
+
+.blog-index-hero {
+  padding: 210px 0 90px;
+  background:
+    linear-gradient(90deg,rgba(7,19,26,.94),rgba(7,19,26,.68)),
+    url('/assets/andalousie-hero-grenade.webp') center 52%/cover no-repeat;
+  color: white;
+}
+.blog-index-hero h1 {
+  margin: 13px 0 18px;
+  font-size: clamp(4rem,10vw,8.5rem);
+  line-height: .9;
+}
+.blog-index-hero p {
+  max-width: 710px;
+  margin: 0;
+  color: rgba(255,255,255,.76);
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+.blog-index-list { padding: 90px 0 110px; }
+.blog-index-card-image img { aspect-ratio: 4/3; }
+.blog-index-coming {
+  margin-top: 44px;
+  padding: 28px 0 0;
+  border-top: 1px solid var(--line);
+}
+.blog-index-coming strong {
+  display: block;
+  margin-bottom: 4px;
+  font-family: Georgia,'Times New Roman',serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+.blog-index-coming p { margin: 0; color: var(--ink-soft); }
+
+@media (max-width: 900px) {
+  .home-journals-heading { grid-template-columns: 1fr; gap: 18px; }
+}
+@media (max-width: 700px) {
+  .header-travel-long { display: none; }
+  .header-travel-short { display: inline; }
+  .header-travel-link { font-size: .7rem; }
+  .home-journals { padding: 78px 0; }
+  .home-journal-grid,
+  .blog-index-grid { grid-template-columns: 1fr; }
+  .blog-index-hero { padding-top: 185px; }
+}
+@media (max-width: 440px) {
+  .header-travel-link { display: none; }
+}
