@@ -1,84 +1,54 @@
-"use client";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import PublishedSite from "../../../components/PublishedSite";
+import { getPublicSite, managedSiteUrl } from "../../../lib/public-site";
 
-import Link from "next/link";
-import { use, useEffect, useState } from "react";
-import SitePreview from "../../../components/SitePreview";
-import { type SiteConfig } from "../../../lib/site-config";
-import { loadPublished } from "../../../lib/site-store";
-import { isSupabaseConfigured } from "../../../lib/supabase-browser";
-import { getPublishedSite } from "../../../lib/supabase-site-repository";
+export const dynamic = "force-dynamic";
 
-export default function PublishedSitePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
-  const [config, setConfig] = useState<SiteConfig | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [source, setSource] = useState<"cloud" | "local" | null>(null);
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const site = await getPublicSite(slug);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        if (isSupabaseConfigured()) {
-          const remote = await getPublishedSite(slug);
-          if (remote && !cancelled) {
-            setConfig(remote.config);
-            setSource("cloud");
-            setLoaded(true);
-            return;
-          }
-        }
-
-        const local = loadPublished(slug);
-        if (!cancelled) {
-          setConfig(local?.config || null);
-          setSource(local ? "local" : null);
-        }
-      } catch {
-        const local = loadPublished(slug);
-        if (!cancelled) {
-          setConfig(local?.config || null);
-          setSource(local ? "local" : null);
-        }
-      } finally {
-        if (!cancelled) setLoaded(true);
-      }
+  if (!site) {
+    return {
+      title: "Site introuvable | AJG Site Builder",
+      robots: { index: false, follow: false }
     };
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
-
-  if (!loaded) {
-    return (
-      <main className="loading-page">
-        <div className="loading-dot" />
-        <p>Chargement du site…</p>
-      </main>
-    );
   }
 
-  if (!config) {
-    return (
-      <main className="not-found">
-        <p className="eyebrow">AJG Site Builder</p>
-        <h1>Site introuvable</h1>
-        <p>Ce site n'existe pas, n'est pas encore publié ou a été suspendu.</p>
-        <Link className="button primary" href="/">Retour</Link>
-      </main>
-    );
-  }
+  const title = `${site.config.brandName} | Voyage`;
+  const description =
+    site.config.heroSubtitle ||
+    `Découvrez le site de ${site.config.firstName} ${site.config.lastName}.`;
+  const canonical = managedSiteUrl(slug);
 
-  return (
-    <main className="published-page">
-      <SitePreview config={config} />
-      {source === "local" ? (
-        <div className="prototype-ribbon">
-          Prototype local · <Link href="/builder">Modifier ce site</Link>
-        </div>
-      ) : null}
-    </main>
-  );
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: "website",
+      images: site.config.profileImageUrl ? [site.config.profileImageUrl] : undefined
+    },
+    robots: { index: true, follow: true }
+  };
+}
+
+export default async function PublishedSitePage({
+  params
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const site = await getPublicSite(slug);
+  if (!site) notFound();
+
+  return <PublishedSite config={site.config} />;
 }
