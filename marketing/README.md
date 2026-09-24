@@ -50,7 +50,7 @@ Le contenu doit principalement parler de :
 
 > Vous voulez simplement voir comment cela fonctionne ?  
 > Le questionnaire prend environ 2 minutes et la présentation est gratuite, sans engagement.  
-> https://ajg-voyage.netlify.app/
+> https://voyage.ajgsolutionsgroup.com/
 
 Utiliser la variante UTM correspondant au canal, définie dans `utm-links.md`.
 
