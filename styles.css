@@ -1790,3 +1790,21 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
     letter-spacing: .08em;
   }
 }
+
+
+/* V4.5 — success page shell consistency */
+.success-page {
+  min-height: 100vh;
+  background: var(--paper);
+}
+.success-page .success-main {
+  min-height: calc(100vh - 92px);
+}
+.success-header {
+  background: rgba(255,255,255,.92);
+}
+@media (max-width: 700px) {
+  .success-page .success-main {
+    min-height: calc(100vh - 88px);
+  }
+}
