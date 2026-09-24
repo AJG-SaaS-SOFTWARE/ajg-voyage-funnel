@@ -1613,3 +1613,27 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
     display: none;
   }
 }
+
+
+/* V4.4.2c — legal header color alignment */
+.legal-header {
+  position: relative;
+  inset: auto;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.legal-header .header-travel-link,
+.legal-header .header-cta,
+.legal-header .header-language-link {
+  color: var(--ink);
+}
+.legal-header .header-cta,
+.legal-header .header-language-link {
+  border-color: rgba(12,23,32,.28);
+}
+.legal-header .header-travel-link:hover,
+.legal-header .header-cta:hover,
+.legal-header .header-language-link:hover {
+  color: var(--aqua-dark);
+  border-color: rgba(26,154,141,.55);
+}
