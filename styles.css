@@ -896,3 +896,273 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
     transform: none;
   }
 }
+
+
+/* V4.0 — carnets de voyage */
+.blog-page { background: #f7f4ec; }
+.blog-header { color: white; }
+.blog-back-link {
+  color: rgba(255,255,255,.9);
+  text-decoration: none;
+  font-size: .86rem;
+  font-weight: 800;
+  border-bottom: 1px solid rgba(255,255,255,.38);
+  padding-bottom: 4px;
+}
+.blog-back-link:hover { color: white; border-color: white; }
+.blog-hero {
+  min-height: 720px;
+  position: relative;
+  display: grid;
+  align-items: end;
+  overflow: hidden;
+  color: white;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.blog-hero-morocco {
+  background-image: url('https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=2000&q=84');
+}
+.blog-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7,19,26,.87) 0%, rgba(7,19,26,.58) 48%, rgba(7,19,26,.16) 100%),
+    linear-gradient(0deg, rgba(7,19,26,.72) 0%, rgba(7,19,26,.06) 56%);
+}
+.blog-hero-content {
+  position: relative;
+  z-index: 2;
+  padding-top: 180px;
+  padding-bottom: 82px;
+}
+.blog-hero-content h1 {
+  max-width: 920px;
+  font-size: clamp(3.8rem, 8vw, 7.4rem);
+  margin-bottom: 26px;
+}
+.blog-hero-content > p {
+  max-width: 720px;
+  color: rgba(255,255,255,.84);
+  font-size: clamp(1rem, 1.8vw, 1.17rem);
+}
+.blog-breadcrumb,
+.blog-breadcrumb-current {
+  display: inline-block;
+  margin-bottom: 34px;
+  color: rgba(255,255,255,.72);
+  font-size: .78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.blog-breadcrumb:hover { color: white; }
+.blog-breadcrumb-sep { margin: 0 8px; opacity: .4; }
+.blog-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 30px;
+}
+.blog-hero-meta span {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(7,19,26,.26);
+  backdrop-filter: blur(8px);
+  color: rgba(255,255,255,.82);
+  font-size: .75rem;
+  font-weight: 750;
+}
+.blog-photo-credit {
+  position: absolute;
+  z-index: 2;
+  right: 18px;
+  bottom: 14px;
+  margin: 0;
+  color: rgba(255,255,255,.54);
+  font-size: .65rem;
+}
+.blog-intro { padding: 90px 0 110px; }
+.blog-reading-grid {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 790px);
+  gap: clamp(38px, 7vw, 92px);
+  justify-content: center;
+  align-items: start;
+}
+.blog-side-card {
+  position: sticky;
+  top: 28px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255,255,255,.68);
+}
+.blog-side-kicker {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--aqua-dark);
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.blog-side-card nav { display: grid; }
+.blog-side-card nav a {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: .82rem;
+  font-weight: 750;
+}
+.blog-side-card nav a:hover { color: var(--aqua-dark); }
+.blog-article { min-width: 0; }
+.blog-copy-section { padding: 12px 0 58px; }
+.blog-copy-section h2,
+.blog-visual-break h2,
+.blog-travel-cta h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.45rem, 5vw, 4.35rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+  font-weight: 500;
+  margin: 15px 0 22px;
+}
+.blog-copy-section > p {
+  color: var(--ink-soft);
+  font-size: 1.03rem;
+  line-height: 1.78;
+}
+.blog-pullquote {
+  margin: 6px 0 70px;
+  padding: 30px 0 30px 32px;
+  border-left: 3px solid var(--aqua-dark);
+}
+.blog-pullquote p {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.7rem, 3.4vw, 2.55rem);
+  line-height: 1.18;
+  letter-spacing: -.025em;
+  color: #26363e;
+}
+.blog-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 13px;
+  margin-top: 32px;
+}
+.blog-feature-card {
+  min-height: 230px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255,255,255,.72);
+}
+.blog-feature-number {
+  color: var(--aqua-dark);
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.blog-feature-card h3 {
+  margin: 58px 0 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.65rem;
+  font-weight: 500;
+}
+.blog-feature-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: .85rem;
+}
+.blog-visual-break {
+  position: relative;
+  min-height: 440px;
+  display: flex;
+  align-items: end;
+  margin: 18px 0 72px;
+  padding: 42px;
+  overflow: hidden;
+  border-radius: 28px;
+  background:
+    linear-gradient(0deg, rgba(7,19,26,.78), rgba(7,19,26,.12)),
+    url('https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=1400&q=76') center 58% / cover no-repeat;
+  color: white;
+}
+.blog-visual-break > div { position: relative; z-index: 2; max-width: 600px; }
+.blog-visual-break p { margin: 0; color: rgba(255,255,255,.78); }
+.blog-check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 30px;
+}
+.blog-check-grid > div {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.68);
+}
+.blog-check-grid strong,
+.blog-check-grid span { display: block; }
+.blog-check-grid strong { margin-bottom: 5px; }
+.blog-check-grid span { color: var(--ink-soft); font-size: .82rem; line-height: 1.5; }
+.blog-travel-cta {
+  margin-top: 20px;
+  padding: 42px;
+  border-radius: 28px;
+  background: var(--ink);
+  color: white;
+}
+.blog-travel-cta p { max-width: 660px; color: rgba(255,255,255,.7); }
+.blog-travel-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.blog-travel-cta .button-ghost { border-color: rgba(255,255,255,.22); }
+.blog-next-note {
+  margin-top: 58px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.blog-next-note > span {
+  display: block;
+  color: var(--aqua-dark);
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.blog-next-note strong {
+  display: block;
+  margin: 7px 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+.blog-next-note p { color: var(--ink-soft); }
+.blog-footer { margin-top: 0; }
+
+@media (max-width: 900px) {
+  .blog-reading-grid { grid-template-columns: 1fr; }
+  .blog-side-card { position: static; }
+  .blog-side-card nav { grid-template-columns: repeat(2, 1fr); gap: 0 18px; }
+  .blog-feature-grid { grid-template-columns: 1fr; }
+  .blog-feature-card { min-height: auto; }
+  .blog-feature-card h3 { margin-top: 28px; }
+}
+@media (max-width: 620px) {
+  .blog-hero { min-height: 700px; }
+  .blog-hero-content { padding-top: 170px; padding-bottom: 62px; }
+  .blog-hero-content h1 { font-size: clamp(3rem, 15vw, 4.8rem); }
+  .blog-breadcrumb, .blog-breadcrumb-current { margin-bottom: 28px; }
+  .blog-photo-credit { right: 10px; bottom: 8px; }
+  .blog-intro { padding: 64px 0 76px; }
+  .blog-side-card nav { grid-template-columns: 1fr; }
+  .blog-pullquote { padding-left: 20px; margin-bottom: 54px; }
+  .blog-visual-break { min-height: 470px; padding: 28px 22px; margin-bottom: 58px; }
+  .blog-check-grid { grid-template-columns: 1fr; }
+  .blog-travel-cta { padding: 30px 22px; }
+  .blog-travel-actions { display: grid; }
+  .blog-travel-actions .button { width: 100%; }
+}
