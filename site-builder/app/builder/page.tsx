@@ -684,6 +684,9 @@ export default function BuilderPage() {
                   <b>Vous gardez toujours le dernier mot.</b>
                   <p>La version préparée n'est qu'un point de départ. Changez les mots pour qu'ils vous ressemblent vraiment.</p>
                 </div>
+                <Field label="Petite phrase au-dessus du titre" hint="Facultatif. Exemple : Voyagez autrement · partagez davantage.">
+                  <input maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
+                </Field>
                 <Field label="Titre principal">
                   <textarea rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
@@ -695,6 +698,9 @@ export default function BuilderPage() {
                   <span>02</span>
                   <div><b>Votre présentation</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
                 </div>
+                <Field label="Titre de la rubrique" hint="Facultatif. Votre nom est utilisé si ce champ reste vide.">
+                  <input maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
+                </Field>
                 <Field label="Votre présentation">
                   <textarea rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
@@ -702,7 +708,13 @@ export default function BuilderPage() {
             ) : null}
 
             {step === "design" ? (
-              <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
+              <>
+                <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
+                <label className="option-card premium-option-card portrait-option">
+                  <input type="checkbox" checked={config.design.showPortrait} onChange={(event) => update("design", { ...config.design, showPortrait: event.target.checked })} />
+                  <span><b>Afficher le portrait dans l'accueil</b><p>Si vous n'avez pas ajouté de photo, vos initiales apparaissent. Décochez pour laisser davantage de place à l'image de fond.</p></span>
+                </label>
+              </>
             ) : null}
 
             {step === "booking" ? (

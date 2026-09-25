@@ -103,7 +103,9 @@ export type Database = {
           facebook_url: string
           first_name: string
           hero_subtitle: string
+          hero_tagline: string
           hero_title: string
+          about_heading: string
           id: string
           instagram_url: string
           last_name: string
@@ -128,7 +130,9 @@ export type Database = {
           facebook_url?: string
           first_name: string
           hero_subtitle?: string
+          hero_tagline?: string
           hero_title: string
+          about_heading?: string
           id?: string
           instagram_url?: string
           last_name: string
@@ -153,7 +157,9 @@ export type Database = {
           facebook_url?: string
           first_name?: string
           hero_subtitle?: string
+          hero_tagline?: string
           hero_title?: string
+          about_heading?: string
           id?: string
           instagram_url?: string
           last_name?: string

@@ -13,6 +13,7 @@ export type SiteDesign = {
   patternStrength: "soft" | "bold";
   showMwrLogo: boolean;
   showTravelAdvantageLogo: boolean;
+  showPortrait: boolean;
   heroImage: MediaChoice | null;
   audio: MediaChoice | null;
 };
@@ -32,6 +33,7 @@ export const defaultSiteDesign: SiteDesign = {
   patternStrength: "soft",
   showMwrLogo: false,
   showTravelAdvantageLogo: false,
+  showPortrait: true,
   heroImage: null,
   audio: null
 };
@@ -70,6 +72,7 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
     patternStrength: input.patternStrength === "bold" ? "bold" : "soft",
     showMwrLogo: input.showMwrLogo === true,
     showTravelAdvantageLogo: input.showTravelAdvantageLogo === true,
+    showPortrait: input.showPortrait !== false,
     heroImage: mediaChoice(input.heroImage),
     audio: mediaChoice(input.audio)
   };

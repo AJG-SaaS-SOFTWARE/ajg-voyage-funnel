@@ -23,10 +23,10 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
       </header>
 
       <main>
-        <section className="public-hero">
+        <section className="public-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
           {config.design.heroImage ? <img className="public-hero-image" src={config.design.heroImage.url} alt="" /> : null}
           <div className="public-hero-copy">
-            <p className="mini">{english ? "Travel first · discover next" : "Voyage d\'abord · découverte ensuite"}</p>
+            <p className="mini">{config.heroTagline || (english ? "Travel first · discover next" : "Voyage d'abord · découverte ensuite")}</p>
             <h1>{config.heroTitle || (english ? "Discover another way to travel" : "Découvrez une autre façon de voyager")}</h1>
             <p>{config.heroSubtitle}</p>
             <div className="public-actions">
@@ -37,18 +37,18 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
             </div>
             {config.design.audio ? <SoundControl audio={config.design.audio} english={english} /> : null}
           </div>
-          <div className="public-portrait">
+          {config.design.showPortrait ? <div className="public-portrait">
             {config.profileImageUrl ? (
               <img src={config.profileImageUrl} alt={`${config.firstName} ${config.lastName}`} />
             ) : (
               <span>{initials}</span>
             )}
-          </div>
+          </div> : null}
         </section>
 
         <section className="public-about" id="presentation">
           <p className="mini">{english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?"}</p>
-          <h2>{config.firstName} {config.lastName}</h2>
+          <h2>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h2>
           <p>{config.aboutText}</p>
         </section>
 

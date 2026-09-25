@@ -13,10 +13,10 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
         <span>{config.language === "both" ? "FR · EN" : config.language.toUpperCase()}</span>
       </nav>
 
-      <section className="preview-hero">
+      <section className="preview-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
         {config.design.heroImage ? <img className="preview-hero-image" src={config.design.heroImage.url} alt="" /> : null}
         <div>
-          <p className="mini">{english ? "Travel first · discover next" : "Voyage d\'abord · découverte ensuite"}</p>
+          <p className="mini">{config.heroTagline || (english ? "Travel first · discover next" : "Voyage d'abord · découverte ensuite")}</p>
           <h3>{config.heroTitle || (english ? "Your headline" : "Votre titre")}</h3>
           <p>{config.heroSubtitle || "Votre texte d'introduction."}</p>
           <button type="button">{config.bookingUrl
@@ -24,14 +24,14 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
             : english ? "About me" : "En savoir plus"}</button>
           {config.design.audio ? <p className="preview-sound">♫ {config.design.audio.title}</p> : null}
         </div>
-        <div className="portrait">
+        {config.design.showPortrait ? <div className="portrait">
           {config.profileImageUrl ? <img src={config.profileImageUrl} alt="" /> : <span>{initials}</span>}
-        </div>
+        </div> : null}
       </section>
 
       <section className="preview-about">
         <p className="mini">{english ? "About me" : "Qui suis-je ?"}</p>
-        <h4>{config.firstName} {config.lastName}</h4>
+        <h4>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h4>
         <p>{config.aboutText}</p>
       </section>
 

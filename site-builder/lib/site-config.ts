@@ -10,7 +10,9 @@ export type SiteConfig = {
   language: SiteLanguage;
   heroTitle: string;
   heroSubtitle: string;
+  heroTagline: string;
   aboutText: string;
+  aboutHeading: string;
   bookingLabel: string;
   bookingUrl: string;
   profileImageUrl: string;
@@ -37,7 +39,9 @@ export const defaultSiteConfig: SiteConfig = {
   heroTitle: "Découvrez une autre façon de voyager",
   heroSubtitle:
     "Une présentation simple et personnalisée de la plateforme Travel Advantage, de ses services voyage et de son fonctionnement.",
+  heroTagline: "",
   aboutText: "",
+  aboutHeading: "",
   bookingLabel: "Réserver une présentation",
   bookingUrl: "",
   profileImageUrl: "",
