@@ -1888,3 +1888,148 @@ button.active .step-label small{color:#63817f}
   .step-guidance-card{padding:13px}
   .review-checklist{grid-template-columns:1fr}
 }
+
+
+/* 0.9 — assistant rédactionnel guidé sans IA */
+.guided-writing-card{
+  margin:0 0 30px;
+  border:1px solid rgba(12,159,150,.18);
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 90% 0,rgba(64,199,188,.08),transparent 220px),
+    linear-gradient(135deg,rgba(241,251,249,.96),rgba(255,255,255,.98));
+  box-shadow:0 14px 34px rgba(27,63,64,.045);
+  overflow:hidden;
+}
+.guided-writing-card summary{
+  list-style:none;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:12px;
+  padding:17px 18px;
+}
+.guided-writing-card summary::-webkit-details-marker{display:none}
+.guided-writing-card summary>span:nth-child(2){
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.guided-writing-card summary b{
+  color:#17373b;
+  font-size:.8rem;
+}
+.guided-writing-card summary small{
+  color:#6f8082;
+  font-size:.65rem;
+  line-height:1.45;
+}
+.guided-writing-icon{
+  width:36px;height:36px;
+  display:grid;place-items:center;
+  border-radius:12px;
+  background:#dff6f2;
+  color:#098f86;
+  font-size:.88rem;
+}
+.guided-writing-badge{
+  padding:6px 9px;
+  border-radius:999px;
+  background:#fff7e8;
+  color:#a27121;
+  border:1px solid rgba(211,162,74,.18);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-size:.52rem;
+  font-weight:800;
+}
+.guided-writing-body{
+  padding:0 18px 20px;
+  border-top:1px solid rgba(12,159,150,.09);
+}
+.guided-writing-intro{
+  margin:16px 0 18px;
+  color:#607176;
+  font-size:.7rem;
+  line-height:1.55;
+}
+.guided-question{
+  display:grid;
+  gap:7px;
+  margin-bottom:14px;
+}
+.guided-question>span{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#344d54;
+  font-size:.7rem;
+  font-weight:720;
+}
+.guided-question>span i{
+  width:22px;height:22px;
+  display:grid;place-items:center;
+  flex:0 0 auto;
+  border-radius:8px;
+  background:#e4f5f2;
+  color:#0c8c84;
+  font-style:normal;
+  font-size:.58rem;
+  font-weight:800;
+}
+.guided-question>span em{
+  margin-left:auto;
+  color:#9aa3a5;
+  font-size:.55rem;
+  font-style:normal;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.guided-question textarea{
+  width:100%;
+  resize:vertical;
+  padding:12px 13px;
+  border:1px solid rgba(16,33,43,.11);
+  border-radius:12px;
+  background:rgba(255,255,255,.92);
+  color:#183039;
+  font:inherit;
+  font-size:.76rem;
+  line-height:1.55;
+}
+.guided-question textarea:focus{
+  outline:none;
+  border-color:rgba(12,159,150,.42);
+  box-shadow:0 0 0 4px rgba(12,159,150,.06);
+}
+.guided-question textarea::placeholder{
+  color:#a1aaac;
+}
+.guided-generate-button{
+  width:100%;
+  min-height:46px;
+  justify-content:center;
+  margin-top:4px;
+  border-radius:13px;
+}
+.guided-writing-help,
+.guided-writing-success{
+  margin:9px 0 0;
+  text-align:center;
+  font-size:.6rem;
+  line-height:1.45;
+}
+.guided-writing-help{color:#8c9698}
+.guided-writing-success{color:#4e7a65}
+@media(max-width:700px){
+  .guided-writing-card summary{
+    grid-template-columns:auto 1fr;
+  }
+  .guided-writing-badge{
+    grid-column:2;
+    justify-self:start;
+  }
+}
