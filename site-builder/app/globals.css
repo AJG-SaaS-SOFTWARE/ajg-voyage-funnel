@@ -2033,3 +2033,28 @@ button.active .step-label small{color:#63817f}
     justify-self:start;
   }
 }
+
+/* Rendez-vous : étapes de copie et retour sur le lien saisi */
+.booking-guide{
+  margin:0 0 28px;
+  padding:18px 20px;
+  border:1px solid rgba(12,159,150,.18);
+  border-radius:16px;
+  background:#f1fbf9;
+  color:#344d54;
+  font-size:.8rem;
+  line-height:1.6;
+}
+.booking-guide b{color:#17373b}
+.booking-guide ol{margin:10px 0;padding-left:22px}
+.booking-guide li+li{margin-top:6px}
+.booking-guide p{margin:10px 0 0;color:#607176}
+.booking-link-feedback{
+  margin:8px 0 24px;
+  font-size:.8rem;
+  line-height:1.5;
+  color:#607176;
+}
+.booking-link-feedback.valid{color:#28775d}
+.booking-link-feedback.invalid{color:#a14331}
+.premium-field input[aria-invalid="true"]{border-color:#b65642}
