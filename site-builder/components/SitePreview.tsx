@@ -18,7 +18,9 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
           <p className="mini">{english ? "Travel first · discover next" : "Voyage d\'abord · découverte ensuite"}</p>
           <h3>{config.heroTitle || (english ? "Your headline" : "Votre titre")}</h3>
           <p>{config.heroSubtitle || "Votre texte d'introduction."}</p>
-          <button type="button">{config.bookingLabel || (english ? "Book" : "Réserver")}</button>
+          <button type="button">{config.bookingUrl
+            ? config.bookingLabel || (english ? "Book" : "Réserver")
+            : english ? "About me" : "En savoir plus"}</button>
         </div>
         <div className="portrait">
           {config.profileImageUrl ? <img src={config.profileImageUrl} alt="" /> : <span>{initials}</span>}
