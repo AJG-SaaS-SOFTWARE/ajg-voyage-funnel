@@ -4,6 +4,9 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const bookingHref = config.bookingUrl || "#presentation";
   const english = config.language === "en";
+  const actionLabel = config.bookingUrl
+    ? config.bookingLabel || (english ? "Book a presentation" : "Réserver une présentation")
+    : english ? "About me" : "En savoir plus";
 
   return (
     <div className="public-site">
@@ -13,7 +16,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
           {config.showTravelJournals ? <a href="#voyages">{english ? "My travels" : "Mes voyages"}</a> : null}
           <a href="#presentation">{english ? "About" : "Présentation"}</a>
           <a className="public-book" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
-            {config.bookingLabel || (english ? "Book" : "Réserver")} →
+            {actionLabel} →
           </a>
         </nav>
       </header>
@@ -26,7 +29,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
             <p>{config.heroSubtitle}</p>
             <div className="public-actions">
               <a className="button primary" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
-                {config.bookingLabel || (english ? "Book a presentation" : "Réserver une présentation")}
+                {actionLabel}
               </a>
               <a className="button public-secondary" href="#presentation">{english ? "About me" : "Qui suis-je ?"}</a>
             </div>
