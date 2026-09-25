@@ -3,14 +3,15 @@ import { requiredDisclaimer, type SiteConfig } from "../lib/site-config";
 export default function PublishedSite({ config }: { config: SiteConfig }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const bookingHref = config.bookingUrl || "#presentation";
+  const english = config.language === "en";
 
   return (
     <div className="public-site">
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
-          {config.showTravelJournals ? <a href="#voyages">Mes voyages</a> : null}
-          <a href="#presentation">Présentation</a>
+          {config.showTravelJournals ? <a href="#voyages">{english ? "My travels" : "Mes voyages"}</a> : null}
+          <a href="#presentation">{english ? "About" : "Présentation"}</a>
           <a className="public-book" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
             {config.bookingLabel || "Réserver"} →
           </a>
@@ -27,7 +28,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
               <a className="button primary" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
                 {config.bookingLabel || "Réserver une présentation"}
               </a>
-              <a className="button public-secondary" href="#presentation">Qui suis-je ?</a>
+              <a className="button public-secondary" href="#presentation">{english ? "About me" : "Qui suis-je ?"}</a>
             </div>
           </div>
           <div className="public-portrait">
