@@ -13,7 +13,6 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
-          {config.showTravelJournals ? <a href="#voyages">{english ? "My travels" : "Mes voyages"}</a> : null}
           <a href="#presentation">{english ? "About" : "Présentation"}</a>
           <a className="public-book" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
             {actionLabel} →
@@ -49,19 +48,6 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
           <p>{config.aboutText}</p>
         </section>
 
-        {config.showTravelJournals ? (
-          <section className="public-travels" id="voyages">
-            <div>
-              <p className="mini">{english ? "My travels" : "Mes voyages"}</p>
-              <h2>{english ? "Personal travel experiences worth sharing" : "Des expériences personnelles à partager"}</h2>
-              <p>{english ? "This section will feature the member\'s travel journals, photos and personal impressions." : "Cette section accueillera les carnets, photos et impressions de voyage du membre."}</p>
-            </div>
-            <div className="public-travel-placeholder">
-              <span>{english ? "Travel journal module" : "Module carnets de voyage"}</span>
-              <strong>{english ? "Ready for the next phase" : "Prêt pour la prochaine phase"}</strong>
-            </div>
-          </section>
-        ) : null}
       </main>
 
       <footer className="public-footer">
