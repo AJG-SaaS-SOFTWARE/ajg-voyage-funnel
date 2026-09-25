@@ -53,7 +53,7 @@ async function authenticatedContext(request: Request) {
   return { user: data.user, supabase };
 }
 
-async function consumeAiAllowance(userId: string, supabase: ReturnType<typeof createClient>) {
+async function consumeAiAllowance(userId: string, supabase: any) {
   const { data, error } = await supabase.rpc("consume_ai_generation", {
     p_user_id: userId,
     p_minute_limit: 5,
