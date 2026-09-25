@@ -47,7 +47,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
         </section>
 
         <section className="public-about" id="presentation">
-          <p className="mini">{english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?"}</p>
+          <p className="mini">{config.affiliation === "mwr" ? (english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?") : (english ? "About me" : "Qui suis-je ?")}</p>
           <h2>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h2>
           <p>{config.aboutText}</p>
         </section>
