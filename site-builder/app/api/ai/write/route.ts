@@ -36,7 +36,7 @@ function clean(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-async function authenticatedUser(request: Request) {
+async function authenticatedContext(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const header = request.headers.get("authorization") || "";
@@ -45,11 +45,23 @@ async function authenticatedUser(request: Request) {
   if (!url || !key || !token) return null;
 
   const supabase = createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false }
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } }
   });
   const { data, error } = await supabase.auth.getUser(token);
-  if (error) return null;
-  return data.user;
+  if (error || !data.user) return null;
+  return { user: data.user, supabase };
+}
+
+async function consumeAiAllowance(userId: string, supabase: ReturnType<typeof createClient>) {
+  const { data, error } = await supabase.rpc("consume_ai_generation", {
+    p_user_id: userId,
+    p_minute_limit: 5,
+    p_daily_limit: 50,
+    p_monthly_limit: 200
+  });
+  if (error) throw error;
+  return typeof data === "string" ? data : "unavailable";
 }
 
 function extractText(data: any) {
@@ -69,12 +81,34 @@ function extractText(data: any) {
 }
 
 export async function POST(request: Request) {
-  const user = await authenticatedUser(request);
-  if (!user) {
+  const auth = await authenticatedContext(request);
+  if (!auth) {
     return NextResponse.json(
       { error: "Reconnectez-vous avant d'utiliser l'assistant IA." },
       { status: 401 }
     );
+  }
+
+  let allowance: string;
+  try {
+    allowance = await consumeAiAllowance(auth.user.id, auth.supabase);
+  } catch (error) {
+    console.error("AI allowance check failed", error);
+    return NextResponse.json(
+      { error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." },
+      { status: 503 }
+    );
+  }
+
+  if (allowance !== "ok") {
+    const message = allowance === "minute_limit"
+      ? "Vous avez effectué plusieurs demandes très rapidement. Attendez une minute avant de réessayer."
+      : allowance === "daily_limit"
+        ? "Votre limite IA du jour est atteinte. Vous pourrez à nouveau utiliser l'assistant demain."
+        : allowance === "monthly_limit"
+          ? "Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain."
+          : "L'assistant IA est temporairement indisponible.";
+    return NextResponse.json({ error: message }, { status: 429 });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -147,13 +181,18 @@ export async function POST(request: Request) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    console.error("OpenAI text generation failed", {
-      status: response.status,
-      code: data?.error?.code || "unknown"
-    });
+    const code = data?.error?.code || "unknown";
+    console.error("OpenAI text generation failed", { status: response.status, code });
+    const unavailable = code === "credit_balance_exhausted" || code === "insufficient_quota";
     return NextResponse.json(
-      { error: "L'IA n'a pas pu rédiger ce texte. Réessayez dans quelques instants." },
-      { status: 502 }
+      {
+        error: unavailable
+          ? "L'assistant IA est momentanément indisponible. Votre demande n'a pas été générée."
+          : response.status === 429
+            ? "Le service IA reçoit trop de demandes. Réessayez dans quelques instants."
+            : "L'IA n'a pas pu rédiger ce texte. Réessayez dans quelques instants."
+      },
+      { status: unavailable ? 503 : 502 }
     );
   }
 
