@@ -43,7 +43,7 @@ const steps = [
     eyebrow: "Passer à l'action",
     description: "Reliez votre agenda et vos réseaux pour transformer la visite en échange concret.",
     time: "2 min",
-    guidance: "Collez votre lien Calendly ou Google Calendar si vous en avez un. Les réseaux sociaux restent facultatifs."
+    guidance: "Copiez l'adresse de votre page de réservation, puis collez-la ci-dessous. Vous pouvez aussi passer cette étape et y revenir plus tard."
   },
   {
     key: "options",
@@ -279,6 +279,19 @@ export default function BuilderPage() {
     guidedAnswers.discovery.trim().length > 0 &&
     guidedAnswers.benefit.trim().length > 0;
 
+  const bookingLinkStatus = (() => {
+    const value = config.bookingUrl.trim();
+    if (!value) return "empty";
+    try {
+      const url = new URL(value);
+      return (url.protocol === "https:" || url.protocol === "http:") && url.hostname.includes(".")
+        ? "valid"
+        : "invalid";
+    } catch {
+      return "invalid";
+    }
+  })();
+
   const errors = useMemo(() => {
     const next: string[] = [];
     if (!config.firstName.trim()) next.push("Prénom manquant");
@@ -287,11 +300,11 @@ export default function BuilderPage() {
     if (!config.slug.trim()) next.push("Sous-domaine manquant");
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push("Sous-domaine invalide");
     if (!config.heroTitle.trim()) next.push("Titre principal manquant");
-    if (config.bookingUrl && !/^https?:\/\//i.test(config.bookingUrl)) {
+    if (bookingLinkStatus === "invalid") {
       next.push("Lien de rendez-vous invalide");
     }
     return next;
-  }, [config]);
+  }, [config, bookingLinkStatus]);
 
   const save = async () => {
     setBusy(true);
@@ -674,6 +687,15 @@ export default function BuilderPage() {
 
             {step === "booking" ? (
               <>
+                <div className="booking-guide">
+                  <b>Comment ajouter votre agenda ?</b>
+                  <ol>
+                    <li>Ouvrez votre page de réservation Calendly, Google Calendar ou un autre agenda.</li>
+                    <li>Copiez son adresse dans la barre du navigateur ou avec le bouton de partage.</li>
+                    <li>Collez cette adresse dans le champ ci-dessous. Un message confirmera si le lien est complet.</li>
+                  </ol>
+                  <p>Vous n'avez pas encore d'agenda en ligne ? Laissez le champ vide pour le moment.</p>
+                </div>
                 <div className="section-kicker">
                   <span>01</span>
                   <div><b>Votre rendez-vous</b><p>Un seul lien suffit pour transformer l'intérêt en échange.</p></div>
@@ -681,14 +703,25 @@ export default function BuilderPage() {
                 <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton principal de votre site.">
                   <input placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
-                <Field label="Lien de rendez-vous" hint="Facultatif pour commencer. Copiez ici l'adresse de votre page Calendly, Google Calendar ou d'un autre agenda.">
+                <Field label="Lien de rendez-vous" hint="Facultatif. Le lien doit commencer par https:// et contenir l'adresse complète de votre page.">
                   <input
                     type="url"
-                    placeholder="https://..."
+                    inputMode="url"
+                    autoComplete="url"
+                    aria-invalid={bookingLinkStatus === "invalid"}
+                    aria-describedby="booking-link-feedback"
+                    placeholder="https://calendly.com/votre-nom/30min"
                     value={config.bookingUrl}
                     onChange={(e) => update("bookingUrl", e.target.value)}
                   />
                 </Field>
+                <p id="booking-link-feedback" className={"booking-link-feedback " + bookingLinkStatus} role="status">
+                  {bookingLinkStatus === "valid"
+                    ? "✓ Lien reconnu. Vérifiez qu'il ouvre bien votre page de réservation."
+                    : bookingLinkStatus === "invalid"
+                      ? "Le lien semble incomplet. Copiez l'adresse entière, par exemple https://calendly.com/votre-nom/30min."
+                      : "Vous pouvez continuer sans lien et l'ajouter plus tard."}
+                </p>
 
                 <div className="section-kicker">
                   <span>02</span>
