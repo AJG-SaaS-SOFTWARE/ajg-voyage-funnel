@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { accentColors, patterns, type MediaChoice, type SiteDesign } from "../lib/site-design";
+import { accentColors, backgrounds, patterns, type MediaChoice, type SiteDesign } from "../lib/site-design";
 
 type SearchResult = MediaChoice & { thumbnail: string };
 
@@ -11,6 +11,10 @@ const patternLabels: Record<SiteDesign["pattern"], string> = {
   lines: "Lignes",
   grid: "Quadrillage",
   rays: "Rayons"
+};
+
+const backgroundLabels: Record<SiteDesign["background"], string> = {
+  ivory: "Ivoire", sand: "Sable", mist: "Brume", sage: "Sauge", slate: "Ardoise"
 };
 
 const suggestions = {
@@ -97,7 +101,7 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
     <div className="media-library">
       <div className="section-kicker">
         <span>01</span>
-        <div><b>Couleur et motif</b><p>Choisissez une touche visuelle pour l'accueil de votre site.</p></div>
+        <div><b>Couleur et fond</b><p>Composez l'ambiance de votre site et de sa rubrique de présentation.</p></div>
       </div>
       <fieldset className="design-fieldset">
         <legend>Couleur d'accent</legend>
@@ -111,7 +115,16 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
         </div>
       </fieldset>
       <fieldset className="design-fieldset">
-        <legend>Motif de fond</legend>
+        <legend>Fond des rubriques</legend>
+        <div className="background-choices">
+          {backgrounds.map((background) => <label key={background} className="background-choice" data-background={background}>
+            <input type="radio" name="site-background" checked={design.background === background} onChange={() => onChange({ ...design, background })} />
+            <span>{backgroundLabels[background]}</span>
+          </label>)}
+        </div>
+      </fieldset>
+      <fieldset className="design-fieldset">
+        <legend>Motif de la présentation</legend>
         <div className="pattern-choices">
           {patterns.map((pattern) => (
             <label key={pattern} className="pattern-choice" data-pattern={pattern}>
@@ -121,6 +134,13 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
           ))}
         </div>
       </fieldset>
+      {design.pattern !== "none" ? <fieldset className="design-fieldset">
+        <legend>Intensité du motif</legend>
+        <div className="media-type-tabs">
+          <label className="strength-choice"><input type="radio" name="pattern-strength" checked={design.patternStrength === "soft"} onChange={() => onChange({ ...design, patternStrength: "soft" })} /> Discret</label>
+          <label className="strength-choice"><input type="radio" name="pattern-strength" checked={design.patternStrength === "bold"} onChange={() => onChange({ ...design, patternStrength: "bold" })} /> Marqué</label>
+        </div>
+      </fieldset> : null}
 
       <div className="section-kicker">
         <span>02</span>

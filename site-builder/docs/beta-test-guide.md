@@ -15,7 +15,8 @@ Merci de relever le type d'appareil et de navigateur, l'étape concernée, ce qu
 
 ## Portée actuelle
 
-- Bêta fermée destinée d'abord aux sites d'ambassadeurs MWR Life en français.
+- Bêta fermée destinée d'abord aux sites d'ambassadeurs MWR Life en français. Le profil « autre activité indépendante » n'inclut pas encore les mentions légales propres à cette activité.
+- Couleurs, fonds et motifs configurables ; les logos MWR Life et Travel Advantage sont facultatifs, tandis que la mention d'indépendance reste affichée pour le profil MWR.
 - Un site par compte, sans paiement ni domaine personnalisé.
 - Lien public utilisable après publication. Le sous-domaine `prenom.voyage.ajgsolutionsgroup.com` reste à valider avant utilisation.
 - Les médias recherchés sont déclarés CC0 par leurs sources via Openverse ; vérifier la fiche source et les droits éventuels liés aux personnes ou marques.

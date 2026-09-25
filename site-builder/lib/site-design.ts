@@ -9,16 +9,29 @@ export type MediaChoice = {
 export type SiteDesign = {
   accent: string;
   pattern: "none" | "dots" | "lines" | "grid" | "rays";
+  background: "ivory" | "sand" | "mist" | "sage" | "slate";
+  patternStrength: "soft" | "bold";
+  showMwrLogo: boolean;
+  showTravelAdvantageLogo: boolean;
   heroImage: MediaChoice | null;
   audio: MediaChoice | null;
 };
 
-export const accentColors = ["#57d4c9", "#e9ae65", "#90b8ef", "#d99bb2", "#b8cb83"] as const;
+export const accentColors = [
+  "#57d4c9", "#e9ae65", "#90b8ef", "#d99bb2", "#b8cb83",
+  "#e6c76e", "#e98d78", "#a999d4", "#7cc1d8", "#72ad95",
+  "#d1a47e", "#ededdf"
+] as const;
 export const patterns = ["none", "dots", "lines", "grid", "rays"] as const;
+export const backgrounds = ["ivory", "sand", "mist", "sage", "slate"] as const;
 
 export const defaultSiteDesign: SiteDesign = {
   accent: accentColors[0],
   pattern: "none",
+  background: "ivory",
+  patternStrength: "soft",
+  showMwrLogo: false,
+  showTravelAdvantageLogo: false,
   heroImage: null,
   audio: null
 };
@@ -53,6 +66,10 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
   return {
     accent: accentColors.find((color) => color === input.accent) || defaultSiteDesign.accent,
     pattern: patterns.find((pattern) => pattern === input.pattern) || defaultSiteDesign.pattern,
+    background: backgrounds.find((background) => background === input.background) || defaultSiteDesign.background,
+    patternStrength: input.patternStrength === "bold" ? "bold" : "soft",
+    showMwrLogo: input.showMwrLogo === true,
+    showTravelAdvantageLogo: input.showTravelAdvantageLogo === true,
     heroImage: mediaChoice(input.heroImage),
     audio: mediaChoice(input.audio)
   };

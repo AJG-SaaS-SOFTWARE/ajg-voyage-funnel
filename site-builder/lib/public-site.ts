@@ -35,7 +35,8 @@ function configFromRow(row: any): SiteConfig {
     showTravelJournals: row.show_travel_journals,
     instagramUrl: row.instagram_url,
     facebookUrl: row.facebook_url,
-    design: normalizeSiteDesign(row.design_assets)
+    design: normalizeSiteDesign(row.design_assets),
+    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr"
   };
 }
 

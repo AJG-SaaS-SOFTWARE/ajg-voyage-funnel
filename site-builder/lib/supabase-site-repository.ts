@@ -44,7 +44,8 @@ function configFromRow(row: any): SiteConfig {
     showTravelJournals: row.show_travel_journals,
     instagramUrl: row.instagram_url,
     facebookUrl: row.facebook_url,
-    design: normalizeSiteDesign(row.design_assets)
+    design: normalizeSiteDesign(row.design_assets),
+    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr"
   };
 }
 
@@ -68,7 +69,7 @@ function payload(user: User, config: SiteConfig, status: "draft" | "published") 
     design_assets: config.design,
     profile_image_url: config.profileImageUrl,
     show_travel_journals: config.showTravelJournals,
-    compliance_profile: "mwr-life-independent-ambassador-v1",
+    compliance_profile: config.affiliation === "independent" ? "independent-v1" : "mwr-life-independent-ambassador-v1",
     published_at: status === "published" ? new Date().toISOString() : null
   };
 }

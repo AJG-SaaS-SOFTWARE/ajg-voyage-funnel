@@ -1,5 +1,5 @@
 import { type CSSProperties } from "react";
-import { requiredDisclaimer, type SiteConfig } from "../lib/site-config";
+import { siteDisclaimer, type SiteConfig } from "../lib/site-config";
 import SoundControl from "./SoundControl";
 
 export default function PublishedSite({ config }: { config: SiteConfig }) {
@@ -11,7 +11,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
     : english ? "About me" : "En savoir plus";
 
   return (
-    <div className="public-site" data-pattern={config.design.pattern} style={{ "--site-accent": config.design.accent } as CSSProperties}>
+    <div className="public-site" data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent } as CSSProperties}>
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
@@ -56,11 +56,15 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
 
       <footer className="public-footer">
         <strong>{config.brandName}</strong>
-        <p>{requiredDisclaimer}</p>
+        {siteDisclaimer(config) ? <p>{siteDisclaimer(config)}</p> : null}
         <div className="public-socials">
           {config.instagramUrl ? <a href={config.instagramUrl} target="_blank" rel="noopener">Instagram</a> : null}
           {config.facebookUrl ? <a href={config.facebookUrl} target="_blank" rel="noopener">Facebook</a> : null}
         </div>
+        {config.affiliation === "mwr" && (config.design.showMwrLogo || config.design.showTravelAdvantageLogo) ? <div className="public-brand-marks">
+          {config.design.showMwrLogo ? <img src="/logos/mwr-life-independent.svg" alt="MWR Life — distributeur indépendant" /> : null}
+          {config.design.showTravelAdvantageLogo ? <img src="/logos/travel-advantage-independent.svg" alt="Travel Advantage — distributeur indépendant" /> : null}
+        </div> : null}
         {(config.design.heroImage || config.design.audio) ? <div className="public-credits">
           {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">Image : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}
           {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">Son : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}

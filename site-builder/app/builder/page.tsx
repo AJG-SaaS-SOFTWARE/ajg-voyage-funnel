@@ -780,22 +780,41 @@ export default function BuilderPage() {
                     <p>Vous pourrez ajouter vos récits et vos photos lorsque l'éditeur de carnets sera prêt. Aucun contenu d'attente ne sera publié à votre place.</p>
                   </div>
                 </div>
+                <div className="option-card premium-option-card">
+                  <div>
+                    <b>Autres rubriques envisagées</b>
+                    <p>Galerie personnelle, questions fréquentes, témoignages et formulaire de contact. Elles seront proposées quand leur édition et leur affichage seront prêts.</p>
+                  </div>
+                </div>
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Conformité</b><p>Ces éléments restent protégés et communs à tous les sites.</p></div>
+                  <div><b>Activité et identité</b><p>Les mentions MWR Life concernent uniquement les sites d'ambassadeurs.</p></div>
                 </div>
-                <div className="locked premium-locked">
-                  <span>Conformité verrouillée</span>
-                  <p>{requiredDisclaimer}</p>
-                </div>
-                <div className="helper-card premium-helper-card">
-                  <b>Pourquoi c'est important</b>
-                  <p>
-                    Les mentions obligatoires ne sont pas éditables par les membres. Elles sont gérées au niveau du
-                    template et pourront être mises à jour pour tous les sites.
-                  </p>
-                </div>
+                <Field label="Votre activité">
+                  <select value={config.affiliation} onChange={(event) => update("affiliation", event.target.value as SiteConfig["affiliation"])}>
+                    <option value="mwr">Ambassadeur indépendant MWR Life</option>
+                    <option value="independent">Autre activité indépendante</option>
+                  </select>
+                </Field>
+                {config.affiliation === "mwr" ? <>
+                  <div className="locked premium-locked">
+                    <span>Mention d'indépendance maintenue</span>
+                    <p>{requiredDisclaimer}</p>
+                  </div>
+                  <p className="media-license-note">Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d'indépendance.</p>
+                  <label className="option-card premium-option-card">
+                    <input type="checkbox" checked={config.design.showMwrLogo} onChange={(event) => update("design", { ...config.design, showMwrLogo: event.target.checked })} />
+                    <span><b>Afficher le logo MWR Life « Independent Distributor »</b><p>Je confirme pouvoir utiliser ce visuel dans le cadre de mon activité.</p></span>
+                  </label>
+                  <label className="option-card premium-option-card">
+                    <input type="checkbox" checked={config.design.showTravelAdvantageLogo} onChange={(event) => update("design", { ...config.design, showTravelAdvantageLogo: event.target.checked })} />
+                    <span><b>Afficher le logo Travel Advantage « Independent Distributor »</b><p>Je confirme pouvoir utiliser ce visuel dans le cadre de mon activité.</p></span>
+                  </label>
+                </> : <div className="helper-card premium-helper-card">
+                  <b>Site indépendant sans mention MWR Life</b>
+                  <p>Les noms et logos MWR Life et Travel Advantage seront absents. Les informations légales propres à votre activité ne sont pas encore générées par cet éditeur ; vérifiez-les avant de partager le site.</p>
+                </div>}
               </>
             ) : null}
 
@@ -845,9 +864,9 @@ export default function BuilderPage() {
                     <span>{config.bookingUrl ? "✓" : "○"}</span>
                     <p><b>Rendez-vous</b><small>{config.bookingUrl ? "Lien ajouté" : "Facultatif"}</small></p>
                   </div>
-                  <div className="done">
-                    <span>✓</span>
-                    <p><b>Conformité</b><small>Gérée automatiquement</small></p>
+                  <div className={config.affiliation === "mwr" ? "done" : "optional"}>
+                    <span>{config.affiliation === "mwr" ? "✓" : "○"}</span>
+                    <p><b>Activité</b><small>{config.affiliation === "mwr" ? "Mention d'indépendance affichée" : "Mentions légales à vérifier"}</small></p>
                   </div>
                 </div>
 

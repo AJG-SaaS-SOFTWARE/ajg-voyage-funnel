@@ -6,13 +6,15 @@ Dernière mise à jour : 25 septembre 2026.
 État : terminé pour le prototype bêta
 
 - [x] application Next.js isolée ;
-- [x] parcours guidé en 5 étapes ;
+- [x] parcours guidé en 6 étapes ;
 - [x] aperçu en direct ;
 - [x] validation des champs essentiels ;
 - [x] sauvegarde locale automatique des modifications ;
 - [x] sauvegarde distante Supabase ;
 - [x] upload réel de photo de profil ;
 - [x] publication partageable ;
+- [x] personnalisation des couleurs, fonds, motifs, image et son ;
+- [x] profil MWR ou activité indépendante, logos facultatifs ;
 - [x] conformité verrouillée ;
 - [x] base FR / EN.
 
@@ -50,6 +52,16 @@ Dernière mise à jour : 25 septembre 2026.
 - [ ] journal de retours utilisateur ;
 - [ ] amélioration continue du template public.
 
+## Modules de contenu envisagés
+
+1. Carnets de voyage : récits, photos et pages individuelles ; aucun contenu factice publié.
+2. Galerie : collections d'images avec légendes et crédits.
+3. Questions fréquentes : ajout, ordre et masquage des réponses.
+4. Témoignages : uniquement avec accord des personnes citées.
+5. Contact : formulaire avec protection contre les abus et gestion des données.
+
+L'ordre sera ajusté après les retours de bêta. Ces modules ne sont pas encore disponibles.
+
 ## Sprint 5 — monétisation
 
 - [ ] plans et droits par offre ;
@@ -61,4 +73,4 @@ Dernière mise à jour : 25 septembre 2026.
 
 ## Principe de conformité
 
-Les mentions MWR Life / Travel Advantage nécessaires restent des blocs système non éditables par le membre. Les contenus personnels et marketing de l'utilisateur restent séparés des éléments officiels ou obligatoires.
+Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc système même si les logos ne sont pas affichés. Les logos sont facultatifs et leur activation suppose que le membre dispose du droit d'utiliser les visuels. Pour une autre activité, les mentions MWR sont supprimées. L'éditeur ne génère pas encore les informations légales propres à cette activité ; elles doivent être vérifiées avant diffusion.

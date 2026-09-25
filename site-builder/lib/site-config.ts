@@ -18,10 +18,15 @@ export type SiteConfig = {
   instagramUrl: string;
   facebookUrl: string;
   design: SiteDesign;
+  affiliation: "mwr" | "independent";
 };
 
 export const requiredDisclaimer =
   "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de MWR Life ou Travel Advantage.";
+
+export function siteDisclaimer(config: SiteConfig) {
+  return config.affiliation === "mwr" ? requiredDisclaimer : "";
+}
 
 export const defaultSiteConfig: SiteConfig = {
   slug: "",
@@ -39,5 +44,6 @@ export const defaultSiteConfig: SiteConfig = {
   showTravelJournals: false,
   instagramUrl: "",
   facebookUrl: "",
-  design: defaultSiteDesign
+  design: defaultSiteDesign,
+  affiliation: "mwr"
 };
