@@ -49,9 +49,9 @@ const steps = [
     key: "options",
     label: "Options",
     eyebrow: "Votre contenu",
-    description: "Activez les modules utiles tout en gardant les éléments de conformité centralisés.",
+    description: "Vérifiez les éléments communs à tous les sites et les modules à venir.",
     time: "1 min",
-    guidance: "Choisissez seulement ce que vous souhaitez montrer. Vous pourrez modifier ces options plus tard."
+    guidance: "Les carnets de voyage sont en préparation. Votre site peut être publié sans attendre leur ouverture."
   },
   {
     key: "review",
@@ -759,20 +759,14 @@ export default function BuilderPage() {
               <>
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Modules du site</b><p>Gardez uniquement ce qui sert réellement votre présentation.</p></div>
+                  <div><b>Modules du site</b><p>Les contenus affichés sur votre site doivent être prêts à être partagés.</p></div>
                 </div>
-                <label className="option-card premium-option-card">
-                  <input
-                    type="checkbox"
-                    checked={config.showTravelJournals}
-                    onChange={(e) => update("showTravelJournals", e.target.checked)}
-                  />
-                  <span className="option-toggle" aria-hidden="true"><i /></span>
+                <div className="option-card premium-option-card">
                   <div>
-                    <b>Mes voyages</b>
-                    <p>Activez cette option si vous souhaitez partager vos propres voyages et photos. Vous pourrez la désactiver plus tard.</p>
+                    <b>Mes voyages · bientôt disponible</b>
+                    <p>Vous pourrez ajouter vos récits et vos photos lorsque l'éditeur de carnets sera prêt. Aucun contenu d'attente ne sera publié à votre place.</p>
                   </div>
-                </label>
+                </div>
 
                 <div className="section-kicker">
                   <span>02</span>
