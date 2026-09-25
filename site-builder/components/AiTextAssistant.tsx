@@ -20,6 +20,17 @@ type Props = {
   affiliation: "mwr" | "independent";
   firstName: string;
   brandName: string;
+  siteContext?: {
+    heroTagline?: string;
+    heroTitle?: string;
+    heroSubtitle?: string;
+    aboutHeading?: string;
+    aboutText?: string;
+    guidedTraveler?: string;
+    guidedDiscovery?: string;
+    guidedBenefit?: string;
+    guidedAudience?: string;
+  };
   onApply: (text: string) => void;
   placeholder: string;
 };
@@ -32,6 +43,7 @@ export default function AiTextAssistant({
   affiliation,
   firstName,
   brandName,
+  siteContext,
   onApply,
   placeholder
 }: Props) {
@@ -75,7 +87,8 @@ export default function AiTextAssistant({
             language,
             affiliation,
             firstName,
-            brandName
+            brandName,
+            siteContext
           }
         })
       });
