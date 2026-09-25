@@ -3,16 +3,17 @@ import { requiredDisclaimer, type SiteConfig } from "../lib/site-config";
 export default function PublishedSite({ config }: { config: SiteConfig }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const bookingHref = config.bookingUrl || "#presentation";
+  const english = config.language === "en";
 
   return (
     <div className="public-site">
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
-          {config.showTravelJournals ? <a href="#voyages">Mes voyages</a> : null}
-          <a href="#presentation">Présentation</a>
+          {config.showTravelJournals ? <a href="#voyages">{english ? "My travels" : "Mes voyages"}</a> : null}
+          <a href="#presentation">{english ? "About" : "Présentation"}</a>
           <a className="public-book" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
-            {config.bookingLabel || "Réserver"} →
+            {config.bookingLabel || (english ? "Book" : "Réserver")} →
           </a>
         </nav>
       </header>
@@ -20,14 +21,14 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
       <main>
         <section className="public-hero">
           <div className="public-hero-copy">
-            <p className="mini">Voyage d'abord · découverte ensuite</p>
-            <h1>{config.heroTitle || "Découvrez une autre façon de voyager"}</h1>
+            <p className="mini">{english ? "Travel first · discover next" : "Voyage d\'abord · découverte ensuite"}</p>
+            <h1>{config.heroTitle || (english ? "Discover another way to travel" : "Découvrez une autre façon de voyager")}</h1>
             <p>{config.heroSubtitle}</p>
             <div className="public-actions">
               <a className="button primary" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
-                {config.bookingLabel || "Réserver une présentation"}
+                {config.bookingLabel || (english ? "Book a presentation" : "Réserver une présentation")}
               </a>
-              <a className="button public-secondary" href="#presentation">Qui suis-je ?</a>
+              <a className="button public-secondary" href="#presentation">{english ? "About me" : "Qui suis-je ?"}</a>
             </div>
           </div>
           <div className="public-portrait">
@@ -40,7 +41,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
         </section>
 
         <section className="public-about" id="presentation">
-          <p className="mini">Qui vous présente la plateforme ?</p>
+          <p className="mini">{english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?"}</p>
           <h2>{config.firstName} {config.lastName}</h2>
           <p>{config.aboutText}</p>
         </section>
@@ -48,13 +49,13 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
         {config.showTravelJournals ? (
           <section className="public-travels" id="voyages">
             <div>
-              <p className="mini">Mes voyages</p>
-              <h2>Des expériences personnelles à partager</h2>
-              <p>Cette section accueillera les carnets, photos et impressions de voyage du membre.</p>
+              <p className="mini">{english ? "My travels" : "Mes voyages"}</p>
+              <h2>{english ? "Personal travel experiences worth sharing" : "Des expériences personnelles à partager"}</h2>
+              <p>{english ? "This section will feature the member\'s travel journals, photos and personal impressions." : "Cette section accueillera les carnets, photos et impressions de voyage du membre."}</p>
             </div>
             <div className="public-travel-placeholder">
-              <span>Module carnets de voyage</span>
-              <strong>Prêt pour la prochaine phase</strong>
+              <span>{english ? "Travel journal module" : "Module carnets de voyage"}</span>
+              <strong>{english ? "Ready for the next phase" : "Prêt pour la prochaine phase"}</strong>
             </div>
           </section>
         ) : null}
