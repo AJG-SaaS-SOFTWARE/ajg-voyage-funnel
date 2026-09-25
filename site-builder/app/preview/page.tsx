@@ -40,7 +40,7 @@ export default function PreviewPage() {
       <header className="preview-toolbar">
         <Link href="/builder">← Modifier</Link>
         <strong>Aperçu du site</strong>
-        <span>Aperçu · domaine cible : {config.slug}.voyage.ajgsolutionsgroup.com</span>
+        <span>Aperçu · domaine cible : {config.slug ? config.slug + ".voyage.ajgsolutionsgroup.com" : "à choisir"}</span>
       </header>
       <div className="preview-canvas">
         <SitePreview config={config} />
