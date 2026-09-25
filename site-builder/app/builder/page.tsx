@@ -313,6 +313,18 @@ export default function BuilderPage() {
     guidedAnswers.discovery.trim().length > 0 &&
     guidedAnswers.benefit.trim().length > 0;
 
+  const aiSiteContext = {
+    heroTagline: config.heroTagline,
+    heroTitle: config.heroTitle,
+    heroSubtitle: config.heroSubtitle,
+    aboutHeading: config.aboutHeading,
+    aboutText: config.aboutText,
+    guidedTraveler: guidedAnswers.traveler,
+    guidedDiscovery: guidedAnswers.discovery,
+    guidedBenefit: guidedAnswers.benefit,
+    guidedAudience: guidedAnswers.audience
+  };
+
   const bookingLinkStatus = (() => {
     const value = config.bookingUrl.trim();
     if (!value) return "empty";
@@ -713,6 +725,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  siteContext={aiSiteContext}
                   onApply={(text) => update("heroTagline", text)}
                   placeholder="Ex. Une phrase chaleureuse et très courte sur le plaisir de voyager autrement"
                 />
@@ -727,6 +740,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  siteContext={aiSiteContext}
                   onApply={(text) => update("heroTitle", text)}
                   placeholder="Ex. Un titre simple, rassurant et premium pour des personnes qui aiment voyager"
                 />
@@ -741,6 +755,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  siteContext={aiSiteContext}
                   onApply={(text) => update("heroSubtitle", text)}
                   placeholder="Ex. Explique en 2 phrases que je partage une solution que j'utilise moi-même pour mes voyages, avec un ton naturel"
                 />
@@ -760,6 +775,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  siteContext={aiSiteContext}
                   onApply={(text) => update("aboutHeading", text)}
                   placeholder="Ex. Un titre personnel et simple, moins formel que « À propos »"
                 />
@@ -774,6 +790,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  siteContext={aiSiteContext}
                   onApply={(text) => update("aboutText", text)}
                   placeholder="Ex. Présente-moi de façon humaine : j'aime voyager en couple, découvrir la gastronomie locale et partager les bons plans que j'utilise vraiment"
                 />
@@ -816,6 +833,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  siteContext={aiSiteContext}
                   onApply={(text) => update("bookingLabel", text)}
                   placeholder="Ex. Un appel à l'action rassurant, sans pression commerciale"
                 />
