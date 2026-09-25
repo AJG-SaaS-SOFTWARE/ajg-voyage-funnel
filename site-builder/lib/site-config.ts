@@ -1,3 +1,5 @@
+import { defaultSiteDesign, type SiteDesign } from "./site-design";
+
 export type SiteLanguage = "fr" | "en" | "both";
 
 export type SiteConfig = {
@@ -15,6 +17,7 @@ export type SiteConfig = {
   showTravelJournals: boolean;
   instagramUrl: string;
   facebookUrl: string;
+  design: SiteDesign;
 };
 
 export const requiredDisclaimer =
@@ -35,5 +38,6 @@ export const defaultSiteConfig: SiteConfig = {
   profileImageUrl: "",
   showTravelJournals: false,
   instagramUrl: "",
-  facebookUrl: ""
+  facebookUrl: "",
+  design: defaultSiteDesign
 };
