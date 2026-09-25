@@ -1700,3 +1700,40 @@ button.active .step-label small{color:#63817f}
   .premium-auth-card{padding:28px 22px;border-radius:22px}
   .auth-card-footer{align-items:flex-start;flex-direction:column}
 }
+
+
+/* 0.7 — publication bêta partageable */
+.published-share-card{
+  margin-top:16px;
+  padding:18px;
+  border:1px solid rgba(13,157,145,.24);
+  border-radius:18px;
+  background:linear-gradient(135deg,rgba(232,249,246,.9),rgba(255,255,255,.96));
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.published-share-card>div:first-child{min-width:0}
+.published-share-card .mini{display:block;margin-bottom:7px}
+.published-share-card strong{
+  display:block;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:.9rem;
+}
+.published-share-card p{
+  margin:7px 0 0;
+  color:#637178;
+  font-size:.78rem;
+  line-height:1.5;
+}
+.published-share-actions{display:flex;gap:8px;flex:0 0 auto}
+.published-share-actions .button{white-space:nowrap}
+@media(max-width:720px){
+  .published-share-card{align-items:stretch;flex-direction:column}
+  .published-share-actions{width:100%}
+  .published-share-actions .button{flex:1}
+}
