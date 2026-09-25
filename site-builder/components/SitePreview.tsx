@@ -6,7 +6,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
   const english = config.language === "en";
 
   return (
-    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent } as CSSProperties}>
+    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, ...(config.design.customBackgroundColor ? { "--site-custom-background": config.design.customBackgroundColor } : {}) } as CSSProperties}>
       <nav>
         <strong>{config.brandName || (english ? "Your site" : "Votre site")}</strong>
         <span>{english ? "About" : "Présentation"}</span>
@@ -19,9 +19,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
           <p className="mini">{config.heroTagline || (english ? "Travel first · discover next" : "Voyage d'abord · découverte ensuite")}</p>
           <h3>{config.heroTitle || (english ? "Your headline" : "Votre titre")}</h3>
           <p>{config.heroSubtitle || "Votre texte d'introduction."}</p>
-          <button type="button">{config.bookingUrl
-            ? config.bookingLabel || (english ? "Book" : "Réserver")
-            : english ? "About me" : "En savoir plus"}</button>
+          {config.bookingUrl && config.bookingLabel.trim() ? <button type="button">{config.bookingLabel}</button> : null}
           {config.design.audio ? <p className="preview-sound">♫ {config.design.audio.title}</p> : null}
         </div>
         {config.design.showPortrait ? <div className="portrait">
