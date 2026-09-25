@@ -2252,3 +2252,6 @@ button.active .step-label small{color:#63817f}
 }
 
 .custom-color-row{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-top:14px}.custom-color-row label{display:grid;gap:6px;font-size:.78rem;font-weight:750}.custom-color-row input[type=color]{width:64px;height:42px;padding:3px;cursor:pointer}.custom-color-row input[type=text]{width:110px}.site-preview .preview-about,.public-site .public-about{background-color:var(--site-custom-background,transparent)}
+
+/* Keep paired form controls aligned even when one field has helper text. */
+.grid.two>.field{grid-template-rows:auto auto 1fr;align-content:start}.grid.two>.field>input,.grid.two>.field>select,.grid.two>.field>.slug-field{grid-row:2;min-height:46px}.grid.two>.field>small{grid-row:3}.grid.two>.field>.slug-field input{min-height:44px}
