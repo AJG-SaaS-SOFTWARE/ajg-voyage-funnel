@@ -196,6 +196,7 @@ export async function POST(request: Request) {
         "Infer sensible writing intent from the field goal and supplied site context when the user's request is vague.",
         "Prefer specific details already supplied by the user over generic marketing language. Do not mechanically repeat context or duplicate nearby fields.",
         "Preserve the person's voice and facts. Avoid clichés, hype and generic AI copy. Never invent factual claims.",
+        "The final copy must have impeccable spelling, grammar, punctuation and typography in the requested language. Silently correct any language errors present in source text.",
         complianceRules
       ].join(" "),
       input: prompt,
