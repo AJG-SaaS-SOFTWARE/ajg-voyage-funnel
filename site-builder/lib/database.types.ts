@@ -93,6 +93,7 @@ export type Database = {
       sites: {
         Row: {
           about_text: string
+          design_assets: Json
           booking_label: string
           booking_url: string
           brand_name: string
@@ -117,6 +118,7 @@ export type Database = {
         }
         Insert: {
           about_text?: string
+          design_assets?: Json
           booking_label?: string
           booking_url?: string
           brand_name: string
@@ -141,6 +143,7 @@ export type Database = {
         }
         Update: {
           about_text?: string
+          design_assets?: Json
           booking_label?: string
           booking_url?: string
           brand_name?: string
