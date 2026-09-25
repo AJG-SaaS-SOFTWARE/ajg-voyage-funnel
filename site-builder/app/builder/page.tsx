@@ -560,7 +560,7 @@ export default function BuilderPage() {
                     >
                       <option value="fr">Français</option>
                       <option value="en">English</option>
-                      <option value="both">Français + English</option>
+                      <option value="both" disabled>Français + English (à venir)</option>
                     </select>
                   </Field>
                 </div>
@@ -853,7 +853,7 @@ export default function BuilderPage() {
 
                 <div className="publish-summary premium-publish-summary">
                   <div><span>Lien du site après publication</span><strong>{betaPublicUrl}</strong></div>
-                  <div><span>Langue</span><strong>{config.language === "both" ? "Français + English" : config.language.toUpperCase()}</strong></div>
+                  <div><span>Langue</span><strong>{config.language === "both" ? "Français (bilingue à venir)" : config.language.toUpperCase()}</strong></div>
                   <div><span>Stockage</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
                   <div><span>État</span><strong>{published ? "Publié" : "Prêt à publier"}</strong></div>
                 </div>
