@@ -33,7 +33,7 @@ export const defaultSiteConfig: SiteConfig = {
   bookingLabel: "Réserver une présentation",
   bookingUrl: "",
   profileImageUrl: "",
-  showTravelJournals: true,
+  showTravelJournals: false,
   instagramUrl: "",
   facebookUrl: ""
 };
