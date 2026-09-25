@@ -4,21 +4,18 @@ import SoundControl from "./SoundControl";
 
 export default function PublishedSite({ config }: { config: SiteConfig }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
-  const bookingHref = config.bookingUrl || "#presentation";
+  const hasBooking = Boolean(config.bookingUrl && config.bookingLabel.trim());
+  const bookingHref = config.bookingUrl;
   const english = config.language === "en";
-  const actionLabel = config.bookingUrl
-    ? config.bookingLabel || (english ? "Book a presentation" : "Réserver une présentation")
-    : english ? "About me" : "En savoir plus";
+  const actionLabel = config.bookingLabel;
 
   return (
-    <div className="public-site" data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent } as CSSProperties}>
+    <div className="public-site" data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, ...(config.design.customBackgroundColor ? { "--site-custom-background": config.design.customBackgroundColor } : {}) } as CSSProperties}>
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
           <a href="#presentation">{english ? "About" : "Présentation"}</a>
-          <a className="public-book" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
-            {actionLabel} →
-          </a>
+          {hasBooking ? <a className="public-book" href={bookingHref} target="_blank" rel="noopener">{actionLabel} →</a> : null}
         </nav>
       </header>
 
@@ -30,9 +27,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
             <h1>{config.heroTitle || (english ? "Discover another way to travel" : "Découvrez une autre façon de voyager")}</h1>
             <p>{config.heroSubtitle}</p>
             <div className="public-actions">
-              <a className="button primary" href={bookingHref} target={config.bookingUrl ? "_blank" : undefined} rel={config.bookingUrl ? "noopener" : undefined}>
-                {actionLabel}
-              </a>
+              {hasBooking ? <a className="button primary" href={bookingHref} target="_blank" rel="noopener">{actionLabel}</a> : null}
               <a className="button public-secondary" href="#presentation">{english ? "About me" : "Qui suis-je ?"}</a>
             </div>
             {config.design.audio ? <SoundControl audio={config.design.audio} english={english} /> : null}
