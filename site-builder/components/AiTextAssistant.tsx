@@ -39,6 +39,7 @@ export default function AiTextAssistant({
   const [instruction, setInstruction] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [suggestion, setSuggestion] = useState("");
 
   const generate = async () => {
     const request = instruction.trim();
@@ -50,6 +51,7 @@ export default function AiTextAssistant({
 
     setState("loading");
     setMessage("");
+    setSuggestion("");
 
     try {
       const supabase = getSupabaseBrowserClient();
@@ -93,9 +95,9 @@ export default function AiTextAssistant({
         throw new Error("La réponse de l'IA est vide. Réessayez avec une demande un peu plus précise.");
       }
 
-      onApply(result.text.trim());
+      setSuggestion(result.text.trim());
       setState("done");
-      setMessage("✓ Proposition ajoutée dans le champ. Vous pouvez la modifier librement.");
+      setMessage("Proposition prête. Relisez-la avant de remplacer votre texte.");
     } catch (error) {
       setState("error");
       setMessage(error instanceof Error ? error.message : "Une erreur est survenue.");
@@ -159,6 +161,22 @@ export default function AiTextAssistant({
             ))}
           </div>
 
+          {suggestion ? (
+            <div className="ai-current-note" role="status" aria-live="polite">
+              <b>Proposition de l&apos;IA</b>
+              <p>{suggestion}</p>
+              <div className="ai-field-actions">
+                <button type="button" className="button primary premium-button" onClick={() => {
+                  onApply(suggestion);
+                  setSuggestion("");
+                  setState("done");
+                  setMessage("✓ Proposition insérée. Vous pouvez encore la modifier librement.");
+                }}>Utiliser ce texte</button>
+                <button type="button" className="button secondary" onClick={generate}>Regénérer</button>
+              </div>
+            </div>
+          ) : null}
+
           {value.trim() ? (
             <p className="ai-current-note">
               Le texte déjà présent servira de contexte. La nouvelle proposition le remplacera dans le champ,
@@ -173,7 +191,7 @@ export default function AiTextAssistant({
               disabled={state === "loading" || !instruction.trim()}
               onClick={generate}
             >
-              {state === "loading" ? "Rédaction…" : "Générer et insérer"}
+              {state === "loading" ? "Rédaction…" : suggestion ? "Générer une autre proposition" : "Générer une proposition"}
               {state !== "loading" ? <span aria-hidden="true">→</span> : null}
             </button>
             <button
