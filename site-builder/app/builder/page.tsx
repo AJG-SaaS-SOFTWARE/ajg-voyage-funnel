@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import SitePreview from "../../components/SitePreview";
+import MediaLibrary from "../../components/MediaLibrary";
 import {
   defaultSiteConfig,
   requiredDisclaimer,
@@ -36,6 +37,14 @@ const steps = [
     description: "Le titre, l'introduction et votre présentation. Le ton reste simple, humain et fidèle à vous.",
     time: "4 min",
     guidance: "Écrivez comme si vous expliquiez votre démarche à une connaissance. Quelques phrases naturelles suffisent."
+  },
+  {
+    key: "design",
+    label: "Style",
+    eyebrow: "Votre ambiance",
+    description: "Couleurs, motifs, images et sons pour donner une identité personnelle à votre site.",
+    time: "5 min",
+    guidance: "Commencez par une couleur et un motif. Vous pouvez rechercher une image ou un son, puis revenir changer vos choix plus tard."
   },
   {
     key: "booking",
@@ -690,6 +699,10 @@ export default function BuilderPage() {
                   <textarea rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
               </>
+            ) : null}
+
+            {step === "design" ? (
+              <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
             ) : null}
 
             {step === "booking" ? (
