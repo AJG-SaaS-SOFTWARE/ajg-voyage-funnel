@@ -6,26 +6,32 @@ export const runtime = "nodejs";
 const writableFields = {
   heroTagline: {
     name: "la petite phrase située au-dessus du titre",
+    purpose: "Create a distinctive micro-hook that sets the mood and complements the headline instead of repeating it.",
     constraint: "Une seule phrase très courte, 90 caractères maximum."
   },
   heroTitle: {
     name: "le titre principal de la page d'accueil",
+    purpose: "Make the visitor understand the promise or point of view immediately. Prefer a memorable human headline over generic marketing language.",
     constraint: "Un titre clair et naturel, idéalement 4 à 10 mots, 90 caractères maximum."
   },
   heroSubtitle: {
     name: "l'introduction sous le titre principal",
+    purpose: "Clarify the headline with concrete personal context and give the visitor a reason to keep reading, without overselling.",
     constraint: "Deux ou trois phrases courtes, simples et humaines, 420 caractères maximum."
   },
   aboutHeading: {
     name: "le titre de la rubrique de présentation personnelle",
+    purpose: "Introduce the person naturally and create continuity with the site's tone. Avoid generic labels when a more personal title is supported by context.",
     constraint: "Un titre court, naturel, 100 caractères maximum."
   },
   aboutText: {
     name: "la présentation personnelle",
+    purpose: "Sound like the person speaking to a visitor: specific, credible and warm. Use supplied personal details selectively rather than listing them.",
     constraint: "Un texte humain de 70 à 130 mots, en paragraphes courts si utile."
   },
   bookingLabel: {
     name: "le texte du bouton de prise de rendez-vous",
+    purpose: "Give a clear, low-pressure next action. Avoid hype, urgency and vague calls to action.",
     constraint: "Une formulation d'action très courte, 45 caractères maximum."
   }
 } as const;
@@ -142,6 +148,22 @@ export async function POST(request: Request) {
   const affiliation = context.affiliation === "independent" ? "independent" : "mwr";
   const firstName = clean(context.firstName, 80);
   const brandName = clean(context.brandName, 120);
+  const rawSiteContext = context.siteContext && typeof context.siteContext === "object" ? context.siteContext : {};
+  const contextEntries = [
+    ["tagline", clean(rawSiteContext.heroTagline, 120)],
+    ["headline", clean(rawSiteContext.heroTitle, 140)],
+    ["intro", clean(rawSiteContext.heroSubtitle, 500)],
+    ["about heading", clean(rawSiteContext.aboutHeading, 140)],
+    ["about", clean(rawSiteContext.aboutText, 900)],
+    ["traveler profile", clean(rawSiteContext.guidedTraveler, 220)],
+    ["discovery", clean(rawSiteContext.guidedDiscovery, 220)],
+    ["benefit", clean(rawSiteContext.guidedBenefit, 220)],
+    ["audience", clean(rawSiteContext.guidedAudience, 220)]
+  ].filter(([, value]) => value && value !== currentText);
+  const editorialContext = contextEntries
+    .slice(0, 6)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join("\n");
   const fieldSpec = writableFields[field];
 
   const complianceRules = affiliation === "mwr"
@@ -150,10 +172,12 @@ export async function POST(request: Request) {
 
   const prompt = [
     `Field to write: ${fieldSpec.name}.`,
+    `Goal: ${fieldSpec.purpose}`,
     `Hard constraint: ${fieldSpec.constraint}`,
     `Language: ${language}.`,
     firstName ? `First name: ${firstName}.` : "",
     brandName ? `Site/brand name: ${brandName}.` : "",
+    editorialContext ? `Relevant site context:\n${editorialContext}` : "",
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
     "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
@@ -169,12 +193,15 @@ export async function POST(request: Request) {
       model: process.env.OPENAI_TEXT_MODEL || "gpt-5.6-luna",
       instructions: [
         "You write concise website copy for non-expert users.",
-        "Follow the user's intent while keeping wording factual, natural and easy to understand.",
-        "Never invent factual claims that were not supplied by the user.",
+        "Infer sensible writing intent from the field goal and supplied site context when the user's request is vague.",
+        "Prefer specific details already supplied by the user over generic marketing language. Do not mechanically repeat context or duplicate nearby fields.",
+        "Preserve the person's voice and facts. Avoid clichés, hype and generic AI copy. Never invent factual claims.",
         complianceRules
       ].join(" "),
       input: prompt,
-      max_output_tokens: field === "aboutText" ? 500 : 220
+      reasoning: { effort: "low" },
+      text: { verbosity: "low" },
+      max_output_tokens: field === "aboutText" ? 320 : 140
     })
   });
 
