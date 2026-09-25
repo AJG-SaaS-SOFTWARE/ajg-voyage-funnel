@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublishedSite from "../../../components/PublishedSite";
-import { getPublicSite, managedSiteUrl } from "../../../lib/public-site";
+import { getPublicSite, publicSiteUrl } from "../../../lib/public-site";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export async function generateMetadata({
   const description =
     site.config.heroSubtitle ||
     `Découvrez le site de ${site.config.firstName} ${site.config.lastName}.`;
-  const canonical = managedSiteUrl(slug);
+  const canonical = publicSiteUrl(slug);
 
   return {
     title,
