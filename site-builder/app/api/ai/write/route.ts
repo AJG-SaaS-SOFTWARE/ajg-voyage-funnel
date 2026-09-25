@@ -29,6 +29,11 @@ const writableFields = {
     purpose: "Sound like the person speaking to a visitor: specific, credible and warm. Use supplied personal details selectively rather than listing them.",
     constraint: "Un texte humain de 70 à 130 mots, en paragraphes courts si utile."
   },
+  guidedDraft: {
+    name: "l'ensemble des textes principaux du site",
+    purpose: "Transform short, fragmentary guided answers into polished, coherent website copy. Build complete sentences and a clear narrative without inventing facts.",
+    constraint: "Return exactly five fields in the requested JSON structure: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText."
+  },
   bookingLabel: {
     name: "le texte du bouton de prise de rendez-vous",
     purpose: "Give a clear, low-pressure next action. Avoid hype, urgency and vague calls to action.",
@@ -180,7 +185,9 @@ export async function POST(request: Request) {
     editorialContext ? `Relevant site context:\n${editorialContext}` : "",
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
-    "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
+    field === "guidedDraft"
+      ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
+      : "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
   ].filter(Boolean).join("\n");
 
   const response = await fetch("https://api.openai.com/v1/responses", {
@@ -197,12 +204,14 @@ export async function POST(request: Request) {
         "Prefer specific details already supplied by the user over generic marketing language. Do not mechanically repeat context or duplicate nearby fields.",
         "Preserve the person's voice and facts. Avoid clichés, hype and generic AI copy. Never invent factual claims.",
         "The final copy must have impeccable spelling, grammar, punctuation and typography in the requested language. Silently correct any language errors present in source text.",
+        "Never paste raw notes or fragments as sentences. Convert keywords and telegraphic answers into fluent, complete sentences with an initial capital letter.",
+        "Default to polished, structured, moderately formal prose while remaining natural and credible.",
         complianceRules
       ].join(" "),
       input: prompt,
       reasoning: { effort: "low" },
       text: { verbosity: "low" },
-      max_output_tokens: field === "aboutText" ? 320 : 140
+      max_output_tokens: field === "guidedDraft" ? 650 : field === "aboutText" ? 320 : 140
     })
   });
 
@@ -230,6 +239,19 @@ export async function POST(request: Request) {
       { error: "L'IA n'a pas renvoyé de texte exploitable. Reformulez votre demande." },
       { status: 502 }
     );
+  }
+
+  if (field === "guidedDraft") {
+    try {
+      const cleaned = text.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "");
+      const draft = JSON.parse(cleaned);
+      const required = ["heroTagline", "heroTitle", "heroSubtitle", "aboutHeading", "aboutText"];
+      if (!required.every((key) => typeof draft[key] === "string" && draft[key].trim())) throw new Error("Incomplete guided draft");
+      return NextResponse.json({ draft });
+    } catch (error) {
+      console.error("Invalid guided draft output", error);
+      return NextResponse.json({ error: "L'IA n'a pas pu structurer les textes. Réessayez." }, { status: 502 });
+    }
   }
 
   return NextResponse.json({ text });
