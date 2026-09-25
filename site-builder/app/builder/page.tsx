@@ -251,13 +251,7 @@ export default function BuilderPage() {
   const nextStepLabel =
     stepIndex < steps.length - 1 ? steps[stepIndex + 1].label : "";
 
-  const sentence = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return "";
-    return /[.!?]$/.test(trimmed) ? trimmed : trimmed + ".";
-  };
-
-  const createGuidedDraft = () => {
+  const createGuidedDraft = async () => {
     const hasPersonalizedText =
       config.heroTitle !== defaultSiteConfig.heroTitle ||
       config.heroSubtitle !== defaultSiteConfig.heroSubtitle ||
@@ -266,46 +260,56 @@ export default function BuilderPage() {
       "Les textes actuels seront remplacés par la nouvelle proposition. Voulez-vous continuer ?"
     )) return;
 
-    const english = config.language === "en";
-    const firstName = config.firstName.trim();
-    const traveler = sentence(guidedAnswers.traveler);
-    const discovery = sentence(guidedAnswers.discovery);
-    const benefit = sentence(guidedAnswers.benefit);
-    const audience = sentence(guidedAnswers.audience);
+    setBusy(true);
+    setSyncError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Reconnectez-vous pour préparer vos textes avec l'IA.");
 
-    const heroTitle = english
-      ? "Discover another way to travel"
-      : "Découvrez une autre façon de voyager";
+      const response = await fetch("/api/ai/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          field: "guidedDraft",
+          instruction: "À partir des réponses guidées, rédige une première version complète, structurée et soignée des textes du site. Reformule les notes courtes en vraies phrases. Ne copie pas mécaniquement les réponses.",
+          currentText: "",
+          context: {
+            language: config.language,
+            affiliation: config.affiliation,
+            firstName: config.firstName,
+            brandName: config.brandName,
+            siteContext: {
+              guidedTraveler: guidedAnswers.traveler,
+              guidedDiscovery: guidedAnswers.discovery,
+              guidedBenefit: guidedAnswers.benefit,
+              guidedAudience: guidedAnswers.audience
+            }
+          }
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.draft) throw new Error(data?.error || "Impossible de préparer les textes.");
 
-    const heroSubtitleParts = [discovery, benefit].filter(Boolean);
-    const aboutParts = [
-      firstName
-        ? english
-          ? `My name is ${firstName}.`
-          : `Je m'appelle ${firstName}.`
-        : "",
-      traveler,
-      discovery,
-      benefit,
-      audience
-        ? english
-          ? "I created this site to share this experience with people who may find it useful. " + audience
-          : "J'ai créé ce site pour partager cette expérience avec les personnes à qui elle peut être utile. " + audience
-        : ""
-    ].filter(Boolean);
-
-    const nextConfig = {
-      ...config,
-      heroTitle,
-      heroSubtitle: heroSubtitleParts.join(" "),
-      aboutText: aboutParts.join(" ")
-    };
-
-    setConfig(nextConfig);
-    saveDraft(nextConfig);
-    setSaved(false);
-    setPublished(false);
-    setGuidedDraftReady(true);
+      const nextConfig = {
+        ...config,
+        heroTagline: data.draft.heroTagline.trim(),
+        heroTitle: data.draft.heroTitle.trim(),
+        heroSubtitle: data.draft.heroSubtitle.trim(),
+        aboutHeading: data.draft.aboutHeading.trim(),
+        aboutText: data.draft.aboutText.trim()
+      };
+      setConfig(nextConfig);
+      saveDraft(nextConfig);
+      setSaved(false);
+      setPublished(false);
+      setGuidedDraftReady(true);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Impossible de préparer les textes.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const guidedDraftEnabled =
