@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
+import AiTextAssistant from "../../components/AiTextAssistant";
 import {
   defaultSiteConfig,
   requiredDisclaimer,
@@ -443,7 +444,7 @@ export default function BuilderPage() {
           <span className="brand-mark">A</span>
           <span>
             <strong>AJG Site Builder</strong>
-            <small>Prototype 0.9</small>
+            <small>Prototype 0.10</small>
           </span>
         </Link>
 
@@ -704,12 +705,45 @@ export default function BuilderPage() {
                 <Field label="Petite phrase au-dessus du titre" hint="Facultatif. Exemple : Voyagez autrement · partagez davantage.">
                   <input maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
                 </Field>
+                <AiTextAssistant
+                  field="heroTagline"
+                  label="cette petite phrase"
+                  value={config.heroTagline}
+                  language={config.language}
+                  affiliation={config.affiliation}
+                  firstName={config.firstName}
+                  brandName={config.brandName}
+                  onApply={(text) => update("heroTagline", text)}
+                  placeholder="Ex. Une phrase chaleureuse et très courte sur le plaisir de voyager autrement"
+                />
                 <Field label="Titre principal">
                   <textarea rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
+                <AiTextAssistant
+                  field="heroTitle"
+                  label="le titre principal"
+                  value={config.heroTitle}
+                  language={config.language}
+                  affiliation={config.affiliation}
+                  firstName={config.firstName}
+                  brandName={config.brandName}
+                  onApply={(text) => update("heroTitle", text)}
+                  placeholder="Ex. Un titre simple, rassurant et premium pour des personnes qui aiment voyager"
+                />
                 <Field label="Introduction">
                   <textarea rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
                 </Field>
+                <AiTextAssistant
+                  field="heroSubtitle"
+                  label="l'introduction"
+                  value={config.heroSubtitle}
+                  language={config.language}
+                  affiliation={config.affiliation}
+                  firstName={config.firstName}
+                  brandName={config.brandName}
+                  onApply={(text) => update("heroSubtitle", text)}
+                  placeholder="Ex. Explique en 2 phrases que je partage une solution que j'utilise moi-même pour mes voyages, avec un ton naturel"
+                />
 
                 <div className="section-kicker">
                   <span>02</span>
@@ -718,9 +752,31 @@ export default function BuilderPage() {
                 <Field label="Titre de la rubrique" hint="Facultatif. Votre nom est utilisé si ce champ reste vide.">
                   <input maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
                 </Field>
+                <AiTextAssistant
+                  field="aboutHeading"
+                  label="le titre de votre présentation"
+                  value={config.aboutHeading}
+                  language={config.language}
+                  affiliation={config.affiliation}
+                  firstName={config.firstName}
+                  brandName={config.brandName}
+                  onApply={(text) => update("aboutHeading", text)}
+                  placeholder="Ex. Un titre personnel et simple, moins formel que « À propos »"
+                />
                 <Field label="Votre présentation">
                   <textarea rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
+                <AiTextAssistant
+                  field="aboutText"
+                  label="votre présentation"
+                  value={config.aboutText}
+                  language={config.language}
+                  affiliation={config.affiliation}
+                  firstName={config.firstName}
+                  brandName={config.brandName}
+                  onApply={(text) => update("aboutText", text)}
+                  placeholder="Ex. Présente-moi de façon humaine : j'aime voyager en couple, découvrir la gastronomie locale et partager les bons plans que j'utilise vraiment"
+                />
               </>
             ) : null}
 
@@ -752,6 +808,17 @@ export default function BuilderPage() {
                 <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous.">
                   <input placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
+                <AiTextAssistant
+                  field="bookingLabel"
+                  label="le bouton de rendez-vous"
+                  value={config.bookingLabel}
+                  language={config.language}
+                  affiliation={config.affiliation}
+                  firstName={config.firstName}
+                  brandName={config.brandName}
+                  onApply={(text) => update("bookingLabel", text)}
+                  placeholder="Ex. Un appel à l'action rassurant, sans pression commerciale"
+                />
                 <Field label="Lien de rendez-vous" hint="Facultatif. Le lien doit commencer par https:// et contenir l'adresse complète de votre page.">
                   <input
                     type="url"

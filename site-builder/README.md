@@ -33,3 +33,13 @@ Le prototype comprend déjà :
 Le produit ne clone pas un dépôt ou une application par membre. Le code, le design et les corrections restent centralisés ; chaque client possède sa configuration, ses médias et son adresse publique.
 
 Voir `docs/mvp-roadmap.md` pour la suite du développement.
+
+
+## Assistant IA dans les champs
+
+Les champs éditoriaux à forte valeur (accroche, titre, introduction, présentation et appel à l'action)
+peuvent être rédigés ou reformulés depuis le builder. L'utilisateur écrit sa demande en langage naturel,
+la proposition est insérée dans le champ, puis reste entièrement modifiable avant sauvegarde ou publication.
+
+L'appel au modèle passe uniquement par `/api/ai/write` côté serveur. La clé `OPENAI_API_KEY` ne doit jamais
+être exposée au navigateur. Le modèle par défaut est configurable via `OPENAI_TEXT_MODEL`.
