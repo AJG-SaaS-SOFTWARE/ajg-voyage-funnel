@@ -104,11 +104,47 @@ export default function AiTextAssistant({
     }
   };
 
-  const quickPrompts = [
-    "Rends le texte plus chaleureux et naturel",
-    "Raccourcis et simplifie le texte",
-    "Rends le texte plus professionnel sans être commercial"
-  ];
+  const quickPrompts = language === "en"
+    ? [
+        "Make the text warmer and more natural",
+        "Shorten and simplify the text",
+        "Make the text more professional without sounding salesy"
+      ]
+    : [
+        "Rends le texte plus chaleureux et naturel",
+        "Raccourcis et simplifie le texte",
+        "Rends le texte plus professionnel sans être commercial"
+      ];
+
+  const ui = language === "en"
+    ? {
+        trigger: "Write with AI",
+        optional: "Optional · you stay in control of the final text",
+        question: `What would you like for ${label}?`,
+        suggestions: "Suggestions",
+        proposal: "AI suggestion",
+        use: "Use this text",
+        regenerate: "Regenerate",
+        generate: "Generate a suggestion",
+        generateAnother: "Generate another suggestion",
+        writing: "Writing…",
+        close: "Close",
+        current: "Your current text is used as context. Nothing is replaced until you approve the suggestion."
+      }
+    : {
+        trigger: "Écrire avec l'IA",
+        optional: "Facultatif · vous gardez le contrôle du texte final",
+        question: `Que voulez-vous pour ${label} ?`,
+        suggestions: "Suggestions",
+        proposal: "Proposition de l'IA",
+        use: "Utiliser ce texte",
+        regenerate: "Regénérer",
+        generate: "Générer une proposition",
+        generateAnother: "Générer une autre proposition",
+        writing: "Rédaction…",
+        close: "Fermer",
+        current: "Votre texte actuel sert de contexte. Rien n'est remplacé avant votre validation."
+      };
 
   return (
     <div className={"ai-field-assistant " + (open ? "open" : "")}>
@@ -124,8 +160,8 @@ export default function AiTextAssistant({
       >
         <span className="ai-field-spark">✦</span>
         <span>
-          <b>Écrire avec l'IA</b>
-          <small>Facultatif · vous pourrez modifier le résultat</small>
+          <b>{ui.trigger}</b>
+          <small>{ui.optional}</small>
         </span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
       </button>
@@ -133,7 +169,7 @@ export default function AiTextAssistant({
       {open ? (
         <div className="ai-field-panel">
           <label>
-            <span>Que voulez-vous pour {label} ?</span>
+            <span>{ui.question}</span>
             <textarea
               rows={3}
               value={instruction}
@@ -149,7 +185,7 @@ export default function AiTextAssistant({
             />
           </label>
 
-          <div className="ai-quick-prompts" aria-label="Suggestions">
+          <div className="ai-quick-prompts" aria-label={ui.suggestions}>
             {quickPrompts.map((prompt) => (
               <button
                 key={prompt}
@@ -163,7 +199,7 @@ export default function AiTextAssistant({
 
           {suggestion ? (
             <div className="ai-current-note" role="status" aria-live="polite">
-              <b>Proposition de l&apos;IA</b>
+              <b>{ui.proposal}</b>
               <p>{suggestion}</p>
               <div className="ai-field-actions">
                 <button type="button" className="button primary premium-button" onClick={() => {
@@ -171,16 +207,15 @@ export default function AiTextAssistant({
                   setSuggestion("");
                   setState("done");
                   setMessage("✓ Proposition insérée. Vous pouvez encore la modifier librement.");
-                }}>Utiliser ce texte</button>
-                <button type="button" className="button secondary" onClick={generate}>Regénérer</button>
+                }}>{ui.use}</button>
+                <button type="button" className="button secondary" onClick={generate}>{ui.regenerate}</button>
               </div>
             </div>
           ) : null}
 
           {value.trim() ? (
             <p className="ai-current-note">
-              Le texte déjà présent servira de contexte. La nouvelle proposition le remplacera dans le champ,
-              mais vous pourrez encore la modifier.
+              {ui.current}
             </p>
           ) : null}
 
@@ -191,7 +226,7 @@ export default function AiTextAssistant({
               disabled={state === "loading" || !instruction.trim()}
               onClick={generate}
             >
-              {state === "loading" ? "Rédaction…" : suggestion ? "Générer une autre proposition" : "Générer une proposition"}
+              {state === "loading" ? ui.writing : suggestion ? ui.generateAnother : ui.generate}
               {state !== "loading" ? <span aria-hidden="true">→</span> : null}
             </button>
             <button
@@ -200,7 +235,7 @@ export default function AiTextAssistant({
               onClick={() => setOpen(false)}
               disabled={state === "loading"}
             >
-              Fermer
+              {ui.close}
             </button>
           </div>
 
