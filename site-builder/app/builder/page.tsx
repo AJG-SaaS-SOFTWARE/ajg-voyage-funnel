@@ -86,8 +86,11 @@ export default function BuilderPage() {
   const [syncError, setSyncError] = useState("");
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
+  const [origin, setOrigin] = useState("");
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
 
   useEffect(() => {
+    setOrigin(window.location.origin);
     let cancelled = false;
 
     const boot = async () => {
@@ -135,6 +138,20 @@ export default function BuilderPage() {
       cancelled = true;
     };
   }, [remoteMode, router]);
+
+  const publicPath = "/site/" + config.slug;
+  const betaPublicUrl = origin ? origin + publicPath : publicPath;
+  const targetPublicUrl = config.slug + ".voyage.ajgsolutionsgroup.com";
+
+  const copyPublicUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(betaPublicUrl);
+      setCopyState("copied");
+      window.setTimeout(() => setCopyState("idle"), 1800);
+    } catch {
+      setCopyState("error");
+    }
+  };
 
   const stepIndex = steps.findIndex((item) => item.key === step);
   const currentStep = steps[stepIndex];
@@ -270,7 +287,7 @@ export default function BuilderPage() {
           <span className="brand-mark">A</span>
           <span>
             <strong>AJG Site Builder</strong>
-            <small>Prototype 0.6.2</small>
+            <small>Prototype 0.7</small>
           </span>
         </Link>
 
@@ -324,7 +341,7 @@ export default function BuilderPage() {
           <div className="step-nav-footer">
             <span>Site</span>
             <strong>{config.brandName || "Nouveau site"}</strong>
-            <small>{config.slug}.voyage.ajgsolutionsgroup.com</small>
+            <small>{targetPublicUrl}</small>
           </div>
         </aside>
 
@@ -569,7 +586,7 @@ export default function BuilderPage() {
                 )}
 
                 <div className="publish-summary premium-publish-summary">
-                  <div><span>Adresse prévue</span><strong>{config.slug}.voyage.ajgsolutionsgroup.com</strong></div>
+                  <div><span>Adresse cible</span><strong>{targetPublicUrl}</strong></div>
                   <div><span>Langue</span><strong>{config.language === "both" ? "Français + English" : config.language.toUpperCase()}</strong></div>
                   <div><span>Stockage</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
                   <div><span>État</span><strong>{published ? "Publié" : "Prêt à publier"}</strong></div>
@@ -585,7 +602,19 @@ export default function BuilderPage() {
                   {!busy ? <span aria-hidden="true">→</span> : null}
                 </button>
                 {published ? (
-                  <Link className="text-link published-link" href={"/site/" + config.slug}>Ouvrir le site publié →</Link>
+                  <div className="published-share-card" aria-live="polite">
+                    <div>
+                      <span className="mini">Lien bêta partageable</span>
+                      <strong>{betaPublicUrl}</strong>
+                      <p>Ce lien fonctionne dès maintenant. Le sous-domaine personnalisé sera activé dans une étape ultérieure.</p>
+                    </div>
+                    <div className="published-share-actions">
+                      <Link className="button secondary" href={publicPath} target="_blank">Ouvrir ↗</Link>
+                      <button type="button" className="button primary" onClick={copyPublicUrl}>
+                        {copyState === "copied" ? "✓ Lien copié" : copyState === "error" ? "Copie impossible" : "Copier le lien"}
+                      </button>
+                    </div>
+                  </div>
                 ) : null}
               </>
             ) : null}
