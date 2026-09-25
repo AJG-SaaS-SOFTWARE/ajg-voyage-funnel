@@ -637,7 +637,7 @@ export default function BuilderPage() {
                     <span className="guided-writing-icon">✦</span>
                     <span>
                       <b>Mode guidé recommandé</b>
-                      <small>Répondez à 3 questions simples : nous préparons une première version de vos textes.</small>
+                      <small>Répondez à 3 questions simples, puis à une 4e facultative : nous préparons une première version de vos textes.</small>
                     </span>
                     <span className="guided-writing-badge">Le plus simple</span>
                   </summary>
