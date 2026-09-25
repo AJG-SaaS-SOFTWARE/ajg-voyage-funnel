@@ -2250,3 +2250,5 @@ button.active .step-label small{color:#63817f}
   .ai-field-actions{display:grid;grid-template-columns:1fr}
   .ai-field-actions .button{width:100%}
 }
+
+.custom-color-row{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-top:14px}.custom-color-row label{display:grid;gap:6px;font-size:.78rem;font-weight:750}.custom-color-row input[type=color]{width:64px;height:42px;padding:3px;cursor:pointer}.custom-color-row input[type=text]{width:110px}.site-preview .preview-about,.public-site .public-about{background-color:var(--site-custom-background,transparent)}
