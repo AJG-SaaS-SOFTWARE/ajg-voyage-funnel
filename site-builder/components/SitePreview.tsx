@@ -8,7 +8,6 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
     <div className={compact ? "site-preview compact" : "site-preview"}>
       <nav>
         <strong>{config.brandName || (english ? "Your site" : "Votre site")}</strong>
-        {config.showTravelJournals ? <span>{english ? "Travels" : "Voyages"}</span> : null}
         <span>{english ? "About" : "Présentation"}</span>
         <span>{config.language === "both" ? "FR · EN" : config.language.toUpperCase()}</span>
       </nav>
@@ -33,15 +32,6 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
         <p>{config.aboutText}</p>
       </section>
 
-      {config.showTravelJournals ? (
-        <section className="preview-trips">
-          <p className="mini">{english ? "My travels" : "Mes voyages"}</p>
-          <div className="trip-grid">
-            <article><b>{english ? "First journal" : "Premier carnet"}</b><span>{english ? "Photos & impressions" : "Photos & impressions"}</span></article>
-            <article><b>{english ? "Second journal" : "Deuxième carnet"}</b><span>{english ? "To customize" : "À personnaliser"}</span></article>
-          </div>
-        </section>
-      ) : null}
 
       <footer>{requiredDisclaimer}</footer>
     </div>
