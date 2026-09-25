@@ -1,6 +1,7 @@
 "use client";
 
 import { defaultSiteConfig, type SiteConfig } from "./site-config";
+import { normalizeSiteDesign } from "./site-design";
 
 export type BuilderDraft = {
   config: SiteConfig;
@@ -24,7 +25,7 @@ export function loadDraft(): BuilderDraft {
     const parsed = JSON.parse(raw) as BuilderDraft;
     return {
       ...parsed,
-      config: { ...defaultSiteConfig, ...parsed.config }
+      config: { ...defaultSiteConfig, ...parsed.config, design: normalizeSiteDesign(parsed.config?.design) }
     };
   } catch {
     return { config: defaultSiteConfig, status: "draft", updatedAt: new Date().toISOString() };
@@ -59,7 +60,7 @@ export function loadPublished(slug: string): BuilderDraft | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as BuilderDraft;
-    return { ...parsed, config: { ...defaultSiteConfig, ...parsed.config } };
+    return { ...parsed, config: { ...defaultSiteConfig, ...parsed.config, design: normalizeSiteDesign(parsed.config?.design) } };
   } catch {
     return null;
   }
