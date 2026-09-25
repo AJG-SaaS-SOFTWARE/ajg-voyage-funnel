@@ -129,7 +129,7 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
         <legend>Fond des rubriques</legend>
         <div className="background-choices">
           {backgrounds.map((background) => <label key={background} className="background-choice" data-background={background}>
-            <input type="radio" name="site-background" checked={design.background === background} onChange={() => onChange({ ...design, background })} />
+            <input type="radio" name="site-background" checked={!design.customBackgroundColor && design.background === background} onChange={() => onChange({ ...design, background, customBackgroundColor: "" })} />
             <span>{backgroundLabels[background]}</span>
           </label>)}
         </div>
