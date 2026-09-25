@@ -1,3 +1,4 @@
+import { type CSSProperties } from "react";
 import { requiredDisclaimer, type SiteConfig } from "../lib/site-config";
 
 export default function SitePreview({ config, compact = false }: { config: SiteConfig; compact?: boolean }) {
@@ -5,7 +6,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
   const english = config.language === "en";
 
   return (
-    <div className={compact ? "site-preview compact" : "site-preview"}>
+    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} style={{ "--site-accent": config.design.accent } as CSSProperties}>
       <nav>
         <strong>{config.brandName || (english ? "Your site" : "Votre site")}</strong>
         <span>{english ? "About" : "Présentation"}</span>
@@ -13,6 +14,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
       </nav>
 
       <section className="preview-hero">
+        {config.design.heroImage ? <img className="preview-hero-image" src={config.design.heroImage.url} alt="" /> : null}
         <div>
           <p className="mini">{english ? "Travel first · discover next" : "Voyage d\'abord · découverte ensuite"}</p>
           <h3>{config.heroTitle || (english ? "Your headline" : "Votre titre")}</h3>
@@ -20,6 +22,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
           <button type="button">{config.bookingUrl
             ? config.bookingLabel || (english ? "Book" : "Réserver")
             : english ? "About me" : "En savoir plus"}</button>
+          {config.design.audio ? <p className="preview-sound">♫ {config.design.audio.title}</p> : null}
         </div>
         <div className="portrait">
           {config.profileImageUrl ? <img src={config.profileImageUrl} alt="" /> : <span>{initials}</span>}
