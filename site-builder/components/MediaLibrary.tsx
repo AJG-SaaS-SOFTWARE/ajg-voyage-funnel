@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { accentColors, patterns, type MediaChoice, type SiteDesign } from "../lib/site-design";
 
 type SearchResult = MediaChoice & { thumbnail: string };
@@ -13,6 +13,23 @@ const patternLabels: Record<SiteDesign["pattern"], string> = {
   rays: "Rayons"
 };
 
+const suggestions = {
+  image: [
+    { label: "Nature", query: "landscape nature" },
+    { label: "Mer", query: "sea beach" },
+    { label: "Montagne", query: "mountain landscape" },
+    { label: "Ville", query: "city architecture" },
+    { label: "Gastronomie", query: "food cooking" }
+  ],
+  audio: [
+    { label: "Nature", query: "forest birds" },
+    { label: "Mer", query: "sea waves" },
+    { label: "Ambiance", query: "ambient" },
+    { label: "Piano", query: "piano" },
+    { label: "Ville", query: "city ambience" }
+  ]
+};
+
 export default function MediaLibrary({ design, onChange }: { design: SiteDesign; onChange: (design: SiteDesign) => void }) {
   const [type, setType] = useState<"image" | "audio">("image");
   const [query, setQuery] = useState("voyage");
@@ -20,8 +37,13 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
+  const request = useRef<AbortController | null>(null);
+
+  useEffect(() => () => request.current?.abort(), []);
 
   const switchType = (next: "image" | "audio") => {
+    request.current?.abort();
+    setLoading(false);
     setType(next);
     setResults([]);
     setError("");
@@ -29,24 +51,32 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
     setQuery(next === "image" ? "voyage" : "nature");
   };
 
-  const search = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!query.trim()) return;
+  const searchFor = async (term: string, mediaType: "image" | "audio") => {
+    if (!term.trim()) return;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     setLoading(true);
     setError("");
     setResults([]);
     setSearched(true);
     try {
-      const params = new URLSearchParams({ type, q: query.trim() });
-      const response = await fetch(`/api/media/search?${params}`);
+      const params = new URLSearchParams({ type: mediaType, q: term.trim() });
+      const response = await fetch(`/api/media/search?${params}`, { signal: controller.signal });
       const data = await response.json() as { results?: SearchResult[]; error?: string };
+      if (controller.signal.aborted) return;
       if (!response.ok) throw new Error(data.error || "Recherche indisponible.");
       setResults(data.results || []);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Recherche indisponible.");
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Recherche indisponible.");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
+  };
+
+  const search = (event: FormEvent) => {
+    event.preventDefault();
+    void searchFor(query, type);
   };
 
   const choose = (item: MediaChoice) => {
@@ -98,6 +128,10 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
           <button className="primary" disabled={loading || !query.trim()}>{loading ? "Recherche…" : "Rechercher"}</button>
         </div>
       </form>
+      <div className="media-suggestions" aria-label="Idées de recherche">
+        <span>Explorer :</span>
+        {suggestions[type].map((suggestion) => <button type="button" key={suggestion.label} onClick={() => { setQuery(suggestion.query); void searchFor(suggestion.query, type); }}>{suggestion.label}</button>)}
+      </div>
       <p className="media-license-note">Résultats déclarés CC0 par leurs sources via Openverse. Ouvrez la fiche source pour vérifier la licence et les éventuels droits liés aux personnes ou marques visibles.</p>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       {!loading && !error && results.length === 0 ? <p className="media-empty">{searched ? "Aucun résultat pour cette recherche. Essayez un autre terme." : "Lancez une recherche pour explorer la médiathèque."}</p> : null}
@@ -109,15 +143,17 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
               <b title={item.title}>{item.title}</b>
               <small>{item.creator} · CC0</small>
               <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">Vérifier la source ↗</a>
-              <button type="button" className="secondary" onClick={() => choose(item)}>Choisir</button>
+              <button type="button" className="secondary" aria-pressed={(type === "image" ? design.heroImage : design.audio)?.url === item.url} onClick={() => choose(item)}>
+                {(type === "image" ? design.heroImage : design.audio)?.url === item.url ? "✓ Sélectionné" : "Choisir"}
+              </button>
             </div>
           </article>
         ))}
       </div>
       {(design.heroImage || design.audio) ? (
         <div className="media-selected">
-          {design.heroImage ? <p><b>Image choisie :</b> {design.heroImage.title} <button type="button" onClick={() => onChange({ ...design, heroImage: null })}>Retirer</button></p> : null}
-          {design.audio ? <p><b>Son choisi :</b> {design.audio.title} <button type="button" onClick={() => onChange({ ...design, audio: null })}>Retirer</button></p> : null}
+          {design.heroImage ? <div className="media-selected-item"><img src={design.heroImage.url} alt="Aperçu de l'image choisie" /><p><b>Image choisie :</b> {design.heroImage.title} <button type="button" onClick={() => onChange({ ...design, heroImage: null })}>Retirer</button></p></div> : null}
+          {design.audio ? <div className="media-selected-item"><audio controls preload="none" src={design.audio.url} aria-label={`Écouter ${design.audio.title}`} /><p><b>Son choisi :</b> {design.audio.title} <button type="button" onClick={() => onChange({ ...design, audio: null })}>Retirer</button></p></div> : null}
         </div>
       ) : null}
     </div>
