@@ -232,6 +232,14 @@ export default function BuilderPage() {
   };
 
   const createGuidedDraft = () => {
+    const hasPersonalizedText =
+      config.heroTitle !== defaultSiteConfig.heroTitle ||
+      config.heroSubtitle !== defaultSiteConfig.heroSubtitle ||
+      config.aboutText !== defaultSiteConfig.aboutText;
+    if (hasPersonalizedText && !window.confirm(
+      "Les textes actuels seront remplacés par la nouvelle proposition. Voulez-vous continuer ?"
+    )) return;
+
     const english = config.language === "en";
     const firstName = config.firstName.trim();
     const traveler = sentence(guidedAnswers.traveler);
