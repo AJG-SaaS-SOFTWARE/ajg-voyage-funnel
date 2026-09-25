@@ -113,6 +113,17 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
             </label>
           ))}
         </div>
+        <div className="custom-color-row">
+          <label>Couleur personnalisée
+            <input type="color" value={design.accent} onChange={(event) => onChange({ ...design, accent: event.target.value })} />
+          </label>
+          <label>Code HEX
+            <input type="text" value={design.accent} maxLength={7} spellCheck={false} onChange={(event) => {
+              const value = event.target.value;
+              if (/^#[0-9a-fA-F]{6}$/.test(value)) onChange({ ...design, accent: value });
+            }} />
+          </label>
+        </div>
       </fieldset>
       <fieldset className="design-fieldset">
         <legend>Fond des rubriques</legend>
@@ -121,6 +132,12 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
             <input type="radio" name="site-background" checked={design.background === background} onChange={() => onChange({ ...design, background })} />
             <span>{backgroundLabels[background]}</span>
           </label>)}
+        </div>
+        <div className="custom-color-row">
+          <label>Fond personnalisé
+            <input type="color" value={design.customBackgroundColor || "#f8f4eb"} onChange={(event) => onChange({ ...design, customBackgroundColor: event.target.value })} />
+          </label>
+          <button type="button" className="secondary" onClick={() => onChange({ ...design, customBackgroundColor: "" })}>Utiliser le fond prédéfini</button>
         </div>
       </fieldset>
       <fieldset className="design-fieldset">
