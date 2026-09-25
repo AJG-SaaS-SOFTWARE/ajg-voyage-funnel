@@ -204,6 +204,23 @@ export default function BuilderPage() {
     });
   };
 
+  const updateAffiliation = (affiliation: SiteConfig["affiliation"]) => {
+    const neutralIntro = "Présentez votre activité, votre approche et ce que vos visiteurs peuvent découvrir avec vous.";
+    setSaved(false);
+    setPublished(false);
+    setSyncError("");
+    setConfig((current) => {
+      const heroSubtitle = affiliation === "independent" && current.heroSubtitle === defaultSiteConfig.heroSubtitle
+        ? neutralIntro
+        : affiliation === "mwr" && current.heroSubtitle === neutralIntro
+          ? defaultSiteConfig.heroSubtitle
+          : current.heroSubtitle;
+      const next = { ...current, affiliation, heroSubtitle };
+      saveDraft(next);
+      return next;
+    });
+  };
+
   const slugify = (value: string) =>
     value
       .normalize("NFD")
@@ -804,7 +821,7 @@ export default function BuilderPage() {
                   <div><b>Activité et identité</b><p>Les mentions MWR Life concernent uniquement les sites d'ambassadeurs.</p></div>
                 </div>
                 <Field label="Votre activité">
-                  <select value={config.affiliation} onChange={(event) => update("affiliation", event.target.value as SiteConfig["affiliation"])}>
+                  <select value={config.affiliation} onChange={(event) => updateAffiliation(event.target.value as SiteConfig["affiliation"])}>
                     <option value="mwr">Ambassadeur indépendant MWR Life</option>
                     <option value="independent">Autre activité indépendante</option>
                   </select>
@@ -825,7 +842,7 @@ export default function BuilderPage() {
                   </label>
                 </> : <div className="helper-card premium-helper-card">
                   <b>Site indépendant sans mention MWR Life</b>
-                  <p>Les noms et logos MWR Life et Travel Advantage seront absents. Les informations légales propres à votre activité ne sont pas encore générées par cet éditeur ; vérifiez-les avant de partager le site.</p>
+                  <p>Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Relisez les textes que vous avez rédigés. Les informations légales propres à votre activité ne sont pas encore générées par cet éditeur ; vérifiez-les avant de partager le site.</p>
                 </div>}
               </>
             ) : null}
