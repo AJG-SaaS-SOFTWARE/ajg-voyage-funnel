@@ -111,7 +111,7 @@ export default function Home() {
     <main className="shell premium-home">
       <section className="dashboard-hero">
         <div className="intro premium-intro">
-          <p className="eyebrow">AJG Site Builder · Prototype 0.6.2</p>
+          <p className="eyebrow">AJG Site Builder · Prototype 0.7.2</p>
           <h1>Votre site en quelques étapes</h1>
           <p>
             Un seul moteur pour créer et maintenir les sites des membres : identité, contenu,
