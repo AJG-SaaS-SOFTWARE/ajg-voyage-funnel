@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import type { SiteConfig, SiteLanguage } from "./site-config";
 import { getSupabaseBrowserClient } from "./supabase-browser";
+import { normalizeSiteDesign } from "./site-design";
 
 export type RemoteSite = {
   id: string;
@@ -42,7 +43,8 @@ function configFromRow(row: any): SiteConfig {
     profileImageUrl: row.profile_image_url,
     showTravelJournals: row.show_travel_journals,
     instagramUrl: row.instagram_url,
-    facebookUrl: row.facebook_url
+    facebookUrl: row.facebook_url,
+    design: normalizeSiteDesign(row.design_assets)
   };
 }
 
@@ -63,6 +65,7 @@ function payload(user: User, config: SiteConfig, status: "draft" | "published") 
     booking_url: config.bookingUrl,
     instagram_url: config.instagramUrl,
     facebook_url: config.facebookUrl,
+    design_assets: config.design,
     profile_image_url: config.profileImageUrl,
     show_travel_journals: config.showTravelJournals,
     compliance_profile: "mwr-life-independent-ambassador-v1",
