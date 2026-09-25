@@ -25,31 +25,41 @@ const steps = [
     key: "identity",
     label: "Identité",
     eyebrow: "Votre base",
-    description: "Nom, adresse, langue et photo : les éléments qui rendent le site immédiatement personnel."
+    description: "Nom, adresse, langue et photo : les éléments qui rendent le site immédiatement personnel.",
+    time: "2 min",
+    guidance: "Commencez simplement par votre prénom et votre nom. Le nom du site et son adresse se préremplissent automatiquement."
   },
   {
     key: "story",
     label: "Message",
     eyebrow: "Votre voix",
-    description: "Le titre, l'introduction et votre présentation. Le ton reste simple, humain et fidèle à vous."
+    description: "Le titre, l'introduction et votre présentation. Le ton reste simple, humain et fidèle à vous.",
+    time: "4 min",
+    guidance: "Écrivez comme si vous expliquiez votre démarche à une connaissance. Quelques phrases naturelles suffisent."
   },
   {
     key: "booking",
     label: "Rendez-vous",
     eyebrow: "Passer à l'action",
-    description: "Reliez votre agenda et vos réseaux pour transformer la visite en échange concret."
+    description: "Reliez votre agenda et vos réseaux pour transformer la visite en échange concret.",
+    time: "2 min",
+    guidance: "Collez votre lien Calendly ou Google Calendar si vous en avez un. Les réseaux sociaux restent facultatifs."
   },
   {
     key: "options",
     label: "Options",
     eyebrow: "Votre contenu",
-    description: "Activez les modules utiles tout en gardant les éléments de conformité centralisés."
+    description: "Activez les modules utiles tout en gardant les éléments de conformité centralisés.",
+    time: "1 min",
+    guidance: "Choisissez seulement ce que vous souhaitez montrer. Vous pourrez modifier ces options plus tard."
   },
   {
     key: "review",
     label: "Publication",
     eyebrow: "Dernière vérification",
-    description: "Contrôlez l'adresse, la langue et les informations essentielles avant la mise en ligne."
+    description: "Contrôlez l'adresse, la langue et les informations essentielles avant la mise en ligne.",
+    time: "1 min",
+    guidance: "Relisez le résumé. Si tout est vert, vous pouvez publier puis partager votre lien."
   }
 ] as const;
 
@@ -88,6 +98,8 @@ export default function BuilderPage() {
   const [userEmail, setUserEmail] = useState("");
   const [origin, setOrigin] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const [brandTouched, setBrandTouched] = useState(false);
+  const [slugTouched, setSlugTouched] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -98,6 +110,8 @@ export default function BuilderPage() {
 
       if (!remoteMode) {
         setConfig(local.config);
+        setBrandTouched(Boolean(local.config.brandName));
+        setSlugTouched(Boolean(local.config.slug));
         setPublished(local.status === "published");
         setReady(true);
         return;
@@ -117,16 +131,22 @@ export default function BuilderPage() {
 
         if (remote) {
           setConfig(remote.config);
+          setBrandTouched(Boolean(remote.config.brandName));
+          setSlugTouched(Boolean(remote.config.slug));
           setRemoteSiteId(remote.id);
           setPublished(remote.status === "published");
         } else {
           setConfig(local.config);
+          setBrandTouched(Boolean(local.config.brandName));
+          setSlugTouched(Boolean(local.config.slug));
           setPublished(false);
         }
       } catch (error) {
         if (!cancelled) {
           setSyncError(error instanceof Error ? error.message : "Impossible de charger le site.");
           setConfig(local.config);
+          setBrandTouched(Boolean(local.config.brandName));
+          setSlugTouched(Boolean(local.config.slug));
         }
       } finally {
         if (!cancelled) setReady(true);
@@ -168,6 +188,35 @@ export default function BuilderPage() {
       return next;
     });
   };
+
+  const slugify = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  const updateIdentityName = (key: "firstName" | "lastName", value: string) => {
+    setSaved(false);
+    setPublished(false);
+    setSyncError("");
+    setConfig((current) => {
+      const next = { ...current, [key]: value };
+      const first = key === "firstName" ? value : current.firstName;
+      const last = key === "lastName" ? value : current.lastName;
+      const fullName = [first, last].filter(Boolean).join(" ").trim();
+
+      if (!brandTouched) next.brandName = fullName;
+      if (!slugTouched) next.slug = slugify([first, last].filter(Boolean).join("-"));
+
+      saveDraft(next);
+      return next;
+    });
+  };
+
+  const nextStepLabel =
+    stepIndex < steps.length - 1 ? steps[stepIndex + 1].label : "";
 
   const errors = useMemo(() => {
     const next: string[] = [];
@@ -287,7 +336,7 @@ export default function BuilderPage() {
           <span className="brand-mark">A</span>
           <span>
             <strong>AJG Site Builder</strong>
-            <small>Prototype 0.7.1</small>
+            <small>Prototype 0.8</small>
           </span>
         </Link>
 
@@ -315,6 +364,10 @@ export default function BuilderPage() {
             <p className="eyebrow">Votre parcours</p>
             <h2>Construire le site</h2>
             <p>Avancez étape par étape. Vous pouvez revenir sur chaque section à tout moment.</p>
+            <div className="beginner-promise">
+              <span>✓</span>
+              <p>Pas besoin de compétences techniques : remplissez simplement les questions, nous nous occupons du reste.</p>
+            </div>
           </div>
 
           <div className="step-list">
@@ -359,6 +412,13 @@ export default function BuilderPage() {
           </div>
 
           <div className="editor-body">
+            <div className="step-guidance-card">
+              <div className="step-guidance-icon">?</div>
+              <div>
+                <span>Ce que vous avez à faire · environ {currentStep.time}</span>
+                <p>{currentStep.guidance}</p>
+              </div>
+            </div>
             {syncError ? <div className="error-card premium-error-card"><b>Synchronisation</b><p>{syncError}</p></div> : null}
 
             {step === "identity" ? (
@@ -370,15 +430,22 @@ export default function BuilderPage() {
 
                 <div className="grid two">
                   <Field label="Prénom">
-                    <input value={config.firstName} onChange={(e) => update("firstName", e.target.value)} />
+                    <input placeholder="Ex. Julie" value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
                   </Field>
                   <Field label="Nom">
-                    <input value={config.lastName} onChange={(e) => update("lastName", e.target.value)} />
+                    <input placeholder="Ex. Martin" value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
                   </Field>
                 </div>
 
-                <Field label="Nom affiché du site">
-                  <input value={config.brandName} onChange={(e) => update("brandName", e.target.value)} />
+                <Field label="Nom affiché du site" hint="Nous le préremplissons avec votre nom. Vous pouvez le remplacer par votre marque si vous en avez une.">
+                  <input
+                    placeholder="Ex. Julie Martin Voyages"
+                    value={config.brandName}
+                    onChange={(e) => {
+                      setBrandTouched(true);
+                      update("brandName", e.target.value);
+                    }}
+                  />
                 </Field>
 
                 <div className="grid two">
@@ -386,16 +453,11 @@ export default function BuilderPage() {
                     <div className="slug-field premium-slug-field">
                       <input
                         value={config.slug}
-                        onChange={(e) =>
-                          update(
-                            "slug",
-                            e.target.value
-                              .toLowerCase()
-                              .replace(/[^a-z0-9-]/g, "-")
-                              .replace(/-+/g, "-")
-                              .replace(/^-|-$/g, "")
-                          )
-                        }
+                        placeholder="julie-martin"
+                        onChange={(e) => {
+                          setSlugTouched(true);
+                          update("slug", slugify(e.target.value));
+                        }}
                       />
                       <span>.voyage…</span>
                     </div>
@@ -454,11 +516,15 @@ export default function BuilderPage() {
                   <span>01</span>
                   <div><b>Le premier message</b><p>Le visiteur doit comprendre en quelques secondes ce que vous lui proposez.</p></div>
                 </div>
+                <div className="question-prompt">
+                  <b>Imaginez qu'un ami arrive sur votre site.</b>
+                  <p>Que voulez-vous qu'il comprenne en premier ? Écrivez simplement avec vos mots, sans chercher une formulation parfaite.</p>
+                </div>
                 <Field label="Titre principal">
-                  <textarea rows={2} value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
+                  <textarea rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
                 <Field label="Introduction">
-                  <textarea rows={5} value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
+                  <textarea rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
                 </Field>
 
                 <div className="section-kicker">
@@ -466,7 +532,7 @@ export default function BuilderPage() {
                   <div><b>Votre histoire</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
                 </div>
                 <Field label="Votre présentation">
-                  <textarea rows={7} value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
+                  <textarea rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
                 <div className="helper-card premium-helper-card ai-helper">
                   <span className="helper-icon">✦</span>
@@ -487,10 +553,10 @@ export default function BuilderPage() {
                   <span>01</span>
                   <div><b>Votre rendez-vous</b><p>Un seul lien suffit pour transformer l'intérêt en échange.</p></div>
                 </div>
-                <Field label="Texte du bouton">
-                  <input value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
+                <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton principal de votre site.">
+                  <input placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
-                <Field label="Lien de rendez-vous" hint="Calendly, Google Calendar ou autre lien HTTPS.">
+                <Field label="Lien de rendez-vous" hint="Facultatif pour commencer. Copiez ici l'adresse de votre page Calendly, Google Calendar ou d'un autre agenda.">
                   <input
                     type="url"
                     placeholder="https://..."
@@ -539,7 +605,7 @@ export default function BuilderPage() {
                   <span className="option-toggle" aria-hidden="true"><i /></span>
                   <div>
                     <b>Mes voyages</b>
-                    <p>Ajouter une section permettant de publier des carnets personnels comme Marrakech ou l'Andalousie.</p>
+                    <p>Activez cette option si vous souhaitez partager vos propres voyages et photos. Vous pourrez la désactiver plus tard.</p>
                   </div>
                 </label>
 
@@ -585,6 +651,25 @@ export default function BuilderPage() {
                   </div>
                 )}
 
+                <div className="review-checklist">
+                  <div className={config.firstName && config.lastName && config.brandName && config.slug ? "done" : ""}>
+                    <span>{config.firstName && config.lastName && config.brandName && config.slug ? "✓" : "1"}</span>
+                    <p><b>Identité</b><small>Nom du site et adresse</small></p>
+                  </div>
+                  <div className={config.heroTitle ? "done" : ""}>
+                    <span>{config.heroTitle ? "✓" : "2"}</span>
+                    <p><b>Message</b><small>Titre principal</small></p>
+                  </div>
+                  <div className={config.bookingUrl ? "done" : "optional"}>
+                    <span>{config.bookingUrl ? "✓" : "○"}</span>
+                    <p><b>Rendez-vous</b><small>{config.bookingUrl ? "Lien ajouté" : "Facultatif"}</small></p>
+                  </div>
+                  <div className="done">
+                    <span>✓</span>
+                    <p><b>Conformité</b><small>Gérée automatiquement</small></p>
+                  </div>
+                </div>
+
                 <div className="publish-summary premium-publish-summary">
                   <div><span>Adresse cible</span><strong>{targetPublicUrl}</strong></div>
                   <div><span>Langue</span><strong>{config.language === "both" ? "Français + English" : config.language.toUpperCase()}</strong></div>
@@ -629,7 +714,7 @@ export default function BuilderPage() {
             </button>
             {stepIndex < steps.length - 1 ? (
               <button type="button" className="primary premium-button" disabled={busy} onClick={() => go(1)}>
-                Continuer <span aria-hidden="true">→</span>
+                Continuer : {nextStepLabel} <span aria-hidden="true">→</span>
               </button>
             ) : null}
           </div>
@@ -649,7 +734,7 @@ export default function BuilderPage() {
           </div>
           <div className="preview-note">
             <span>✦</span>
-            <p>Chaque modification apparaît ici avant la publication.</p>
+            <p>Vous voyez le résultat en direct. Rien n'est public avant l'étape « Publication ».</p>
           </div>
         </aside>
       </div>
