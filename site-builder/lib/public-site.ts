@@ -67,7 +67,7 @@ export async function getPublicSite(slug: string): Promise<PublicSiteRecord | nu
   };
 }
 
-export function managedSiteUrl(slug: string) {
-  const root = process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN || "voyage.ajgsolutionsgroup.com";
-  return `https://${slug}.${root}`;
+export function publicSiteUrl(slug: string) {
+  const base = process.env.NEXT_PUBLIC_SITE_BUILDER_URL || "https://ajg-site-builder.vercel.app";
+  return `${base.replace(/\/$/, "")}/site/${encodeURIComponent(slug)}`;
 }
