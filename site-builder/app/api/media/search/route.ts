@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       next: { revalidate: 3600 }
     });
     if (!response.ok) throw new Error(`Openverse ${response.status}`);
-    const data = await response.json() as { results?: OpenverseItem[]; count?: number };
+    const data = await response.json() as { results?: OpenverseItem[]; result_count?: number; page_count?: number };
     const results = (data.results || []).flatMap((item) => {
       const url = safeHttpsUrl(item.url);
       const sourceUrl = safeHttpsUrl(item.foreign_landing_url);
@@ -43,7 +43,12 @@ export async function GET(request: NextRequest) {
       };
       return [{ ...choice, thumbnail: safeHttpsUrl(item.thumbnail) || url }];
     });
-    return NextResponse.json({ results, hasMore: page < 5 && page * 18 < (data.count || 0) }, { headers: { "Cache-Control": "public, s-maxage=3600" } });
+    const hasMore = page < 5 && (typeof data.page_count === "number"
+      ? page < data.page_count
+      : typeof data.result_count === "number"
+        ? page * 18 < data.result_count
+        : (data.results || []).length === 18);
+    return NextResponse.json({ results, hasMore }, { headers: { "Cache-Control": "public, s-maxage=3600" } });
   } catch {
     return NextResponse.json({ error: "La médiathèque est indisponible pour le moment. Réessayez plus tard." }, { status: 503 });
   }
