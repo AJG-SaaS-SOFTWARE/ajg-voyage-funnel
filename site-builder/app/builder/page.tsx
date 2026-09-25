@@ -168,7 +168,6 @@ export default function BuilderPage() {
 
   const publicPath = "/site/" + config.slug;
   const betaPublicUrl = origin ? origin + publicPath : publicPath;
-  const targetPublicUrl = config.slug ? config.slug + ".voyage.ajgsolutionsgroup.com" : "Votre sous-domaine";
 
   const copyPublicUrl = async () => {
     try {
@@ -301,15 +300,15 @@ export default function BuilderPage() {
   })();
 
   const errors = useMemo(() => {
-    const next: string[] = [];
-    if (!config.firstName.trim()) next.push("Prénom manquant");
-    if (!config.lastName.trim()) next.push("Nom manquant");
-    if (!config.brandName.trim()) next.push("Nom du site manquant");
-    if (!config.slug.trim()) next.push("Sous-domaine manquant");
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push("Sous-domaine invalide");
-    if (!config.heroTitle.trim()) next.push("Titre principal manquant");
+    const next: { message: string; step: StepKey }[] = [];
+    if (!config.firstName.trim()) next.push({ message: "Prénom manquant", step: "identity" });
+    if (!config.lastName.trim()) next.push({ message: "Nom manquant", step: "identity" });
+    if (!config.brandName.trim()) next.push({ message: "Nom du site manquant", step: "identity" });
+    if (!config.slug.trim()) next.push({ message: "Adresse du site manquante", step: "identity" });
+    else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push({ message: "Adresse du site invalide", step: "identity" });
+    if (!config.heroTitle.trim()) next.push({ message: "Titre principal manquant", step: "story" });
     if (bookingLinkStatus === "invalid") {
-      next.push("Lien de rendez-vous invalide");
+      next.push({ message: "Lien de rendez-vous invalide", step: "booking" });
     }
     return next;
   }, [config, bookingLinkStatus]);
@@ -476,7 +475,7 @@ export default function BuilderPage() {
           <div className="step-nav-footer">
             <span>Site</span>
             <strong>{config.brandName || "Nouveau site"}</strong>
-            <small>{targetPublicUrl}</small>
+            <small>{config.slug ? publicPath : "Adresse à définir"}</small>
           </div>
         </aside>
 
@@ -708,7 +707,7 @@ export default function BuilderPage() {
                   <span>01</span>
                   <div><b>Votre rendez-vous</b><p>Un seul lien suffit pour transformer l'intérêt en échange.</p></div>
                 </div>
-                <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton principal de votre site.">
+                <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous.">
                   <input placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
                 <Field label="Lien de rendez-vous" hint="Facultatif. Le lien doit commencer par https:// et contenir l'adresse complète de votre page.">
@@ -802,7 +801,16 @@ export default function BuilderPage() {
                 {errors.length ? (
                   <div className="error-card premium-error-card">
                     <b>À corriger avant publication</b>
-                    <ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul>
+                    <ul>{errors.map((error) => (
+                      <li key={error.message}>
+                        <button type="button" className="review-error-link" onClick={() => {
+                          setStep(error.step);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}>
+                          {error.message} · Corriger dans « {steps.find((item) => item.key === error.step)?.label} »
+                        </button>
+                      </li>
+                    ))}</ul>
                   </div>
                 ) : (
                   <div className="success-card premium-success-card review-success">
@@ -837,7 +845,7 @@ export default function BuilderPage() {
                 </div>
 
                 <div className="publish-summary premium-publish-summary">
-                  <div><span>Adresse cible</span><strong>{targetPublicUrl}</strong></div>
+                  <div><span>Lien du site après publication</span><strong>{betaPublicUrl}</strong></div>
                   <div><span>Langue</span><strong>{config.language === "both" ? "Français + English" : config.language.toUpperCase()}</strong></div>
                   <div><span>Stockage</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
                   <div><span>État</span><strong>{published ? "Publié" : "Prêt à publier"}</strong></div>
