@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import type { SiteConfig, SiteLanguage } from "./site-config";
+import { normalizeSiteDesign } from "./site-design";
 
 export type PublicSiteRecord = {
   id: string;
@@ -33,7 +34,8 @@ function configFromRow(row: any): SiteConfig {
     profileImageUrl: row.profile_image_url,
     showTravelJournals: row.show_travel_journals,
     instagramUrl: row.instagram_url,
-    facebookUrl: row.facebook_url
+    facebookUrl: row.facebook_url,
+    design: normalizeSiteDesign(row.design_assets)
   };
 }
 
