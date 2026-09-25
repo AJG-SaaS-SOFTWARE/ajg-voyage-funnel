@@ -15,12 +15,13 @@ type OpenverseItem = {
 export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type");
   const query = request.nextUrl.searchParams.get("q")?.trim() || "";
-  if ((type !== "image" && type !== "audio") || !query || query.length > 80) {
+  const page = Number(request.nextUrl.searchParams.get("page") || "1");
+  if ((type !== "image" && type !== "audio") || !query || query.length > 80 || !Number.isInteger(page) || page < 1 || page > 5) {
     return NextResponse.json({ error: "Choisissez un type et une recherche de 80 caractères maximum." }, { status: 400 });
   }
 
   const endpoint = new URL(`https://api.openverse.org/v1/${type === "image" ? "images" : "audio"}/`);
-  endpoint.search = new URLSearchParams({ q: query, license: "cc0", page_size: "18", mature: "false" }).toString();
+  endpoint.search = new URLSearchParams({ q: query, license: "cc0", page_size: "18", page: String(page), mature: "false" }).toString();
 
   try {
     const response = await fetch(endpoint, {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       next: { revalidate: 3600 }
     });
     if (!response.ok) throw new Error(`Openverse ${response.status}`);
-    const data = await response.json() as { results?: OpenverseItem[] };
+    const data = await response.json() as { results?: OpenverseItem[]; count?: number };
     const results = (data.results || []).flatMap((item) => {
       const url = safeHttpsUrl(item.url);
       const sourceUrl = safeHttpsUrl(item.foreign_landing_url);
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
       };
       return [{ ...choice, thumbnail: safeHttpsUrl(item.thumbnail) || url }];
     });
-    return NextResponse.json({ results }, { headers: { "Cache-Control": "public, s-maxage=3600" } });
+    return NextResponse.json({ results, hasMore: page < 5 && page * 18 < (data.count || 0) }, { headers: { "Cache-Control": "public, s-maxage=3600" } });
   } catch {
     return NextResponse.json({ error: "La médiathèque est indisponible pour le moment. Réessayez plus tard." }, { status: 503 });
   }
