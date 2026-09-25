@@ -550,10 +550,10 @@ export default function BuilderPage() {
 
                 <div className="grid two">
                   <Field label="Prénom">
-                    <input placeholder="Ex. Julie" value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
+                    <input spellCheck placeholder="Ex. Julie" value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
                   </Field>
                   <Field label="Nom">
-                    <input placeholder="Ex. Martin" value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
+                    <input spellCheck placeholder="Ex. Martin" value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
                   </Field>
                 </div>
 
@@ -605,7 +605,7 @@ export default function BuilderPage() {
                     label="Photo de profil"
                     hint="JPEG, PNG, WebP ou AVIF · 8 Mo maximum. La photo est stockée dans votre espace Supabase."
                   >
-                    <input className="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
+                    <input spellCheck className="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
                   </Field>
                 ) : (
                   <Field label="Photo de profil — URL" hint="L'upload direct fonctionne dès que Supabase est configuré.">
@@ -715,7 +715,7 @@ export default function BuilderPage() {
                   <p>La version préparée n'est qu'un point de départ. Changez les mots pour qu'ils vous ressemblent vraiment.</p>
                 </div>
                 <Field label="Petite phrase au-dessus du titre" hint="Facultatif. Exemple : Voyagez autrement · partagez davantage.">
-                  <input maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
+                  <input spellCheck maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
                 </Field>
                 <AiTextAssistant
                   field="heroTagline"
@@ -730,7 +730,7 @@ export default function BuilderPage() {
                   placeholder="Ex. Une phrase chaleureuse et très courte sur le plaisir de voyager autrement"
                 />
                 <Field label="Titre principal">
-                  <textarea rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
+                  <textarea spellCheck rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="heroTitle"
@@ -745,7 +745,7 @@ export default function BuilderPage() {
                   placeholder="Ex. Un titre simple, rassurant et premium pour des personnes qui aiment voyager"
                 />
                 <Field label="Introduction">
-                  <textarea rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
+                  <textarea spellCheck rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="heroSubtitle"
@@ -765,7 +765,7 @@ export default function BuilderPage() {
                   <div><b>Votre présentation</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
                 </div>
                 <Field label="Titre de la rubrique" hint="Facultatif. Votre nom est utilisé si ce champ reste vide.">
-                  <input maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
+                  <input spellCheck maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
                 </Field>
                 <AiTextAssistant
                   field="aboutHeading"
@@ -780,7 +780,7 @@ export default function BuilderPage() {
                   placeholder="Ex. Un titre personnel et simple, moins formel que « À propos »"
                 />
                 <Field label="Votre présentation">
-                  <textarea rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
+                  <textarea spellCheck rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="aboutText"
@@ -801,7 +801,7 @@ export default function BuilderPage() {
               <>
                 <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
                 <label className="option-card premium-option-card portrait-option">
-                  <input type="checkbox" checked={config.design.showPortrait} onChange={(event) => update("design", { ...config.design, showPortrait: event.target.checked })} />
+                  <input spellCheck type="checkbox" checked={config.design.showPortrait} onChange={(event) => update("design", { ...config.design, showPortrait: event.target.checked })} />
                   <span><b>Afficher le portrait dans l'accueil</b><p>Si vous n'avez pas ajouté de photo, vos initiales apparaissent. Décochez pour laisser davantage de place à l'image de fond.</p></span>
                 </label>
               </>
@@ -823,7 +823,7 @@ export default function BuilderPage() {
                   <div><b>Votre rendez-vous</b><p>Un seul lien suffit pour transformer l'intérêt en échange.</p></div>
                 </div>
                 <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous.">
-                  <input placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
+                  <input spellCheck placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="bookingLabel"
@@ -918,11 +918,11 @@ export default function BuilderPage() {
                   </div>
                   <p className="media-license-note">Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d'indépendance.</p>
                   <label className="option-card premium-option-card">
-                    <input type="checkbox" checked={config.design.showMwrLogo} onChange={(event) => update("design", { ...config.design, showMwrLogo: event.target.checked })} />
+                    <input spellCheck type="checkbox" checked={config.design.showMwrLogo} onChange={(event) => update("design", { ...config.design, showMwrLogo: event.target.checked })} />
                     <span><b>Afficher le logo MWR Life « Independent Distributor »</b><p>Je confirme pouvoir utiliser ce visuel dans le cadre de mon activité.</p></span>
                   </label>
                   <label className="option-card premium-option-card">
-                    <input type="checkbox" checked={config.design.showTravelAdvantageLogo} onChange={(event) => update("design", { ...config.design, showTravelAdvantageLogo: event.target.checked })} />
+                    <input spellCheck type="checkbox" checked={config.design.showTravelAdvantageLogo} onChange={(event) => update("design", { ...config.design, showTravelAdvantageLogo: event.target.checked })} />
                     <span><b>Afficher le logo Travel Advantage « Independent Distributor »</b><p>Je confirme pouvoir utiliser ce visuel dans le cadre de mon activité.</p></span>
                   </label>
                 </> : <div className="helper-card premium-helper-card">
@@ -955,10 +955,10 @@ export default function BuilderPage() {
                 ) : (
                   <div className="success-card premium-success-card review-success">
                     <div>
-                      <b>{remoteMode ? "Le site est prêt à être publié." : "Le site est prêt pour le prototype local."}</b>
+                      <b>{remoteMode ? "Contrôle qualité structurel réussi." : "Le site est prêt pour le prototype local."}</b>
                       <p>
                         {remoteMode
-                          ? "Les informations essentielles sont présentes. Vous pouvez lancer la publication."
+                          ? "Identité, message, liens requis et conformité structurelle sont cohérents. Relisez l'aperçu visuel avant publication."
                           : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil."}
                       </p>
                     </div>
