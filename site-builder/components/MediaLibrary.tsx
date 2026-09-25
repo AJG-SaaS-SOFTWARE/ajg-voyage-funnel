@@ -37,6 +37,8 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [nextPage, setNextPage] = useState<number | null>(null);
+  const activeSearch = useRef<{ term: string; mediaType: "image" | "audio" } | null>(null);
   const request = useRef<AbortController | null>(null);
 
   useEffect(() => () => request.current?.abort(), []);
@@ -46,27 +48,34 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
     setLoading(false);
     setType(next);
     setResults([]);
+    setNextPage(null);
+    activeSearch.current = null;
     setError("");
     setSearched(false);
     setQuery(next === "image" ? "voyage" : "nature");
   };
 
-  const searchFor = async (term: string, mediaType: "image" | "audio") => {
+  const searchFor = async (term: string, mediaType: "image" | "audio", page = 1) => {
     if (!term.trim()) return;
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
     setLoading(true);
     setError("");
-    setResults([]);
+    if (page === 1) {
+      setResults([]);
+      setNextPage(null);
+      activeSearch.current = { term: term.trim(), mediaType };
+    }
     setSearched(true);
     try {
-      const params = new URLSearchParams({ type: mediaType, q: term.trim() });
+      const params = new URLSearchParams({ type: mediaType, q: term.trim(), page: String(page) });
       const response = await fetch(`/api/media/search?${params}`, { signal: controller.signal });
-      const data = await response.json() as { results?: SearchResult[]; error?: string };
+      const data = await response.json() as { results?: SearchResult[]; hasMore?: boolean; error?: string };
       if (controller.signal.aborted) return;
       if (!response.ok) throw new Error(data.error || "Recherche indisponible.");
-      setResults(data.results || []);
+      setResults((previous) => page === 1 ? (data.results || []) : [...previous, ...(data.results || []).filter((item) => !previous.some((existing) => existing.url === item.url))]);
+      setNextPage(data.hasMore ? page + 1 : null);
     } catch (cause) {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Recherche indisponible.");
     } finally {
@@ -150,6 +159,10 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
           </article>
         ))}
       </div>
+      {nextPage && activeSearch.current ? <button type="button" className="media-more" disabled={loading} onClick={() => {
+        const current = activeSearch.current;
+        if (current) void searchFor(current.term, current.mediaType, nextPage);
+      }}>{loading ? "Chargement…" : "Voir plus de résultats"}</button> : null}
       {(design.heroImage || design.audio) ? (
         <div className="media-selected">
           {design.heroImage ? <div className="media-selected-item"><img src={design.heroImage.url} alt="Aperçu de l'image choisie" /><p><b>Image choisie :</b> {design.heroImage.title} <button type="button" onClick={() => onChange({ ...design, heroImage: null })}>Retirer</button></p></div> : null}
