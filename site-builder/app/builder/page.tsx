@@ -100,6 +100,13 @@ export default function BuilderPage() {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [brandTouched, setBrandTouched] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [guidedAnswers, setGuidedAnswers] = useState({
+    traveler: "",
+    discovery: "",
+    benefit: "",
+    audience: ""
+  });
+  const [guidedDraftReady, setGuidedDraftReady] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -217,6 +224,60 @@ export default function BuilderPage() {
 
   const nextStepLabel =
     stepIndex < steps.length - 1 ? steps[stepIndex + 1].label : "";
+
+  const sentence = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    return /[.!?]$/.test(trimmed) ? trimmed : trimmed + ".";
+  };
+
+  const createGuidedDraft = () => {
+    const english = config.language === "en";
+    const firstName = config.firstName.trim();
+    const traveler = sentence(guidedAnswers.traveler);
+    const discovery = sentence(guidedAnswers.discovery);
+    const benefit = sentence(guidedAnswers.benefit);
+    const audience = sentence(guidedAnswers.audience);
+
+    const heroTitle = english
+      ? "Discover another way to travel"
+      : "Découvrez une autre façon de voyager";
+
+    const heroSubtitleParts = [discovery, benefit].filter(Boolean);
+    const aboutParts = [
+      firstName
+        ? english
+          ? `My name is ${firstName}.`
+          : `Je m'appelle ${firstName}.`
+        : "",
+      traveler,
+      discovery,
+      benefit,
+      audience
+        ? english
+          ? "I created this site to share this experience with people who may find it useful. " + audience
+          : "J'ai créé ce site pour partager cette expérience avec les personnes à qui elle peut être utile. " + audience
+        : ""
+    ].filter(Boolean);
+
+    const nextConfig = {
+      ...config,
+      heroTitle,
+      heroSubtitle: heroSubtitleParts.join(" "),
+      aboutText: aboutParts.join(" ")
+    };
+
+    setConfig(nextConfig);
+    saveDraft(nextConfig);
+    setSaved(false);
+    setPublished(false);
+    setGuidedDraftReady(true);
+  };
+
+  const guidedDraftEnabled =
+    guidedAnswers.traveler.trim().length > 0 &&
+    guidedAnswers.discovery.trim().length > 0 &&
+    guidedAnswers.benefit.trim().length > 0;
 
   const errors = useMemo(() => {
     const next: string[] = [];
@@ -336,7 +397,7 @@ export default function BuilderPage() {
           <span className="brand-mark">A</span>
           <span>
             <strong>AJG Site Builder</strong>
-            <small>Prototype 0.8</small>
+            <small>Prototype 0.9</small>
           </span>
         </Link>
 
@@ -512,13 +573,87 @@ export default function BuilderPage() {
 
             {step === "story" ? (
               <>
+                <details className="guided-writing-card" open>
+                  <summary>
+                    <span className="guided-writing-icon">✦</span>
+                    <span>
+                      <b>Mode guidé recommandé</b>
+                      <small>Répondez à 3 questions simples : nous préparons une première version de vos textes.</small>
+                    </span>
+                    <span className="guided-writing-badge">Le plus simple</span>
+                  </summary>
+
+                  <div className="guided-writing-body">
+                    <p className="guided-writing-intro">
+                      Pas besoin de savoir rédiger un site. Répondez comme vous parleriez à quelqu'un.
+                      Vous pourrez modifier chaque phrase ensuite.
+                    </p>
+
+                    <label className="guided-question">
+                      <span><i>1</i> Quel type de voyageur êtes-vous ?</span>
+                      <textarea
+                        rows={3}
+                        placeholder="Ex. J'aime partir en couple ou avec des amis, découvrir les cultures locales et garder du temps pour profiter sur place."
+                        value={guidedAnswers.traveler}
+                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, traveler: e.target.value }))}
+                      />
+                    </label>
+
+                    <label className="guided-question">
+                      <span><i>2</i> Comment avez-vous découvert cette façon de voyager ?</span>
+                      <textarea
+                        rows={3}
+                        placeholder="Ex. Je cherchais surtout une solution pour mes propres voyages avant de penser à la recommander."
+                        value={guidedAnswers.discovery}
+                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, discovery: e.target.value }))}
+                      />
+                    </label>
+
+                    <label className="guided-question">
+                      <span><i>3</i> Qu'est-ce que vous appréciez le plus aujourd'hui ?</span>
+                      <textarea
+                        rows={3}
+                        placeholder="Ex. J'apprécie de pouvoir comparer plus facilement et de disposer de plusieurs outils au même endroit."
+                        value={guidedAnswers.benefit}
+                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, benefit: e.target.value }))}
+                      />
+                    </label>
+
+                    <label className="guided-question optional">
+                      <span><i>4</i> À qui souhaitez-vous surtout parler ? <em>facultatif</em></span>
+                      <textarea
+                        rows={2}
+                        placeholder="Ex. Aux personnes qui aiment voyager et veulent simplement regarder si le concept peut leur correspondre."
+                        value={guidedAnswers.audience}
+                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, audience: e.target.value }))}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      className="button primary premium-button guided-generate-button"
+                      disabled={!guidedDraftEnabled}
+                      onClick={createGuidedDraft}
+                    >
+                      {guidedDraftReady ? "✓ Textes préparés — actualiser" : "Préparer mes textes"}
+                      <span aria-hidden="true">→</span>
+                    </button>
+
+                    {!guidedDraftEnabled ? (
+                      <p className="guided-writing-help">Répondez aux 3 premières questions pour préparer vos textes.</p>
+                    ) : guidedDraftReady ? (
+                      <p className="guided-writing-success">Votre première version est prête juste en dessous. Relisez-la et modifiez ce qui ne vous ressemble pas.</p>
+                    ) : null}
+                  </div>
+                </details>
+
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Le premier message</b><p>Le visiteur doit comprendre en quelques secondes ce que vous lui proposez.</p></div>
+                  <div><b>Votre texte d'accueil</b><p>Le visiteur doit comprendre en quelques secondes ce que vous lui proposez.</p></div>
                 </div>
                 <div className="question-prompt">
-                  <b>Imaginez qu'un ami arrive sur votre site.</b>
-                  <p>Que voulez-vous qu'il comprenne en premier ? Écrivez simplement avec vos mots, sans chercher une formulation parfaite.</p>
+                  <b>Vous gardez toujours le dernier mot.</b>
+                  <p>La version préparée n'est qu'un point de départ. Changez les mots pour qu'ils vous ressemblent vraiment.</p>
                 </div>
                 <Field label="Titre principal">
                   <textarea rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
@@ -529,21 +664,11 @@ export default function BuilderPage() {
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Votre histoire</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
+                  <div><b>Votre présentation</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
                 </div>
                 <Field label="Votre présentation">
                   <textarea rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
-                <div className="helper-card premium-helper-card ai-helper">
-                  <span className="helper-icon">✦</span>
-                  <div>
-                    <b>Assistant rédactionnel — prochaine étape</b>
-                    <p>
-                      L'IA pourra transformer quelques réponses personnelles en proposition de texte,
-                      tout en vous laissant la validation finale.
-                    </p>
-                  </div>
-                </div>
               </>
             ) : null}
 
