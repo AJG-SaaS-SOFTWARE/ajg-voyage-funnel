@@ -1737,3 +1737,154 @@ button.active .step-label small{color:#63817f}
   .published-share-actions{width:100%}
   .published-share-actions .button{flex:1}
 }
+
+
+/* 0.8 — parcours guidé pour débutants */
+.beginner-promise{
+  margin-top:14px;
+  padding:11px 12px;
+  display:flex;
+  gap:9px;
+  align-items:flex-start;
+  border:1px solid rgba(12,159,150,.12);
+  border-radius:13px;
+  background:rgba(238,249,247,.74);
+}
+.beginner-promise span{
+  width:19px;height:19px;
+  flex:0 0 auto;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:#dff5f1;
+  color:#0b948b;
+  font-size:.6rem;
+  font-weight:800;
+}
+.beginner-promise p{
+  margin:0;
+  color:#607177;
+  font-size:.64rem;
+  line-height:1.5;
+}
+
+.step-guidance-card{
+  margin:0 0 24px;
+  padding:15px 16px;
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  border:1px solid rgba(12,159,150,.13);
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(237,249,247,.95),rgba(255,255,255,.94));
+}
+.step-guidance-icon{
+  width:32px;height:32px;
+  flex:0 0 auto;
+  display:grid;place-items:center;
+  border-radius:11px;
+  background:#dff5f1;
+  color:#0b9289;
+  font-size:.78rem;
+  font-weight:800;
+}
+.step-guidance-card span{
+  display:block;
+  margin-bottom:4px;
+  color:#0a8179;
+  font-size:.6rem;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.step-guidance-card p{
+  margin:0;
+  color:#5f7075;
+  font-size:.72rem;
+  line-height:1.55;
+}
+
+.question-prompt{
+  margin:-4px 0 20px;
+  padding:15px 16px;
+  border-left:3px solid rgba(211,162,74,.72);
+  border-radius:0 13px 13px 0;
+  background:rgba(253,248,237,.72);
+}
+.question-prompt b{
+  display:block;
+  margin-bottom:4px;
+  color:#4c4540;
+  font-size:.72rem;
+}
+.question-prompt p{
+  margin:0;
+  color:#81766b;
+  font-size:.67rem;
+  line-height:1.5;
+}
+
+.review-checklist{
+  margin:0 0 18px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.review-checklist>div{
+  min-width:0;
+  padding:12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid rgba(16,33,43,.08);
+  border-radius:13px;
+  background:#fafaf8;
+}
+.review-checklist>div>span{
+  width:27px;height:27px;
+  flex:0 0 auto;
+  display:grid;place-items:center;
+  border-radius:9px;
+  background:#ecefed;
+  color:#7f898b;
+  font-size:.66rem;
+  font-weight:800;
+}
+.review-checklist>div.done{
+  background:#f1f8f5;
+  border-color:rgba(91,137,111,.15);
+}
+.review-checklist>div.done>span{
+  background:#dfeee5;
+  color:#52775f;
+}
+.review-checklist>div.optional>span{
+  background:#f8f1e5;
+  color:#a4772d;
+}
+.review-checklist p{
+  min-width:0;
+  margin:0;
+}
+.review-checklist b,.review-checklist small{
+  display:block;
+}
+.review-checklist b{
+  color:#34484f;
+  font-size:.68rem;
+}
+.review-checklist small{
+  margin-top:2px;
+  color:#8a9497;
+  font-size:.58rem;
+}
+
+.premium-field input::placeholder,
+.premium-field textarea::placeholder{
+  color:#a3aaac;
+  opacity:1;
+}
+
+@media(max-width:700px){
+  .step-guidance-card{padding:13px}
+  .review-checklist{grid-template-columns:1fr}
+}
