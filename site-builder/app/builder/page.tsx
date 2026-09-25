@@ -141,7 +141,7 @@ export default function BuilderPage() {
 
   const publicPath = "/site/" + config.slug;
   const betaPublicUrl = origin ? origin + publicPath : publicPath;
-  const targetPublicUrl = config.slug + ".voyage.ajgsolutionsgroup.com";
+  const targetPublicUrl = config.slug ? config.slug + ".voyage.ajgsolutionsgroup.com" : "Votre sous-domaine";
 
   const copyPublicUrl = async () => {
     try {
@@ -287,7 +287,7 @@ export default function BuilderPage() {
           <span className="brand-mark">A</span>
           <span>
             <strong>AJG Site Builder</strong>
-            <small>Prototype 0.7</small>
+            <small>Prototype 0.7.1</small>
           </span>
         </Link>
 
