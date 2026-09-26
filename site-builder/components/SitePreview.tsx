@@ -50,6 +50,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
 
       <footer>
         {siteDisclaimer(config)}
+        <div className="preview-legal-links"><span>Mentions légales</span><span>Confidentialité</span><span>Cookies</span></div>
         {config.affiliation === "mwr" && (config.design.showMwrLogo || config.design.showTravelAdvantageLogo) ? <div className="preview-brand-marks">
           {config.design.showMwrLogo ? <img src="/logos/mwr-life-independent.svg" alt="MWR Life — distributeur indépendant" /> : null}
           {config.design.showTravelAdvantageLogo ? <img src="/logos/travel-advantage-independent.svg" alt="Travel Advantage — distributeur indépendant" /> : null}
