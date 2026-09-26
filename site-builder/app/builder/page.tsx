@@ -404,7 +404,7 @@ export default function BuilderPage() {
     const punctuation = sentences.every((text) => /[.!?…]$/.test(text.trim()));
     checks.push({ label: "Ponctuation", detail: punctuation ? "Les paragraphes principaux se terminent correctement." : "Vérifiez la ponctuation de l’introduction et de la présentation.", status: punctuation ? "pass" : "warn", step: "story" });
     return checks;
-  }, [config, bookingLinkStatus, config.design]);
+  }, [config, bookingLinkStatus]);
 
   const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
   const qualityWarnings = qualityChecks.length - qualityPassed;
