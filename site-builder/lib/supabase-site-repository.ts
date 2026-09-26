@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { defaultSiteConfig, type SiteConfig, type SiteLanguage } from "./site-config";
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import { normalizeSiteDesign } from "./site-design";
+import { normalizeSiteLegalConfig } from "./site-legal";
 
 export type RemoteSite = {
   id: string;
@@ -47,14 +48,15 @@ function configFromRow(row: any): SiteConfig {
     instagramUrl: row.instagram_url,
     facebookUrl: row.facebook_url,
     design: normalizeSiteDesign(row.design_assets),
-    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr"
+    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr",
+    legal: normalizeSiteLegalConfig(row.legal_config)
   };
 }
 
 function draftFromRow(row: any, draft: any): SiteConfig {
   const published = configFromRow(row);
   if (!draft || typeof draft !== "object") return published;
-  return { ...defaultSiteConfig, ...published, ...draft, design: normalizeSiteDesign(draft.design ?? published.design) };
+  return { ...defaultSiteConfig, ...published, ...draft, design: normalizeSiteDesign(draft.design ?? published.design), legal: normalizeSiteLegalConfig(draft.legal ?? published.legal) };
 }
 
 function payload(user: User, config: SiteConfig, status: "draft" | "published") {
@@ -77,6 +79,7 @@ function payload(user: User, config: SiteConfig, status: "draft" | "published") 
     instagram_url: config.instagramUrl,
     facebook_url: config.facebookUrl,
     design_assets: config.design,
+    legal_config: config.legal,
     profile_image_url: config.profileImageUrl,
     show_travel_journals: config.showTravelJournals,
     compliance_profile: config.affiliation === "independent" ? "independent-v1" : "mwr-life-independent-ambassador-v1",
