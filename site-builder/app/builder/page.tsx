@@ -63,9 +63,9 @@ const steps = [
     key: "options",
     label: "Options",
     eyebrow: "Votre contenu",
-    description: "Vérifiez les éléments communs à tous les sites et les modules à venir.",
-    time: "1 min",
-    guidance: "Les carnets de voyage sont en préparation. Votre site peut être publié sans attendre leur ouverture."
+    description: "Configurez les rubriques facultatives, leur contenu et leur ordre d'affichage.",
+    time: "2 min",
+    guidance: "Activez uniquement les rubriques utiles. Elles restent masquées tant qu'elles ne contiennent pas de contenu publiable."
   },
   {
     key: "review",
@@ -124,6 +124,7 @@ export default function BuilderPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [reviewResult, setReviewResult] = useState<{ issues: { field: keyof SiteConfig; reason: string }[]; suggestions: Record<string, string> } | null>(null);
   const [reviewing, setReviewing] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [changeVersion, setChangeVersion] = useState(0);
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const latestVersion = useRef(0);
@@ -1234,15 +1235,21 @@ export default function BuilderPage() {
               <p className="step">Aperçu live</p>
               <h2>{config.brandName}</h2>
             </div>
-            <Link href="/preview">Plein écran ↗</Link>
+            <div className="preview-heading-actions">
+              <div className="preview-device-switch" aria-label="Format de l'aperçu">
+                <button type="button" className={previewDevice === "desktop" ? "active" : ""} aria-pressed={previewDevice === "desktop"} onClick={() => setPreviewDevice("desktop")}>Ordinateur</button>
+                <button type="button" className={previewDevice === "mobile" ? "active" : ""} aria-pressed={previewDevice === "mobile"} onClick={() => setPreviewDevice("mobile")}>Mobile</button>
+              </div>
+              <Link href="/preview">Plein écran ↗</Link>
+            </div>
           </div>
-          <div className="preview-device-frame">
+          <div className={`preview-device-frame ${previewDevice === "mobile" ? "is-mobile" : "is-desktop"}`}>
             <div className="device-dots"><i /><i /><i /></div>
             <SitePreview config={config} compact />
           </div>
           <div className="preview-note">
             <span>✦</span>
-            <p>Vous voyez le résultat en direct. Rien n'est public avant l'étape « Publication ».</p>
+            <p>{previewDevice === "mobile" ? "Aperçu mobile simulé : vérifiez notamment le cadrage de la photo, la longueur des titres et les boutons." : "Vous voyez le résultat en direct. Rien n'est public avant l'étape « Publication »."}</p>
           </div>
         </aside>
       </div>
