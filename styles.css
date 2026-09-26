@@ -1971,3 +1971,22 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
     margin-top: 22px;
   }
 }
+
+
+/* V5.1 — proportions et rythme final des exemples concrets */
+@media (min-width: 901px) {
+  .proof-showcase {
+    grid-template-columns: minmax(0, 1.32fr) minmax(320px, 1fr);
+    column-gap: clamp(36px, 4.5vw, 68px);
+  }
+  .proof-showcase-heading {
+    margin-bottom: 20px;
+  }
+  .proof-showcase > .proof-carousel {
+    width: 100%;
+    max-width: 620px;
+  }
+  .proof-showcase-info {
+    padding-top: 0;
+  }
+}
