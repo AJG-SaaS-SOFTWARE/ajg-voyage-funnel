@@ -2303,3 +2303,20 @@ button.active .step-label small{color:#63817f}
 .preview-device-frame.is-mobile .public-actions,
 .preview-device-frame.is-mobile .site-module .button{width:100%}
 @media(max-width:650px){.preview-heading-actions{width:100%;justify-content:space-between}.preview-device-switch{order:1}}
+
+
+/* Personal background controls */
+.photo-background-editor{display:grid;gap:0}
+.photo-background-editor>b{margin-bottom:4px}
+.photo-background-editor>p{margin:10px 0 18px}
+.background-upload-field{display:grid!important;gap:9px!important;margin:0 0 18px}
+.background-upload-field input[type=file]{display:block}
+.background-upload-status{margin:-6px 0 16px!important}
+.background-photo-adjustments{display:grid;gap:20px;padding-top:2px}
+.background-remove-button{justify-self:start;margin:0}
+.background-position-control{display:grid!important;gap:9px!important}
+.background-position-control>span{display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:.88rem}
+.background-position-control>span strong{font-variant-numeric:tabular-nums;white-space:nowrap;color:#0b7f76}
+.background-position-control input[type=range]{width:100%;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#0c9f96}
+.background-position-control small{display:flex;justify-content:space-between;color:#7a868a;font-size:.68rem;line-height:1}
+@media(max-width:600px){.background-photo-adjustments{gap:18px}.background-remove-button{width:100%}}
