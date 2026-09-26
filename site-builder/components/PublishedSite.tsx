@@ -4,6 +4,7 @@ import { siteDisclaimer, type SiteConfig } from "../lib/site-config";
 import SoundControl from "./SoundControl";
 import SiteModulesView from "./SiteModulesView";
 import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
+import { legalIsComplete } from "../lib/site-legal";
 
 export default function PublishedSite({ config }: { config: SiteConfig }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
@@ -14,6 +15,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
   const english = config.language === "en";
   const actionLabel = config.bookingLabel;
   const { surface, ink } = surfaceInk(config.design);
+  const legalReady = legalIsComplete(config.legal, config.firstName, config.lastName);
   const backgroundImageStyle = {
     objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%`,
     ...(config.design.backgroundPhotoUrl
@@ -81,11 +83,11 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
           {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">Image : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}
           {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">Son : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}
         </div> : null}
-        <nav className="public-legal-links" aria-label={english ? "Legal information" : "Informations légales"}>
+        {legalReady ? <nav className="public-legal-links" aria-label={english ? "Legal information" : "Informations légales"}>
           <Link href={`/site/${encodeURIComponent(config.slug)}/mentions-legales`}>{english ? "Legal notice" : "Mentions légales"}</Link>
           <Link href={`/site/${encodeURIComponent(config.slug)}/confidentialite`}>{english ? "Privacy" : "Confidentialité"}</Link>
           <Link href={`/site/${encodeURIComponent(config.slug)}/cookies`}>Cookies</Link>
-        </nav>
+        </nav> : null}
       </footer>
     </div>
   );
