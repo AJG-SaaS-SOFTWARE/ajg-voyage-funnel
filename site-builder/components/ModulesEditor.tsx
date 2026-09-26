@@ -1,12 +1,47 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import type { SiteModules } from "../lib/site-design";
+import type { SiteModuleKey, SiteModules } from "../lib/site-design";
 
 export default function ModulesEditor({ modules, onChange, onImage, uploading }: { modules: SiteModules; onChange: (value: SiteModules) => void; onImage: (event: ChangeEvent<HTMLInputElement>) => void; uploading: boolean }) {
   const change = <K extends keyof SiteModules>(key: K, value: SiteModules[K]) => onChange({ ...modules, [key]: value });
+  const moduleLabels: Record<SiteModuleKey, string> = {
+    gallery: "Galerie / Voyages",
+    faq: "FAQ",
+    testimonials: "Témoignages",
+    video: "Vidéo",
+    figures: "Chiffres clés",
+    benefits: "Avantages",
+    contact: "Contact"
+  };
+  const isEnabled = (key: SiteModuleKey) => modules[key].enabled;
+  const moveModule = (key: SiteModuleKey, direction: -1 | 1) => {
+    const index = modules.order.indexOf(key);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= modules.order.length) return;
+    const next = [...modules.order];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    change("order", next);
+  };
+
   return <div className="modules-editor">
     <p>Chaque rubrique apparaît uniquement si elle est activée et contient au moins un élément complet.</p>
+    <section className="module-editor module-order-editor">
+      <div>
+        <b>Ordre des rubriques</b>
+        <p>Organisez les sections dans l'ordre où elles apparaîtront dans l'aperçu et sur le site publié.</p>
+      </div>
+      <div className="module-order-list">
+        {modules.order.map((key, index) => <div className="module-order-row" key={key}>
+          <span className="module-order-index">{index + 1}</span>
+          <span><b>{moduleLabels[key]}</b><small>{isEnabled(key) ? "Activée" : "Désactivée"}</small></span>
+          <div className="module-order-actions">
+            <button type="button" className="secondary" aria-label={`Monter ${moduleLabels[key]}`} disabled={index === 0} onClick={() => moveModule(key, -1)}>↑</button>
+            <button type="button" className="secondary" aria-label={`Descendre ${moduleLabels[key]}`} disabled={index === modules.order.length - 1} onClick={() => moveModule(key, 1)}>↓</button>
+          </div>
+        </div>)}
+      </div>
+    </section>
     <section className="module-editor"><label><input type="checkbox" checked={modules.gallery.enabled} onChange={(e) => change("gallery", { ...modules.gallery, enabled: e.target.checked })} /> <b>Galerie / Voyages</b></label>
       {modules.gallery.enabled ? <div className="module-fields"><label>Titre<input value={modules.gallery.title} maxLength={100} onChange={(e) => change("gallery", { ...modules.gallery, title: e.target.value })} /></label><label>Ajouter une photo personnelle<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploading || modules.gallery.images.length >= 12} onChange={onImage} /></label>{modules.gallery.images.map((image, index) => <div className="module-row" key={index}><img src={image.url} alt="" /><input aria-label={`Légende photo ${index + 1}`} placeholder="Légende facultative" value={image.caption} onChange={(e) => change("gallery", { ...modules.gallery, images: modules.gallery.images.map((item, i) => i === index ? { ...item, caption: e.target.value } : item) })} /><button type="button" onClick={() => change("gallery", { ...modules.gallery, images: modules.gallery.images.filter((_, i) => i !== index) })}>Retirer</button></div>)}</div> : null}
     </section>
