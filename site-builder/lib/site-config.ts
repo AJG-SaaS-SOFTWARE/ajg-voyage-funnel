@@ -1,4 +1,5 @@
 import { defaultSiteDesign, type SiteDesign } from "./site-design";
+import { defaultSiteLegalConfig, type SiteLegalConfig } from "./site-legal";
 
 export type SiteLanguage = "fr" | "en" | "both";
 
@@ -21,6 +22,7 @@ export type SiteConfig = {
   facebookUrl: string;
   design: SiteDesign;
   affiliation: "mwr" | "independent";
+  legal: SiteLegalConfig;
 };
 
 export const requiredDisclaimer =
@@ -59,5 +61,6 @@ export const defaultSiteConfig: SiteConfig = {
   instagramUrl: "",
   facebookUrl: "",
   design: defaultSiteDesign,
-  affiliation: "mwr"
+  affiliation: "mwr",
+  legal: defaultSiteLegalConfig
 };
