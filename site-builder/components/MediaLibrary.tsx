@@ -151,13 +151,30 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
           ))}
         </div>
       </fieldset>
-      {design.pattern !== "none" ? <fieldset className="design-fieldset">
+      {design.pattern !== "none" ? <>
+      <fieldset className="design-fieldset">
+        <legend>Couleur du motif</legend>
+        <p className="field-help">Automatique utilise la couleur d’accent du site. Vous pouvez aussi choisir une teinte indépendante.</p>
+        <div className="custom-color-row">
+          <button type="button" className={!design.patternColor ? "secondary active" : "secondary"} aria-pressed={!design.patternColor} onClick={() => onChange({ ...design, patternColor: "" })}>Automatique</button>
+          <label>Couleur personnalisée
+            <input type="color" value={design.patternColor || design.accent} onChange={(event) => onChange({ ...design, patternColor: event.target.value })} />
+          </label>
+          <label>Code HEX
+            <input type="text" value={design.patternColor || design.accent} maxLength={7} spellCheck={false} onChange={(event) => {
+              const value = event.target.value;
+              if (/^#[0-9a-fA-F]{6}$/.test(value)) onChange({ ...design, patternColor: value });
+            }} />
+          </label>
+        </div>
+      </fieldset>
+      <fieldset className="design-fieldset">
         <legend>Intensité du motif</legend>
         <div className="media-type-tabs">
           <label className="strength-choice"><input type="radio" name="pattern-strength" checked={design.patternStrength === "soft"} onChange={() => onChange({ ...design, patternStrength: "soft" })} /> Discret</label>
           <label className="strength-choice"><input type="radio" name="pattern-strength" checked={design.patternStrength === "bold"} onChange={() => onChange({ ...design, patternStrength: "bold" })} /> Marqué</label>
         </div>
-      </fieldset> : null}
+      </fieldset></> : null}
 
       <div className="section-kicker">
         <span>02</span>
