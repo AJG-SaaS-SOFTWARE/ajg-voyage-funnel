@@ -2320,3 +2320,32 @@ button.active .step-label small{color:#63817f}
 .background-position-control input[type=range]{width:100%;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#0c9f96}
 .background-position-control small{display:flex;justify-content:space-between;color:#7a868a;font-size:.68rem;line-height:1}
 @media(max-width:600px){.background-photo-adjustments{gap:18px}.background-remove-button{width:100%}}
+
+
+/* Explicit visibility controls */
+.visibility-options-stack{display:grid;gap:12px;margin-bottom:16px}
+.visibility-option{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:16px 18px;border:1px solid rgba(16,33,43,.12);border-radius:17px;background:#fff;cursor:pointer;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.visibility-option:hover{border-color:rgba(12,159,150,.28)}
+.visibility-option.is-active{border-color:rgba(12,159,150,.34);background:linear-gradient(135deg,#f1fbf9,#fbfefd);box-shadow:0 9px 24px rgba(12,159,150,.055)}
+.visibility-option.is-inactive{background:#f7f7f5}
+.visibility-option-input{position:absolute!important;inline-size:1px!important;block-size:1px!important;opacity:0!important;pointer-events:none}
+.visibility-switch{position:relative;width:46px;height:26px;border-radius:999px;background:#cdd3d1;box-shadow:inset 0 0 0 1px rgba(16,33,43,.08);transition:background .18s ease}
+.visibility-switch i{position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(16,33,43,.18);transition:transform .18s ease}
+.visibility-option.is-active .visibility-switch{background:#0ca89e}
+.visibility-option.is-active .visibility-switch i{transform:translateX(20px)}
+.visibility-option:has(.visibility-option-input:focus-visible){outline:3px solid rgba(12,159,150,.22);outline-offset:2px}
+.visibility-option-copy{display:grid;gap:5px;min-width:0}
+.visibility-option-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.visibility-option-heading>b{font-size:.9rem;color:#172b33}
+.visibility-option-heading em{font-style:normal;padding:4px 8px;border-radius:999px;background:#e5e8e6;color:#66736f;font-size:.62rem;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+.visibility-option.is-active .visibility-option-heading em{background:#d8f4ee;color:#08776f}
+.visibility-option-copy small{color:#68767a;line-height:1.45}
+.visibility-option-logo{width:auto;max-width:118px;height:42px;object-fit:contain;background:#fff;border:1px solid rgba(16,33,43,.08);border-radius:8px;padding:5px;opacity:.55;transition:opacity .18s ease}
+.visibility-option.is-active .visibility-option-logo{opacity:1}
+.booking-visibility-summary{display:flex;align-items:flex-start;gap:12px;margin:0 0 18px;padding:13px 15px;border:1px solid #d8e9e5;border-radius:14px;background:#f2faf8}
+.booking-visibility-summary>span{flex:0 0 auto;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:#daf4ed;color:#08766c;font-weight:900}
+.booking-visibility-summary b{display:block;font-size:.78rem;margin:1px 0 3px}
+.booking-visibility-summary p{margin:0;color:#61716f;font-size:.72rem;line-height:1.5}
+.booking-visibility-summary.warning{border-color:#eadfc8;background:#fffaf1}
+.booking-visibility-summary.warning>span{background:#fff0cd;color:#90600b}
+@media(max-width:620px){.visibility-option{grid-template-columns:auto minmax(0,1fr)}.visibility-option-logo{grid-column:2;justify-self:start}.visibility-option-heading{align-items:flex-start}.visibility-option-heading em{margin-left:0}}
