@@ -30,7 +30,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
         </div> : null}
       </section>
 
-      <SiteModulesView modules={config.design.modules} />
+      <SiteModulesView modules={config.design.modules} english={english} />
 
       {config.aboutText.trim() ? <section className="preview-about">
         <p className="mini">{english ? "About me" : "Qui suis-je ?"}</p>
