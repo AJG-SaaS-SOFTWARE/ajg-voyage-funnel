@@ -52,7 +52,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
           <p>{config.aboutText}</p>
         </section> : null}
 
-        <SiteModulesView modules={config.design.modules} />
+        <SiteModulesView modules={config.design.modules} english={english} />
 
       </main>
 
