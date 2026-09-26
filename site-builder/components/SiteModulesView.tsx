@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import ConsentVideo from "./ConsentVideo";
 import { defaultSiteModules, type SiteModuleKey, type SiteModules } from "../lib/site-design";
 
 export default function SiteModulesView({ modules, english = false }: { modules: SiteModules; english?: boolean }) {
@@ -83,9 +84,7 @@ export default function SiteModulesView({ modules, english = false }: { modules:
         return videoId ? (
           <section className="site-module" id="video">
             <h2>{titleFor("video")}</h2>
-            <div className="module-video">
-              <iframe src={`https://www.youtube-nocookie.com/embed/${videoId}`} title={titleFor("video")} loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-            </div>
+            <ConsentVideo videoId={videoId} title={titleFor("video")} english={english} />
           </section>
         ) : null;
       case "figures":
