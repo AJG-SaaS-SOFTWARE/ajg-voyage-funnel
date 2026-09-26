@@ -42,6 +42,11 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
   const [nextPage, setNextPage] = useState<number | null>(null);
+  const [accentHex, setAccentHex] = useState(design.accent);
+  const [patternHex, setPatternHex] = useState(design.patternColor || design.accent);
+
+  useEffect(() => setAccentHex(design.accent), [design.accent]);
+  useEffect(() => setPatternHex(design.patternColor || design.accent), [design.patternColor, design.accent]);
   const activeSearch = useRef<{ term: string; mediaType: "image" | "audio" } | null>(null);
   const request = useRef<AbortController | null>(null);
 
@@ -118,10 +123,11 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
             <input type="color" value={design.accent} onChange={(event) => onChange({ ...design, accent: event.target.value })} />
           </label>
           <label>Code HEX
-            <input type="text" value={design.accent} maxLength={7} spellCheck={false} onChange={(event) => {
+            <input type="text" value={accentHex} maxLength={7} spellCheck={false} onChange={(event) => {
               const value = event.target.value;
+              setAccentHex(value);
               if (/^#[0-9a-fA-F]{6}$/.test(value)) onChange({ ...design, accent: value });
-            }} />
+            }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(accentHex)) setAccentHex(design.accent); }} />
           </label>
         </div>
       </fieldset>
@@ -161,10 +167,11 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
             <input type="color" value={design.patternColor || design.accent} onChange={(event) => onChange({ ...design, patternColor: event.target.value })} />
           </label>
           <label>Code HEX
-            <input type="text" value={design.patternColor || design.accent} maxLength={7} spellCheck={false} onChange={(event) => {
+            <input type="text" value={patternHex} maxLength={7} spellCheck={false} onChange={(event) => {
               const value = event.target.value;
+              setPatternHex(value);
               if (/^#[0-9a-fA-F]{6}$/.test(value)) onChange({ ...design, patternColor: value });
-            }} />
+            }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(patternHex)) setPatternHex(design.patternColor || design.accent); }} />
           </label>
         </div>
       </fieldset>
