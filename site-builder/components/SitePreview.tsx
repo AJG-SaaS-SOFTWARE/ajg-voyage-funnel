@@ -6,7 +6,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
   const english = config.language === "en";
 
   return (
-    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, ...(config.design.customBackgroundColor ? { "--site-custom-background": config.design.customBackgroundColor } : {}) } as CSSProperties}>
+    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-pattern-color": config.design.patternColor || config.design.accent, ...(config.design.customBackgroundColor ? { "--site-custom-background": config.design.customBackgroundColor } : {}) } as CSSProperties}>
       <nav>
         <strong>{config.brandName || (english ? "Your site" : "Votre site")}</strong>
         <span>{english ? "About" : "Présentation"}</span>
