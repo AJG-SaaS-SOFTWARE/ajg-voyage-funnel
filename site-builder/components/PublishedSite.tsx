@@ -13,6 +13,15 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
   const english = config.language === "en";
   const actionLabel = config.bookingLabel;
   const { surface, ink } = surfaceInk(config.design);
+  const backgroundImageStyle = {
+    objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%`,
+    ...(config.design.backgroundPhotoUrl
+      ? {
+          transform: `scale(1.12) translateX(${((50 - config.design.backgroundPositionX) * 0.1).toFixed(2)}%)`,
+          transformOrigin: "center"
+        }
+      : {})
+  } as CSSProperties;
 
   return (
     <div className="public-site" data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
@@ -26,7 +35,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
 
       <main>
         <section className="public-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
-          {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="public-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={{ objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%` }} /> : null}
+          {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="public-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={backgroundImageStyle} /> : null}
           <div className="public-hero-copy">
             {config.heroTagline.trim() ? <p className="mini">{config.heroTagline}</p> : null}
             <h1>{config.heroTitle || (english ? "Discover another way to travel" : "Découvrez une autre façon de voyager")}</h1>
