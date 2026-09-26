@@ -15,7 +15,7 @@ import {
 } from "../../lib/site-config";
 import { loadDraft, publishDraft, saveDraft } from "../../lib/site-store";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
-import { optimizeImage } from "../../lib/optimize-image";
+import { optimizeBackgroundImage, optimizeImage } from "../../lib/optimize-image";
 import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import {
   getCurrentUser,
@@ -531,12 +531,19 @@ export default function BuilderPage() {
     setSyncError("");
     try {
       if (!remoteMode) throw new Error("Connectez le stockage du site avant d'importer une photo.");
-      const optimized = await optimizeImage(file);
+      const prepared = category === "background"
+        ? await optimizeBackgroundImage(file)
+        : { blob: await optimizeImage(file), focus: null };
       const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false);
       setRemoteSiteId(site.id);
-      const url = await uploadSiteImage(optimized, site.id, category);
+      const url = await uploadSiteImage(prepared.blob, site.id, category);
       const design = category === "background"
-        ? { ...config.design, backgroundPhotoUrl: url, backgroundPositionX: 50, backgroundPositionY: 50 }
+        ? {
+            ...config.design,
+            backgroundPhotoUrl: url,
+            backgroundPositionX: prepared.focus?.x ?? 50,
+            backgroundPositionY: prepared.focus?.y ?? 50
+          }
         : { ...config.design, modules: { ...config.design.modules, gallery: { ...config.design.modules.gallery, images: [...config.design.modules.gallery.images, { url, caption: "" }] } } };
       update("design", design);
     } catch (error) {
@@ -920,7 +927,7 @@ export default function BuilderPage() {
                 <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
                 <div className="photo-background-editor module-editor">
                   <b>Photo personnelle en arrière-plan</b>
-                  <p>La photo est compressée avant l'envoi et affichée en mode cover. Déplacez son point central pour garder le sujet visible sur écran étroit.</p>
+                  <p>La photo est compressée avant l'envoi et affichée en mode cover. AJG cherche automatiquement le point d'intérêt de l'image pour le centrage initial ; vous pouvez ensuite l'ajuster avec les curseurs.</p>
                   <label>Importer une photo<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage || busy} onChange={(event) => void uploadDesignImage(event, "background")} /></label>
                   {uploadingImage ? <p role="status">Optimisation et envoi de la photo…</p> : null}
                   {config.design.backgroundPhotoUrl ? <>
