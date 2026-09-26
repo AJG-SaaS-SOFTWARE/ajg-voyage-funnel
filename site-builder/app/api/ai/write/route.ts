@@ -36,7 +36,7 @@ const writableFields = {
   },
   qualityReview: {
     name: "la relecture du site",
-    purpose: "Check French or English spelling, grammar, editorial coherence, repetition, clarity and call to action. Recommend only meaningful changes while preserving facts.",
+    purpose: "Check French or English spelling, grammar, editorial coherence, unnecessary repetition, marketing clarity, reader benefit and call to action. Recommend only meaningful changes, avoid hype and preserve every factual claim.",
     constraint: "Return JSON with issues and suggested field replacements, never overwrite user content."
   },
   bookingLabel: {
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
     field === "qualityReview"
-      ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Do not invent claims. If all is good, return empty arrays and object."
+      ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Check spelling, grammar, coherence between fields, redundant ideas, clarity of the visitor benefit, credibility of marketing language and the CTA. Prefer concrete natural wording over hype or generic claims. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Preserve facts and never invent claims. If all is good, return empty arrays and object."
       : field === "guidedDraft"
       ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
       : "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
