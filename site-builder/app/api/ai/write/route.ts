@@ -167,8 +167,12 @@ export async function POST(request: Request) {
     ["benefit", clean(rawSiteContext.guidedBenefit, 220)],
     ["audience", clean(rawSiteContext.guidedAudience, 220)]
   ].filter(([, value]) => value && value !== currentText);
-  const editorialContext = contextEntries
-    .slice(0, field === "qualityReview" ? 10 : 6)
+  const selectedContextEntries = field === "guidedDraft"
+    ? contextEntries.filter(([key]) => ["traveler profile", "discovery", "benefit", "audience"].includes(key))
+    : field === "qualityReview"
+      ? contextEntries.slice(0, 10)
+      : contextEntries.slice(0, 6);
+  const editorialContext = selectedContextEntries
     .map(([key, value]) => `${key}: ${value}`)
     .join("\n");
   const fieldSpec = writableFields[field];
@@ -190,7 +194,7 @@ export async function POST(request: Request) {
     field === "qualityReview"
       ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Check spelling, grammar, coherence between fields, redundant ideas, clarity of the visitor benefit, credibility of marketing language and the CTA. Prefer concrete natural wording over hype or generic claims. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Preserve facts and never invent claims. If all is good, return empty arrays and object."
       : field === "guidedDraft"
-      ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
+      ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Treat the guided answers as notes, not copy to paste. Turn even one or two keywords into fluent complete sentences, but never invent facts. Give each field a distinct role: heroTagline = very short mood/angle; heroTitle = clear memorable promise or point of view; heroSubtitle = 2 or 3 sentences explaining what the visitor will discover; aboutHeading = personal section title; aboutText = 70 to 130 words connecting the person's travel profile, discovery and motivation naturally. Use the audience answer only if it was supplied. Avoid repeating the same phrase, benefit or opening across fields. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
       : "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
   ].filter(Boolean).join("\n");
 
