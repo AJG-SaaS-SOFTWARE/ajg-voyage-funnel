@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import type { SiteConfig, SiteLanguage } from "./site-config";
 import { normalizeSiteDesign } from "./site-design";
+import { normalizeSiteLegalConfig } from "./site-legal";
 
 export type PublicSiteRecord = {
   id: string;
@@ -38,7 +39,8 @@ function configFromRow(row: any): SiteConfig {
     instagramUrl: row.instagram_url,
     facebookUrl: row.facebook_url,
     design: normalizeSiteDesign(row.design_assets),
-    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr"
+    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr",
+    legal: normalizeSiteLegalConfig(row.legal_config)
   };
 }
 
