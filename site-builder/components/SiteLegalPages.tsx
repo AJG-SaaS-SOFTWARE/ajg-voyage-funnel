@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { SiteConfig } from "../lib/site-config";
 import {
   effectivePrivacyEmail,
@@ -9,7 +10,7 @@ import {
 
 export type LegalPageKind = "legal" | "privacy" | "cookies";
 
-function LegalShell({ config, kind, children }: { config: SiteConfig; kind: LegalPageKind; children: React.ReactNode }) {
+function LegalShell({ config, kind, children }: { config: SiteConfig; kind: LegalPageKind; children: ReactNode }) {
   const english = config.language === "en";
   const labels = english
     ? { home: "Back to site", legal: "Legal notice", privacy: "Privacy", cookies: "Cookies" }
