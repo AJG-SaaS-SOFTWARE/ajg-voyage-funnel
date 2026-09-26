@@ -342,6 +342,28 @@ export default function BuilderPage() {
     }
   })();
 
+  const qualityChecks = useMemo(() => {
+    const checks: { label: string; detail: string; status: "pass" | "warn"; step: StepKey }[] = [];
+    const words = (value: string) => value.trim().split(/\s+/).filter(Boolean).length;
+    const validOptionalUrl = (value: string) => {
+      if (!value.trim()) return true;
+      try { const url = new URL(value); return url.protocol === "https:" && url.hostname.includes("."); } catch { return false; }
+    };
+    checks.push({ label: "Identité complète", detail: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "Nom et identité du site renseignés." : "Complétez l’identité du site.", status: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "pass" : "warn", step: "identity" });
+    checks.push({ label: "Message d’accueil", detail: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "Titre et introduction suffisamment renseignés." : "Ajoutez un titre et une introduction plus complète.", status: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "pass" : "warn", step: "story" });
+    checks.push({ label: "Présentation personnelle", detail: words(config.aboutText) >= 25 ? "La présentation apporte assez de contexte." : "La présentation gagnerait à être un peu plus développée.", status: words(config.aboutText) >= 25 ? "pass" : "warn", step: "story" });
+    checks.push({ label: "Appel à l’action", detail: !config.bookingUrl.trim() || config.bookingLabel.trim() ? "Le rendez-vous est cohérent avec le bouton affiché." : "Ajoutez un texte de bouton ou retirez le lien de rendez-vous.", status: !config.bookingUrl.trim() || config.bookingLabel.trim() ? "pass" : "warn", step: "booking" });
+    const socialOk = validOptionalUrl(config.instagramUrl) && validOptionalUrl(config.facebookUrl);
+    checks.push({ label: "Liens externes", detail: socialOk && bookingLinkStatus !== "invalid" ? "Les liens renseignés ont un format valide." : "Au moins un lien doit être vérifié.", status: socialOk && bookingLinkStatus !== "invalid" ? "pass" : "warn", step: "booking" });
+    const mediaOk = Boolean(config.design.heroImage);
+    checks.push({ label: "Qualité visuelle", detail: mediaOk ? "Une image principale est sélectionnée." : "Ajoutez une image principale pour renforcer l’impact visuel.", status: mediaOk ? "pass" : "warn", step: "design" });
+    checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Site indépendant : vérifiez les mentions propres à votre activité.", status: config.affiliation === "mwr" ? "pass" : "warn", step: "options" });
+    return checks;
+  }, [config, bookingLinkStatus]);
+
+  const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
+  const qualityWarnings = qualityChecks.length - qualityPassed;
+
   const errors = useMemo(() => {
     const next: { message: string; step: StepKey }[] = [];
     if (!config.firstName.trim()) next.push({ message: "Prénom manquant", step: "identity" });
@@ -968,6 +990,21 @@ export default function BuilderPage() {
                     </div>
                   </div>
                 )}
+
+                <div className="quality-summary-card">
+                  <div className="quality-summary-head">
+                    <div><span className="mini">QUALITY CHECK AJG</span><strong>{qualityPassed}/{qualityChecks.length} contrôles réussis</strong></div>
+                    <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} amélioration${qualityWarnings > 1 ? "s" : ""}` : "Prêt ✓"}</span>
+                  </div>
+                  <div className="quality-check-list">
+                    {qualityChecks.map((check) => <button type="button" key={check.label} className={`quality-check ${check.status}`} onClick={() => { setStep(check.step); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                      <span>{check.status === "pass" ? "✓" : "!"}</span>
+                      <p><b>{check.label}</b><small>{check.detail}</small></p>
+                      <i>Corriger →</i>
+                    </button>)}
+                  </div>
+                  <p className="quality-note">Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.</p>
+                </div>
 
                 <div className="review-checklist">
                   <div className={config.firstName && config.lastName && config.brandName && config.slug ? "done" : ""}>
