@@ -28,7 +28,14 @@ export type SiteDesign = {
   modules: SiteModules;
 };
 
+export type SiteModuleKey = "gallery" | "faq" | "testimonials" | "video" | "figures" | "benefits" | "contact";
+
+export const defaultSiteModuleOrder: SiteModuleKey[] = [
+  "gallery", "faq", "testimonials", "video", "figures", "benefits", "contact"
+];
+
 export type SiteModules = {
+  order: SiteModuleKey[];
   gallery: { enabled: boolean; title: string; images: { url: string; caption: string }[] };
   faq: { enabled: boolean; title: string; items: { question: string; answer: string }[] };
   testimonials: { enabled: boolean; title: string; items: { quote: string; author: string }[] };
@@ -39,6 +46,7 @@ export type SiteModules = {
 };
 
 export const defaultSiteModules: SiteModules = {
+  order: [...defaultSiteModuleOrder],
   gallery: { enabled: false, title: "Mes voyages", images: [] },
   faq: { enabled: false, title: "Questions fréquentes", items: [] },
   testimonials: { enabled: false, title: "Témoignages", items: [] },
@@ -134,6 +142,14 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
   const text = (value: unknown, max: number) => typeof value === "string" ? value.slice(0, max) : "";
   const list = (value: unknown) => Array.isArray(value) ? value.slice(0, 12) : [];
   const position = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 50;
+  const moduleOrder = (() => {
+    const allowed = new Set<SiteModuleKey>(defaultSiteModuleOrder);
+    const requested = Array.isArray(modules.order)
+      ? modules.order.filter((key: unknown): key is SiteModuleKey => typeof key === "string" && allowed.has(key as SiteModuleKey))
+      : [];
+    const unique = [...new Set(requested)];
+    return [...unique, ...defaultSiteModuleOrder.filter((key) => !unique.includes(key))];
+  })();
   return {
     accent: typeof input.accent === "string" && /^#[0-9a-fA-F]{6}$/.test(input.accent) ? input.accent : defaultSiteDesign.accent,
     customBackgroundColor: typeof input.customBackgroundColor === "string" && /^#[0-9a-fA-F]{6}$/.test(input.customBackgroundColor) ? input.customBackgroundColor : "",
@@ -154,6 +170,7 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
     backgroundPositionX: position(input.backgroundPositionX),
     backgroundPositionY: position(input.backgroundPositionY),
     modules: {
+      order: moduleOrder,
       gallery: { enabled: modules.gallery?.enabled === true, title: text(modules.gallery?.title, 100) || defaultSiteModules.gallery.title, images: list(modules.gallery?.images).map((item: any) => ({ url: safeHttpsUrl(item?.url), caption: text(item?.caption, 180) })).filter((item) => item.url) },
       faq: { enabled: modules.faq?.enabled === true, title: text(modules.faq?.title, 100) || defaultSiteModules.faq.title, items: list(modules.faq?.items).map((item: any) => ({ question: text(item?.question, 200), answer: text(item?.answer, 1200) })) },
       testimonials: { enabled: modules.testimonials?.enabled === true, title: text(modules.testimonials?.title, 100) || defaultSiteModules.testimonials.title, items: list(modules.testimonials?.items).map((item: any) => ({ quote: text(item?.quote, 800), author: text(item?.author, 120) })) },
