@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { type CSSProperties } from "react";
 import { siteDisclaimer, type SiteConfig } from "../lib/site-config";
 import SoundControl from "./SoundControl";
@@ -80,6 +81,11 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
           {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">Image : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}
           {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">Son : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}
         </div> : null}
+        <nav className="public-legal-links" aria-label={english ? "Legal information" : "Informations légales"}>
+          <Link href={`/site/${encodeURIComponent(config.slug)}/mentions-legales`}>{english ? "Legal notice" : "Mentions légales"}</Link>
+          <Link href={`/site/${encodeURIComponent(config.slug)}/confidentialite`}>{english ? "Privacy" : "Confidentialité"}</Link>
+          <Link href={`/site/${encodeURIComponent(config.slug)}/cookies`}>Cookies</Link>
+        </nav>
       </footer>
     </div>
   );
