@@ -2,6 +2,7 @@
 
 import { defaultSiteConfig, type SiteConfig } from "./site-config";
 import { normalizeSiteDesign } from "./site-design";
+import { normalizeSiteLegalConfig } from "./site-legal";
 
 export type BuilderDraft = {
   config: SiteConfig;
@@ -25,7 +26,7 @@ export function loadDraft(): BuilderDraft {
     const parsed = JSON.parse(raw) as BuilderDraft;
     return {
       ...parsed,
-      config: { ...defaultSiteConfig, ...parsed.config, affiliation: parsed.config?.affiliation === "independent" ? "independent" : "mwr", design: normalizeSiteDesign(parsed.config?.design) }
+      config: { ...defaultSiteConfig, ...parsed.config, affiliation: parsed.config?.affiliation === "independent" ? "independent" : "mwr", design: normalizeSiteDesign(parsed.config?.design), legal: normalizeSiteLegalConfig(parsed.config?.legal) }
     };
   } catch {
     return { config: defaultSiteConfig, status: "draft", updatedAt: new Date().toISOString() };
@@ -60,7 +61,7 @@ export function loadPublished(slug: string): BuilderDraft | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as BuilderDraft;
-    return { ...parsed, config: { ...defaultSiteConfig, ...parsed.config, affiliation: parsed.config?.affiliation === "independent" ? "independent" : "mwr", design: normalizeSiteDesign(parsed.config?.design) } };
+    return { ...parsed, config: { ...defaultSiteConfig, ...parsed.config, affiliation: parsed.config?.affiliation === "independent" ? "independent" : "mwr", design: normalizeSiteDesign(parsed.config?.design), legal: normalizeSiteLegalConfig(parsed.config?.legal) } };
   } catch {
     return null;
   }
