@@ -359,7 +359,7 @@ export default function BuilderPage() {
     checks.push({ label: "Qualité visuelle", detail: mediaOk ? "Une image principale est sélectionnée." : "Ajoutez une image principale pour renforcer l’impact visuel.", status: mediaOk ? "pass" : "warn", step: "design" });
     checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Site indépendant : vérifiez les mentions propres à votre activité.", status: config.affiliation === "mwr" ? "pass" : "warn", step: "options" });
     return checks;
-  }, [config, bookingLinkStatus]);
+  }, [config, bookingLinkStatus, config.design]);
 
   const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
   const qualityWarnings = qualityChecks.length - qualityPassed;
