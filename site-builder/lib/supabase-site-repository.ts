@@ -51,9 +51,8 @@ function configFromRow(row: any): SiteConfig {
   };
 }
 
-function draftFromRow(row: any): SiteConfig {
+function draftFromRow(row: any, draft: any): SiteConfig {
   const published = configFromRow(row);
-  const draft = row.draft_config;
   if (!draft || typeof draft !== "object") return published;
   return { ...defaultSiteConfig, ...published, ...draft, design: normalizeSiteDesign(draft.design ?? published.design) };
 }
@@ -85,13 +84,13 @@ function payload(user: User, config: SiteConfig, status: "draft" | "published") 
   };
 }
 
-function toRemote(row: any): RemoteSite {
+function toRemote(row: any, draft?: any): RemoteSite {
   return {
     id: row.id,
     ownerId: row.owner_id,
     slug: row.slug,
     status: row.status,
-    config: draftFromRow(row),
+    config: draftFromRow(row, draft),
     publishedAt: row.published_at,
     updatedAt: row.updated_at
   };
@@ -164,7 +163,10 @@ export async function getMySite(): Promise<RemoteSite | null> {
     .maybeSingle();
 
   if (error) throw error;
-  return data ? toRemote(data) : null;
+  if (!data) return null;
+  const { data: draft, error: draftError } = await supabase.from("site_drafts").select("config").eq("site_id", data.id).maybeSingle();
+  if (draftError) throw draftError;
+  return toRemote(data, draft?.config);
 }
 
 export async function saveMySite(config: SiteConfig, publish = false): Promise<RemoteSite> {
@@ -175,19 +177,28 @@ export async function saveMySite(config: SiteConfig, publish = false): Promise<R
   if (!user) throw new Error("Vous devez être connecté.");
 
   const existing = await getMySite();
-  const nextPayload = { ...payload(user, config, publish ? "published" : "draft"), draft_config: publish ? null : config };
+  const nextPayload = payload(user, config, publish ? "published" : "draft");
 
   if (existing) {
+    if (!publish && existing.status === "published") {
+      const { error } = await supabase.from("site_drafts").upsert({ site_id: existing.id, owner_id: user.id, config }, { onConflict: "site_id" });
+      if (error) throw error;
+      return { ...existing, config };
+    }
     const { data, error } = await supabase
       .from("sites")
-      .update(!publish && existing.status === "published" ? { draft_config: config } : nextPayload)
+      .update(nextPayload)
       .eq("id", existing.id)
       .select("*")
       .single();
 
     if (error) throw error;
     const remote = toRemote(data);
-    if (publish) await ensureManagedDomain(remote.id, remote.slug);
+    if (publish) {
+      await ensureManagedDomain(remote.id, remote.slug);
+      const { error: draftError } = await supabase.from("site_drafts").delete().eq("site_id", remote.id);
+      if (draftError) throw draftError;
+    }
     return remote;
   }
 

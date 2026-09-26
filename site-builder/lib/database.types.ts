@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      site_drafts: {
+        Row: { site_id: string; owner_id: string; config: Json; updated_at: string }
+        Insert: { site_id: string; owner_id: string; config: Json; updated_at?: string }
+        Update: { site_id?: string; owner_id?: string; config?: Json; updated_at?: string }
+        Relationships: []
+      }
       domains: {
         Row: {
           created_at: string
@@ -92,7 +98,6 @@ export type Database = {
       }
       sites: {
         Row: {
-          draft_config: Json | null
           about_text: string
           design_assets: Json
           booking_label: string
@@ -120,7 +125,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          draft_config?: Json | null
           about_text?: string
           design_assets?: Json
           booking_label?: string
@@ -148,7 +152,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          draft_config?: Json | null
           about_text?: string
           design_assets?: Json
           booking_label?: string
