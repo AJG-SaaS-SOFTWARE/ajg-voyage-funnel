@@ -986,13 +986,23 @@ export default function BuilderPage() {
                 <div className="photo-background-editor module-editor">
                   <b>Photo personnelle en arrière-plan</b>
                   <p>La photo est compressée avant l'envoi et affichée en mode cover. AJG cherche automatiquement le point d'intérêt de l'image pour le centrage initial ; vous pouvez ensuite l'ajuster avec les curseurs.</p>
-                  <label>Importer une photo<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage || busy} onChange={(event) => void uploadDesignImage(event, "background")} /></label>
-                  {uploadingImage ? <p role="status">Optimisation et envoi de la photo…</p> : null}
-                  {config.design.backgroundPhotoUrl ? <>
-                    <button type="button" className="secondary" onClick={() => update("design", { ...config.design, backgroundPhotoUrl: "" })}>Retirer la photo de fond</button>
-                    <label>Position horizontale : {config.design.backgroundPositionX} %<input type="range" min="0" max="100" value={config.design.backgroundPositionX} onChange={(e) => update("design", { ...config.design, backgroundPositionX: Number(e.target.value) })} /></label>
-                    <label>Position verticale : {config.design.backgroundPositionY} %<input type="range" min="0" max="100" value={config.design.backgroundPositionY} onChange={(e) => update("design", { ...config.design, backgroundPositionY: Number(e.target.value) })} /></label>
-                  </> : null}
+                  <label className="background-upload-field">Importer une photo<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage || busy} onChange={(event) => void uploadDesignImage(event, "background")} /></label>
+                  {uploadingImage ? <p className="background-upload-status" role="status">Optimisation et envoi de la photo…</p> : null}
+                  {config.design.backgroundPhotoUrl ? (
+                    <div className="background-photo-adjustments">
+                      <button type="button" className="button secondary background-remove-button" onClick={() => update("design", { ...config.design, backgroundPhotoUrl: "" })}>Retirer la photo de fond</button>
+                      <label className="background-position-control">
+                        <span>Position horizontale <strong>{config.design.backgroundPositionX} %</strong></span>
+                        <input aria-label="Position horizontale de la photo de fond" type="range" min="0" max="100" step="1" value={config.design.backgroundPositionX} onChange={(e) => update("design", { ...config.design, backgroundPositionX: Number(e.target.value) })} />
+                        <small><span>Gauche</span><span>Droite</span></small>
+                      </label>
+                      <label className="background-position-control">
+                        <span>Position verticale <strong>{config.design.backgroundPositionY} %</strong></span>
+                        <input aria-label="Position verticale de la photo de fond" type="range" min="0" max="100" step="1" value={config.design.backgroundPositionY} onChange={(e) => update("design", { ...config.design, backgroundPositionY: Number(e.target.value) })} />
+                        <small><span>Haut</span><span>Bas</span></small>
+                      </label>
+                    </div>
+                  ) : null}
                 </div>
                 <label className="option-card premium-option-card portrait-option">
                   <input spellCheck type="checkbox" checked={config.design.showPortrait} onChange={(event) => update("design", { ...config.design, showPortrait: event.target.checked })} />
