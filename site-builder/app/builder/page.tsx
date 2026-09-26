@@ -365,7 +365,7 @@ export default function BuilderPage() {
     if (!value) return "empty";
     try {
       const url = new URL(value);
-      return (url.protocol === "https:" || url.protocol === "http:") && url.hostname.includes(".")
+      return url.protocol === "https:" && url.hostname.includes(".")
         ? "valid"
         : "invalid";
     } catch {
@@ -383,7 +383,9 @@ export default function BuilderPage() {
     checks.push({ label: "Identité complète", detail: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "Nom et identité du site renseignés." : "Complétez l’identité du site.", status: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "pass" : "warn", step: "identity" });
     checks.push({ label: "Message d’accueil", detail: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "Titre et introduction suffisamment renseignés." : "Ajoutez un titre et une introduction plus complète.", status: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "pass" : "warn", step: "story" });
     checks.push({ label: "Présentation personnelle", detail: words(config.aboutText) >= 25 ? "La présentation apporte assez de contexte." : "La présentation gagnerait à être un peu plus développée.", status: words(config.aboutText) >= 25 ? "pass" : "warn", step: "story" });
-    checks.push({ label: "Appel à l’action", detail: !config.design.showBooking || !config.bookingUrl.trim() || config.bookingLabel.trim() ? "Le rendez-vous est cohérent avec le bouton affiché." : "Ajoutez un texte de bouton ou désactivez le rendez-vous.", status: !config.design.showBooking || !config.bookingUrl.trim() || config.bookingLabel.trim() ? "pass" : "warn", step: "booking" });
+    const bookingLabelLength = config.bookingLabel.trim().length;
+    const ctaOk = !config.design.showBooking || !config.bookingUrl.trim() || (bookingLabelLength >= 3 && bookingLabelLength <= 60);
+    checks.push({ label: "Appel à l’action", detail: ctaOk ? "Le rendez-vous et le libellé du bouton sont cohérents." : "Utilisez un libellé de bouton clair et concis, entre 3 et 60 caractères.", status: ctaOk ? "pass" : "warn", step: "booking" });
     const socialOk = (!config.design.showInstagram || validOptionalUrl(config.instagramUrl)) && (!config.design.showFacebook || validOptionalUrl(config.facebookUrl));
     checks.push({ label: "Liens externes", detail: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "Les liens affichés ont un format valide." : "Au moins un lien affiché doit être vérifié.", status: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "pass" : "warn", step: "booking" });
     const mediaOk = Boolean(config.design.heroImage || config.design.backgroundPhotoUrl);
@@ -397,9 +399,39 @@ export default function BuilderPage() {
     checks.push({ label: "Répétitions évidentes", detail: new Set(normalized).size === normalized.length ? "Aucun texte identique entre les champs principaux." : "Deux champs contiennent le même texte : diversifiez-les.", status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
     const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter/i.test(allText.join(" "));
     checks.push({ label: "Texte à compléter", detail: placeholders ? "Un texte de démonstration semble encore présent." : "Aucun texte de démonstration connu détecté.", status: placeholders ? "warn" : "pass", step: "story" });
+    const responsiveTextOk = config.heroTitle.trim().length <= 90
+      && config.heroSubtitle.trim().length <= 320
+      && config.brandName.trim().length <= 70
+      && (!config.design.showBooking || config.bookingLabel.trim().length <= 60);
+    checks.push({ label: "Responsive du contenu", detail: responsiveTextOk ? "Les longueurs principales restent adaptées aux petits écrans." : "Un titre, une introduction, le nom du site ou le CTA est trop long pour un affichage mobile confortable.", status: responsiveTextOk ? "pass" : "warn", step: "story" });
+    const focusOk = !config.design.backgroundPhotoUrl
+      || (config.design.backgroundPositionX >= 10 && config.design.backgroundPositionX <= 90 && config.design.backgroundPositionY >= 10 && config.design.backgroundPositionY <= 85);
+    checks.push({ label: "Cadrage mobile", detail: focusOk ? "Le point focal de la photo reste dans une zone sûre pour le recadrage cover." : "Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", status: focusOk ? "pass" : "warn", step: "design" });
     const modules = config.design.modules;
-    const moduleReady = (!modules.gallery.enabled || modules.gallery.images.length > 0) && (!modules.faq.enabled || modules.faq.items.some((item) => item.question.trim() && item.answer.trim())) && (!modules.testimonials.enabled || modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) && (!modules.contact.enabled || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email)) && (!modules.video.enabled || /^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/.test(modules.video.url)) && (!modules.figures.enabled || modules.figures.items.some((item) => item.value.trim() && item.label.trim())) && (!modules.benefits.enabled || modules.benefits.items.some((item) => item.title.trim() && item.text.trim()));
-    checks.push({ label: "Modules activés", detail: moduleReady ? "Les rubriques activées ont du contenu publiable." : "Une rubrique activée est vide ou incomplète ; elle restera masquée.", status: moduleReady ? "pass" : "warn", step: "options" });
+    const validYoutubeUrl = (value: string) => {
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "https:") return false;
+        if (url.hostname === "youtu.be") return /^[\w-]{11}$/.test(url.pathname.slice(1));
+        if (!["youtube.com", "www.youtube.com"].includes(url.hostname)) return false;
+        const id = url.searchParams.get("v") || url.pathname.match(/^\/embed\/([\w-]{11})$/)?.[1];
+        return Boolean(id && /^[\w-]{11}$/.test(id));
+      } catch {
+        return false;
+      }
+    };
+    const moduleProblems: string[] = [];
+    if (modules.gallery.enabled && modules.gallery.images.length === 0) moduleProblems.push("galerie");
+    if (modules.faq.enabled && !modules.faq.items.some((item) => item.question.trim() && item.answer.trim())) moduleProblems.push("FAQ");
+    if (modules.testimonials.enabled && !modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) moduleProblems.push("témoignages");
+    if (modules.contact.enabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email)) moduleProblems.push("contact");
+    if (modules.video.enabled && !validYoutubeUrl(modules.video.url)) moduleProblems.push("vidéo");
+    if (modules.figures.enabled && !modules.figures.items.some((item) => item.value.trim() && item.label.trim())) moduleProblems.push("chiffres clés");
+    if (modules.benefits.enabled && !modules.benefits.items.some((item) => item.title.trim() && item.text.trim())) moduleProblems.push("avantages");
+    const moduleReady = moduleProblems.length === 0;
+    checks.push({ label: "Modules activés", detail: moduleReady ? "Les rubriques activées ont du contenu publiable." : `À compléter : ${moduleProblems.join(", ")}.`, status: moduleReady ? "pass" : "warn", step: "options" });
+    const galleryAccessible = !modules.gallery.enabled || modules.gallery.images.length === 0 || modules.gallery.images.every((image) => image.caption.trim().length >= 3);
+    checks.push({ label: "Images accessibles", detail: galleryAccessible ? "Les images de galerie ont une légende exploitable comme description." : "Ajoutez une légende descriptive aux images de galerie pour améliorer compréhension et accessibilité.", status: galleryAccessible ? "pass" : "warn", step: "options" });
     const sentences = [config.heroSubtitle, config.aboutText].filter(Boolean);
     const punctuation = sentences.every((text) => /[.!?…]$/.test(text.trim()));
     checks.push({ label: "Ponctuation", detail: punctuation ? "Les paragraphes principaux se terminent correctement." : "Vérifiez la ponctuation de l’introduction et de la présentation.", status: punctuation ? "pass" : "warn", step: "story" });
@@ -408,6 +440,18 @@ export default function BuilderPage() {
 
   const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
   const qualityWarnings = qualityChecks.length - qualityPassed;
+  const reviewFieldLabels: Partial<Record<keyof SiteConfig, string>> = {
+    heroTagline: "Accroche",
+    heroTitle: "Titre principal",
+    heroSubtitle: "Introduction",
+    aboutHeading: "Titre de présentation",
+    aboutText: "Présentation",
+    bookingLabel: "Bouton de rendez-vous"
+  };
+  const currentReviewText = (field: keyof SiteConfig) => {
+    const value = config[field];
+    return typeof value === "string" ? value : "";
+  };
 
   const errors = useMemo(() => {
     const next: { message: string; step: StepKey }[] = [];
@@ -1112,7 +1156,7 @@ export default function BuilderPage() {
                   <div className="quality-summary-head"><div><span className="mini">RELECTURE ÉDITORIALE</span><strong>Orthographe, grammaire et clarté</strong></div></div>
                   <p>Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement.</p>
                   <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? "Relecture en cours…" : "Relire avec l’IA"}</button>
-                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p>{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
+                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{reviewFieldLabels[issue.field] || issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p><small>Texte actuel</small><br />{currentReviewText(issue.field)}</p><p><small>Proposition</small><br />{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
                 </div>
 
                 <div className="review-checklist">
