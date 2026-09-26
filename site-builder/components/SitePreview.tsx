@@ -7,6 +7,15 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const english = config.language === "en";
   const { surface, ink } = surfaceInk(config.design);
+  const backgroundImageStyle = {
+    objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%`,
+    ...(config.design.backgroundPhotoUrl
+      ? {
+          transform: `scale(1.12) translateX(${((50 - config.design.backgroundPositionX) * 0.1).toFixed(2)}%)`,
+          transformOrigin: "center"
+        }
+      : {})
+  } as CSSProperties;
 
   return (
     <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
@@ -17,7 +26,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
       </nav>
 
       <section className="preview-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
-        {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="preview-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={{ objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%` }} /> : null}
+        {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="preview-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={backgroundImageStyle} /> : null}
         <div>
           {config.heroTagline.trim() ? <p className="mini">{config.heroTagline}</p> : null}
           <h3>{config.heroTitle || (english ? "Your headline" : "Votre titre")}</h3>
