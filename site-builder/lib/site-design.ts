@@ -9,6 +9,7 @@ export type MediaChoice = {
 export type SiteDesign = {
   accent: string;
   customBackgroundColor: string;
+  patternColor: string;
   pattern: "none" | "dots" | "lines" | "grid" | "rays";
   background: "ivory" | "sand" | "mist" | "sage" | "slate";
   patternStrength: "soft" | "bold";
@@ -32,6 +33,7 @@ export const backgrounds = ["ivory", "sand", "mist", "sage", "slate"] as const;
 export const defaultSiteDesign: SiteDesign = {
   accent: accentColors[0],
   customBackgroundColor: "",
+  patternColor: "",
   pattern: "none",
   background: "ivory",
   patternStrength: "soft",
@@ -72,6 +74,7 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
   return {
     accent: typeof input.accent === "string" && /^#[0-9a-fA-F]{6}$/.test(input.accent) ? input.accent : defaultSiteDesign.accent,
     customBackgroundColor: typeof input.customBackgroundColor === "string" && /^#[0-9a-fA-F]{6}$/.test(input.customBackgroundColor) ? input.customBackgroundColor : "",
+    patternColor: typeof input.patternColor === "string" && /^#[0-9a-fA-F]{6}$/.test(input.patternColor) ? input.patternColor : "",
     pattern: patterns.find((pattern) => pattern === input.pattern) || defaultSiteDesign.pattern,
     background: backgrounds.find((background) => background === input.background) || defaultSiteDesign.background,
     patternStrength: input.patternStrength === "bold" ? "bold" : "soft",
