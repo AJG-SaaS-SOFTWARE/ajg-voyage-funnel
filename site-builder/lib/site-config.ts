@@ -27,7 +27,17 @@ export const requiredDisclaimer =
   "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de MWR Life ou Travel Advantage.";
 
 export function siteDisclaimer(config: SiteConfig) {
-  return config.affiliation === "mwr" ? requiredDisclaimer : "";
+  if (config.affiliation !== "mwr") return "";
+  const usesMwr = config.design.showMwrLogo;
+  const usesTravelAdvantage = config.design.showTravelAdvantageLogo ||
+    /\btravel\s*advantage\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName].join(" "));
+  if (usesMwr && !usesTravelAdvantage) {
+    return "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de MWR Life.";
+  }
+  if (usesTravelAdvantage && !usesMwr) {
+    return "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de Travel Advantage.";
+  }
+  return requiredDisclaimer;
 }
 
 export const defaultSiteConfig: SiteConfig = {
