@@ -7,6 +7,7 @@ import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
 import ModulesEditor from "../../components/ModulesEditor";
 import AiTextAssistant from "../../components/AiTextAssistant";
+import ComplianceEditor from "../../components/ComplianceEditor";
 import {
   defaultSiteConfig,
   requiredDisclaimer,
@@ -17,6 +18,7 @@ import { loadDraft, publishDraft, saveDraft } from "../../lib/site-store";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
 import { optimizeBackgroundImage, optimizeImage } from "../../lib/optimize-image";
 import { contrastRatio, surfaceInk } from "../../lib/site-design";
+import { legalMissingFields } from "../../lib/site-legal";
 import {
   getCurrentUser,
   getMySite,
@@ -431,7 +433,14 @@ export default function BuilderPage() {
     checks.push({ label: "Qualité visuelle", detail: mediaOk ? "Au moins un visuel personnel ou principal est présent." : "Ajoutez une photo ou une image principale pour renforcer l’impact visuel.", status: mediaOk ? "pass" : "warn", step: "design" });
     const portraitOk = !config.design.showPortrait || Boolean(config.profileImageUrl);
     checks.push({ label: "Photo de profil", detail: portraitOk ? (config.design.showPortrait ? "Le portrait affiché dispose d’une photo." : "Le portrait est volontairement masqué.") : "Le portrait est activé sans photo : les initiales seront affichées. Ajoutez une photo ou masquez le portrait.", status: portraitOk ? "pass" : "warn", step: "identity" });
-    checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Site indépendant : vérifiez les mentions propres à votre activité.", status: config.affiliation === "mwr" ? "pass" : "warn", step: "options" });
+    checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Le profil d’activité indépendant est appliqué.", status: "pass", step: "options" });
+    const legalMissing = legalMissingFields(config.legal, config.firstName, config.lastName);
+    checks.push({
+      label: "Mentions légales & RGPD",
+      detail: legalMissing.length ? `À compléter : ${legalMissing.slice(0, 4).join(", ")}${legalMissing.length > 4 ? "…" : ""}` : "Les informations nécessaires aux pages Mentions légales, Confidentialité et Cookies sont renseignées.",
+      status: legalMissing.length ? "warn" : "pass",
+      step: "options"
+    });
     const { surface, ink } = surfaceInk(config.design);
     checks.push({ label: "Lisibilité des rubriques", detail: `Contraste du fond et du texte : ${contrastRatio(surface, ink).toFixed(1)}:1.`, status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn", step: "design" });
     checks.push({ label: "Contraste du bouton", detail: `Texte du bouton adapté à la couleur choisie (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`, status: "pass", step: "design" });
@@ -518,6 +527,10 @@ export default function BuilderPage() {
     }
     if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName, JSON.stringify(config.design.modules)].join(" "))) {
       next.push({ message: "Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", step: "options" });
+    }
+    const missingLegal = legalMissingFields(config.legal, config.firstName, config.lastName);
+    if (missingLegal.length) {
+      next.push({ message: `Informations légales à compléter : ${missingLegal.slice(0, 3).join(", ")}${missingLegal.length > 3 ? "…" : ""}`, step: "options" });
     }
     return next;
   }, [config, bookingLinkStatus]);
@@ -1225,8 +1238,20 @@ export default function BuilderPage() {
                   </div>
                 </> : <div className="helper-card premium-helper-card">
                   <b>Site indépendant sans mention MWR Life</b>
-                  <p>Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Relisez les textes que vous avez rédigés. Les informations légales propres à votre activité ne sont pas encore générées par cet éditeur ; vérifiez-les avant de partager le site.</p>
+                  <p>Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Les pages légales ci-dessous seront adaptées aux informations que vous renseignez.</p>
                 </div>}
+
+                <div className="section-kicker">
+                  <span>03</span>
+                  <div><b>Conformité du site</b><p>Préparez automatiquement les pages légales et la transparence RGPD du site.</p></div>
+                </div>
+                <ComplianceEditor
+                  value={config.legal}
+                  firstName={config.firstName}
+                  lastName={config.lastName}
+                  affiliation={config.affiliation}
+                  onChange={(legal) => update("legal", legal)}
+                />
               </>
             ) : null}
 
