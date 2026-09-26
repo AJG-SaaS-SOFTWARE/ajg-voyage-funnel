@@ -7,9 +7,9 @@ import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
 export default function PublishedSite({ config }: { config: SiteConfig }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const bookingHref = safeHttpsUrl(config.bookingUrl);
-  const hasBooking = Boolean(bookingHref && config.bookingLabel.trim());
-  const instagramHref = safeHttpsUrl(config.instagramUrl);
-  const facebookHref = safeHttpsUrl(config.facebookUrl);
+  const hasBooking = Boolean(config.design.showBooking && bookingHref && config.bookingLabel.trim());
+  const instagramHref = config.design.showInstagram ? safeHttpsUrl(config.instagramUrl) : "";
+  const facebookHref = config.design.showFacebook ? safeHttpsUrl(config.facebookUrl) : "";
   const english = config.language === "en";
   const actionLabel = config.bookingLabel;
   const { surface, ink } = surfaceInk(config.design);
@@ -32,7 +32,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
             <h1>{config.heroTitle || (english ? "Discover another way to travel" : "Découvrez une autre façon de voyager")}</h1>
             <p>{config.heroSubtitle}</p>
             <div className="public-actions">
-              {hasBooking ? <a className="button primary" href={bookingHref} target="_blank" rel="noopener">{actionLabel}</a> : null}
+              {hasBooking && config.design.showPrimaryButton ? <a className="button primary" href={bookingHref} target="_blank" rel="noopener">{actionLabel}</a> : null}
               {config.aboutText.trim() ? <a className="button public-secondary" href="#presentation">{english ? "About me" : "Qui suis-je ?"}</a> : null}
             </div>
             {config.design.audio ? <SoundControl audio={config.design.audio} english={english} /> : null}

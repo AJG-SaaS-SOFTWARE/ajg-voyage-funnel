@@ -22,7 +22,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
           {config.heroTagline.trim() ? <p className="mini">{config.heroTagline}</p> : null}
           <h3>{config.heroTitle || (english ? "Your headline" : "Votre titre")}</h3>
           <p>{config.heroSubtitle || "Votre texte d'introduction."}</p>
-          {config.bookingUrl && config.bookingLabel.trim() ? <button type="button">{config.bookingLabel}</button> : null}
+          {config.design.showBooking && config.design.showPrimaryButton && config.bookingUrl && config.bookingLabel.trim() ? <button type="button">{config.bookingLabel}</button> : null}
           {config.design.audio ? <p className="preview-sound">♫ {config.design.audio.title}</p> : null}
         </div>
         {config.design.showPortrait ? <div className="portrait">

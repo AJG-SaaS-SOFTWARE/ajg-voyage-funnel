@@ -16,6 +16,10 @@ export type SiteDesign = {
   showMwrLogo: boolean;
   showTravelAdvantageLogo: boolean;
   showPortrait: boolean;
+  showPrimaryButton: boolean;
+  showBooking: boolean;
+  showInstagram: boolean;
+  showFacebook: boolean;
   heroImage: MediaChoice | null;
   audio: MediaChoice | null;
   backgroundPhotoUrl: string;
@@ -29,13 +33,19 @@ export type SiteModules = {
   faq: { enabled: boolean; title: string; items: { question: string; answer: string }[] };
   testimonials: { enabled: boolean; title: string; items: { quote: string; author: string }[] };
   contact: { enabled: boolean; title: string; email: string };
+  video: { enabled: boolean; title: string; url: string };
+  figures: { enabled: boolean; title: string; items: { value: string; label: string }[] };
+  benefits: { enabled: boolean; title: string; items: { title: string; text: string }[] };
 };
 
 export const defaultSiteModules: SiteModules = {
   gallery: { enabled: false, title: "Mes voyages", images: [] },
   faq: { enabled: false, title: "Questions fréquentes", items: [] },
   testimonials: { enabled: false, title: "Témoignages", items: [] },
-  contact: { enabled: false, title: "Me contacter", email: "" }
+  contact: { enabled: false, title: "Me contacter", email: "" },
+  video: { enabled: false, title: "Une vidéo pour découvrir", url: "" },
+  figures: { enabled: false, title: "En chiffres", items: [] },
+  benefits: { enabled: false, title: "Les avantages", items: [] }
 };
 
 export const accentColors = [
@@ -58,6 +68,10 @@ export const defaultSiteDesign: SiteDesign = {
   showMwrLogo: false,
   showTravelAdvantageLogo: false,
   showPortrait: true,
+  showPrimaryButton: true,
+  showBooking: true,
+  showInstagram: true,
+  showFacebook: true,
   heroImage: null,
   audio: null,
   backgroundPhotoUrl: "",
@@ -130,6 +144,10 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
     showMwrLogo: input.showMwrLogo === true,
     showTravelAdvantageLogo: input.showTravelAdvantageLogo === true,
     showPortrait: input.showPortrait !== false,
+    showPrimaryButton: input.showPrimaryButton !== false,
+    showBooking: input.showBooking !== false,
+    showInstagram: input.showInstagram !== false,
+    showFacebook: input.showFacebook !== false,
     heroImage: mediaChoice(input.heroImage),
     audio: mediaChoice(input.audio),
     backgroundPhotoUrl: safeHttpsUrl(input.backgroundPhotoUrl),
@@ -139,7 +157,10 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
       gallery: { enabled: modules.gallery?.enabled === true, title: text(modules.gallery?.title, 100) || defaultSiteModules.gallery.title, images: list(modules.gallery?.images).map((item: any) => ({ url: safeHttpsUrl(item?.url), caption: text(item?.caption, 180) })).filter((item) => item.url) },
       faq: { enabled: modules.faq?.enabled === true, title: text(modules.faq?.title, 100) || defaultSiteModules.faq.title, items: list(modules.faq?.items).map((item: any) => ({ question: text(item?.question, 200), answer: text(item?.answer, 1200) })) },
       testimonials: { enabled: modules.testimonials?.enabled === true, title: text(modules.testimonials?.title, 100) || defaultSiteModules.testimonials.title, items: list(modules.testimonials?.items).map((item: any) => ({ quote: text(item?.quote, 800), author: text(item?.author, 120) })) },
-      contact: { enabled: modules.contact?.enabled === true, title: text(modules.contact?.title, 100) || defaultSiteModules.contact.title, email: text(modules.contact?.email, 254) }
+      contact: { enabled: modules.contact?.enabled === true, title: text(modules.contact?.title, 100) || defaultSiteModules.contact.title, email: text(modules.contact?.email, 254) },
+      video: { enabled: modules.video?.enabled === true, title: text(modules.video?.title, 100) || defaultSiteModules.video.title, url: safeHttpsUrl(modules.video?.url) },
+      figures: { enabled: modules.figures?.enabled === true, title: text(modules.figures?.title, 100) || defaultSiteModules.figures.title, items: list(modules.figures?.items).map((item: any) => ({ value: text(item?.value, 30), label: text(item?.label, 120) })) },
+      benefits: { enabled: modules.benefits?.enabled === true, title: text(modules.benefits?.title, 100) || defaultSiteModules.benefits.title, items: list(modules.benefits?.items).map((item: any) => ({ title: text(item?.title, 100), text: text(item?.text, 500) })) }
     }
   };
 }

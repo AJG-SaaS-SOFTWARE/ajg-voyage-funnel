@@ -22,8 +22,8 @@ import {
   getMySite,
   saveMySite,
   signOut,
-  uploadProfileImage
-  ,uploadSiteImage
+  uploadProfileImage,
+  uploadSiteImage
 } from "../../lib/supabase-site-repository";
 
 const steps = [
@@ -216,10 +216,10 @@ export default function BuilderPage() {
   const currentStep = steps[stepIndex];
   const completion = Math.round(((stepIndex + 1) / steps.length) * 100);
 
-  const update = <K extends keyof SiteConfig>(key: K, value: SiteConfig[K]) => {
+  const update = <K extends keyof SiteConfig>(key: K, value: SiteConfig[K], preserveReview = false) => {
     setChangeVersion((version) => version + 1);
     latestVersion.current += 1;
-    setReviewResult(null);
+    if (!preserveReview) setReviewResult(null);
     setSaved(false);
     setPublished(false);
     setSyncError("");
@@ -383,9 +383,9 @@ export default function BuilderPage() {
     checks.push({ label: "Identité complète", detail: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "Nom et identité du site renseignés." : "Complétez l’identité du site.", status: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "pass" : "warn", step: "identity" });
     checks.push({ label: "Message d’accueil", detail: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "Titre et introduction suffisamment renseignés." : "Ajoutez un titre et une introduction plus complète.", status: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "pass" : "warn", step: "story" });
     checks.push({ label: "Présentation personnelle", detail: words(config.aboutText) >= 25 ? "La présentation apporte assez de contexte." : "La présentation gagnerait à être un peu plus développée.", status: words(config.aboutText) >= 25 ? "pass" : "warn", step: "story" });
-    checks.push({ label: "Appel à l’action", detail: !config.bookingUrl.trim() || config.bookingLabel.trim() ? "Le rendez-vous est cohérent avec le bouton affiché." : "Ajoutez un texte de bouton ou retirez le lien de rendez-vous.", status: !config.bookingUrl.trim() || config.bookingLabel.trim() ? "pass" : "warn", step: "booking" });
-    const socialOk = validOptionalUrl(config.instagramUrl) && validOptionalUrl(config.facebookUrl);
-    checks.push({ label: "Liens externes", detail: socialOk && bookingLinkStatus !== "invalid" ? "Les liens renseignés ont un format valide." : "Au moins un lien doit être vérifié.", status: socialOk && bookingLinkStatus !== "invalid" ? "pass" : "warn", step: "booking" });
+    checks.push({ label: "Appel à l’action", detail: !config.design.showBooking || !config.bookingUrl.trim() || config.bookingLabel.trim() ? "Le rendez-vous est cohérent avec le bouton affiché." : "Ajoutez un texte de bouton ou désactivez le rendez-vous.", status: !config.design.showBooking || !config.bookingUrl.trim() || config.bookingLabel.trim() ? "pass" : "warn", step: "booking" });
+    const socialOk = (!config.design.showInstagram || validOptionalUrl(config.instagramUrl)) && (!config.design.showFacebook || validOptionalUrl(config.facebookUrl));
+    checks.push({ label: "Liens externes", detail: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "Les liens affichés ont un format valide." : "Au moins un lien affiché doit être vérifié.", status: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "pass" : "warn", step: "booking" });
     const mediaOk = Boolean(config.design.heroImage || config.design.backgroundPhotoUrl);
     checks.push({ label: "Qualité visuelle", detail: mediaOk ? "Une image principale est sélectionnée." : "Ajoutez une image principale pour renforcer l’impact visuel.", status: mediaOk ? "pass" : "warn", step: "design" });
     checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Site indépendant : vérifiez les mentions propres à votre activité.", status: config.affiliation === "mwr" ? "pass" : "warn", step: "options" });
@@ -398,7 +398,7 @@ export default function BuilderPage() {
     const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter/i.test(allText.join(" "));
     checks.push({ label: "Texte à compléter", detail: placeholders ? "Un texte de démonstration semble encore présent." : "Aucun texte de démonstration connu détecté.", status: placeholders ? "warn" : "pass", step: "story" });
     const modules = config.design.modules;
-    const moduleReady = (!modules.gallery.enabled || modules.gallery.images.length > 0) && (!modules.faq.enabled || modules.faq.items.some((item) => item.question.trim() && item.answer.trim())) && (!modules.testimonials.enabled || modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) && (!modules.contact.enabled || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email));
+    const moduleReady = (!modules.gallery.enabled || modules.gallery.images.length > 0) && (!modules.faq.enabled || modules.faq.items.some((item) => item.question.trim() && item.answer.trim())) && (!modules.testimonials.enabled || modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) && (!modules.contact.enabled || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email)) && (!modules.video.enabled || /^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/.test(modules.video.url)) && (!modules.figures.enabled || modules.figures.items.some((item) => item.value.trim() && item.label.trim())) && (!modules.benefits.enabled || modules.benefits.items.some((item) => item.title.trim() && item.text.trim()));
     checks.push({ label: "Modules activés", detail: moduleReady ? "Les rubriques activées ont du contenu publiable." : "Une rubrique activée est vide ou incomplète ; elle restera masquée.", status: moduleReady ? "pass" : "warn", step: "options" });
     const sentences = [config.heroSubtitle, config.aboutText].filter(Boolean);
     const punctuation = sentences.every((text) => /[.!?…]$/.test(text.trim()));
@@ -417,10 +417,10 @@ export default function BuilderPage() {
     if (!config.slug.trim()) next.push({ message: "Adresse du site manquante", step: "identity" });
     else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push({ message: "Adresse du site invalide", step: "identity" });
     if (!config.heroTitle.trim()) next.push({ message: "Titre principal manquant", step: "story" });
-    if (bookingLinkStatus === "invalid") {
+    if (config.design.showBooking && bookingLinkStatus === "invalid") {
       next.push({ message: "Lien de rendez-vous invalide", step: "booking" });
     }
-    if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName].join(" "))) {
+    if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName, JSON.stringify(config.design.modules)].join(" "))) {
       next.push({ message: "Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", step: "options" });
     }
     return next;
@@ -938,6 +938,8 @@ export default function BuilderPage() {
 
             {step === "booking" ? (
               <>
+                <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showBooking} onChange={(e) => update("design", { ...config.design, showBooking: e.target.checked })} /><span><b>Afficher le rendez-vous</b><p>Désactivez pour masquer tous les liens de réservation sans effacer votre adresse.</p></span></label>
+                {config.design.showBooking ? <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showPrimaryButton} onChange={(e) => update("design", { ...config.design, showPrimaryButton: e.target.checked })} /><span><b>Afficher le bouton principal dans l’accueil</b><p>Le lien de rendez-vous peut rester dans la navigation si ce bouton est masqué.</p></span></label> : null}
                 <div className="booking-guide">
                   <b>Comment ajouter votre agenda ?</b>
                   <ol>
@@ -991,6 +993,8 @@ export default function BuilderPage() {
                   <div><b>Vos réseaux</b><p>Optionnels, mais utiles pour prolonger la relation hors du site.</p></div>
                 </div>
                 <div className="grid two">
+                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showInstagram} onChange={(e) => update("design", { ...config.design, showInstagram: e.target.checked })} /><span><b>Afficher Instagram</b></span></label>
+                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showFacebook} onChange={(e) => update("design", { ...config.design, showFacebook: e.target.checked })} /><span><b>Afficher Facebook</b></span></label>
                   <Field label="Instagram">
                     <input
                       type="url"
@@ -1101,7 +1105,7 @@ export default function BuilderPage() {
                   <div className="quality-summary-head"><div><span className="mini">RELECTURE ÉDITORIALE</span><strong>Orthographe, grammaire et clarté</strong></div></div>
                   <p>Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement.</p>
                   <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? "Relecture en cours…" : "Relire avec l’IA"}</button>
-                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p>{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => update(issue.field, reviewResult.suggestions[issue.field] as never)}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
+                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p>{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
                 </div>
 
                 <div className="review-checklist">

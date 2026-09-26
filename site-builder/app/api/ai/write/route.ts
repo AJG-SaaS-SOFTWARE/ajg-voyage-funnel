@@ -105,28 +105,6 @@ export async function POST(request: Request) {
     );
   }
 
-  let allowance: string;
-  try {
-    allowance = await consumeAiAllowance(auth.user.id, auth.supabase);
-  } catch (error) {
-    console.error("AI allowance check failed", error);
-    return NextResponse.json(
-      { error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." },
-      { status: 503 }
-    );
-  }
-
-  if (allowance !== "ok") {
-    const message = allowance === "minute_limit"
-      ? "Vous avez effectué plusieurs demandes très rapidement. Attendez une minute avant de réessayer."
-      : allowance === "daily_limit"
-        ? "Votre limite IA du jour est atteinte. Vous pourrez à nouveau utiliser l'assistant demain."
-        : allowance === "monthly_limit"
-          ? "Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain."
-          : "L'assistant IA est temporairement indisponible.";
-    return NextResponse.json({ error: message }, { status: 429 });
-  }
-
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -150,6 +128,24 @@ export async function POST(request: Request) {
   const instruction = clean(body?.instruction, 800);
   if (!instruction) {
     return NextResponse.json({ error: "Décrivez le texte que vous souhaitez obtenir." }, { status: 400 });
+  }
+
+  let allowance: string;
+  try {
+    allowance = await consumeAiAllowance(auth.user.id, auth.supabase);
+  } catch (error) {
+    console.error("AI allowance check failed", error);
+    return NextResponse.json({ error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." }, { status: 503 });
+  }
+  if (allowance !== "ok") {
+    const message = allowance === "minute_limit"
+      ? "Vous avez effectué plusieurs demandes très rapidement. Attendez une minute avant de réessayer."
+      : allowance === "daily_limit"
+        ? "Votre limite IA du jour est atteinte. Vous pourrez à nouveau utiliser l'assistant demain."
+        : allowance === "monthly_limit"
+          ? "Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain."
+          : "L'assistant IA est temporairement indisponible.";
+    return NextResponse.json({ error: message }, { status: 429 });
   }
 
   const currentText = clean(body?.currentText, 3500);
