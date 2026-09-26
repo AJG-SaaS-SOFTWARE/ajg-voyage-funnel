@@ -1928,3 +1928,46 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
 @media (max-width: 620px) {
   .proof-showcase-heading { margin-bottom: 20px; }
 }
+
+
+/* V5.0 — carrousel et informations côte à côte sur grand écran */
+.proof-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 540px) minmax(300px, 1fr);
+  column-gap: clamp(42px, 6vw, 88px);
+  align-items: start;
+}
+.proof-showcase-heading {
+  grid-column: 1 / -1;
+}
+.proof-showcase > .proof-carousel {
+  grid-column: 1;
+}
+.proof-showcase-info {
+  grid-column: 2;
+  align-self: start;
+  display: grid;
+  gap: 16px;
+  padding-top: 2px;
+}
+.proof-showcase-info .proof-disclaimer-wide,
+.proof-showcase-info .product-first-note,
+.proof-showcase-info .source-note {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  text-align: left;
+}
+.proof-showcase-info .product-first-note {
+  padding: 20px 22px;
+}
+@media (max-width: 900px) {
+  .proof-showcase {
+    display: block;
+  }
+  .proof-showcase-info {
+    display: grid;
+    gap: 14px;
+    margin-top: 22px;
+  }
+}
