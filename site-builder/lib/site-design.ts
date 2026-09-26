@@ -36,6 +36,7 @@ export const defaultSiteModuleOrder: SiteModuleKey[] = [
 
 export type SiteModules = {
   order: SiteModuleKey[];
+  assistantBrief: string;
   gallery: { enabled: boolean; title: string; images: { url: string; caption: string }[] };
   faq: { enabled: boolean; title: string; items: { question: string; answer: string }[] };
   testimonials: { enabled: boolean; title: string; items: { quote: string; author: string }[] };
@@ -47,6 +48,7 @@ export type SiteModules = {
 
 export const defaultSiteModules: SiteModules = {
   order: [...defaultSiteModuleOrder],
+  assistantBrief: "",
   gallery: { enabled: false, title: "Mes voyages", images: [] },
   faq: { enabled: false, title: "Questions fréquentes", items: [] },
   testimonials: { enabled: false, title: "Témoignages", items: [] },
@@ -171,6 +173,7 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
     backgroundPositionY: position(input.backgroundPositionY),
     modules: {
       order: moduleOrder,
+      assistantBrief: text(modules.assistantBrief, 1000),
       gallery: { enabled: modules.gallery?.enabled === true, title: text(modules.gallery?.title, 100) || defaultSiteModules.gallery.title, images: list(modules.gallery?.images).map((item: any) => ({ url: safeHttpsUrl(item?.url), caption: text(item?.caption, 180) })).filter((item) => item.url) },
       faq: { enabled: modules.faq?.enabled === true, title: text(modules.faq?.title, 100) || defaultSiteModules.faq.title, items: list(modules.faq?.items).map((item: any) => ({ question: text(item?.question, 200), answer: text(item?.answer, 1200) })) },
       testimonials: { enabled: modules.testimonials?.enabled === true, title: text(modules.testimonials?.title, 100) || defaultSiteModules.testimonials.title, items: list(modules.testimonials?.items).map((item: any) => ({ quote: text(item?.quote, 800), author: text(item?.author, 120) })) },
