@@ -12,7 +12,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
     <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
       <nav>
         <strong>{config.brandName || (english ? "Your site" : "Votre site")}</strong>
-        <span>{english ? "About" : "Présentation"}</span>
+        {config.aboutText.trim() ? <span>{english ? "About" : "Présentation"}</span> : null}
         <span>{config.language === "both" ? "FR · EN" : config.language.toUpperCase()}</span>
       </nav>
 
