@@ -39,6 +39,11 @@ const writableFields = {
     purpose: "Check French or English spelling, grammar, editorial coherence, unnecessary repetition, marketing clarity, reader benefit and call to action. Recommend only meaningful changes, avoid hype and preserve every factual claim.",
     constraint: "Return JSON with issues and suggested field replacements, never overwrite user content."
   },
+  moduleDraft: {
+    name: "une rubrique facultative du site",
+    purpose: "Prepare useful structured draft content for an optional website module from the user's business/activity brief and existing site context, while never inventing facts.",
+    constraint: "Return only the JSON structure requested for the specified module type."
+  },
   bookingLabel: {
     name: "le texte du bouton de prise de rendez-vous",
     purpose: "Give a clear, low-pressure next action. Avoid hype, urgency and vague calls to action.",
@@ -154,6 +159,8 @@ export async function POST(request: Request) {
   const affiliation = context.affiliation === "independent" ? "independent" : "mwr";
   const firstName = clean(context.firstName, 80);
   const brandName = clean(context.brandName, 120);
+  const moduleType = clean(context.moduleType, 30);
+  const moduleBrief = clean(context.moduleBrief, 1000);
   const rawSiteContext = context.siteContext && typeof context.siteContext === "object" ? context.siteContext : {};
   const contextEntries = [
     ["tagline", clean(rawSiteContext.heroTagline, 120)],
@@ -165,13 +172,16 @@ export async function POST(request: Request) {
     ["traveler profile", clean(rawSiteContext.guidedTraveler, 220)],
     ["discovery", clean(rawSiteContext.guidedDiscovery, 220)],
     ["benefit", clean(rawSiteContext.guidedBenefit, 220)],
-    ["audience", clean(rawSiteContext.guidedAudience, 220)]
+    ["audience", clean(rawSiteContext.guidedAudience, 220)],
+    ["module brief", moduleBrief]
   ].filter(([, value]) => value && value !== currentText);
   const selectedContextEntries = field === "guidedDraft"
     ? contextEntries.filter(([key]) => ["traveler profile", "discovery", "benefit", "audience"].includes(key))
-    : field === "qualityReview"
-      ? contextEntries.slice(0, 10)
-      : contextEntries.slice(0, 6);
+    : field === "moduleDraft"
+      ? contextEntries.slice(0, 11)
+      : field === "qualityReview"
+        ? contextEntries.slice(0, 10)
+        : contextEntries.slice(0, 6);
   const editorialContext = selectedContextEntries
     .map(([key, value]) => `${key}: ${value}`)
     .join("\n");
@@ -180,6 +190,24 @@ export async function POST(request: Request) {
   const complianceRules = affiliation === "mwr"
     ? "The member is an independent MWR Life Lifestyle Ambassador. Do not present the site as official. Do not invent prices, discounts, savings, guarantees, income claims, affiliations, certifications or product capabilities. Mention MWR Life or Travel Advantage only when the user's request or existing text makes it relevant."
     : "This is an independent site. Do not introduce MWR Life or Travel Advantage unless they already appear in the user's request. Do not invent affiliations, certifications, guarantees, prices, savings, income claims or product capabilities.";
+
+  const modulePrompt = field === "moduleDraft"
+    ? moduleType === "faq"
+      ? "Module type: FAQ. Return ONLY valid JSON: {\"title\":\"...\",\"items\":[{\"question\":\"...\",\"answer\":\"...\"}]}. Produce 4 to 6 genuinely useful questions. Answers must rely only on supplied facts. Never invent prices, guarantees, savings, performance, legal claims or commercial conditions. Keep answers concise and natural."
+      : moduleType === "benefits"
+        ? "Module type: benefits. Return ONLY valid JSON: {\"title\":\"...\",\"items\":[{\"title\":\"...\",\"text\":\"...\"}]}. Produce 3 to 5 distinct benefits supported by supplied context. Describe visitor value concretely without hype or invented claims."
+        : moduleType === "figures"
+          ? "Module type: key figures. Return ONLY valid JSON: {\"title\":\"...\",\"items\":[{\"value\":\"\",\"label\":\"...\"}]}. Produce 3 to 5 useful categories the user could truthfully quantify. The value field MUST remain empty. Never invent any number, percentage, duration, revenue, customer count or statistic."
+          : ""
+    : "";
+
+  if (field === "moduleDraft" && !["faq", "benefits", "figures"].includes(moduleType)) {
+    return NextResponse.json({ error: "Cette rubrique n'est pas encore compatible avec l'assistant IA." }, { status: 400 });
+  }
+
+  if (field === "moduleDraft" && !moduleBrief) {
+    return NextResponse.json({ error: "Décrivez d'abord votre activité ou l'objectif du site." }, { status: 400 });
+  }
 
   const prompt = [
     `Field to write: ${fieldSpec.name}.`,
@@ -195,7 +223,9 @@ export async function POST(request: Request) {
       ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Check spelling, grammar, coherence between fields, redundant ideas, clarity of the visitor benefit, credibility of marketing language and the CTA. Prefer concrete natural wording over hype or generic claims. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Preserve facts and never invent claims. If all is good, return empty arrays and object."
       : field === "guidedDraft"
       ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Treat the guided answers as notes, not copy to paste. Turn even one or two keywords into fluent complete sentences, but never invent facts. Give each field a distinct role: heroTagline = very short mood/angle; heroTitle = clear memorable promise or point of view; heroSubtitle = 2 or 3 sentences explaining what the visitor will discover; aboutHeading = personal section title; aboutText = 70 to 130 words connecting the person's travel profile, discovery and motivation naturally. Use the audience answer only if it was supplied. Avoid repeating the same phrase, benefit or opening across fields. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
-      : "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
+      : field === "moduleDraft"
+        ? modulePrompt
+        : "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
   ].filter(Boolean).join("\n");
 
   const response = await fetch("https://api.openai.com/v1/responses", {
@@ -219,7 +249,7 @@ export async function POST(request: Request) {
       input: prompt,
       reasoning: { effort: "low" },
       text: { verbosity: "low" },
-      max_output_tokens: field === "guidedDraft" ? 650 : field === "qualityReview" ? 800 : field === "aboutText" ? 320 : 140
+      max_output_tokens: field === "guidedDraft" ? 650 : field === "qualityReview" ? 800 : field === "moduleDraft" ? 900 : field === "aboutText" ? 320 : 140
     })
   });
 
@@ -271,6 +301,41 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error("Invalid guided draft output", error);
       return NextResponse.json({ error: "L'IA n'a pas pu structurer les textes. Réessayez." }, { status: 502 });
+    }
+  }
+
+  if (field === "moduleDraft") {
+    try {
+      const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+      const raw = JSON.parse(cleaned);
+      const title = clean(raw?.title, 100);
+      const items = Array.isArray(raw?.items) ? raw.items.slice(0, 6) : [];
+      if (!title || !items.length) throw new Error("Incomplete module draft");
+
+      if (moduleType === "faq") {
+        const normalized = items
+          .map((item: any) => ({ question: clean(item?.question, 200), answer: clean(item?.answer, 1200) }))
+          .filter((item: any) => item.question && item.answer);
+        if (!normalized.length) throw new Error("Empty FAQ draft");
+        return NextResponse.json({ draft: { title, items: normalized } });
+      }
+
+      if (moduleType === "benefits") {
+        const normalized = items
+          .map((item: any) => ({ title: clean(item?.title, 100), text: clean(item?.text, 500) }))
+          .filter((item: any) => item.title && item.text);
+        if (!normalized.length) throw new Error("Empty benefits draft");
+        return NextResponse.json({ draft: { title, items: normalized } });
+      }
+
+      const normalized = items
+        .map((item: any) => ({ value: "", label: clean(item?.label, 120) }))
+        .filter((item: any) => item.label);
+      if (!normalized.length) throw new Error("Empty figures draft");
+      return NextResponse.json({ draft: { title, items: normalized } });
+    } catch (error) {
+      console.error("Invalid module draft output", error);
+      return NextResponse.json({ error: "L'IA n'a pas pu structurer cette rubrique. Réessayez." }, { status: 502 });
     }
   }
 
