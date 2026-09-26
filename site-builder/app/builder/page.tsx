@@ -436,8 +436,19 @@ export default function BuilderPage() {
     const sentences = [config.heroSubtitle, config.aboutText].filter(Boolean);
     const punctuation = sentences.every((text) => /[.!?…]$/.test(text.trim()));
     checks.push({ label: "Ponctuation", detail: punctuation ? "Les paragraphes principaux se terminent correctement." : "Vérifiez la ponctuation de l’introduction et de la présentation.", status: punctuation ? "pass" : "warn", step: "story" });
+    const editorialReviewOk = reviewResult !== null && reviewResult.issues.length === 0;
+    checks.push({
+      label: "Relecture éditoriale IA",
+      detail: reviewResult === null
+        ? "La relecture orthographe, grammaire et cohérence n’a pas encore été lancée."
+        : reviewResult.issues.length
+          ? `${reviewResult.issues.length} suggestion(s) restent à examiner avant publication.`
+          : "Orthographe, grammaire, cohérence et clarté ont été relues sans correction restante.",
+      status: editorialReviewOk ? "pass" : "warn",
+      step: "review"
+    });
     return checks;
-  }, [config, bookingLinkStatus]);
+  }, [config, bookingLinkStatus, reviewResult]);
 
   const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
   const qualityWarnings = qualityChecks.length - qualityPassed;
@@ -1148,7 +1159,7 @@ export default function BuilderPage() {
                     {qualityChecks.map((check) => <button type="button" key={check.label} className={`quality-check ${check.status}`} onClick={() => { setStep(check.step); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                       <span>{check.status === "pass" ? "✓" : "!"}</span>
                       <p><b>{check.label}</b><small>{check.detail}</small></p>
-                      <i>Corriger →</i>
+                      <i>{check.status === "pass" ? "Voir →" : "Corriger →"}</i>
                     </button>)}
                   </div>
                   <p className="quality-note">Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.</p>
