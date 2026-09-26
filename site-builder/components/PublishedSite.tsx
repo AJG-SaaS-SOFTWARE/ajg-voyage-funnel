@@ -10,7 +10,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
   const actionLabel = config.bookingLabel;
 
   return (
-    <div className="public-site" data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, ...(config.design.customBackgroundColor ? { "--site-custom-background": config.design.customBackgroundColor } : {}) } as CSSProperties}>
+    <div className="public-site" data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-pattern-color": config.design.patternColor || config.design.accent, ...(config.design.customBackgroundColor ? { "--site-custom-background": config.design.customBackgroundColor } : {}) } as CSSProperties}>
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
