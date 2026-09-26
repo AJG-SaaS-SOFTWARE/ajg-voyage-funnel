@@ -97,6 +97,44 @@ function Field({
   );
 }
 
+function VisibilityOption({
+  checked,
+  title,
+  description,
+  activeLabel = "Actif",
+  inactiveLabel = "Masqué",
+  logo,
+  onChange
+}: {
+  checked: boolean;
+  title: string;
+  description: string;
+  activeLabel?: string;
+  inactiveLabel?: string;
+  logo?: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className={`visibility-option ${checked ? "is-active" : "is-inactive"}`}>
+      <input
+        className="visibility-option-input"
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span className="visibility-switch" aria-hidden="true"><i /></span>
+      <span className="visibility-option-copy">
+        <span className="visibility-option-heading">
+          <b>{title}</b>
+          <em>{checked ? activeLabel : inactiveLabel}</em>
+        </span>
+        <small>{description}</small>
+      </span>
+      {logo ? <img className="visibility-option-logo" src={logo} alt="" aria-hidden="true" /> : null}
+    </label>
+  );
+}
+
 export default function BuilderPage() {
   const router = useRouter();
   const remoteMode = isSupabaseConfigured();
@@ -1013,8 +1051,45 @@ export default function BuilderPage() {
 
             {step === "booking" ? (
               <>
-                <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showBooking} onChange={(e) => update("design", { ...config.design, showBooking: e.target.checked })} /><span><b>Afficher le rendez-vous</b><p>Désactivez pour masquer tous les liens de réservation sans effacer votre adresse.</p></span></label>
-                {config.design.showBooking ? <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showPrimaryButton} onChange={(e) => update("design", { ...config.design, showPrimaryButton: e.target.checked })} /><span><b>Afficher le bouton principal dans l’accueil</b><p>Le lien de rendez-vous peut rester dans la navigation si ce bouton est masqué.</p></span></label> : null}
+                <div className="visibility-options-stack">
+                  <VisibilityOption
+                    checked={config.design.showBooking}
+                    title="Rendez-vous sur le site"
+                    activeLabel="Activé"
+                    inactiveLabel="Désactivé"
+                    description={config.design.showBooking
+                      ? "Les accès au rendez-vous peuvent apparaître sur le site dès qu'un lien valide est renseigné."
+                      : "Tous les accès au rendez-vous sont masqués. Le texte et le lien restent enregistrés pour plus tard."}
+                    onChange={(checked) => update("design", { ...config.design, showBooking: checked })}
+                  />
+                  {config.design.showBooking ? (
+                    <VisibilityOption
+                      checked={config.design.showPrimaryButton}
+                      title="Bouton principal dans l’accueil"
+                      activeLabel="Visible"
+                      inactiveLabel="Masqué"
+                      description={config.design.showPrimaryButton
+                        ? "Avec un lien valide, le bouton apparaît dans le hero en plus de l'accès dans la navigation."
+                        : "Avec un lien valide, l'accès reste dans la navigation mais le gros bouton du hero est masqué."}
+                      onChange={(checked) => update("design", { ...config.design, showPrimaryButton: checked })}
+                    />
+                  ) : null}
+                </div>
+                <div className={`booking-visibility-summary ${!config.design.showBooking || bookingLinkStatus !== "valid" ? "warning" : "active"}`}>
+                  <span aria-hidden="true">{!config.design.showBooking ? "○" : bookingLinkStatus === "valid" ? "✓" : "!"}</span>
+                  <div>
+                    <b>Ce que verra le visiteur</b>
+                    <p>
+                      {!config.design.showBooking
+                        ? "Aucun accès au rendez-vous : la fonction est désactivée."
+                        : bookingLinkStatus !== "valid"
+                          ? "Aucun bouton pour le moment : ajoutez un lien de rendez-vous HTTPS valide ci-dessous."
+                          : config.design.showPrimaryButton
+                            ? "Un accès dans la navigation + le bouton principal dans l’accueil."
+                            : "Un accès dans la navigation uniquement. Le bouton principal de l’accueil est masqué."}
+                    </p>
+                  </div>
+                </div>
                 <div className="booking-guide">
                   <b>Comment ajouter votre agenda ?</b>
                   <ol>
@@ -1096,7 +1171,17 @@ export default function BuilderPage() {
                   <span>01</span>
                   <div><b>Modules du site</b><p>Les contenus affichés sur votre site doivent être prêts à être partagés.</p></div>
                 </div>
-                <ModulesEditor modules={config.design.modules} onChange={(modules) => update("design", { ...config.design, modules })} onImage={(event) => void uploadDesignImage(event, "gallery")} uploading={uploadingImage || busy} />
+                <ModulesEditor
+                  modules={config.design.modules}
+                  onChange={(modules) => update("design", { ...config.design, modules })}
+                  onImage={(event) => void uploadDesignImage(event, "gallery")}
+                  uploading={uploadingImage || busy}
+                  language={config.language}
+                  affiliation={config.affiliation}
+                  firstName={config.firstName}
+                  brandName={config.brandName}
+                  siteContext={aiSiteContext}
+                />
 
                 <div className="section-kicker">
                   <span>02</span>
@@ -1114,14 +1199,30 @@ export default function BuilderPage() {
                     <p>{requiredDisclaimer}</p>
                   </div>
                   <p className="media-license-note">Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d'indépendance.</p>
-                  <label className="option-card premium-option-card">
-                    <input spellCheck type="checkbox" checked={config.design.showMwrLogo} onChange={(event) => update("design", { ...config.design, showMwrLogo: event.target.checked })} />
-                    <span><b>Afficher le logo MWR Life « Independent Distributor »</b><p>Je confirme pouvoir utiliser ce visuel dans le cadre de mon activité.</p></span>
-                  </label>
-                  <label className="option-card premium-option-card">
-                    <input spellCheck type="checkbox" checked={config.design.showTravelAdvantageLogo} onChange={(event) => update("design", { ...config.design, showTravelAdvantageLogo: event.target.checked })} />
-                    <span><b>Afficher le logo Travel Advantage « Independent Distributor »</b><p>Je confirme pouvoir utiliser ce visuel dans le cadre de mon activité.</p></span>
-                  </label>
+                  <div className="visibility-options-stack logo-visibility-options">
+                    <VisibilityOption
+                      checked={config.design.showMwrLogo}
+                      title="Logo MWR Life « Independent Distributor »"
+                      activeLabel="Affiché"
+                      inactiveLabel="Masqué"
+                      description={config.design.showMwrLogo
+                        ? "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire."
+                        : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée."}
+                      logo="/logos/mwr-life-independent.svg"
+                      onChange={(checked) => update("design", { ...config.design, showMwrLogo: checked })}
+                    />
+                    <VisibilityOption
+                      checked={config.design.showTravelAdvantageLogo}
+                      title="Logo Travel Advantage « Independent Distributor »"
+                      activeLabel="Affiché"
+                      inactiveLabel="Masqué"
+                      description={config.design.showTravelAdvantageLogo
+                        ? "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire."
+                        : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée."}
+                      logo="/logos/travel-advantage-independent.svg"
+                      onChange={(checked) => update("design", { ...config.design, showTravelAdvantageLogo: checked })}
+                    />
+                  </div>
                 </> : <div className="helper-card premium-helper-card">
                   <b>Site indépendant sans mention MWR Life</b>
                   <p>Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Relisez les textes que vous avez rédigés. Les informations légales propres à votre activité ne sont pas encore générées par cet éditeur ; vérifiez-les avant de partager le site.</p>
