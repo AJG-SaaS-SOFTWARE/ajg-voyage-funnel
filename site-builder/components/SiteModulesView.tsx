@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import type { SiteModuleKey, SiteModules } from "../lib/site-design";
+import { defaultSiteModules, type SiteModuleKey, type SiteModules } from "../lib/site-design";
 
 export default function SiteModulesView({ modules, english = false }: { modules: SiteModules; english?: boolean }) {
   const gallery = modules.gallery.enabled ? modules.gallery.images.filter((image) => image.url) : [];
@@ -8,6 +8,31 @@ export default function SiteModulesView({ modules, english = false }: { modules:
   const email = modules.contact.enabled && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email.trim()) ? modules.contact.email.trim() : "";
   const figures = modules.figures.enabled ? modules.figures.items.filter((item) => item.value.trim() && item.label.trim()) : [];
   const benefits = modules.benefits.enabled ? modules.benefits.items.filter((item) => item.title.trim() && item.text.trim()) : [];
+  const localizedDefaultTitles: Record<SiteModuleKey, string> = english
+    ? {
+        gallery: "My travels",
+        faq: "Frequently asked questions",
+        testimonials: "Testimonials",
+        video: "Discover in video",
+        figures: "Key figures",
+        benefits: "Benefits",
+        contact: "Contact me"
+      }
+    : {
+        gallery: defaultSiteModules.gallery.title,
+        faq: defaultSiteModules.faq.title,
+        testimonials: defaultSiteModules.testimonials.title,
+        video: defaultSiteModules.video.title,
+        figures: defaultSiteModules.figures.title,
+        benefits: defaultSiteModules.benefits.title,
+        contact: defaultSiteModules.contact.title
+      };
+  const titleFor = (key: SiteModuleKey) => {
+    const current = modules[key].title.trim();
+    const frenchDefault = defaultSiteModules[key].title;
+    return english && current === frenchDefault ? localizedDefaultTitles[key] : current || localizedDefaultTitles[key];
+  };
+
   const videoUrl = modules.video.enabled ? modules.video.url : "";
   const videoId = (() => {
     try {
@@ -27,7 +52,7 @@ export default function SiteModulesView({ modules, english = false }: { modules:
       case "gallery":
         return gallery.length ? (
           <section className="site-module" id="voyages">
-            <h2>{modules.gallery.title}</h2>
+            <h2>{titleFor("gallery")}</h2>
             <div className="module-gallery">
               {gallery.map((image, index) => (
                 <figure key={`${image.url}-${index}`}>
@@ -41,14 +66,14 @@ export default function SiteModulesView({ modules, english = false }: { modules:
       case "faq":
         return faq.length ? (
           <section className="site-module" id="faq">
-            <h2>{modules.faq.title}</h2>
+            <h2>{titleFor("faq")}</h2>
             {faq.map((item, index) => <details key={index}><summary>{item.question}</summary><p>{item.answer}</p></details>)}
           </section>
         ) : null;
       case "testimonials":
         return testimonials.length ? (
           <section className="site-module" id="temoignages">
-            <h2>{modules.testimonials.title}</h2>
+            <h2>{titleFor("testimonials")}</h2>
             <div className="module-testimonials">
               {testimonials.map((item, index) => <blockquote key={index}><p>“{item.quote}”</p><footer>{item.author}</footer></blockquote>)}
             </div>
@@ -57,16 +82,16 @@ export default function SiteModulesView({ modules, english = false }: { modules:
       case "video":
         return videoId ? (
           <section className="site-module" id="video">
-            <h2>{modules.video.title}</h2>
+            <h2>{titleFor("video")}</h2>
             <div className="module-video">
-              <iframe src={`https://www.youtube-nocookie.com/embed/${videoId}`} title={modules.video.title} loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+              <iframe src={`https://www.youtube-nocookie.com/embed/${videoId}`} title={titleFor("video")} loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             </div>
           </section>
         ) : null;
       case "figures":
         return figures.length ? (
           <section className="site-module" id="chiffres">
-            <h2>{modules.figures.title}</h2>
+            <h2>{titleFor("figures")}</h2>
             <div className="module-testimonials">
               {figures.map((item, index) => <div className="module-figure" key={index}><strong>{item.value}</strong><p>{item.label}</p></div>)}
             </div>
@@ -75,7 +100,7 @@ export default function SiteModulesView({ modules, english = false }: { modules:
       case "benefits":
         return benefits.length ? (
           <section className="site-module" id="avantages">
-            <h2>{modules.benefits.title}</h2>
+            <h2>{titleFor("benefits")}</h2>
             <div className="module-testimonials">
               {benefits.map((item, index) => <article className="module-figure" key={index}><h3>{item.title}</h3><p>{item.text}</p></article>)}
             </div>
@@ -84,7 +109,7 @@ export default function SiteModulesView({ modules, english = false }: { modules:
       case "contact":
         return email ? (
           <section className="site-module" id="contact">
-            <h2>{modules.contact.title}</h2>
+            <h2>{titleFor("contact")}</h2>
             <a className="button primary" href={`mailto:${email}`}>{english ? "Send an email" : "Envoyer un e-mail"}</a>
           </section>
         ) : null;
