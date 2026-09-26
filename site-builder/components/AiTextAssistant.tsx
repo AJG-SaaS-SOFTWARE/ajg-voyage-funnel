@@ -53,8 +53,8 @@ export default function AiTextAssistant({
   const [message, setMessage] = useState("");
   const [suggestion, setSuggestion] = useState("");
 
-  const generate = async () => {
-    const request = instruction.trim();
+  const generate = async (quickInstruction?: string) => {
+    const request = (quickInstruction || instruction).trim();
     if (!request) {
       setState("error");
       setMessage("Décrivez en quelques mots ce que vous souhaitez obtenir.");
@@ -118,16 +118,8 @@ export default function AiTextAssistant({
   };
 
   const quickPrompts = language === "en"
-    ? [
-        "Make the text warmer and more natural",
-        "Shorten and simplify the text",
-        "Make the text more professional without sounding salesy"
-      ]
-    : [
-        "Rends le texte plus chaleureux et naturel",
-        "Raccourcis et simplifie le texte",
-        "Rends le texte plus professionnel sans être commercial"
-      ];
+    ? ["Improve", "More natural", "Warmer", "More professional", "Shorter", "New suggestion"]
+    : ["Améliorer", "Plus naturel", "Plus chaleureux", "Plus professionnel", "Plus court", "Nouvelle proposition"];
 
   const ui = language === "en"
     ? {
@@ -203,7 +195,8 @@ export default function AiTextAssistant({
               <button
                 key={prompt}
                 type="button"
-                onClick={() => setInstruction(prompt)}
+                disabled={state === "loading" || (!value.trim() && prompt !== "Nouvelle proposition" && prompt !== "New suggestion")}
+                onClick={() => { setInstruction(prompt); void generate(prompt); }}
               >
                 {prompt}
               </button>
@@ -221,7 +214,7 @@ export default function AiTextAssistant({
                   setState("done");
                   setMessage("✓ Proposition insérée. Vous pouvez encore la modifier librement.");
                 }}>{ui.use}</button>
-                <button type="button" className="button secondary" onClick={generate}>{ui.regenerate}</button>
+                <button type="button" className="button secondary" onClick={() => void generate("Nouvelle proposition")}>{ui.regenerate}</button>
               </div>
             </div>
           ) : null}
@@ -237,7 +230,7 @@ export default function AiTextAssistant({
               type="button"
               className="button primary premium-button"
               disabled={state === "loading" || !instruction.trim()}
-              onClick={generate}
+              onClick={() => void generate()}
             >
               {state === "loading" ? ui.writing : suggestion ? ui.generateAnother : ui.generate}
               {state !== "loading" ? <span aria-hidden="true">→</span> : null}

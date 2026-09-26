@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import type { SiteConfig, SiteLanguage } from "./site-config";
+import { defaultSiteConfig, type SiteConfig, type SiteLanguage } from "./site-config";
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import { normalizeSiteDesign } from "./site-design";
 
@@ -51,6 +51,13 @@ function configFromRow(row: any): SiteConfig {
   };
 }
 
+function draftFromRow(row: any): SiteConfig {
+  const published = configFromRow(row);
+  const draft = row.draft_config;
+  if (!draft || typeof draft !== "object") return published;
+  return { ...defaultSiteConfig, ...published, ...draft, design: normalizeSiteDesign(draft.design ?? published.design) };
+}
+
 function payload(user: User, config: SiteConfig, status: "draft" | "published") {
   const language = languageFields(config.language);
   return {
@@ -84,7 +91,7 @@ function toRemote(row: any): RemoteSite {
     ownerId: row.owner_id,
     slug: row.slug,
     status: row.status,
-    config: configFromRow(row),
+    config: draftFromRow(row),
     publishedAt: row.published_at,
     updatedAt: row.updated_at
   };
@@ -168,12 +175,12 @@ export async function saveMySite(config: SiteConfig, publish = false): Promise<R
   if (!user) throw new Error("Vous devez être connecté.");
 
   const existing = await getMySite();
-  const nextPayload = payload(user, config, publish ? "published" : "draft");
+  const nextPayload = { ...payload(user, config, publish ? "published" : "draft"), draft_config: publish ? null : config };
 
   if (existing) {
     const { data, error } = await supabase
       .from("sites")
-      .update(nextPayload)
+      .update(!publish && existing.status === "published" ? { draft_config: config } : nextPayload)
       .eq("id", existing.id)
       .select("*")
       .single();
@@ -232,6 +239,19 @@ export async function uploadProfileImage(file: File, siteId: string) {
 
   const { data } = supabase.storage.from("site-media").getPublicUrl(objectPath);
   return data.publicUrl;
+}
+
+export async function uploadSiteImage(file: Blob, siteId: string, category: "background" | "gallery") {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Vous devez être connecté.");
+  const objectPath = `${user.id}/${siteId}/${category}/${crypto.randomUUID()}.webp`;
+  const { error } = await supabase.storage.from("site-media").upload(objectPath, file, {
+    contentType: "image/webp", cacheControl: "31536000"
+  });
+  if (error) throw error;
+  return supabase.storage.from("site-media").getPublicUrl(objectPath).data.publicUrl;
 }
 
 export async function signOut() {

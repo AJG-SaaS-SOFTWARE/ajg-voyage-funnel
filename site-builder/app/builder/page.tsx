@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
+import ModulesEditor from "../../components/ModulesEditor";
 import AiTextAssistant from "../../components/AiTextAssistant";
 import {
   defaultSiteConfig,
@@ -13,13 +14,16 @@ import {
   type SiteLanguage
 } from "../../lib/site-config";
 import { loadDraft, publishDraft, saveDraft } from "../../lib/site-store";
-import { isSupabaseConfigured } from "../../lib/supabase-browser";
+import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
+import { optimizeImage } from "../../lib/optimize-image";
+import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import {
   getCurrentUser,
   getMySite,
   saveMySite,
   signOut,
   uploadProfileImage
+  ,uploadSiteImage
 } from "../../lib/supabase-site-repository";
 
 const steps = [
@@ -117,6 +121,25 @@ export default function BuilderPage() {
     audience: ""
   });
   const [guidedDraftReady, setGuidedDraftReady] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [reviewResult, setReviewResult] = useState<{ issues: { field: keyof SiteConfig; reason: string }[]; suggestions: Record<string, string> } | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const [changeVersion, setChangeVersion] = useState(0);
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const latestVersion = useRef(0);
+
+  useEffect(() => {
+    if (!remoteMode || !ready || changeVersion === 0) return;
+    const version = changeVersion;
+    const timer = window.setTimeout(() => {
+      saveQueue.current = saveQueue.current.catch(() => undefined).then(async () => {
+        const remote = await saveMySite(config, false);
+        setRemoteSiteId(remote.id);
+        if (version === latestVersion.current) setSaved(true);
+      }).catch((error) => setSyncError(error instanceof Error ? error.message : "Sauvegarde automatique impossible."));
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, [config, changeVersion, ready, remoteMode]);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -194,6 +217,9 @@ export default function BuilderPage() {
   const completion = Math.round(((stepIndex + 1) / steps.length) * 100);
 
   const update = <K extends keyof SiteConfig>(key: K, value: SiteConfig[K]) => {
+    setChangeVersion((version) => version + 1);
+    latestVersion.current += 1;
+    setReviewResult(null);
     setSaved(false);
     setPublished(false);
     setSyncError("");
@@ -206,6 +232,8 @@ export default function BuilderPage() {
   };
 
   const updateAffiliation = (affiliation: SiteConfig["affiliation"]) => {
+    setChangeVersion((version) => version + 1);
+    latestVersion.current += 1;
     const neutralIntro = "Présentez votre activité, votre approche et ce que vos visiteurs peuvent découvrir avec vous.";
     setSaved(false);
     setPublished(false);
@@ -231,6 +259,8 @@ export default function BuilderPage() {
       .replace(/^-+|-+$/g, "");
 
   const updateIdentityName = (key: "firstName" | "lastName", value: string) => {
+    setChangeVersion((version) => version + 1);
+    latestVersion.current += 1;
     setSaved(false);
     setPublished(false);
     setSyncError("");
@@ -264,6 +294,7 @@ export default function BuilderPage() {
     setSyncError("");
     try {
       const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("L'assistant IA nécessite une connexion au site.");
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Reconnectez-vous pour préparer vos textes avec l'IA.");
@@ -355,9 +386,23 @@ export default function BuilderPage() {
     checks.push({ label: "Appel à l’action", detail: !config.bookingUrl.trim() || config.bookingLabel.trim() ? "Le rendez-vous est cohérent avec le bouton affiché." : "Ajoutez un texte de bouton ou retirez le lien de rendez-vous.", status: !config.bookingUrl.trim() || config.bookingLabel.trim() ? "pass" : "warn", step: "booking" });
     const socialOk = validOptionalUrl(config.instagramUrl) && validOptionalUrl(config.facebookUrl);
     checks.push({ label: "Liens externes", detail: socialOk && bookingLinkStatus !== "invalid" ? "Les liens renseignés ont un format valide." : "Au moins un lien doit être vérifié.", status: socialOk && bookingLinkStatus !== "invalid" ? "pass" : "warn", step: "booking" });
-    const mediaOk = Boolean(config.design.heroImage);
+    const mediaOk = Boolean(config.design.heroImage || config.design.backgroundPhotoUrl);
     checks.push({ label: "Qualité visuelle", detail: mediaOk ? "Une image principale est sélectionnée." : "Ajoutez une image principale pour renforcer l’impact visuel.", status: mediaOk ? "pass" : "warn", step: "design" });
     checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Site indépendant : vérifiez les mentions propres à votre activité.", status: config.affiliation === "mwr" ? "pass" : "warn", step: "options" });
+    const { surface, ink } = surfaceInk(config.design);
+    checks.push({ label: "Lisibilité des rubriques", detail: `Contraste du fond et du texte : ${contrastRatio(surface, ink).toFixed(1)}:1.`, status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn", step: "design" });
+    checks.push({ label: "Contraste du bouton", detail: `Texte du bouton adapté à la couleur choisie (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`, status: "pass", step: "design" });
+    const allText = [config.heroTagline, config.heroTitle, config.heroSubtitle, config.aboutHeading, config.aboutText].filter((value) => value.trim());
+    const normalized = allText.map((value) => value.trim().toLowerCase().replace(/[.!?]+$/, ""));
+    checks.push({ label: "Répétitions évidentes", detail: new Set(normalized).size === normalized.length ? "Aucun texte identique entre les champs principaux." : "Deux champs contiennent le même texte : diversifiez-les.", status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
+    const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter/i.test(allText.join(" "));
+    checks.push({ label: "Texte à compléter", detail: placeholders ? "Un texte de démonstration semble encore présent." : "Aucun texte de démonstration connu détecté.", status: placeholders ? "warn" : "pass", step: "story" });
+    const modules = config.design.modules;
+    const moduleReady = (!modules.gallery.enabled || modules.gallery.images.length > 0) && (!modules.faq.enabled || modules.faq.items.some((item) => item.question.trim() && item.answer.trim())) && (!modules.testimonials.enabled || modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) && (!modules.contact.enabled || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email));
+    checks.push({ label: "Modules activés", detail: moduleReady ? "Les rubriques activées ont du contenu publiable." : "Une rubrique activée est vide ou incomplète ; elle restera masquée.", status: moduleReady ? "pass" : "warn", step: "options" });
+    const sentences = [config.heroSubtitle, config.aboutText].filter(Boolean);
+    const punctuation = sentences.every((text) => /[.!?…]$/.test(text.trim()));
+    checks.push({ label: "Ponctuation", detail: punctuation ? "Les paragraphes principaux se terminent correctement." : "Vérifiez la ponctuation de l’introduction et de la présentation.", status: punctuation ? "pass" : "warn", step: "story" });
     return checks;
   }, [config, bookingLinkStatus, config.design]);
 
@@ -375,6 +420,9 @@ export default function BuilderPage() {
     if (bookingLinkStatus === "invalid") {
       next.push({ message: "Lien de rendez-vous invalide", step: "booking" });
     }
+    if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName].join(" "))) {
+      next.push({ message: "Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", step: "options" });
+    }
     return next;
   }, [config, bookingLinkStatus]);
 
@@ -382,6 +430,7 @@ export default function BuilderPage() {
     setBusy(true);
     setSyncError("");
     try {
+      await saveQueue.current;
       saveDraft(config);
       if (remoteMode) {
         const remote = await saveMySite(config, false);
@@ -401,6 +450,7 @@ export default function BuilderPage() {
     setBusy(true);
     setSyncError("");
     try {
+      await saveQueue.current;
       if (remoteMode) {
         const remote = await saveMySite(config, true);
         setRemoteSiteId(remote.id);
@@ -413,6 +463,25 @@ export default function BuilderPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const reviewWithAi = async () => {
+    setReviewing(true);
+    setSyncError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour lancer la relecture IA.");
+      const response = await fetch("/api/ai/write", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify({ field: "qualityReview", instruction: "Relis les textes du site et propose uniquement des corrections utiles.", context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, siteContext: { ...aiSiteContext, bookingLabel: config.bookingLabel } } })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Relecture indisponible.");
+      setReviewResult(result);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Relecture indisponible.");
+    } finally { setReviewing(false); }
   };
 
   const uploadPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -451,6 +520,29 @@ export default function BuilderPage() {
       setSyncError(error instanceof Error ? error.message : "Impossible d'envoyer la photo.");
     } finally {
       setBusy(false);
+      event.target.value = "";
+    }
+  };
+
+  const uploadDesignImage = async (event: ChangeEvent<HTMLInputElement>, category: "background" | "gallery") => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    setSyncError("");
+    try {
+      if (!remoteMode) throw new Error("Connectez le stockage du site avant d'importer une photo.");
+      const optimized = await optimizeImage(file);
+      const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false);
+      setRemoteSiteId(site.id);
+      const url = await uploadSiteImage(optimized, site.id, category);
+      const design = category === "background"
+        ? { ...config.design, backgroundPhotoUrl: url, backgroundPositionX: 50, backgroundPositionY: 50 }
+        : { ...config.design, modules: { ...config.design.modules, gallery: { ...config.design.modules.gallery, images: [...config.design.modules.gallery.images, { url, caption: "" }] } } };
+      update("design", design);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Impossible d'envoyer l'image.");
+    } finally {
+      setUploadingImage(false);
       event.target.value = "";
     }
   };
@@ -826,6 +918,17 @@ export default function BuilderPage() {
             {step === "design" ? (
               <>
                 <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
+                <div className="photo-background-editor module-editor">
+                  <b>Photo personnelle en arrière-plan</b>
+                  <p>La photo est compressée avant l'envoi et affichée en mode cover. Déplacez son point central pour garder le sujet visible sur écran étroit.</p>
+                  <label>Importer une photo<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage || busy} onChange={(event) => void uploadDesignImage(event, "background")} /></label>
+                  {uploadingImage ? <p role="status">Optimisation et envoi de la photo…</p> : null}
+                  {config.design.backgroundPhotoUrl ? <>
+                    <button type="button" className="secondary" onClick={() => update("design", { ...config.design, backgroundPhotoUrl: "" })}>Retirer la photo de fond</button>
+                    <label>Position horizontale : {config.design.backgroundPositionX} %<input type="range" min="0" max="100" value={config.design.backgroundPositionX} onChange={(e) => update("design", { ...config.design, backgroundPositionX: Number(e.target.value) })} /></label>
+                    <label>Position verticale : {config.design.backgroundPositionY} %<input type="range" min="0" max="100" value={config.design.backgroundPositionY} onChange={(e) => update("design", { ...config.design, backgroundPositionY: Number(e.target.value) })} /></label>
+                  </> : null}
+                </div>
                 <label className="option-card premium-option-card portrait-option">
                   <input spellCheck type="checkbox" checked={config.design.showPortrait} onChange={(event) => update("design", { ...config.design, showPortrait: event.target.checked })} />
                   <span><b>Afficher le portrait dans l'accueil</b><p>Si vous n'avez pas ajouté de photo, vos initiales apparaissent. Décochez pour laisser davantage de place à l'image de fond.</p></span>
@@ -914,18 +1017,7 @@ export default function BuilderPage() {
                   <span>01</span>
                   <div><b>Modules du site</b><p>Les contenus affichés sur votre site doivent être prêts à être partagés.</p></div>
                 </div>
-                <div className="option-card premium-option-card">
-                  <div>
-                    <b>Mes voyages · bientôt disponible</b>
-                    <p>Vous pourrez ajouter vos récits et vos photos lorsque l'éditeur de carnets sera prêt. Aucun contenu d'attente ne sera publié à votre place.</p>
-                  </div>
-                </div>
-                <div className="option-card premium-option-card">
-                  <div>
-                    <b>Autres rubriques envisagées</b>
-                    <p>Galerie personnelle, questions fréquentes, témoignages et formulaire de contact. Elles seront proposées quand leur édition et leur affichage seront prêts.</p>
-                  </div>
-                </div>
+                <ModulesEditor modules={config.design.modules} onChange={(modules) => update("design", { ...config.design, modules })} onImage={(event) => void uploadDesignImage(event, "gallery")} uploading={uploadingImage || busy} />
 
                 <div className="section-kicker">
                   <span>02</span>
@@ -1004,6 +1096,12 @@ export default function BuilderPage() {
                     </button>)}
                   </div>
                   <p className="quality-note">Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.</p>
+                </div>
+                <div className="quality-summary-card">
+                  <div className="quality-summary-head"><div><span className="mini">RELECTURE ÉDITORIALE</span><strong>Orthographe, grammaire et clarté</strong></div></div>
+                  <p>Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement.</p>
+                  <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? "Relecture en cours…" : "Relire avec l’IA"}</button>
+                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p>{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => update(issue.field, reviewResult.suggestions[issue.field] as never)}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
                 </div>
 
                 <div className="review-checklist">

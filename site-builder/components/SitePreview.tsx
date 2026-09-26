@@ -1,12 +1,15 @@
 import { type CSSProperties } from "react";
 import { siteDisclaimer, type SiteConfig } from "../lib/site-config";
+import SiteModulesView from "./SiteModulesView";
+import { readableInk, surfaceInk } from "../lib/site-design";
 
 export default function SitePreview({ config, compact = false }: { config: SiteConfig; compact?: boolean }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const english = config.language === "en";
+  const { surface, ink } = surfaceInk(config.design);
 
   return (
-    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-pattern-color": config.design.patternColor || config.design.accent, ...(config.design.customBackgroundColor ? { "--site-custom-background": config.design.customBackgroundColor } : {}) } as CSSProperties}>
+    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
       <nav>
         <strong>{config.brandName || (english ? "Your site" : "Votre site")}</strong>
         <span>{english ? "About" : "Présentation"}</span>
@@ -14,9 +17,9 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
       </nav>
 
       <section className="preview-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
-        {config.design.heroImage ? <img className="preview-hero-image" src={config.design.heroImage.url} alt="" /> : null}
+        {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="preview-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={{ objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%` }} /> : null}
         <div>
-          <p className="mini">{config.heroTagline || (english ? "Travel first · discover next" : "Voyage d'abord · découverte ensuite")}</p>
+          {config.heroTagline.trim() ? <p className="mini">{config.heroTagline}</p> : null}
           <h3>{config.heroTitle || (english ? "Your headline" : "Votre titre")}</h3>
           <p>{config.heroSubtitle || "Votre texte d'introduction."}</p>
           {config.bookingUrl && config.bookingLabel.trim() ? <button type="button">{config.bookingLabel}</button> : null}
@@ -27,11 +30,13 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
         </div> : null}
       </section>
 
-      <section className="preview-about">
+      <SiteModulesView modules={config.design.modules} />
+
+      {config.aboutText.trim() ? <section className="preview-about">
         <p className="mini">{english ? "About me" : "Qui suis-je ?"}</p>
         <h4>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h4>
         <p>{config.aboutText}</p>
-      </section>
+      </section> : null}
 
 
       <footer>

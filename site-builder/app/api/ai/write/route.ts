@@ -34,6 +34,11 @@ const writableFields = {
     purpose: "Transform short, fragmentary guided answers into polished, coherent website copy. Build complete sentences and a clear narrative without inventing facts.",
     constraint: "Return exactly five fields in the requested JSON structure: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText."
   },
+  qualityReview: {
+    name: "la relecture du site",
+    purpose: "Check French or English spelling, grammar, editorial coherence, repetition, clarity and call to action. Recommend only meaningful changes while preserving facts.",
+    constraint: "Return JSON with issues and suggested field replacements, never overwrite user content."
+  },
   bookingLabel: {
     name: "le texte du bouton de prise de rendez-vous",
     purpose: "Give a clear, low-pressure next action. Avoid hype, urgency and vague calls to action.",
@@ -160,13 +165,14 @@ export async function POST(request: Request) {
     ["intro", clean(rawSiteContext.heroSubtitle, 500)],
     ["about heading", clean(rawSiteContext.aboutHeading, 140)],
     ["about", clean(rawSiteContext.aboutText, 900)],
+    ["booking button", clean(rawSiteContext.bookingLabel, 100)],
     ["traveler profile", clean(rawSiteContext.guidedTraveler, 220)],
     ["discovery", clean(rawSiteContext.guidedDiscovery, 220)],
     ["benefit", clean(rawSiteContext.guidedBenefit, 220)],
     ["audience", clean(rawSiteContext.guidedAudience, 220)]
   ].filter(([, value]) => value && value !== currentText);
   const editorialContext = contextEntries
-    .slice(0, 6)
+    .slice(0, field === "qualityReview" ? 10 : 6)
     .map(([key, value]) => `${key}: ${value}`)
     .join("\n");
   const fieldSpec = writableFields[field];
@@ -185,7 +191,9 @@ export async function POST(request: Request) {
     editorialContext ? `Relevant site context:\n${editorialContext}` : "",
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
-    field === "guidedDraft"
+    field === "qualityReview"
+      ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Do not invent claims. If all is good, return empty arrays and object."
+      : field === "guidedDraft"
       ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
       : "Write only the final text that can be inserted directly into the field. No quotation marks, headings, explanations, markdown or alternatives."
   ].filter(Boolean).join("\n");
@@ -211,7 +219,7 @@ export async function POST(request: Request) {
       input: prompt,
       reasoning: { effort: "low" },
       text: { verbosity: "low" },
-      max_output_tokens: field === "guidedDraft" ? 650 : field === "aboutText" ? 320 : 140
+      max_output_tokens: field === "guidedDraft" ? 650 : field === "qualityReview" ? 800 : field === "aboutText" ? 320 : 140
     })
   });
 
@@ -239,6 +247,18 @@ export async function POST(request: Request) {
       { error: "L'IA n'a pas renvoyé de texte exploitable. Reformulez votre demande." },
       { status: 502 }
     );
+  }
+
+  if (field === "qualityReview") {
+    try {
+      const parsed = JSON.parse(text.replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, ""));
+      const allowed = ["heroTagline", "heroTitle", "heroSubtitle", "aboutHeading", "aboutText", "bookingLabel"];
+      const suggestions = Object.fromEntries(Object.entries(parsed.suggestions || {}).filter(([key, value]) => allowed.includes(key) && typeof value === "string" && value.trim()).map(([key, value]) => [key, clean(value, 3500)]));
+      const issues = (Array.isArray(parsed.issues) ? parsed.issues : []).filter((item: any) => allowed.includes(item?.field) && typeof item?.reason === "string").slice(0, 6).map((item: any) => ({ field: item.field, reason: clean(item.reason, 240) }));
+      return NextResponse.json({ issues, suggestions });
+    } catch {
+      return NextResponse.json({ error: "La relecture n'a pas pu être structurée. Réessayez." }, { status: 502 });
+    }
   }
 
   if (field === "guidedDraft") {

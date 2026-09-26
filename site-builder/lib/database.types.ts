@@ -92,6 +92,7 @@ export type Database = {
       }
       sites: {
         Row: {
+          draft_config: Json | null
           about_text: string
           design_assets: Json
           booking_label: string
@@ -119,6 +120,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          draft_config?: Json | null
           about_text?: string
           design_assets?: Json
           booking_label?: string
@@ -146,6 +148,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          draft_config?: Json | null
           about_text?: string
           design_assets?: Json
           booking_label?: string

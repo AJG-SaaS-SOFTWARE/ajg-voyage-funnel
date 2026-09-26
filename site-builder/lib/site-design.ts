@@ -18,6 +18,24 @@ export type SiteDesign = {
   showPortrait: boolean;
   heroImage: MediaChoice | null;
   audio: MediaChoice | null;
+  backgroundPhotoUrl: string;
+  backgroundPositionX: number;
+  backgroundPositionY: number;
+  modules: SiteModules;
+};
+
+export type SiteModules = {
+  gallery: { enabled: boolean; title: string; images: { url: string; caption: string }[] };
+  faq: { enabled: boolean; title: string; items: { question: string; answer: string }[] };
+  testimonials: { enabled: boolean; title: string; items: { quote: string; author: string }[] };
+  contact: { enabled: boolean; title: string; email: string };
+};
+
+export const defaultSiteModules: SiteModules = {
+  gallery: { enabled: false, title: "Mes voyages", images: [] },
+  faq: { enabled: false, title: "Questions fréquentes", items: [] },
+  testimonials: { enabled: false, title: "Témoignages", items: [] },
+  contact: { enabled: false, title: "Me contacter", email: "" }
 };
 
 export const accentColors = [
@@ -41,8 +59,35 @@ export const defaultSiteDesign: SiteDesign = {
   showTravelAdvantageLogo: false,
   showPortrait: true,
   heroImage: null,
-  audio: null
+  audio: null,
+  backgroundPhotoUrl: "",
+  backgroundPositionX: 50,
+  backgroundPositionY: 50,
+  modules: defaultSiteModules
 };
+
+const surfaceColors: Record<SiteDesign["background"], string> = {
+  ivory: "#f8f4eb", sand: "#efe1ca", mist: "#e4eff0", sage: "#e5eddf", slate: "#26373e"
+};
+
+export function contrastRatio(a: string, b: string) {
+  const luminance = (hex: string) => {
+    const channels = [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16) / 255);
+    return channels.map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+      .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+  };
+  const first = luminance(a), second = luminance(b);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
+
+export function readableInk(background: string) {
+  return contrastRatio(background, "#10212b") >= contrastRatio(background, "#ffffff") ? "#10212b" : "#ffffff";
+}
+
+export function surfaceInk(design: SiteDesign) {
+  const surface = design.customBackgroundColor || surfaceColors[design.background];
+  return { surface, ink: readableInk(surface) };
+}
 
 export function safeHttpsUrl(value: unknown): string {
   if (typeof value !== "string") return "";
@@ -71,6 +116,10 @@ function mediaChoice(value: unknown): MediaChoice | null {
 
 export function normalizeSiteDesign(value: unknown): SiteDesign {
   const input = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const modules = input.modules && typeof input.modules === "object" ? input.modules as Record<string, any> : {};
+  const text = (value: unknown, max: number) => typeof value === "string" ? value.slice(0, max) : "";
+  const list = (value: unknown) => Array.isArray(value) ? value.slice(0, 12) : [];
+  const position = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 50;
   return {
     accent: typeof input.accent === "string" && /^#[0-9a-fA-F]{6}$/.test(input.accent) ? input.accent : defaultSiteDesign.accent,
     customBackgroundColor: typeof input.customBackgroundColor === "string" && /^#[0-9a-fA-F]{6}$/.test(input.customBackgroundColor) ? input.customBackgroundColor : "",
@@ -82,6 +131,15 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
     showTravelAdvantageLogo: input.showTravelAdvantageLogo === true,
     showPortrait: input.showPortrait !== false,
     heroImage: mediaChoice(input.heroImage),
-    audio: mediaChoice(input.audio)
+    audio: mediaChoice(input.audio),
+    backgroundPhotoUrl: safeHttpsUrl(input.backgroundPhotoUrl),
+    backgroundPositionX: position(input.backgroundPositionX),
+    backgroundPositionY: position(input.backgroundPositionY),
+    modules: {
+      gallery: { enabled: modules.gallery?.enabled === true, title: text(modules.gallery?.title, 100) || defaultSiteModules.gallery.title, images: list(modules.gallery?.images).map((item: any) => ({ url: safeHttpsUrl(item?.url), caption: text(item?.caption, 180) })).filter((item) => item.url) },
+      faq: { enabled: modules.faq?.enabled === true, title: text(modules.faq?.title, 100) || defaultSiteModules.faq.title, items: list(modules.faq?.items).map((item: any) => ({ question: text(item?.question, 200), answer: text(item?.answer, 1200) })) },
+      testimonials: { enabled: modules.testimonials?.enabled === true, title: text(modules.testimonials?.title, 100) || defaultSiteModules.testimonials.title, items: list(modules.testimonials?.items).map((item: any) => ({ quote: text(item?.quote, 800), author: text(item?.author, 120) })) },
+      contact: { enabled: modules.contact?.enabled === true, title: text(modules.contact?.title, 100) || defaultSiteModules.contact.title, email: text(modules.contact?.email, 254) }
+    }
   };
 }
