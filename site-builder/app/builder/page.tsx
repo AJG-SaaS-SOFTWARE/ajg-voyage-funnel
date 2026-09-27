@@ -574,8 +574,9 @@ export default function BuilderPage() {
       || (config.design.backgroundPositionX >= 10 && config.design.backgroundPositionX <= 90 && config.design.backgroundPositionY >= 10 && config.design.backgroundPositionY <= 85);
     checks.push({ label: "Cadrage mobile", detail: focusOk ? "Le point focal de la photo reste dans une zone sûre pour le recadrage cover." : "Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", status: focusOk ? "pass" : "warn", step: "design" });
     const unknownRights = config.contentLibrary.assets.filter((asset) => asset.rights === "unknown");
-    const publishableMissing = config.contentLibrary.assets.filter((asset) => asset.publishable && asset.kind !== "text" && !asset.url);
-    checks.push({ label: "Droits des contenus", detail: unknownRights.length ? `${unknownRights.length} contenu(s) ont des droits à vérifier et restent exclus de la publication.` : "Les contenus fournis ont un statut de droits explicite.", status: unknownRights.length ? "warn" : "pass", step: "story" });
+    const publishableMissing = config.contentLibrary.assets.filter((asset) => asset.publishable && ((asset.kind !== "text" && !asset.url) || (asset.kind === "text" && !asset.text.trim())));
+    const rightsSourceMissing = config.contentLibrary.assets.filter((asset) => (asset.rights === "licensed" || asset.rights === "public-domain") && !asset.sourceUrl.trim());
+    checks.push({ label: "Droits des contenus", detail: unknownRights.length ? `${unknownRights.length} contenu(s) ont des droits à vérifier et restent exclus de la publication.` : rightsSourceMissing.length ? `${rightsSourceMissing.length} contenu(s) sous licence ou domaine public nécessitent encore une source vérifiable.` : "Les contenus fournis ont un statut de droits explicite et les sources requises.", status: unknownRights.length || rightsSourceMissing.length ? "warn" : "pass", step: "story" });
     checks.push({ label: "Bibliothèque de contenus", detail: publishableMissing.length ? "Un contenu autorisé à la publication ne possède pas encore de fichier exploitable." : "Les contenus publiables disposent des informations nécessaires.", status: publishableMissing.length ? "warn" : "pass", step: "story" });
     const enabledPages = config.architecture.pages.filter((page) => page.enabled);
     const pageSlugs = enabledPages.map((page) => page.slug);
