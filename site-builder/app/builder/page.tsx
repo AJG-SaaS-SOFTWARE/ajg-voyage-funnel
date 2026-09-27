@@ -161,6 +161,9 @@ export default function BuilderPage() {
     audience: ""
   });
   const [guidedDraftReady, setGuidedDraftReady] = useState(false);
+  const [architectBrief, setArchitectBrief] = useState("");
+  const [architectProposal, setArchitectProposal] = useState<any>(null);
+  const [architectLoading, setArchitectLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [reviewResult, setReviewResult] = useState<{ issues: { field: keyof SiteConfig; reason: string }[]; suggestions: Record<string, string> } | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -382,6 +385,62 @@ export default function BuilderPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const createSiteWithAi = async () => {
+    if (!architectBrief.trim()) return;
+    setArchitectLoading(true);
+    setSyncError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("La création complète par IA nécessite une connexion.");
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la création complète par IA.");
+      const response = await fetch("/api/ai/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify({
+          field: "siteArchitect",
+          instruction: "Construis une première proposition cohérente de site à partir du besoin décrit. N'invente aucune information absente.",
+          context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, architectBrief, siteContext: aiSiteContext }
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
+      setArchitectProposal(result.proposal);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Impossible de préparer le site complet.");
+    } finally {
+      setArchitectLoading(false);
+    }
+  };
+
+  const applyArchitectProposal = () => {
+    if (!architectProposal) return;
+    const recommended = new Set<string>(architectProposal.recommendedModules || []);
+    const modules = config.design.modules;
+    const next: SiteConfig = {
+      ...config,
+      heroTagline: architectProposal.heroTagline || config.heroTagline,
+      heroTitle: architectProposal.heroTitle || config.heroTitle,
+      heroSubtitle: architectProposal.heroSubtitle || config.heroSubtitle,
+      aboutHeading: architectProposal.aboutHeading || config.aboutHeading,
+      aboutText: architectProposal.aboutText || config.aboutText,
+      bookingLabel: architectProposal.bookingLabel || config.bookingLabel,
+      design: {
+        ...config.design,
+        modules: {
+          ...modules,
+          faq: { ...modules.faq, enabled: recommended.has("faq") && architectProposal.faq?.items?.length > 0, title: architectProposal.faq?.title || modules.faq.title, items: architectProposal.faq?.items || modules.faq.items },
+          benefits: { ...modules.benefits, enabled: recommended.has("benefits") && architectProposal.benefits?.items?.length > 0, title: architectProposal.benefits?.title || modules.benefits.title, items: architectProposal.benefits?.items || modules.benefits.items }
+        }
+      }
+    };
+    setConfig(next);
+    saveDraft(next);
+    setSaved(false);
+    setPublished(false);
+    setArchitectProposal(null);
   };
 
   const guidedDraftEnabled =
@@ -866,6 +925,19 @@ export default function BuilderPage() {
 
             {step === "story" ? (
               <>
+                <details className="guided-writing-card ai-architect-card">
+                  <summary>
+                    <span className="guided-writing-icon">✦</span>
+                    <span><b>Créer mon site avec l’IA</b><small>Premium · décrivez votre besoin et obtenez une proposition complète à valider.</small></span>
+                    <span className="guided-writing-badge">Nouveau</span>
+                  </summary>
+                  <div className="guided-writing-body">
+                    <p className="guided-writing-intro">Décrivez votre activité, votre cible, l’objectif du site, le ton souhaité et quelques mots-clés. L’IA prépare les textes et recommande uniquement les rubriques pertinentes.</p>
+                    <label className="guided-question"><span>Votre besoin</span><textarea rows={6} maxLength={1800} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je veux présenter mon univers, rassurer les futurs clients et les inviter à me contacter. Ton chaleureux, élégant, naturel. Mots-clés : mariage, famille, émotion, lumière naturelle." /></label>
+                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={createSiteWithAi}>{architectLoading ? "Création du site…" : "Créer une proposition complète"} <span aria-hidden="true">→</span></button>
+                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p><p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={applyArchitectProposal}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
+                  </div>
+                </details>
                 <details className="guided-writing-card" open>
                   <summary>
                     <span className="guided-writing-icon">✦</span>
