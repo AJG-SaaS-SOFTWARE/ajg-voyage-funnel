@@ -6,7 +6,14 @@ export type MediaChoice = {
   licenseUrl: string;
 };
 
+export type SiteLayout = "classic" | "editorial" | "showcase" | "conversion";
+export type HeroLayout = "split" | "centered" | "immersive";
+export type ContentWidth = "compact" | "balanced" | "wide";
+
 export type SiteDesign = {
+  layout: SiteLayout;
+  heroLayout: HeroLayout;
+  contentWidth: ContentWidth;
   accent: string;
   customBackgroundColor: string;
   patternColor: string;
@@ -69,6 +76,9 @@ export const patterns = ["none", "dots", "lines", "grid", "rays"] as const;
 export const backgrounds = ["ivory", "sand", "mist", "sage", "slate"] as const;
 
 export const defaultSiteDesign: SiteDesign = {
+  layout: "classic",
+  heroLayout: "split",
+  contentWidth: "balanced",
   accent: accentColors[0],
   customBackgroundColor: "",
   patternColor: "",
@@ -153,6 +163,9 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
     return [...unique, ...defaultSiteModuleOrder.filter((key) => !unique.includes(key))];
   })();
   return {
+    layout: ["classic","editorial","showcase","conversion"].includes(String(input.layout)) ? input.layout as SiteLayout : defaultSiteDesign.layout,
+    heroLayout: ["split","centered","immersive"].includes(String(input.heroLayout)) ? input.heroLayout as HeroLayout : defaultSiteDesign.heroLayout,
+    contentWidth: ["compact","balanced","wide"].includes(String(input.contentWidth)) ? input.contentWidth as ContentWidth : defaultSiteDesign.contentWidth,
     accent: typeof input.accent === "string" && /^#[0-9a-fA-F]{6}$/.test(input.accent) ? input.accent : defaultSiteDesign.accent,
     customBackgroundColor: typeof input.customBackgroundColor === "string" && /^#[0-9a-fA-F]{6}$/.test(input.customBackgroundColor) ? input.customBackgroundColor : "",
     patternColor: typeof input.patternColor === "string" && /^#[0-9a-fA-F]{6}$/.test(input.patternColor) ? input.patternColor : "",
