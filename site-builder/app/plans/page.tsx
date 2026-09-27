@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { freeEntitlements, getMyAiUsage, getMyEntitlements, type AiUsage, type SubscriptionEntitlements } from "../../lib/subscription";
+import { freeEntitlements, getMyAiUsage, getMyEntitlements, getMyStorageUsage, type AiUsage, type StorageUsage, type SubscriptionEntitlements } from "../../lib/subscription";
 
 export default function PlansPage() {
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
   const [loaded, setLoaded] = useState(false);
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
+  const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
   useEffect(() => {
-    Promise.all([getMyEntitlements(), getMyAiUsage()])
-      .then(([entitlements, aiUsage]) => { setCurrent(entitlements); setUsage(aiUsage); })
+    Promise.all([getMyEntitlements(), getMyAiUsage(), getMyStorageUsage()])
+      .then(([entitlements, aiUsage, storageUsage]) => { setCurrent(entitlements); setUsage(aiUsage); setStorage(storageUsage); })
       .catch(() => setCurrent(freeEntitlements))
       .finally(() => setLoaded(true));
   }, []);
@@ -23,6 +24,7 @@ export default function PlansPage() {
       <Link className="button secondary" href="/builder">← Retour au builder</Link>
     </section>
     {loaded ? <section className="usage-card" aria-label="Utilisation IA"><div><p className="eyebrow">Votre utilisation</p><h2>{usage.month} / {current.aiMonthlyLimit} générations IA ce mois-ci</h2><p>{usage.today} / {current.aiDailyLimit} aujourd’hui · limite instantanée {current.aiMinuteLimit}/min</p></div><progress max={current.aiMonthlyLimit} value={Math.min(usage.month,current.aiMonthlyLimit)} aria-label="Quota IA mensuel utilisé" /></section> : null}
+    {loaded ? <section className="usage-card" aria-label="Utilisation stockage"><div><p className="eyebrow">Stockage</p><h2>{(storage.usedBytes / 1024 / 1024).toFixed(storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} Mo / {storage.limitMb} Mo</h2><p>Photos, images, audio et documents importés dans AJG.</p></div><progress max={storage.limitMb * 1024 * 1024} value={Math.min(storage.usedBytes,storage.limitMb * 1024 * 1024)} aria-label="Quota de stockage utilisé" /></section> : null}
     <section className="plans-grid" aria-label="Offres">
       <article className={current.planKey === "free" ? "plan-card current" : "plan-card"}>
         <p className="eyebrow">Gratuit</p><h2>Créer et tester</h2>
