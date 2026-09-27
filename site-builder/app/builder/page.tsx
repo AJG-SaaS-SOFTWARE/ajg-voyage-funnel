@@ -167,7 +167,7 @@ export default function BuilderPage() {
   type ArchitectProposal = {
     heroTagline: string; heroTitle: string; heroSubtitle: string; aboutHeading: string; aboutText: string; bookingLabel: string;
     recommendedModules: string[];
-    architecture: { mode: "single" | "multi"; pages: { id: string; slug: string; title: string; kind: "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom"; purpose: string; enabled: boolean }[] };
+    architecture: { mode: "single" | "multi"; pages: { id: string; slug: string; title: string; kind: "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom"; purpose: string; enabled: boolean; assetIds: string[] }[] };
     design: { layout: "classic" | "editorial" | "showcase" | "conversion"; heroLayout: "split" | "centered" | "immersive"; contentWidth: "compact" | "balanced" | "wide"; accent: string; background: "ivory" | "sand" | "mist" | "sage" | "slate"; pattern: "none" | "dots" | "lines" | "grid" | "rays"; patternStrength: "soft" | "bold" };
     faq: { title: string; items: { question: string; answer: string }[] };
     benefits: { title: string; items: { title: string; text: string }[] };
@@ -545,7 +545,10 @@ export default function BuilderPage() {
     checks.push({ label: "Bibliothèque de contenus", detail: publishableMissing.length ? "Un contenu autorisé à la publication ne possède pas encore de fichier exploitable." : "Les contenus publiables disposent des informations nécessaires.", status: publishableMissing.length ? "warn" : "pass", step: "story" });
     const enabledPages = config.architecture.pages.filter((page) => page.enabled);
     const pageSlugs = enabledPages.map((page) => page.slug);
+    const clearedAssetIds = new Set(config.contentLibrary.assets.filter((asset) => asset.publishable && asset.rights !== "unknown").map((asset) => asset.id));
+    const invalidAssignments = enabledPages.flatMap((page) => page.assetIds || []).filter((id) => !clearedAssetIds.has(id));
     const architectureOk = enabledPages.some((page) => page.kind === "home") && new Set(pageSlugs).size === pageSlugs.length && (config.architecture.mode === "single" || enabledPages.length > 1);
+    checks.push({ label: "Affectation des contenus", detail: invalidAssignments.length ? "Une page référence un contenu non autorisé ou aux droits non validés." : "Les contenus affectés aux pages sont autorisés à la publication.", status: invalidAssignments.length ? "warn" : "pass", step: "story" });
     checks.push({ label: "Architecture du site", detail: architectureOk ? `${enabledPages.length} page(s), hiérarchie et URLs cohérentes.` : "La structure des pages contient une incohérence à corriger.", status: architectureOk ? "pass" : "warn", step: "story" });
     const modules = config.design.modules;
     const validYoutubeUrl = (value: string) => {
