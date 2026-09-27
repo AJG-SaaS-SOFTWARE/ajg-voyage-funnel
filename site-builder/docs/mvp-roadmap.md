@@ -1,6 +1,6 @@
 # Roadmap MVP — AJG Site Builder
 
-Dernière mise à jour : 26 septembre 2026.
+Dernière mise à jour : 27 septembre 2026.
 
 ## Sprint 1 — configurateur utilisable
 État : terminé pour le prototype bêta
@@ -61,6 +61,31 @@ Dernière mise à jour : 26 septembre 2026.
 - [ ] mesure des abandons du builder ;
 - [ ] journal structuré de retours utilisateur ;
 - [ ] amélioration continue du template public sur la base des tests.
+
+## Itération 4A — AI Site Architect, architecture et contenus utilisateur
+État : code fonctionnel livré sur `main`, recette de déploiement à confirmer
+
+Objectif de sortie : l’IA peut proposer une structure de site sensiblement différente du template historique, sans publier ni inventer silencieusement des informations sensibles.
+
+- [x] proposition complète distincte de l’assistant champ par champ ;
+- [x] choix IA d’une famille de layout, composition du hero et largeur éditoriale ;
+- [x] choix IA monopage ou multipage et plan de 1 à 6 pages ;
+- [x] pages publiques routées et navigation multipage ;
+- [x] métadonnées propres aux sous-pages et sitemap par site ;
+- [x] ordre des modules et modules facultatifs conservés ;
+- [x] bibliothèque de contenus utilisateur : texte, image/photo, audio/musique, document ;
+- [x] provenance/droits explicites : propriétaire, licence, domaine public compatible ou inconnu ;
+- [x] contenu aux droits inconnus bloqué par défaut pour la publication ;
+- [x] AI Site Architect alimenté par les contenus déclarés publiables ;
+- [x] Quality Check : cohérence architecture, contenus publiables incomplets et droits inconnus ;
+- [x] validation humaine avant application de la proposition ;
+- [x] édition manuelle conservée après application ;
+- [ ] upload direct multi-format depuis la bibliothèque (les médias hors galerie utilisent encore une URL HTTPS) ;
+- [ ] attribution automatique des assets aux pages/blocs ;
+- [ ] conversation de révision globale du site (« plus premium », « retire cette page », etc.) ;
+- [ ] éditeur visuel de l’arborescence après génération.
+
+Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. Les quatre points restants constituent l’itération suivante et ne sont pas présentés comme terminés.
 
 ## Modules de contenu
 
