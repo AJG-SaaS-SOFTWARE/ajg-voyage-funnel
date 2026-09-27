@@ -17,6 +17,7 @@ export default function PublishedSite({ config, pageSlug = "" }: { config: SiteC
   const enabledPages = config.architecture.pages.filter((page) => page.enabled);
   const currentPage = enabledPages.find((page) => page.slug === pageSlug) || enabledPages.find((page) => page.kind === "home");
   const isHome = !currentPage || currentPage.kind === "home";
+  const pageAssets = (currentPage?.assetIds || []).map((id) => config.contentLibrary.assets.find((asset) => asset.id === id)).filter((asset) => asset?.publishable && asset.rights !== "unknown");
   const pageHref = (slug: string) => slug ? `/site/${encodeURIComponent(config.slug)}/p/${encodeURIComponent(slug)}` : `/site/${encodeURIComponent(config.slug)}`;
   const { surface, ink } = surfaceInk(config.design);
   const legalReady = legalIsComplete(config.legal, config.firstName, config.lastName);
@@ -70,6 +71,7 @@ export default function PublishedSite({ config, pageSlug = "" }: { config: SiteC
           <p>{config.aboutText}</p>
         </section> : null}
 
+        {pageAssets.length ? <section className="public-page-assets" aria-label={english ? "Selected content" : "Contenus sélectionnés"}>{pageAssets.map((asset) => asset ? <article key={asset.id}>{asset.kind === "image" && asset.url ? <img src={asset.url} alt={asset.name} /> : null}{asset.kind === "audio" && asset.url ? <audio controls preload="metadata" src={asset.url} /> : null}{asset.kind === "text" && asset.text ? <><h2>{asset.name}</h2><p>{asset.text}</p></> : null}{asset.kind === "document" && asset.url ? <a href={asset.url} target="_blank" rel="noreferrer">{asset.name}</a> : null}</article> : null)}</section> : null}
         {isHome ? <SiteModulesView modules={config.design.modules} english={english} /> : null}
         {currentPage?.kind === "gallery" ? <SiteModulesView modules={{ ...config.design.modules, order: ["gallery"] }} english={english} /> : null}
         {currentPage?.kind === "faq" ? <SiteModulesView modules={{ ...config.design.modules, order: ["faq"] }} english={english} /> : null}
