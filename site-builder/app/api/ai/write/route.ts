@@ -39,6 +39,11 @@ const writableFields = {
     purpose: "Check French or English spelling, grammar, editorial coherence, unnecessary repetition, marketing clarity, reader benefit and call to action. Recommend only meaningful changes, avoid hype and preserve every factual claim.",
     constraint: "Return JSON with issues and suggested field replacements, never overwrite user content."
   },
+  siteRevision: {
+    name: "une révision globale du site",
+    purpose: "Revise an existing structured website from a natural-language request while preserving verified facts, rights-cleared assets, legal/system content and choices the user did not ask to change.",
+    constraint: "Return the same structured JSON as siteArchitect. Never publish automatically and never invent facts, testimonials, numbers, prices, contact details, credentials, claims or asset IDs."
+  },
   siteArchitect: {
     name: "un plan complet de site",
     purpose: "Turn a short business/activity brief and keywords into a coherent first website proposal: core copy, useful modules, CTA and a restrained visual direction. Never invent facts.",
@@ -166,6 +171,8 @@ export async function POST(request: Request) {
   const brandName = clean(context.brandName, 120);
   const moduleType = clean(context.moduleType, 30);
   const architectBrief = clean(context.architectBrief, 1800);
+  const revisionRequest = clean(context.revisionRequest, 1200);
+  const existingProposal = context.existingProposal && typeof context.existingProposal === "object" ? context.existingProposal : null;
   const moduleBrief = clean(context.moduleBrief, 1000);
   const rawSiteContext = context.siteContext && typeof context.siteContext === "object" ? context.siteContext : {};
   const contextEntries = [
@@ -182,7 +189,7 @@ export async function POST(request: Request) {
     ["module brief", moduleBrief],
     ["site architect brief", architectBrief]
   ].filter(([, value]) => value && value !== currentText);
-  const selectedContextEntries = field === "siteArchitect"
+  const selectedContextEntries = field === "siteArchitect" || field === "siteRevision"
     ? contextEntries.slice(0, 12)
     : field === "guidedDraft"
     ? contextEntries.filter(([key]) => ["traveler profile", "discovery", "benefit", "audience"].includes(key))
@@ -218,6 +225,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Décrivez d'abord votre activité ou l'objectif du site." }, { status: 400 });
   }
 
+  if (field === "siteRevision" && (!revisionRequest || !existingProposal)) {
+    return NextResponse.json({ error: "Décrivez la modification globale souhaitée sur le site actuel." }, { status: 400 });
+  }
+
   if (field === "siteArchitect" && !architectBrief) {
     return NextResponse.json({ error: "Décrivez d'abord votre activité, votre objectif et quelques mots-clés." }, { status: 400 });
   }
@@ -232,8 +243,8 @@ export async function POST(request: Request) {
     editorialContext ? `Relevant site context:\n${editorialContext}` : "",
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
-    field === "siteArchitect"
-      ? "Return ONLY valid JSON with this exact shape: {\"heroTagline\":\"\",\"heroTitle\":\"\",\"heroSubtitle\":\"\",\"aboutHeading\":\"\",\"aboutText\":\"\",\"bookingLabel\":\"\",\"recommendedModules\":[\"faq\",\"benefits\",\"contact\"],\"faq\":{\"title\":\"\",\"items\":[{\"question\":\"\",\"answer\":\"\"}]},\"benefits\":{\"title\":\"\",\"items\":[{\"title\":\"\",\"text\":\"\"}]}}. Choose the information architecture first. architecture.mode must be single or multi. Propose 1 to 6 pages only when separate pages genuinely improve the visitor journey. Every page must have id, slug, title, kind, purpose and assetIds. assetIds may contain only IDs from user content that is explicitly publishable and has known rights. Assign assets only where they materially improve that page; never fabricate an asset ID. kind must be home, about, services, gallery, faq, contact or custom. There must be exactly one home page with an empty slug. Do not create pages just to make the site look larger. Do not invent content for pages that require missing evidence; the purpose may state what user-provided content is still needed. Choose the site composition too: layout must be classic, editorial, showcase or conversion; heroLayout must be split, centered or immersive; contentWidth must be compact, balanced or wide. Use editorial for story-led content, showcase for visual portfolios, conversion for focused lead generation, and classic for balanced general-purpose sites. Then choose design only from these safe values: accent must be one of #57d4c9, #e9ae65, #90b8ef, #d99bb2, #b8cb83, #264653, #2a9d8f, #e76f51, #6b705c, #111827; background must be ivory, sand, mist, sage or slate; pattern must be none, dots, lines, grid or rays; patternStrength must be soft or bold. Choose a restrained combination matching the requested tone. Use only recommendedModules from gallery, faq, testimonials, contact, video, figures, benefits. Recommend only modules justified by supplied information. Never fabricate testimonials, gallery images, videos, contact details, numbers, prices, savings, credentials or claims. FAQ answers and benefits must be supported by the brief. bookingLabel is only a label, never invent a booking URL. Write a polished first version, not hype. The user must review before applying."
+    field === "siteArchitect" || field === "siteRevision"
+      ? `Return ONLY valid JSON with this exact shape: {\"heroTagline\":\"\",\"heroTitle\":\"\",\"heroSubtitle\":\"\",\"aboutHeading\":\"\",\"aboutText\":\"\",\"bookingLabel\":\"\",\"recommendedModules\":[\"faq\",\"benefits\",\"contact\"],\"faq\":{\"title\":\"\",\"items\":[{\"question\":\"\",\"answer\":\"\"}]},\"benefits\":{\"title\":\"\",\"items\":[{\"title\":\"\",\"text\":\"\"}]}}. Choose the information architecture first. architecture.mode must be single or multi. Propose 1 to 6 pages only when separate pages genuinely improve the visitor journey. Every page must have id, slug, title, kind, purpose and assetIds. assetIds may contain only IDs from user content that is explicitly publishable and has known rights. Assign assets only where they materially improve that page; never fabricate an asset ID. kind must be home, about, services, gallery, faq, contact or custom. There must be exactly one home page with an empty slug. Do not create pages just to make the site look larger. Do not invent content for pages that require missing evidence; the purpose may state what user-provided content is still needed. Choose the site composition too: layout must be classic, editorial, showcase or conversion; heroLayout must be split, centered or immersive; contentWidth must be compact, balanced or wide. Use editorial for story-led content, showcase for visual portfolios, conversion for focused lead generation, and classic for balanced general-purpose sites. Then choose design only from these safe values: accent must be one of #57d4c9, #e9ae65, #90b8ef, #d99bb2, #b8cb83, #264653, #2a9d8f, #e76f51, #6b705c, #111827; background must be ivory, sand, mist, sage or slate; pattern must be none, dots, lines, grid or rays; patternStrength must be soft or bold. Choose a restrained combination matching the requested tone. Use only recommendedModules from gallery, faq, testimonials, contact, video, figures, benefits. Recommend only modules justified by supplied information. Never fabricate testimonials, gallery images, videos, contact details, numbers, prices, savings, credentials or claims. FAQ answers and benefits must be supported by the brief. bookingLabel is only a label, never invent a booking URL. Write a polished first version, not hype. The user must review before applying."
       : field === "qualityReview"
       ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Check spelling, grammar, coherence between fields, redundant ideas, clarity of the visitor benefit, credibility of marketing language and the CTA. Prefer concrete natural wording over hype or generic claims. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Preserve facts and never invent claims. If all is good, return empty arrays and object."
       : field === "guidedDraft"
@@ -294,7 +305,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (field === "siteArchitect") {
+  if (field === "siteArchitect" || field === "siteRevision") {
     try {
       const cleaned = text.replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, "");
       const raw = JSON.parse(cleaned);
