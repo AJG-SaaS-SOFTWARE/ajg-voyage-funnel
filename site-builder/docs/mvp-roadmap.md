@@ -148,6 +148,8 @@ Modules à étudier après validation bêta :
 - [x] RLS : lecture du catalogue authentifiée et lecture limitée à son propre abonnement ;
 - [x] RPC `get_my_entitlements` en SECURITY INVOKER ;
 - [x] quotas IA lus depuis l’offre au lieu de constantes applicatives ;
+- [x] consommation IA sécurisée par `auth.uid()` et RLS, sans limites pilotables par le client ;
+- [x] compteur d’usage IA journalier/mensuel visible dans « Mon offre » ;
 - [x] droits préparés pour stockage, domaine personnalisé et AI Site Architect Premium ;
 - [x] page `/plans` et accès « Mon offre » depuis le builder ;
 - [x] types Supabase régénérés et migration versionnée ;
