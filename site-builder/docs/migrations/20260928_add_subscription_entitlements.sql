@@ -23,6 +23,7 @@ create table if not exists public.user_subscriptions (
   provider text, provider_customer_id text, provider_subscription_id text,
   current_period_end timestamptz, updated_at timestamptz not null default now()
 );
+create index if not exists user_subscriptions_plan_key_idx on public.user_subscriptions(plan_key);
 alter table public.subscription_plans enable row level security;
 alter table public.user_subscriptions enable row level security;
 revoke all on public.subscription_plans from anon;
