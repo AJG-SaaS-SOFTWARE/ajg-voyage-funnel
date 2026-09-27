@@ -85,11 +85,14 @@ async function authenticatedContext(request: Request) {
 }
 
 async function consumeAiAllowance(userId: string, supabase: any) {
+  const { data: entitlementRows, error: entitlementError } = await supabase.rpc("get_my_entitlements");
+  if (entitlementError) throw entitlementError;
+  const entitlements = Array.isArray(entitlementRows) ? entitlementRows[0] : entitlementRows;
   const { data, error } = await supabase.rpc("consume_ai_generation", {
     p_user_id: userId,
-    p_minute_limit: 5,
-    p_daily_limit: 50,
-    p_monthly_limit: 200
+    p_minute_limit: Number(entitlements?.ai_minute_limit) || 5,
+    p_daily_limit: Number(entitlements?.ai_daily_limit) || 20,
+    p_monthly_limit: Number(entitlements?.ai_monthly_limit) || 80
   });
   if (error) throw error;
   return typeof data === "string" ? data : "unavailable";
