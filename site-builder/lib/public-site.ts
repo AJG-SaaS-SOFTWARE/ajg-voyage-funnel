@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
-import type { SiteConfig, SiteLanguage } from "./site-config";
+import { normalizeContentLibrary, normalizeSiteArchitecture, type SiteConfig, type SiteLanguage } from "./site-config";
 import { normalizeSiteDesign } from "./site-design";
 import { normalizeSiteLegalConfig } from "./site-legal";
 
@@ -40,7 +40,9 @@ function configFromRow(row: any): SiteConfig {
     facebookUrl: row.facebook_url,
     design: normalizeSiteDesign(row.design_assets),
     affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr",
-    legal: normalizeSiteLegalConfig(row.legal_config)
+    legal: normalizeSiteLegalConfig(row.legal_config),
+    architecture: normalizeSiteArchitecture(row.design_assets?.architecture),
+    contentLibrary: normalizeContentLibrary(row.design_assets?.contentLibrary)
   };
 }
 
@@ -70,6 +72,20 @@ export async function getPublicSite(slug: string): Promise<PublicSiteRecord | nu
     publishedAt: data.published_at,
     updatedAt: data.updated_at
   };
+}
+
+export async function getPublicSiteByHostname(hostname: string): Promise<PublicSiteRecord | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  const supabase = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const normalized = hostname.trim().toLowerCase().replace(/:\d+$/, "");
+  const { data: domain, error: domainError } = await supabase.from("domains").select("site_id").eq("hostname", normalized).eq("verification_status", "verified").eq("is_primary", true).maybeSingle();
+  if (domainError) throw domainError;
+  if (!domain) return null;
+  const { data, error } = await supabase.from("sites").select("*").eq("id", domain.site_id).eq("status", "published").maybeSingle();
+  if (error) throw error;
+  return data ? { id: data.id, slug: data.slug, config: configFromRow(data), publishedAt: data.published_at, updatedAt: data.updated_at } : null;
 }
 
 export function publicSiteUrl(slug: string) {
