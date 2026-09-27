@@ -165,7 +165,7 @@ export default function BuilderPage() {
   type ArchitectProposal = {
     heroTagline: string; heroTitle: string; heroSubtitle: string; aboutHeading: string; aboutText: string; bookingLabel: string;
     recommendedModules: string[];
-    design: { accent: string; background: "ivory" | "sand" | "mist" | "sage" | "slate"; pattern: "none" | "dots" | "lines" | "grid" | "rays"; patternStrength: "soft" | "bold" };
+    design: { layout: "classic" | "editorial" | "showcase" | "conversion"; heroLayout: "split" | "centered" | "immersive"; contentWidth: "compact" | "balanced" | "wide"; accent: string; background: "ivory" | "sand" | "mist" | "sage" | "slate"; pattern: "none" | "dots" | "lines" | "grid" | "rays"; patternStrength: "soft" | "bold" };
     faq: { title: string; items: { question: string; answer: string }[] };
     benefits: { title: string; items: { title: string; text: string }[] };
   };
@@ -436,6 +436,9 @@ export default function BuilderPage() {
       bookingLabel: architectProposal.bookingLabel || config.bookingLabel,
       design: {
         ...config.design,
+        layout: architectProposal.design?.layout || config.design.layout,
+        heroLayout: architectProposal.design?.heroLayout || config.design.heroLayout,
+        contentWidth: architectProposal.design?.contentWidth || config.design.contentWidth,
         accent: architectProposal.design?.accent || config.design.accent,
         background: architectProposal.design?.background || config.design.background,
         pattern: architectProposal.design?.pattern || config.design.pattern,
@@ -951,7 +954,7 @@ export default function BuilderPage() {
                     <p className="guided-writing-intro">Décrivez votre activité, votre cible, l’objectif du site, le ton souhaité et quelques mots-clés. L’IA prépare les textes et recommande uniquement les rubriques pertinentes.</p>
                     <label className="guided-question"><span>Votre besoin</span><textarea rows={6} maxLength={1800} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je veux présenter mon univers, rassurer les futurs clients et les inviter à me contacter. Ton chaleureux, élégant, naturel. Mots-clés : mariage, famille, émotion, lumière naturelle." /></label>
                     <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={createSiteWithAi}>{architectLoading ? "Création du site…" : "Créer une proposition complète"} <span aria-hidden="true">→</span></button>
-                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p><p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={applyArchitectProposal}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
+                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p><p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p><p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={applyArchitectProposal}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
                   </div>
                 </details>
                 <details className="guided-writing-card" open>
