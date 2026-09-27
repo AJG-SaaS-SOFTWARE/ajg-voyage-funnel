@@ -6,6 +6,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
 import ContentLibraryEditor from "../../components/ContentLibraryEditor";
+import ArchitectureEditor from "../../components/ArchitectureEditor";
 import ModulesEditor from "../../components/ModulesEditor";
 import AiTextAssistant from "../../components/AiTextAssistant";
 import ComplianceEditor from "../../components/ComplianceEditor";
@@ -996,6 +997,7 @@ export default function BuilderPage() {
                   if (!remoteMode || !config.slug) throw new Error("Enregistrez d’abord l’adresse du site avant d’importer un fichier.");
                   return uploadContentAsset(file, config.slug);
                 }} />
+                <ArchitectureEditor value={config.architecture} library={config.contentLibrary} onChange={(architecture) => update("architecture", architecture)} />
                 <details className="guided-writing-card ai-architect-card">
                   <summary>
                     <span className="guided-writing-icon">✦</span>
