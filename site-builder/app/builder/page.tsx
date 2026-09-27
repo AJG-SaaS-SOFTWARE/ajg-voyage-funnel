@@ -832,6 +832,7 @@ export default function BuilderPage() {
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
           {userEmail ? <Link href="/plans" className="button secondary">Mon offre</Link> : null}
+          {userEmail ? <Link href="/domains" className="button secondary">Domaines</Link> : null}
           {userEmail ? (
             <button type="button" className="account-button" onClick={logout} title={userEmail}>
               <span>{userEmail.charAt(0).toUpperCase()}</span>
