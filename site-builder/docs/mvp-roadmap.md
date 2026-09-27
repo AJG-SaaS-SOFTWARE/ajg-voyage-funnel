@@ -118,18 +118,24 @@ Modules à étudier après validation bêta :
 - blocs supplémentaires déterminés par les retours utilisateurs.
 
 ## Itération 4C — durcissement bêta et recette technique
-État : en cours
+État : terminé côté code et sécurité contrôlable ; recette production suspendue au quota de build Vercel
 
 - [x] alignement du bucket Storage avec les formats réellement acceptés par la bibliothèque : images, audio, PDF et TXT ;
 - [x] limite Storage conservée à 15 Mo et contrôle MIME côté application + bucket ;
 - [x] vérification post-migration du bucket ;
 - [x] audit sécurité Supabase relancé après modification ;
-- [ ] recette du build Next.js complet dès que le pipeline Vercel peut redéployer ;
-- [ ] recette fonctionnelle création IA → révision → arborescence → publication ;
-- [ ] validation des sous-domaines gérés en conditions réelles ;
+- [x] CI indépendante renforcée : installation déterministe, typecheck TypeScript puis build Next.js ;
+- [x] checklist de recette bêta versionnée avec critères bloquants ;
+- [x] normalisation durcie : home unique, slugs uniques, IDs/assetIds dédupliqués ;
+- [x] correctif de la révision IA globale : application des modules depuis la bonne proposition ;
+- [x] notes internes de planification retirées du rendu public et des metadata ;
+- [x] sitemap nettoyé : exclusion des pages légales noindex ;
+- [x] droits renforcés : source obligatoire avant publication d’un contenu sous licence/domaine public ;
+- [ ] exécuter la recette build + parcours complet sur le dernier `main` dès réouverture du pipeline Vercel ;
+- [ ] validation finale des sous-domaines gérés en conditions réelles sur ce même déploiement ;
 - [x] accès direct à `ai_usage_events` retiré aux clients et RPC de quota explicitement limité à `authenticated` / `service_role`, avec contrôle `auth.uid()` conservé ;
 - [x] vérification des privilèges effective après migration : anon sans RPC, utilisateur connecté sans accès direct au ledger ;
-- [ ] activer la protection Supabase contre les mots de passe compromis si elle est disponible sur l’offre utilisée ;
+- [ ] activer la protection Supabase contre les mots de passe compromis si elle est disponible sur l’offre utilisée (réglage Auth externe au code) ;
 - [ ] décider après recette si le RPC de quota doit être déplacé vers un schéma API/interne dédié afin d’éliminer également l’avertissement `SECURITY DEFINER`.
 
 ## Sprint 5 — monétisation
