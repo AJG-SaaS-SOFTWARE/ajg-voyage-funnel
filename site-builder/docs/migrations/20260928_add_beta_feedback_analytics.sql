@@ -7,6 +7,7 @@ create table if not exists public.product_events (
 );
 create index if not exists product_events_user_created_idx on public.product_events(user_id,created_at desc);
 create index if not exists product_events_event_created_idx on public.product_events(event_name,created_at desc);
+create index if not exists product_events_site_id_idx on public.product_events(site_id);
 alter table public.product_events enable row level security;
 revoke all on public.product_events from anon;
 grant insert,select on public.product_events to authenticated;
@@ -24,6 +25,8 @@ create table if not exists public.user_feedback (
  created_at timestamptz not null default now()
 );
 create index if not exists user_feedback_status_created_idx on public.user_feedback(status,created_at desc);
+create index if not exists user_feedback_site_id_idx on public.user_feedback(site_id);
+create index if not exists user_feedback_user_id_idx on public.user_feedback(user_id);
 alter table public.user_feedback enable row level security;
 revoke all on public.user_feedback from anon;
 grant insert,select on public.user_feedback to authenticated;
