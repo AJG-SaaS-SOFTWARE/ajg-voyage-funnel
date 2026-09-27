@@ -458,7 +458,7 @@ export default function BuilderPage() {
 
   const applyArchitectProposal = (proposal: ArchitectProposal | null = architectProposal) => {
     if (!proposal) return;
-    const recommended = new Set<string>(proposal.recommendedModules || []);
+    const recommended = new Set<string>(architectProposal.recommendedModules || []);
     const modules = config.design.modules;
     const next: SiteConfig = {
       ...config,
@@ -468,16 +468,16 @@ export default function BuilderPage() {
       aboutHeading: proposal.aboutHeading || config.aboutHeading,
       aboutText: proposal.aboutText || config.aboutText,
       bookingLabel: proposal.bookingLabel || config.bookingLabel,
-      architecture: proposal.architecture || config.architecture,
+      architecture: architectProposal.architecture || config.architecture,
       design: {
         ...config.design,
-        layout: proposal.design?.layout || config.design.layout,
-        heroLayout: proposal.design?.heroLayout || config.design.heroLayout,
-        contentWidth: proposal.design?.contentWidth || config.design.contentWidth,
-        accent: proposal.design?.accent || config.design.accent,
-        background: proposal.design?.background || config.design.background,
-        pattern: proposal.design?.pattern || config.design.pattern,
-        patternStrength: proposal.design?.patternStrength || config.design.patternStrength,
+        layout: architectProposal.design?.layout || config.design.layout,
+        heroLayout: architectProposal.design?.heroLayout || config.design.heroLayout,
+        contentWidth: architectProposal.design?.contentWidth || config.design.contentWidth,
+        accent: architectProposal.design?.accent || config.design.accent,
+        background: architectProposal.design?.background || config.design.background,
+        pattern: architectProposal.design?.pattern || config.design.pattern,
+        patternStrength: architectProposal.design?.patternStrength || config.design.patternStrength,
         customBackgroundColor: "",
         modules: {
           ...modules,
@@ -1006,7 +1006,16 @@ export default function BuilderPage() {
                     <p className="guided-writing-intro">Décrivez votre activité, votre cible, l’objectif du site, le ton souhaité et quelques mots-clés. L’IA prépare les textes et recommande uniquement les rubriques pertinentes.</p>
                     <label className="guided-question"><span>Votre besoin</span><textarea rows={6} maxLength={1800} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je veux présenter mon univers, rassurer les futurs clients et les inviter à me contacter. Ton chaleureux, élégant, naturel. Mots-clés : mariage, famille, émotion, lumière naturelle." /></label>
                     <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={createSiteWithAi}>{architectLoading ? "Création du site…" : "Créer une proposition complète"} <span aria-hidden="true">→</span></button>
-                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{proposal.heroTitle}</strong><br />{proposal.heroSubtitle}</p><p>Rubriques recommandées : {(proposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><p>Architecture : {proposal.architecture?.mode === "multi" ? `${proposal.architecture.pages.length} pages` : "site monopage"} · {(proposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p><p>Structure : {proposal.design?.layout} · hero {proposal.design?.heroLayout} · largeur {proposal.design?.contentWidth}.</p><p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: proposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {proposal.design?.background} · {proposal.design?.pattern === "none" ? "fond uni" : `motif ${proposal.design?.pattern}`}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={applyArchitectProposal}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
+                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p><p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><p>Architecture : {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : "site monopage"} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p><p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p><p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
+                  </div>
+                </details>
+                <details className="guided-writing-card ai-architect-card">
+                  <summary><span className="guided-writing-icon">↻</span><span><b>Modifier tout le site avec l’IA</b><small>Premium · demandez une évolution globale sans écraser automatiquement votre version actuelle.</small></span><span className="guided-writing-badge">Aperçu avant application</span></summary>
+                  <div className="guided-writing-body">
+                    <p className="guided-writing-intro">Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».</p>
+                    <label className="guided-question"><span>Modification souhaitée</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} placeholder="Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible." /></label>
+                    <button type="button" className="button primary premium-button" disabled={revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? "Préparation de la révision…" : "Préparer la révision"} <span aria-hidden="true">→</span></button>
+                    {revisionProposal ? <div className="ai-current-note" role="status"><b>Révision prête à comparer</b><p><strong>{revisionProposal.heroTitle}</strong><br />{revisionProposal.heroSubtitle}</p><p>Architecture proposée : {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : "site monopage"} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p><p>Structure : {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · largeur {revisionProposal.design.contentWidth}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)}>Appliquer cette révision</button><button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>Conserver mon site actuel</button></div><small>Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition.</small></div> : null}
                   </div>
                 </details>
                 <details className="guided-writing-card" open>
