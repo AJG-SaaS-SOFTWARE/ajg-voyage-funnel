@@ -82,15 +82,26 @@ export function normalizeSiteArchitecture(value: unknown): SiteArchitecture {
   const allowedKinds = new Set<SitePageKind>(["home","about","services","gallery","faq","contact","custom"]);
   const rawPages = Array.isArray(input.pages) ? input.pages.slice(0, 8) : [];
   const clean = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
+  const usedSlugs = new Set<string>();
+  let homeSeen = false;
   const pages = rawPages.map((page: any, index) => {
-    const kind = allowedKinds.has(page?.kind) ? page.kind as SitePageKind : "custom";
-    const slug = kind === "home" ? "" : clean(page?.slug, 60).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-    return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: page?.enabled !== false, assetIds: (Array.isArray(page?.assetIds) ? page.assetIds : []).slice(0, 12).map((id: unknown) => clean(id, 80)).filter(Boolean) };
+    let kind = allowedKinds.has(page?.kind) ? page.kind as SitePageKind : "custom";
+    if (kind === "home") {
+      if (homeSeen) kind = "custom";
+      else homeSeen = true;
+    }
+    let slug = kind === "home" ? "" : clean(page?.slug, 60).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || `page-${index + 1}`;
+    if (kind !== "home") {
+      const base = slug;
+      let suffix = 2;
+      while (usedSlugs.has(slug)) slug = `${base}-${suffix++}`.slice(0, 60);
+      usedSlugs.add(slug);
+    }
+    return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: kind === "home" ? true : page?.enabled !== false, assetIds: [...new Set((Array.isArray(page?.assetIds) ? page.assetIds : []).slice(0, 12).map((id: unknown) => clean(id, 80)).filter(Boolean))] };
   }).filter((page, index, all) => index === all.findIndex((item) => item.id === page.id));
   if (!pages.some((page) => page.kind === "home")) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] });
   return { mode: input.mode === "multi" && pages.filter((page) => page.enabled).length > 1 ? "multi" : "single", pages };
 }
-
 
 export function normalizeContentLibrary(value: unknown): ContentLibrary {
   const input = value && typeof value === "object" ? value as Record<string, unknown> : {};
@@ -101,7 +112,7 @@ export function normalizeContentLibrary(value: unknown): ContentLibrary {
   const assets = (Array.isArray(input.assets) ? input.assets : []).slice(0, 50).map((asset: any, index) => {
     const kind = kinds.has(asset?.kind) ? asset.kind as ContentAssetKind : "text";
     const assetRights = rights.has(asset?.rights) ? asset.rights as ContentAssetRights : "unknown";
-    return { id: clean(asset?.id, 80) || `asset-${index + 1}`, kind, name: clean(asset?.name, 160) || "Contenu", url: safeUrl(asset?.url), text: clean(asset?.text, 12000), rights: assetRights, sourceUrl: safeUrl(asset?.sourceUrl), notes: clean(asset?.notes, 1000), publishable: asset?.publishable === true && assetRights !== "unknown" };
-  });
+    return { id: clean(asset?.id, 80) || `asset-${index + 1}`, kind, name: clean(asset?.name, 160) || "Contenu", url: safeUrl(asset?.url), text: clean(asset?.text, 12000), rights: assetRights, sourceUrl: safeUrl(asset?.sourceUrl), notes: clean(asset?.notes, 1000), publishable: asset?.publishable === true && assetRights !== "unknown" && (assetRights === "owned" || Boolean(safeUrl(asset?.sourceUrl))) };
+  }).filter((asset, index, all) => index === all.findIndex((item) => item.id === asset.id));
   return { assets };
 }
