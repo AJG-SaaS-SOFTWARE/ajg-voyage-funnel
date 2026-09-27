@@ -7,6 +7,7 @@ import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
 import ContentLibraryEditor from "../../components/ContentLibraryEditor";
 import ArchitectureEditor from "../../components/ArchitectureEditor";
+import { trackProductEvent } from "../../lib/product-analytics";
 import ModulesEditor from "../../components/ModulesEditor";
 import AiTextAssistant from "../../components/AiTextAssistant";
 import ComplianceEditor from "../../components/ComplianceEditor";
@@ -498,6 +499,7 @@ export default function BuilderPage() {
     latestVersion.current += 1;
     setReviewResult(null);
     setStep("review");
+    void trackProductEvent(revisionProposal ? "revision_applied" : "architect_applied", remoteSiteId);
   };
 
   const guidedDraftEnabled =
@@ -695,6 +697,7 @@ export default function BuilderPage() {
       publishDraft(config);
       setSaved(true);
       setPublished(true);
+      void trackProductEvent("publish_success", remoteSiteId);
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "Erreur de publication.");
     } finally {
@@ -833,6 +836,7 @@ export default function BuilderPage() {
           </span>
           {userEmail ? <Link href="/plans" className="button secondary">Mon offre</Link> : null}
           {userEmail ? <Link href="/domains" className="button secondary">Domaines</Link> : null}
+          {userEmail ? <Link href="/feedback" className="button secondary">Donner mon avis</Link> : null}
           {userEmail ? (
             <button type="button" className="account-button" onClick={logout} title={userEmail}>
               <span>{userEmail.charAt(0).toUpperCase()}</span>
