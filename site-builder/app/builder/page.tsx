@@ -459,7 +459,7 @@ export default function BuilderPage() {
 
   const applyArchitectProposal = (proposal: ArchitectProposal | null = architectProposal) => {
     if (!proposal) return;
-    const recommended = new Set<string>(architectProposal.recommendedModules || []);
+    const recommended = new Set<string>(proposal.recommendedModules || []);
     const modules = config.design.modules;
     const next: SiteConfig = {
       ...config,
