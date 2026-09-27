@@ -157,7 +157,9 @@ Modules à étudier après validation bêta :
 - [ ] prix commercial, périodicité et éventuel essai à valider avant activation du paiement ;
 - [ ] connecter Stripe et ses webhooks ;
 - [ ] appliquer les droits Premium au runtime une fois le paiement opérationnel ;
-- [ ] mesurer et bloquer le stockage total selon l’offre ;
+- [x] mesurer le stockage `site-media` par propriétaire et l’afficher dans « Mon offre » ;
+- [x] refuser les nouveaux imports qui dépasseraient le quota de stockage de l’offre ;
+- [x] conserver les restrictions Storage/RLS existantes et calculer l’usage depuis les métadonnées Storage en lecture seule ;
 - [ ] domaines personnalisés ;
 - [ ] back-office administrateur ;
 - [ ] suspension automatique en cas d’impayé.
