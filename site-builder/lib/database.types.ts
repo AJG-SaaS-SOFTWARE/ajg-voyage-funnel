@@ -14,10 +14,22 @@ export type Database = {
   }
   public: {
     Tables: {
-      site_drafts: {
-        Row: { site_id: string; owner_id: string; config: Json; updated_at: string }
-        Insert: { site_id: string; owner_id: string; config: Json; updated_at?: string }
-        Update: { site_id?: string; owner_id?: string; config?: Json; updated_at?: string }
+      ai_usage_events: {
+        Row: {
+          created_at: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          user_id?: string
+        }
         Relationships: []
       }
       domains: {
@@ -96,26 +108,55 @@ export type Database = {
           },
         ]
       }
+      site_drafts: {
+        Row: {
+          config: Json
+          owner_id: string
+          site_id: string
+          updated_at: string
+        }
+        Insert: {
+          config: Json
+          owner_id: string
+          site_id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          owner_id?: string
+          site_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_drafts_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: true
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sites: {
         Row: {
+          about_heading: string
           about_text: string
-          design_assets: Json
-          legal_config: Json
           booking_label: string
           booking_url: string
           brand_name: string
           compliance_profile: string
           created_at: string
+          design_assets: Json
           enabled_languages: string[]
           facebook_url: string
           first_name: string
           hero_subtitle: string
           hero_tagline: string
           hero_title: string
-          about_heading: string
           id: string
           instagram_url: string
           last_name: string
+          legal_config: Json
           owner_id: string
           primary_language: string
           profile_image_url: string
@@ -126,24 +167,24 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          about_heading?: string
           about_text?: string
-          design_assets?: Json
-          legal_config?: Json
           booking_label?: string
           booking_url?: string
           brand_name: string
           compliance_profile?: string
           created_at?: string
+          design_assets?: Json
           enabled_languages?: string[]
           facebook_url?: string
           first_name: string
           hero_subtitle?: string
           hero_tagline?: string
           hero_title: string
-          about_heading?: string
           id?: string
           instagram_url?: string
           last_name: string
+          legal_config?: Json
           owner_id: string
           primary_language?: string
           profile_image_url?: string
@@ -154,24 +195,24 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          about_heading?: string
           about_text?: string
-          design_assets?: Json
-          legal_config?: Json
           booking_label?: string
           booking_url?: string
           brand_name?: string
           compliance_profile?: string
           created_at?: string
+          design_assets?: Json
           enabled_languages?: string[]
           facebook_url?: string
           first_name?: string
           hero_subtitle?: string
           hero_tagline?: string
           hero_title?: string
-          about_heading?: string
           id?: string
           instagram_url?: string
           last_name?: string
+          legal_config?: Json
           owner_id?: string
           primary_language?: string
           profile_image_url?: string
@@ -180,6 +221,45 @@ export type Database = {
           slug?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          active: boolean
+          ai_daily_limit: number
+          ai_minute_limit: number
+          ai_monthly_limit: number
+          created_at: string
+          custom_domain: boolean
+          key: string
+          name: string
+          premium_architect: boolean
+          storage_mb: number
+        }
+        Insert: {
+          active?: boolean
+          ai_daily_limit: number
+          ai_minute_limit: number
+          ai_monthly_limit: number
+          created_at?: string
+          custom_domain?: boolean
+          key: string
+          name: string
+          premium_architect?: boolean
+          storage_mb: number
+        }
+        Update: {
+          active?: boolean
+          ai_daily_limit?: number
+          ai_minute_limit?: number
+          ai_monthly_limit?: number
+          created_at?: string
+          custom_domain?: boolean
+          key?: string
+          name?: string
+          premium_architect?: boolean
+          storage_mb?: number
         }
         Relationships: []
       }
@@ -240,12 +320,75 @@ export type Database = {
           },
         ]
       }
+      user_subscriptions: {
+        Row: {
+          current_period_end: string | null
+          plan_key: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_period_end?: string | null
+          plan_key?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_period_end?: string | null
+          plan_key?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_key_fkey"
+            columns: ["plan_key"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_ai_generation: {
+        Args: {
+          p_daily_limit?: number
+          p_minute_limit?: number
+          p_monthly_limit?: number
+          p_user_id: string
+        }
+        Returns: string
+      }
+      get_my_entitlements: {
+        Args: never
+        Returns: {
+          ai_daily_limit: number
+          ai_minute_limit: number
+          ai_monthly_limit: number
+          custom_domain: boolean
+          plan_key: string
+          plan_name: string
+          premium_architect: boolean
+          storage_mb: number
+          subscription_status: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
