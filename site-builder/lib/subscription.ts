@@ -60,3 +60,14 @@ export async function getMyAiUsage(): Promise<AiUsage> {
   if (monthError) throw monthError;
   return { today: today || 0, month: month || 0 };
 }
+
+export type StorageUsage = { usedBytes: number; limitMb: number };
+
+export async function getMyStorageUsage(): Promise<StorageUsage> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return { usedBytes: 0, limitMb: freeEntitlements.storageMb };
+  const { data, error } = await supabase.rpc("get_my_storage_usage");
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return { usedBytes: Number(row?.used_bytes) || 0, limitMb: Number(row?.storage_limit_mb) || freeEntitlements.storageMb };
+}
