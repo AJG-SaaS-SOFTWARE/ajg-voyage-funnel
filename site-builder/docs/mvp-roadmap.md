@@ -42,7 +42,7 @@ Dernière mise à jour : 27 septembre 2026.
 - [x] métadonnées SEO et canonical ;
 - [x] statuts brouillon / publié / suspendu côté données ;
 - [x] page introuvable pour un site non publié ;
-- [ ] sitemap par site ;
+- [x] sitemap par site ;
 - [ ] validation complète des sous-domaines en conditions réelles ;
 - [ ] domaine personnalisé en option.
 
@@ -116,6 +116,18 @@ Modules à étudier après validation bêta :
 - carnets de voyage avec pages individuelles ;
 - formulaire de contact protégé contre les abus ;
 - blocs supplémentaires déterminés par les retours utilisateurs.
+
+## Itération 4C — durcissement bêta et recette technique
+État : en cours
+
+- [x] alignement du bucket Storage avec les formats réellement acceptés par la bibliothèque : images, audio, PDF et TXT ;
+- [x] limite Storage conservée à 15 Mo et contrôle MIME côté application + bucket ;
+- [x] vérification post-migration du bucket ;
+- [x] audit sécurité Supabase relancé après modification ;
+- [ ] recette du build Next.js complet dès que le pipeline Vercel peut redéployer ;
+- [ ] recette fonctionnelle création IA → révision → arborescence → publication ;
+- [ ] validation des sous-domaines gérés en conditions réelles ;
+- [ ] traitement des alertes sécurité Supabase restantes selon leur criticité et le modèle d’autorisation attendu.
 
 ## Sprint 5 — monétisation
 
