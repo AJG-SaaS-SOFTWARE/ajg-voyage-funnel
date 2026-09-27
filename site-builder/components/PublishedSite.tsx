@@ -43,7 +43,7 @@ export default function PublishedSite({ config, pageSlug = "" }: { config: SiteC
       </header>
 
       <main>
-        {!isHome && currentPage ? <section className="public-page-intro"><p className="mini">{config.brandName}</p><h1>{currentPage.title}</h1><p>{currentPage.purpose}</p></section> : null}
+        {!isHome && currentPage ? <section className="public-page-intro"><p className="mini">{config.brandName}</p><h1>{currentPage.title}</h1>{config.heroSubtitle.trim() ? <p>{config.heroSubtitle}</p> : null}</section> : null}
         {isHome ? <section className="public-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
           {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="public-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={backgroundImageStyle} /> : null}
           <div className="public-hero-copy">
