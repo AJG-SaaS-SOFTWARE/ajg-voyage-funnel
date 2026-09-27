@@ -43,3 +43,20 @@ export async function getMyEntitlements(): Promise<SubscriptionEntitlements> {
     status: row.subscription_status || "active"
   };
 }
+
+export type AiUsage = { today: number; month: number };
+
+export async function getMyAiUsage(): Promise<AiUsage> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return { today: 0, month: 0 };
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+  const [{ count: today, error: dayError }, { count: month, error: monthError }] = await Promise.all([
+    supabase.from("ai_usage_events").select("*", { count: "exact", head: true }).gte("created_at", dayStart),
+    supabase.from("ai_usage_events").select("*", { count: "exact", head: true }).gte("created_at", monthStart)
+  ]);
+  if (dayError) throw dayError;
+  if (monthError) throw monthError;
+  return { today: today || 0, month: month || 0 };
+}
