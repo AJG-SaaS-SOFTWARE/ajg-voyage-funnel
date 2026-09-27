@@ -174,6 +174,9 @@ export default function BuilderPage() {
   };
   const [architectProposal, setArchitectProposal] = useState<ArchitectProposal | null>(null);
   const [architectLoading, setArchitectLoading] = useState(false);
+  const [revisionRequest, setRevisionRequest] = useState("");
+  const [revisionProposal, setRevisionProposal] = useState<ArchitectProposal | null>(null);
+  const [revisionLoading, setRevisionLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [reviewResult, setReviewResult] = useState<{ issues: { field: keyof SiteConfig; reason: string }[]; suggestions: Record<string, string> } | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -425,33 +428,61 @@ export default function BuilderPage() {
     }
   };
 
-  const applyArchitectProposal = () => {
-    if (!architectProposal) return;
-    const recommended = new Set<string>(architectProposal.recommendedModules || []);
+  const requestGlobalRevision = async () => {
+    if (!revisionRequest.trim()) return;
+    setRevisionLoading(true);
+    setSyncError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("La révision globale nécessite une connexion.");
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la révision globale.");
+      const existingProposal = {
+        heroTagline: config.heroTagline, heroTitle: config.heroTitle, heroSubtitle: config.heroSubtitle, aboutHeading: config.aboutHeading, aboutText: config.aboutText, bookingLabel: config.bookingLabel,
+        architecture: config.architecture,
+        design: { layout: config.design.layout, heroLayout: config.design.heroLayout, contentWidth: config.design.contentWidth, accent: config.design.accent, background: config.design.background, pattern: config.design.pattern, patternStrength: config.design.patternStrength },
+        recommendedModules: config.design.modules.order.filter((key) => config.design.modules[key]?.enabled),
+        faq: config.design.modules.faq,
+        benefits: config.design.modules.benefits
+      };
+      const response = await fetch("/api/ai/write", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({
+        field: "siteRevision", instruction: revisionRequest,
+        context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
+      }) });
+      const result = await response.json();
+      if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer cette révision.");
+      setRevisionProposal(result.proposal);
+    } catch (error) { setSyncError(error instanceof Error ? error.message : "Impossible de préparer cette révision."); }
+    finally { setRevisionLoading(false); }
+  };
+
+  const applyArchitectProposal = (proposal: ArchitectProposal | null = architectProposal) => {
+    if (!proposal) return;
+    const recommended = new Set<string>(proposal.recommendedModules || []);
     const modules = config.design.modules;
     const next: SiteConfig = {
       ...config,
-      heroTagline: architectProposal.heroTagline || config.heroTagline,
-      heroTitle: architectProposal.heroTitle || config.heroTitle,
-      heroSubtitle: architectProposal.heroSubtitle || config.heroSubtitle,
-      aboutHeading: architectProposal.aboutHeading || config.aboutHeading,
-      aboutText: architectProposal.aboutText || config.aboutText,
-      bookingLabel: architectProposal.bookingLabel || config.bookingLabel,
-      architecture: architectProposal.architecture || config.architecture,
+      heroTagline: proposal.heroTagline || config.heroTagline,
+      heroTitle: proposal.heroTitle || config.heroTitle,
+      heroSubtitle: proposal.heroSubtitle || config.heroSubtitle,
+      aboutHeading: proposal.aboutHeading || config.aboutHeading,
+      aboutText: proposal.aboutText || config.aboutText,
+      bookingLabel: proposal.bookingLabel || config.bookingLabel,
+      architecture: proposal.architecture || config.architecture,
       design: {
         ...config.design,
-        layout: architectProposal.design?.layout || config.design.layout,
-        heroLayout: architectProposal.design?.heroLayout || config.design.heroLayout,
-        contentWidth: architectProposal.design?.contentWidth || config.design.contentWidth,
-        accent: architectProposal.design?.accent || config.design.accent,
-        background: architectProposal.design?.background || config.design.background,
-        pattern: architectProposal.design?.pattern || config.design.pattern,
-        patternStrength: architectProposal.design?.patternStrength || config.design.patternStrength,
+        layout: proposal.design?.layout || config.design.layout,
+        heroLayout: proposal.design?.heroLayout || config.design.heroLayout,
+        contentWidth: proposal.design?.contentWidth || config.design.contentWidth,
+        accent: proposal.design?.accent || config.design.accent,
+        background: proposal.design?.background || config.design.background,
+        pattern: proposal.design?.pattern || config.design.pattern,
+        patternStrength: proposal.design?.patternStrength || config.design.patternStrength,
         customBackgroundColor: "",
         modules: {
           ...modules,
-          faq: { ...modules.faq, enabled: recommended.has("faq") && architectProposal.faq?.items?.length > 0, title: architectProposal.faq?.title || modules.faq.title, items: architectProposal.faq?.items || modules.faq.items },
-          benefits: { ...modules.benefits, enabled: recommended.has("benefits") && architectProposal.benefits?.items?.length > 0, title: architectProposal.benefits?.title || modules.benefits.title, items: architectProposal.benefits?.items || modules.benefits.items }
+          faq: { ...modules.faq, enabled: recommended.has("faq") && proposal.faq?.items?.length > 0, title: proposal.faq?.title || modules.faq.title, items: proposal.faq?.items || modules.faq.items },
+          benefits: { ...modules.benefits, enabled: recommended.has("benefits") && proposal.benefits?.items?.length > 0, title: proposal.benefits?.title || modules.benefits.title, items: proposal.benefits?.items || modules.benefits.items }
         }
       }
     };
@@ -460,6 +491,8 @@ export default function BuilderPage() {
     setSaved(false);
     setPublished(false);
     setArchitectProposal(null);
+    setRevisionProposal(null);
+    setRevisionRequest("");
     setChangeVersion((version) => version + 1);
     latestVersion.current += 1;
     setReviewResult(null);
@@ -973,7 +1006,7 @@ export default function BuilderPage() {
                     <p className="guided-writing-intro">Décrivez votre activité, votre cible, l’objectif du site, le ton souhaité et quelques mots-clés. L’IA prépare les textes et recommande uniquement les rubriques pertinentes.</p>
                     <label className="guided-question"><span>Votre besoin</span><textarea rows={6} maxLength={1800} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je veux présenter mon univers, rassurer les futurs clients et les inviter à me contacter. Ton chaleureux, élégant, naturel. Mots-clés : mariage, famille, émotion, lumière naturelle." /></label>
                     <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={createSiteWithAi}>{architectLoading ? "Création du site…" : "Créer une proposition complète"} <span aria-hidden="true">→</span></button>
-                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p><p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><p>Architecture : {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : "site monopage"} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p><p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p><p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={applyArchitectProposal}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
+                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{proposal.heroTitle}</strong><br />{proposal.heroSubtitle}</p><p>Rubriques recommandées : {(proposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><p>Architecture : {proposal.architecture?.mode === "multi" ? `${proposal.architecture.pages.length} pages` : "site monopage"} · {(proposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p><p>Structure : {proposal.design?.layout} · hero {proposal.design?.heroLayout} · largeur {proposal.design?.contentWidth}.</p><p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: proposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {proposal.design?.background} · {proposal.design?.pattern === "none" ? "fond uni" : `motif ${proposal.design?.pattern}`}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={applyArchitectProposal}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
                   </div>
                 </details>
                 <details className="guided-writing-card" open>
