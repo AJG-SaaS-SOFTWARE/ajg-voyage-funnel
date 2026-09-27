@@ -170,6 +170,22 @@ Modules à étudier après validation bêta :
 
 Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
 
+### Itération 5B — exploitation SaaS et domaines
+État : socle livré sur `main`, intégrations externes finales à connecter
+
+- [x] quota de stockage mesuré et bloquant avant upload ;
+- [x] demande de domaine personnalisé réservée au droit Pro ;
+- [x] routage applicatif d’un hostname personnalisé vérifié ;
+- [x] canonical des sites gérés aligné sur le sous-domaine public ;
+- [x] rôles administrateur séparés et protégés par RLS ;
+- [x] back-office sites / offres / domaines ;
+- [x] instrumentation first-party du funnel bêta, sans enregistrer les contenus éditoriaux ;
+- [x] formulaire de feedback volontaire et vue admin des retours ;
+- [x] audit Supabase post-implémentation : aucun nouveau warning sécurité applicatif ;
+- [ ] rattachement/vérification Vercel automatisé des domaines ;
+- [ ] activation Stripe après validation de l’offre commerciale ;
+- [ ] synchronisation impayé/annulation → droits et suspension selon la politique commerciale.
+
 ## Principe de conformité
 
 Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc système. Les logos sont facultatifs et leur activation suppose que le membre dispose du droit d'utiliser les visuels. Pour une autre activité, les mentions MWR sont supprimées. L'éditeur ne génère pas encore toutes les informations légales propres à une activité indépendante ; elles doivent être vérifiées avant diffusion.
