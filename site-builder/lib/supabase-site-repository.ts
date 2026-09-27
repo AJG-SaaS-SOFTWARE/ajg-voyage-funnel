@@ -270,6 +270,22 @@ export async function uploadSiteImage(file: Blob, siteId: string, category: "bac
   return supabase.storage.from("site-media").getPublicUrl(objectPath).data.publicUrl;
 }
 
+export async function uploadContentAsset(file: File, siteId: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Vous devez être connecté.");
+  if (file.size > 15 * 1024 * 1024) throw new Error("Ce fichier dépasse la limite de 15 Mo.");
+
+  const allowed = new Set(["image/jpeg","image/png","image/webp","image/avif","audio/mpeg","audio/mp4","audio/ogg","audio/wav","application/pdf","text/plain"]);
+  if (!allowed.has(file.type)) throw new Error("Format non pris en charge. Utilisez JPG, PNG, WebP, AVIF, MP3, M4A, OGG, WAV, PDF ou TXT.");
+  const extension = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const objectPath = `${user.id}/${siteId}/library/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("site-media").upload(objectPath, file, { contentType: file.type, cacheControl: "31536000" });
+  if (error) throw error;
+  return supabase.storage.from("site-media").getPublicUrl(objectPath).data.publicUrl;
+}
+
 export async function signOut() {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return;
