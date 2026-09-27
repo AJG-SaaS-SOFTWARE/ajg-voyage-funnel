@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
+import ContentLibraryEditor from "../../components/ContentLibraryEditor";
 import ModulesEditor from "../../components/ModulesEditor";
 import AiTextAssistant from "../../components/AiTextAssistant";
 import ComplianceEditor from "../../components/ComplianceEditor";
@@ -537,6 +538,14 @@ export default function BuilderPage() {
     const focusOk = !config.design.backgroundPhotoUrl
       || (config.design.backgroundPositionX >= 10 && config.design.backgroundPositionX <= 90 && config.design.backgroundPositionY >= 10 && config.design.backgroundPositionY <= 85);
     checks.push({ label: "Cadrage mobile", detail: focusOk ? "Le point focal de la photo reste dans une zone sûre pour le recadrage cover." : "Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", status: focusOk ? "pass" : "warn", step: "design" });
+    const unknownRights = config.contentLibrary.assets.filter((asset) => asset.rights === "unknown");
+    const publishableMissing = config.contentLibrary.assets.filter((asset) => asset.publishable && asset.kind !== "text" && !asset.url);
+    checks.push({ label: "Droits des contenus", detail: unknownRights.length ? `${unknownRights.length} contenu(s) ont des droits à vérifier et restent exclus de la publication.` : "Les contenus fournis ont un statut de droits explicite.", status: unknownRights.length ? "warn" : "pass", step: "story" });
+    checks.push({ label: "Bibliothèque de contenus", detail: publishableMissing.length ? "Un contenu autorisé à la publication ne possède pas encore de fichier exploitable." : "Les contenus publiables disposent des informations nécessaires.", status: publishableMissing.length ? "warn" : "pass", step: "story" });
+    const enabledPages = config.architecture.pages.filter((page) => page.enabled);
+    const pageSlugs = enabledPages.map((page) => page.slug);
+    const architectureOk = enabledPages.some((page) => page.kind === "home") && new Set(pageSlugs).size === pageSlugs.length && (config.architecture.mode === "single" || enabledPages.length > 1);
+    checks.push({ label: "Architecture du site", detail: architectureOk ? `${enabledPages.length} page(s), hiérarchie et URLs cohérentes.` : "La structure des pages contient une incohérence à corriger.", status: architectureOk ? "pass" : "warn", step: "story" });
     const modules = config.design.modules;
     const validYoutubeUrl = (value: string) => {
       try {
@@ -946,6 +955,7 @@ export default function BuilderPage() {
 
             {step === "story" ? (
               <>
+                <ContentLibraryEditor value={config.contentLibrary} onChange={(contentLibrary) => update("contentLibrary", contentLibrary)} />
                 <details className="guided-writing-card ai-architect-card">
                   <summary>
                     <span className="guided-writing-icon">✦</span>
