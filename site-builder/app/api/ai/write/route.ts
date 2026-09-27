@@ -233,7 +233,7 @@ export async function POST(request: Request) {
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
     field === "siteArchitect"
-      ? "Return ONLY valid JSON with this exact shape: {\"heroTagline\":\"\",\"heroTitle\":\"\",\"heroSubtitle\":\"\",\"aboutHeading\":\"\",\"aboutText\":\"\",\"bookingLabel\":\"\",\"recommendedModules\":[\"faq\",\"benefits\",\"contact\"],\"faq\":{\"title\":\"\",\"items\":[{\"question\":\"\",\"answer\":\"\"}]},\"benefits\":{\"title\":\"\",\"items\":[{\"title\":\"\",\"text\":\"\"}]}}. Use only recommendedModules from gallery, faq, testimonials, contact, video, figures, benefits. Recommend only modules justified by supplied information. Never fabricate testimonials, gallery images, videos, contact details, numbers, prices, savings, credentials or claims. FAQ answers and benefits must be supported by the brief. bookingLabel is only a label, never invent a booking URL. Write a polished first version, not hype. The user must review before applying."
+      ? "Return ONLY valid JSON with this exact shape: {\"heroTagline\":\"\",\"heroTitle\":\"\",\"heroSubtitle\":\"\",\"aboutHeading\":\"\",\"aboutText\":\"\",\"bookingLabel\":\"\",\"recommendedModules\":[\"faq\",\"benefits\",\"contact\"],\"faq\":{\"title\":\"\",\"items\":[{\"question\":\"\",\"answer\":\"\"}]},\"benefits\":{\"title\":\"\",\"items\":[{\"title\":\"\",\"text\":\"\"}]}}. Choose design only from these safe values: accent must be one of #57d4c9, #e9ae65, #90b8ef, #d99bb2, #b8cb83, #264653, #2a9d8f, #e76f51, #6b705c, #111827; background must be ivory, sand, mist, sage or slate; pattern must be none, dots, lines, grid or rays; patternStrength must be soft or bold. Choose a restrained combination matching the requested tone. Use only recommendedModules from gallery, faq, testimonials, contact, video, figures, benefits. Recommend only modules justified by supplied information. Never fabricate testimonials, gallery images, videos, contact details, numbers, prices, savings, credentials or claims. FAQ answers and benefits must be supported by the brief. bookingLabel is only a label, never invent a booking URL. Write a polished first version, not hype. The user must review before applying."
       : field === "qualityReview"
       ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Check spelling, grammar, coherence between fields, redundant ideas, clarity of the visitor benefit, credibility of marketing language and the CTA. Prefer concrete natural wording over hype or generic claims. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Preserve facts and never invent claims. If all is good, return empty arrays and object."
       : field === "guidedDraft"
@@ -306,6 +306,12 @@ export async function POST(request: Request) {
         aboutHeading: clean(raw.aboutHeading, 100),
         aboutText: clean(raw.aboutText, 1800),
         bookingLabel: clean(raw.bookingLabel, 45),
+        design: {
+          accent: ["#57d4c9","#e9ae65","#90b8ef","#d99bb2","#b8cb83","#264653","#2a9d8f","#e76f51","#6b705c","#111827"].includes(raw.design?.accent) ? raw.design.accent : "#57d4c9",
+          background: ["ivory","sand","mist","sage","slate"].includes(raw.design?.background) ? raw.design.background : "ivory",
+          pattern: ["none","dots","lines","grid","rays"].includes(raw.design?.pattern) ? raw.design.pattern : "none",
+          patternStrength: raw.design?.patternStrength === "bold" ? "bold" : "soft"
+        },
         recommendedModules: (Array.isArray(raw.recommendedModules) ? raw.recommendedModules : []).filter((item: unknown) => typeof item === "string" && allowedModules.includes(item)).slice(0, 5),
         faq: {
           title: clean(raw.faq?.title, 100),
