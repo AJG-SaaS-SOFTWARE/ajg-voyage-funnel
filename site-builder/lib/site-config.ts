@@ -5,6 +5,10 @@ export type SiteLanguage = "fr" | "en" | "both";
 export type SitePageKind = "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom";
 export type SitePagePlan = { id: string; slug: string; title: string; kind: SitePageKind; purpose: string; enabled: boolean };
 export type SiteArchitecture = { mode: "single" | "multi"; pages: SitePagePlan[] };
+export type ContentAssetKind = "image" | "audio" | "text" | "document";
+export type ContentAssetRights = "owned" | "licensed" | "public-domain" | "unknown";
+export type ContentAsset = { id: string; kind: ContentAssetKind; name: string; url: string; text: string; rights: ContentAssetRights; sourceUrl: string; notes: string; publishable: boolean };
+export type ContentLibrary = { assets: ContentAsset[] };
 
 export type SiteConfig = {
   slug: string;
@@ -27,6 +31,7 @@ export type SiteConfig = {
   affiliation: "mwr" | "independent";
   legal: SiteLegalConfig;
   architecture: SiteArchitecture;
+  contentLibrary: ContentLibrary;
 };
 
 export const requiredDisclaimer =
@@ -67,7 +72,8 @@ export const defaultSiteConfig: SiteConfig = {
   design: defaultSiteDesign,
   affiliation: "mwr",
   legal: defaultSiteLegalConfig,
-  architecture: { mode: "single", pages: [{ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true }] }
+  architecture: { mode: "single", pages: [{ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true }] },
+  contentLibrary: { assets: [] }
 };
 
 
@@ -83,4 +89,19 @@ export function normalizeSiteArchitecture(value: unknown): SiteArchitecture {
   }).filter((page, index, all) => index === all.findIndex((item) => item.id === page.id));
   if (!pages.some((page) => page.kind === "home")) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true });
   return { mode: input.mode === "multi" && pages.filter((page) => page.enabled).length > 1 ? "multi" : "single", pages };
+}
+
+
+export function normalizeContentLibrary(value: unknown): ContentLibrary {
+  const input = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const kinds = new Set<ContentAssetKind>(["image","audio","text","document"]);
+  const rights = new Set<ContentAssetRights>(["owned","licensed","public-domain","unknown"]);
+  const clean = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
+  const safeUrl = (v: unknown) => { const raw = clean(v, 2000); if (!raw) return ""; try { const u = new URL(raw); return u.protocol === "https:" ? u.toString() : ""; } catch { return ""; } };
+  const assets = (Array.isArray(input.assets) ? input.assets : []).slice(0, 50).map((asset: any, index) => {
+    const kind = kinds.has(asset?.kind) ? asset.kind as ContentAssetKind : "text";
+    const assetRights = rights.has(asset?.rights) ? asset.rights as ContentAssetRights : "unknown";
+    return { id: clean(asset?.id, 80) || `asset-${index + 1}`, kind, name: clean(asset?.name, 160) || "Contenu", url: safeUrl(asset?.url), text: clean(asset?.text, 12000), rights: assetRights, sourceUrl: safeUrl(asset?.sourceUrl), notes: clean(asset?.notes, 1000), publishable: asset?.publishable === true && assetRights !== "unknown" };
+  });
+  return { assets };
 }
