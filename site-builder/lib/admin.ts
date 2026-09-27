@@ -28,3 +28,25 @@ export async function adminSetPlan(userId:string,planKey:"free"|"pro"){
   const {error}=await supabase.from("user_subscriptions").upsert({user_id:userId,plan_key:planKey,status:"active",updated_at:new Date().toISOString()},{onConflict:"user_id"});
   if(error) throw error;
 }
+
+export type AdminMetrics={events30d:number;publishes30d:number;architectApplies30d:number;feedbackOpen:number};
+export type AdminFeedback={id:string;category:string;rating:number|null;message:string;status:string;createdAt:string};
+
+export async function getAdminMetrics():Promise<AdminMetrics>{
+ const supabase=getSupabaseBrowserClient();if(!supabase||!await isCurrentUserAdmin())throw new Error("Accès administrateur requis.");
+ const since=new Date(Date.now()-30*24*60*60*1000).toISOString();
+ const [events,publishes,architect,feedback]=await Promise.all([
+  supabase.from("product_events").select("*",{count:"exact",head:true}).gte("created_at",since),
+  supabase.from("product_events").select("*",{count:"exact",head:true}).eq("event_name","publish_success").gte("created_at",since),
+  supabase.from("product_events").select("*",{count:"exact",head:true}).in("event_name",["architect_applied","revision_applied"]).gte("created_at",since),
+  supabase.from("user_feedback").select("*",{count:"exact",head:true}).in("status",["new","reviewed","planned"])
+ ]);
+ for(const result of [events,publishes,architect,feedback])if(result.error)throw result.error;
+ return {events30d:events.count||0,publishes30d:publishes.count||0,architectApplies30d:architect.count||0,feedbackOpen:feedback.count||0};
+}
+
+export async function getAdminFeedback():Promise<AdminFeedback[]>{
+ const supabase=getSupabaseBrowserClient();if(!supabase||!await isCurrentUserAdmin())throw new Error("Accès administrateur requis.");
+ const {data,error}=await supabase.from("user_feedback").select("id,category,rating,message,status,created_at").order("created_at",{ascending:false}).limit(50);
+ if(error)throw error;return (data||[]).map((x:any)=>({id:x.id,category:x.category,rating:x.rating,message:x.message,status:x.status,createdAt:x.created_at}));
+}
