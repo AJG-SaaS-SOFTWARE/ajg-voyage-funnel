@@ -39,6 +39,11 @@ const writableFields = {
     purpose: "Check French or English spelling, grammar, editorial coherence, unnecessary repetition, marketing clarity, reader benefit and call to action. Recommend only meaningful changes, avoid hype and preserve every factual claim.",
     constraint: "Return JSON with issues and suggested field replacements, never overwrite user content."
   },
+  siteArchitect: {
+    name: "un plan complet de site",
+    purpose: "Turn a short business/activity brief and keywords into a coherent first website proposal: core copy, useful modules, CTA and a restrained visual direction. Never invent facts.",
+    constraint: "Return only the exact JSON structure requested. The proposal is a draft and must never be published automatically."
+  },
   moduleDraft: {
     name: "une rubrique facultative du site",
     purpose: "Prepare useful structured draft content for an optional website module from the user's business/activity brief and existing site context, while never inventing facts.",
@@ -160,6 +165,7 @@ export async function POST(request: Request) {
   const firstName = clean(context.firstName, 80);
   const brandName = clean(context.brandName, 120);
   const moduleType = clean(context.moduleType, 30);
+  const architectBrief = clean(context.architectBrief, 1800);
   const moduleBrief = clean(context.moduleBrief, 1000);
   const rawSiteContext = context.siteContext && typeof context.siteContext === "object" ? context.siteContext : {};
   const contextEntries = [
@@ -173,9 +179,12 @@ export async function POST(request: Request) {
     ["discovery", clean(rawSiteContext.guidedDiscovery, 220)],
     ["benefit", clean(rawSiteContext.guidedBenefit, 220)],
     ["audience", clean(rawSiteContext.guidedAudience, 220)],
-    ["module brief", moduleBrief]
+    ["module brief", moduleBrief],
+    ["site architect brief", architectBrief]
   ].filter(([, value]) => value && value !== currentText);
-  const selectedContextEntries = field === "guidedDraft"
+  const selectedContextEntries = field === "siteArchitect"
+    ? contextEntries.slice(0, 12)
+    : field === "guidedDraft"
     ? contextEntries.filter(([key]) => ["traveler profile", "discovery", "benefit", "audience"].includes(key))
     : field === "moduleDraft"
       ? contextEntries.slice(0, 11)
@@ -209,6 +218,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Décrivez d'abord votre activité ou l'objectif du site." }, { status: 400 });
   }
 
+  if (field === "siteArchitect" && !architectBrief) {
+    return NextResponse.json({ error: "Décrivez d'abord votre activité, votre objectif et quelques mots-clés." }, { status: 400 });
+  }
+
   const prompt = [
     `Field to write: ${fieldSpec.name}.`,
     `Goal: ${fieldSpec.purpose}`,
@@ -219,7 +232,9 @@ export async function POST(request: Request) {
     editorialContext ? `Relevant site context:\n${editorialContext}` : "",
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
-    field === "qualityReview"
+    field === "siteArchitect"
+      ? "Return ONLY valid JSON with this exact shape: {\"heroTagline\":\"\",\"heroTitle\":\"\",\"heroSubtitle\":\"\",\"aboutHeading\":\"\",\"aboutText\":\"\",\"bookingLabel\":\"\",\"recommendedModules\":[\"faq\",\"benefits\",\"contact\"],\"faq\":{\"title\":\"\",\"items\":[{\"question\":\"\",\"answer\":\"\"}]},\"benefits\":{\"title\":\"\",\"items\":[{\"title\":\"\",\"text\":\"\"}]}}. Use only recommendedModules from gallery, faq, testimonials, contact, video, figures, benefits. Recommend only modules justified by supplied information. Never fabricate testimonials, gallery images, videos, contact details, numbers, prices, savings, credentials or claims. FAQ answers and benefits must be supported by the brief. bookingLabel is only a label, never invent a booking URL. Write a polished first version, not hype. The user must review before applying."
+      : field === "qualityReview"
       ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Check spelling, grammar, coherence between fields, redundant ideas, clarity of the visitor benefit, credibility of marketing language and the CTA. Prefer concrete natural wording over hype or generic claims. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Preserve facts and never invent claims. If all is good, return empty arrays and object."
       : field === "guidedDraft"
       ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Treat the guided answers as notes, not copy to paste. Turn even one or two keywords into fluent complete sentences, but never invent facts. Give each field a distinct role: heroTagline = very short mood/angle; heroTitle = clear memorable promise or point of view; heroSubtitle = 2 or 3 sentences explaining what the visitor will discover; aboutHeading = personal section title; aboutText = 70 to 130 words connecting the person's travel profile, discovery and motivation naturally. Use the audience answer only if it was supplied. Avoid repeating the same phrase, benefit or opening across fields. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
@@ -249,7 +264,7 @@ export async function POST(request: Request) {
       input: prompt,
       reasoning: { effort: "low" },
       text: { verbosity: "low" },
-      max_output_tokens: field === "guidedDraft" ? 650 : field === "qualityReview" ? 800 : field === "moduleDraft" ? 900 : field === "aboutText" ? 320 : 140
+      max_output_tokens: field === "siteArchitect" ? 1100 : field === "guidedDraft" ? 650 : field === "qualityReview" ? 800 : field === "moduleDraft" ? 900 : field === "aboutText" ? 320 : 140
     })
   });
 
@@ -277,6 +292,36 @@ export async function POST(request: Request) {
       { error: "L'IA n'a pas renvoyé de texte exploitable. Reformulez votre demande." },
       { status: 502 }
     );
+  }
+
+  if (field === "siteArchitect") {
+    try {
+      const cleaned = text.replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, "");
+      const raw = JSON.parse(cleaned);
+      const allowedModules = ["gallery", "faq", "testimonials", "contact", "video", "figures", "benefits"];
+      const proposal = {
+        heroTagline: clean(raw.heroTagline, 90),
+        heroTitle: clean(raw.heroTitle, 90),
+        heroSubtitle: clean(raw.heroSubtitle, 420),
+        aboutHeading: clean(raw.aboutHeading, 100),
+        aboutText: clean(raw.aboutText, 1800),
+        bookingLabel: clean(raw.bookingLabel, 45),
+        recommendedModules: (Array.isArray(raw.recommendedModules) ? raw.recommendedModules : []).filter((item: unknown) => typeof item === "string" && allowedModules.includes(item)).slice(0, 5),
+        faq: {
+          title: clean(raw.faq?.title, 100),
+          items: (Array.isArray(raw.faq?.items) ? raw.faq.items : []).slice(0, 6).map((item: any) => ({ question: clean(item?.question, 200), answer: clean(item?.answer, 1200) })).filter((item: any) => item.question && item.answer)
+        },
+        benefits: {
+          title: clean(raw.benefits?.title, 100),
+          items: (Array.isArray(raw.benefits?.items) ? raw.benefits.items : []).slice(0, 5).map((item: any) => ({ title: clean(item?.title, 100), text: clean(item?.text, 500) })).filter((item: any) => item.title && item.text)
+        }
+      };
+      if (!proposal.heroTitle || !proposal.heroSubtitle || !proposal.aboutText) throw new Error("Incomplete site proposal");
+      return NextResponse.json({ proposal });
+    } catch (error) {
+      console.error("Invalid site architect output", error);
+      return NextResponse.json({ error: "L'IA n'a pas pu structurer le site complet. Réessayez." }, { status: 502 });
+    }
   }
 
   if (field === "qualityReview") {
