@@ -366,6 +366,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_upload_site_media: { Args: { p_bytes: number }; Returns: boolean }
       consume_ai_generation: {
         Args: {
           p_daily_limit?: number
@@ -388,6 +389,13 @@ export type Database = {
           premium_architect: boolean
           storage_mb: number
           subscription_status: string
+        }[]
+      }
+      get_my_storage_usage: {
+        Args: never
+        Returns: {
+          storage_limit_mb: number
+          used_bytes: number
         }[]
       }
     }
