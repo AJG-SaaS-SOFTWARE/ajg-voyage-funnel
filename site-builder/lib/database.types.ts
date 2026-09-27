@@ -375,6 +375,7 @@ export type Database = {
         }
         Returns: string
       }
+      consume_my_ai_generation: { Args: never; Returns: string }
       get_my_entitlements: {
         Args: never
         Returns: {
