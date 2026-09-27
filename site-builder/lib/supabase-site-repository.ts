@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import { defaultSiteConfig, type SiteConfig, type SiteLanguage } from "./site-config";
+import { defaultSiteConfig, normalizeSiteArchitecture, type SiteConfig, type SiteLanguage } from "./site-config";
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import { normalizeSiteDesign } from "./site-design";
 import { normalizeSiteLegalConfig } from "./site-legal";
@@ -49,14 +49,15 @@ function configFromRow(row: any): SiteConfig {
     facebookUrl: row.facebook_url,
     design: normalizeSiteDesign(row.design_assets),
     affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr",
-    legal: normalizeSiteLegalConfig(row.legal_config)
+    legal: normalizeSiteLegalConfig(row.legal_config),
+    architecture: normalizeSiteArchitecture(row.design_assets?.architecture)
   };
 }
 
 function draftFromRow(row: any, draft: any): SiteConfig {
   const published = configFromRow(row);
   if (!draft || typeof draft !== "object") return published;
-  return { ...defaultSiteConfig, ...published, ...draft, design: normalizeSiteDesign(draft.design ?? published.design), legal: normalizeSiteLegalConfig(draft.legal ?? published.legal) };
+  return { ...defaultSiteConfig, ...published, ...draft, design: normalizeSiteDesign(draft.design ?? published.design), legal: normalizeSiteLegalConfig(draft.legal ?? published.legal), architecture: normalizeSiteArchitecture(draft.architecture ?? published.architecture) };
 }
 
 function payload(user: User, config: SiteConfig, status: "draft" | "published") {
@@ -78,7 +79,7 @@ function payload(user: User, config: SiteConfig, status: "draft" | "published") 
     booking_url: config.bookingUrl,
     instagram_url: config.instagramUrl,
     facebook_url: config.facebookUrl,
-    design_assets: config.design,
+    design_assets: { ...config.design, architecture: config.architecture },
     legal_config: config.legal,
     profile_image_url: config.profileImageUrl,
     show_travel_journals: config.showTravelJournals,
