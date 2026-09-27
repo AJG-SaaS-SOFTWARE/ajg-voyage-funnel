@@ -409,8 +409,8 @@ export default function BuilderPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
         body: JSON.stringify({
           field: "siteArchitect",
-          instruction: "Construis une première proposition cohérente de site à partir du besoin décrit. N'invente aucune information absente.",
-          context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, architectBrief, siteContext: aiSiteContext }
+          instruction: "Construis une première proposition cohérente de site à partir du besoin décrit. N'invente aucune information absente. Utilise en priorité les contenus utilisateur publiables dont les droits sont connus et ne recommande jamais pour publication un média aux droits inconnus.",
+          context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, architectBrief, contentLibrary: config.contentLibrary.assets.map((asset) => ({ kind: asset.kind, name: asset.name, text: asset.kind === "text" ? asset.text : "", rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
         })
       });
       const result = await response.json();
