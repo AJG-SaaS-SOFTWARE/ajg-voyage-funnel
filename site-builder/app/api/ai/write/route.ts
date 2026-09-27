@@ -84,16 +84,8 @@ async function authenticatedContext(request: Request) {
   return { user: data.user, supabase };
 }
 
-async function consumeAiAllowance(userId: string, supabase: any) {
-  const { data: entitlementRows, error: entitlementError } = await supabase.rpc("get_my_entitlements");
-  if (entitlementError) throw entitlementError;
-  const entitlements = Array.isArray(entitlementRows) ? entitlementRows[0] : entitlementRows;
-  const { data, error } = await supabase.rpc("consume_ai_generation", {
-    p_user_id: userId,
-    p_minute_limit: Number(entitlements?.ai_minute_limit) || 5,
-    p_daily_limit: Number(entitlements?.ai_daily_limit) || 20,
-    p_monthly_limit: Number(entitlements?.ai_monthly_limit) || 80
-  });
+async function consumeAiAllowance(supabase: any) {
+  const { data, error } = await supabase.rpc("consume_my_ai_generation");
   if (error) throw error;
   return typeof data === "string" ? data : "unavailable";
 }
@@ -150,7 +142,7 @@ export async function POST(request: Request) {
 
   let allowance: string;
   try {
-    allowance = await consumeAiAllowance(auth.user.id, auth.supabase);
+    allowance = await consumeAiAllowance(auth.supabase);
   } catch (error) {
     console.error("AI allowance check failed", error);
     return NextResponse.json({ error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." }, { status: 503 });
