@@ -6,7 +6,7 @@ import SiteModulesView from "./SiteModulesView";
 import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
 import { legalIsComplete } from "../lib/site-legal";
 
-export default function PublishedSite({ config, pageSlug = "" }: { config: SiteConfig; pageSlug?: string }) {
+export default function PublishedSite({ config, pageSlug = "", routeBase }: { config: SiteConfig; pageSlug?: string; routeBase?: string }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const bookingHref = safeHttpsUrl(config.bookingUrl);
   const hasBooking = Boolean(config.design.showBooking && bookingHref && config.bookingLabel.trim());
@@ -18,7 +18,8 @@ export default function PublishedSite({ config, pageSlug = "" }: { config: SiteC
   const currentPage = enabledPages.find((page) => page.slug === pageSlug) || enabledPages.find((page) => page.kind === "home");
   const isHome = !currentPage || currentPage.kind === "home";
   const pageAssets = (currentPage?.assetIds || []).map((id) => config.contentLibrary.assets.find((asset) => asset.id === id)).filter((asset) => asset?.publishable && asset.rights !== "unknown");
-  const pageHref = (slug: string) => slug ? `/site/${encodeURIComponent(config.slug)}/p/${encodeURIComponent(slug)}` : `/site/${encodeURIComponent(config.slug)}`;
+  const base = routeBase ?? `/site/${encodeURIComponent(config.slug)}`;
+  const pageHref = (slug: string) => slug ? `${base}/p/${encodeURIComponent(slug)}` : (base || "/");
   const { surface, ink } = surfaceInk(config.design);
   const legalReady = legalIsComplete(config.legal, config.firstName, config.lastName);
   const backgroundImageStyle = {
@@ -96,9 +97,9 @@ export default function PublishedSite({ config, pageSlug = "" }: { config: SiteC
           {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">Son : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}
         </div> : null}
         {legalReady ? <nav className="public-legal-links" aria-label={english ? "Legal information" : "Informations légales"}>
-          <Link href={`/site/${encodeURIComponent(config.slug)}/mentions-legales`}>{english ? "Legal notice" : "Mentions légales"}</Link>
-          <Link href={`/site/${encodeURIComponent(config.slug)}/confidentialite`}>{english ? "Privacy" : "Confidentialité"}</Link>
-          <Link href={`/site/${encodeURIComponent(config.slug)}/cookies`}>Cookies</Link>
+          <Link href={`${base}/mentions-legales` || "/mentions-legales"}>{english ? "Legal notice" : "Mentions légales"}</Link>
+          <Link href={`${base}/confidentialite` || "/confidentialite"}>{english ? "Privacy" : "Confidentialité"}</Link>
+          <Link href={`${base}/cookies` || "/cookies"}>Cookies</Link>
         </nav> : null}
       </footer>
     </div>
