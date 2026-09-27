@@ -2,12 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { freeEntitlements, getMyEntitlements, type SubscriptionEntitlements } from "../../lib/subscription";
+import { freeEntitlements, getMyAiUsage, getMyEntitlements, type AiUsage, type SubscriptionEntitlements } from "../../lib/subscription";
 
 export default function PlansPage() {
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => { getMyEntitlements().then(setCurrent).catch(() => setCurrent(freeEntitlements)).finally(() => setLoaded(true)); }, []);
+  const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
+  useEffect(() => {
+    Promise.all([getMyEntitlements(), getMyAiUsage()])
+      .then(([entitlements, aiUsage]) => { setCurrent(entitlements); setUsage(aiUsage); })
+      .catch(() => setCurrent(freeEntitlements))
+      .finally(() => setLoaded(true));
+  }, []);
 
   return <main className="plans-page">
     <section className="plans-hero">
@@ -16,6 +22,7 @@ export default function PlansPage() {
       <p>Les droits techniques sont déjà séparés du paiement. Les tarifs commerciaux seront branchés au prestataire de paiement sans disperser les règles dans le builder.</p>
       <Link className="button secondary" href="/builder">← Retour au builder</Link>
     </section>
+    {loaded ? <section className="usage-card" aria-label="Utilisation IA"><div><p className="eyebrow">Votre utilisation</p><h2>{usage.month} / {current.aiMonthlyLimit} générations IA ce mois-ci</h2><p>{usage.today} / {current.aiDailyLimit} aujourd’hui · limite instantanée {current.aiMinuteLimit}/min</p></div><progress max={current.aiMonthlyLimit} value={Math.min(usage.month,current.aiMonthlyLimit)} aria-label="Quota IA mensuel utilisé" /></section> : null}
     <section className="plans-grid" aria-label="Offres">
       <article className={current.planKey === "free" ? "plan-card current" : "plan-card"}>
         <p className="eyebrow">Gratuit</p><h2>Créer et tester</h2>
