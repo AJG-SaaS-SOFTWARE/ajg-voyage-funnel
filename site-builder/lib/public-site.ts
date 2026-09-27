@@ -89,6 +89,6 @@ export async function getPublicSiteByHostname(hostname: string): Promise<PublicS
 }
 
 export function publicSiteUrl(slug: string) {
-  const base = process.env.NEXT_PUBLIC_SITE_BUILDER_URL || "https://ajg-site-builder.vercel.app";
-  return `${base.replace(/\/$/, "")}/site/${encodeURIComponent(slug)}`;
+  const root = process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN || "voyage.ajgsolutionsgroup.com";
+  return `https://${encodeURIComponent(slug)}.${root}`;
 }
