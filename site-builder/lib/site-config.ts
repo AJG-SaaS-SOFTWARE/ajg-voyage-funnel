@@ -3,7 +3,7 @@ import { defaultSiteLegalConfig, type SiteLegalConfig } from "./site-legal";
 
 export type SiteLanguage = "fr" | "en" | "both";
 export type SitePageKind = "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom";
-export type SitePagePlan = { id: string; slug: string; title: string; kind: SitePageKind; purpose: string; enabled: boolean };
+export type SitePagePlan = { id: string; slug: string; title: string; kind: SitePageKind; purpose: string; enabled: boolean; assetIds: string[] };
 export type SiteArchitecture = { mode: "single" | "multi"; pages: SitePagePlan[] };
 export type ContentAssetKind = "image" | "audio" | "text" | "document";
 export type ContentAssetRights = "owned" | "licensed" | "public-domain" | "unknown";
@@ -72,7 +72,7 @@ export const defaultSiteConfig: SiteConfig = {
   design: defaultSiteDesign,
   affiliation: "mwr",
   legal: defaultSiteLegalConfig,
-  architecture: { mode: "single", pages: [{ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true }] },
+  architecture: { mode: "single", pages: [{ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] }] },
   contentLibrary: { assets: [] }
 };
 
@@ -85,9 +85,9 @@ export function normalizeSiteArchitecture(value: unknown): SiteArchitecture {
   const pages = rawPages.map((page: any, index) => {
     const kind = allowedKinds.has(page?.kind) ? page.kind as SitePageKind : "custom";
     const slug = kind === "home" ? "" : clean(page?.slug, 60).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-    return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: page?.enabled !== false };
+    return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: page?.enabled !== false, assetIds: (Array.isArray(page?.assetIds) ? page.assetIds : []).slice(0, 12).map((id: unknown) => clean(id, 80)).filter(Boolean) };
   }).filter((page, index, all) => index === all.findIndex((item) => item.id === page.id));
-  if (!pages.some((page) => page.kind === "home")) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true });
+  if (!pages.some((page) => page.kind === "home")) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] });
   return { mode: input.mode === "multi" && pages.filter((page) => page.enabled).length > 1 ? "multi" : "single", pages };
 }
 
