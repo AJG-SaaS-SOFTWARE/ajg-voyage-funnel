@@ -58,9 +58,10 @@ Dernière mise à jour : 27 septembre 2026.
 - [x] relecture IA orthographe, grammaire, cohérence, répétitions, clarté marketing et CTA ;
 - [x] contrôles liens HTTPS, champs incomplets, modules, contraste, longueurs mobile, cadrage et légendes d'images ;
 - [ ] création et observation de plusieurs sites bêta réels ;
-- [ ] mesure des abandons du builder ;
-- [ ] journal structuré de retours utilisateur ;
-- [ ] amélioration continue du template public sur la base des tests.
+- [x] instrumentation first-party minimale du funnel builder : ouverture, étapes clés, application IA et publication, sans contenu utilisateur dans les événements ;
+- [x] journal structuré de retours utilisateur avec catégorie, note et message volontaire ;
+- [x] back-office préparé pour suivre les métriques bêta et les retours ;
+- [ ] amélioration continue du template public sur la base des tests réels.
 
 ## Itération 4A — AI Site Architect, architecture et contenus utilisateur
 État : code fonctionnel livré sur `main`, recette de déploiement à confirmer
