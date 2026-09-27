@@ -10,7 +10,8 @@ import {
 
 export type LegalPageKind = "legal" | "privacy" | "cookies";
 
-function LegalShell({ config, kind, children }: { config: SiteConfig; kind: LegalPageKind; children: ReactNode }) {
+function LegalShell({ config, kind, children, routeBase }: { config: SiteConfig; kind: LegalPageKind; children: ReactNode; routeBase?: string }) {
+  const base = routeBase ?? `/site/${encodeURIComponent(config.slug)}`;
   const english = config.language === "en";
   const labels = english
     ? { home: "Back to site", legal: "Legal notice", privacy: "Privacy", cookies: "Cookies" }
@@ -19,13 +20,13 @@ function LegalShell({ config, kind, children }: { config: SiteConfig; kind: Lega
     <div className="site-legal-page">
       <header className="site-legal-header">
         <strong>{config.brandName || effectivePublisherName(config.legal, config.firstName, config.lastName)}</strong>
-        <Link href={`/site/${encodeURIComponent(config.slug)}`}>{labels.home} →</Link>
+        <Link href={base || "/"}>{labels.home} →</Link>
       </header>
       <main className="site-legal-main">
         <nav className="site-legal-tabs" aria-label={english ? "Legal pages" : "Pages légales"}>
-          <Link className={kind === "legal" ? "active" : ""} href={`/site/${encodeURIComponent(config.slug)}/mentions-legales`}>{labels.legal}</Link>
-          <Link className={kind === "privacy" ? "active" : ""} href={`/site/${encodeURIComponent(config.slug)}/confidentialite`}>{labels.privacy}</Link>
-          <Link className={kind === "cookies" ? "active" : ""} href={`/site/${encodeURIComponent(config.slug)}/cookies`}>{labels.cookies}</Link>
+          <Link className={kind === "legal" ? "active" : ""} href={`${base}/mentions-legales`}>{labels.legal}</Link>
+          <Link className={kind === "privacy" ? "active" : ""} href={`${base}/confidentialite`}>{labels.privacy}</Link>
+          <Link className={kind === "cookies" ? "active" : ""} href={`${base}/cookies`}>{labels.cookies}</Link>
         </nav>
         {children}
       </main>
@@ -37,14 +38,14 @@ function LegalShell({ config, kind, children }: { config: SiteConfig; kind: Lega
   );
 }
 
-export function LegalNoticePage({ config }: { config: SiteConfig }) {
+export function LegalNoticePage({ config, routeBase }: { config: SiteConfig; routeBase?: string }) {
   const english = config.language === "en";
   const legal = config.legal;
   const publisher = effectivePublisherName(legal, config.firstName, config.lastName);
   const director = effectivePublicationDirector(legal, config.firstName, config.lastName);
 
   return (
-    <LegalShell config={config} kind="legal">
+    <LegalShell config={config} routeBase={routeBase} kind="legal">
       <article className="site-legal-article">
         <p className="mini">{english ? "LEGAL INFORMATION" : "INFORMATIONS LÉGALES"}</p>
         <h1>{english ? "Legal notice" : "Mentions légales"}</h1>
@@ -105,7 +106,7 @@ export function LegalNoticePage({ config }: { config: SiteConfig }) {
   );
 }
 
-export function PrivacyPage({ config }: { config: SiteConfig }) {
+export function PrivacyPage({ config, routeBase }: { config: SiteConfig; routeBase?: string }) {
   const english = config.language === "en";
   const legal = config.legal;
   const publisher = effectivePublisherName(legal, config.firstName, config.lastName);
@@ -115,7 +116,7 @@ export function PrivacyPage({ config }: { config: SiteConfig }) {
   const hasRemoteMedia = Boolean(config.design.heroImage || config.design.audio);
 
   return (
-    <LegalShell config={config} kind="privacy">
+    <LegalShell config={config} routeBase={routeBase} kind="privacy">
       <article className="site-legal-article">
         <p className="mini">{english ? "PERSONAL DATA" : "DONNÉES PERSONNELLES"}</p>
         <h1>{english ? "Privacy policy" : "Politique de confidentialité"}</h1>
@@ -191,12 +192,12 @@ export function PrivacyPage({ config }: { config: SiteConfig }) {
   );
 }
 
-export function CookiesPage({ config }: { config: SiteConfig }) {
+export function CookiesPage({ config, routeBase }: { config: SiteConfig; routeBase?: string }) {
   const english = config.language === "en";
   const hasVideo = config.design.modules.video.enabled && Boolean(config.design.modules.video.url);
 
   return (
-    <LegalShell config={config} kind="cookies">
+    <LegalShell config={config} routeBase={routeBase} kind="cookies">
       <article className="site-legal-article">
         <p className="mini">{english ? "COOKIES & TRACKERS" : "COOKIES & TRACEURS"}</p>
         <h1>{english ? "Cookie information" : "Informations sur les cookies"}</h1>
