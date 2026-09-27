@@ -6,7 +6,7 @@ import SiteModulesView from "./SiteModulesView";
 import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
 import { legalIsComplete } from "../lib/site-legal";
 
-export default function PublishedSite({ config }: { config: SiteConfig }) {
+export default function PublishedSite({ config, pageSlug = "" }: { config: SiteConfig; pageSlug?: string }) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const bookingHref = safeHttpsUrl(config.bookingUrl);
   const hasBooking = Boolean(config.design.showBooking && bookingHref && config.bookingLabel.trim());
@@ -14,6 +14,10 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
   const facebookHref = config.design.showFacebook ? safeHttpsUrl(config.facebookUrl) : "";
   const english = config.language === "en";
   const actionLabel = config.bookingLabel;
+  const enabledPages = config.architecture.pages.filter((page) => page.enabled);
+  const currentPage = enabledPages.find((page) => page.slug === pageSlug) || enabledPages.find((page) => page.kind === "home");
+  const isHome = !currentPage || currentPage.kind === "home";
+  const pageHref = (slug: string) => slug ? `/site/${encodeURIComponent(config.slug)}/p/${encodeURIComponent(slug)}` : `/site/${encodeURIComponent(config.slug)}`;
   const { surface, ink } = surfaceInk(config.design);
   const legalReady = legalIsComplete(config.legal, config.firstName, config.lastName);
   const backgroundImageStyle = {
@@ -31,13 +35,15 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
-          {config.aboutText.trim() ? <a href="#presentation">{english ? "About" : "Présentation"}</a> : null}
+          {config.architecture.mode === "multi" ? enabledPages.map((page) => <Link key={page.id} href={pageHref(page.slug)} aria-current={currentPage?.id === page.id ? "page" : undefined}>{page.title}</Link>) : null}
+          {config.architecture.mode !== "multi" && config.aboutText.trim() ? <a href="#presentation">{english ? "About" : "Présentation"}</a> : null}
           {hasBooking ? <a className="public-book" href={bookingHref} target="_blank" rel="noopener">{actionLabel} →</a> : null}
         </nav>
       </header>
 
       <main>
-        <section className="public-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
+        {!isHome && currentPage ? <section className="public-page-intro"><p className="mini">{config.brandName}</p><h1>{currentPage.title}</h1><p>{currentPage.purpose}</p></section> : null}
+        {isHome ? <section className="public-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
           {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="public-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={backgroundImageStyle} /> : null}
           <div className="public-hero-copy">
             {config.heroTagline.trim() ? <p className="mini">{config.heroTagline}</p> : null}
@@ -56,15 +62,19 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
               <span>{initials}</span>
             )}
           </div> : null}
-        </section>
+        </section> : null}
 
-        {config.aboutText.trim() ? <section className="public-about" id="presentation">
+        {(isHome || currentPage?.kind === "about") && config.aboutText.trim() ? <section className="public-about" id="presentation">
           <p className="mini">{config.affiliation === "mwr" ? (english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?") : (english ? "About me" : "Qui suis-je ?")}</p>
           <h2>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h2>
           <p>{config.aboutText}</p>
         </section> : null}
 
-        <SiteModulesView modules={config.design.modules} english={english} />
+        {isHome ? <SiteModulesView modules={config.design.modules} english={english} /> : null}
+        {currentPage?.kind === "gallery" ? <SiteModulesView modules={{ ...config.design.modules, order: ["gallery"] }} english={english} /> : null}
+        {currentPage?.kind === "faq" ? <SiteModulesView modules={{ ...config.design.modules, order: ["faq"] }} english={english} /> : null}
+        {currentPage?.kind === "contact" ? <SiteModulesView modules={{ ...config.design.modules, order: ["contact"] }} english={english} /> : null}
+        {currentPage?.kind === "services" ? <SiteModulesView modules={{ ...config.design.modules, order: ["benefits", "figures"] }} english={english} /> : null}
 
       </main>
 
