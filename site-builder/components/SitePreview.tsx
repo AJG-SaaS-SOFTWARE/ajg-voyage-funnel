@@ -18,7 +18,7 @@ export default function SitePreview({ config, compact = false }: { config: SiteC
   } as CSSProperties;
 
   return (
-    <div className={compact ? "site-preview compact" : "site-preview"} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
+    <div className={compact ? "site-preview compact" : "site-preview"} data-layout={config.design.layout} data-hero-layout={config.design.heroLayout} data-content-width={config.design.contentWidth} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
       <nav>
         <strong>{config.brandName || (english ? "Your site" : "Votre site")}</strong>
         {config.aboutText.trim() ? <span>{english ? "About" : "Présentation"}</span> : null}
