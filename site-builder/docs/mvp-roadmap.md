@@ -160,8 +160,11 @@ Modules à étudier après validation bêta :
 - [x] mesurer le stockage `site-media` par propriétaire et l’afficher dans « Mon offre » ;
 - [x] refuser les nouveaux imports qui dépasseraient le quota de stockage de l’offre ;
 - [x] conserver les restrictions Storage/RLS existantes et calculer l’usage depuis les métadonnées Storage en lecture seule ;
-- [ ] domaines personnalisés ;
-- [ ] back-office administrateur ;
+- [x] socle domaines personnalisés : droit Pro, demande normalisée, état pending/verified/failed et écran utilisateur ;
+- [x] résolution publique d’un hostname personnalisé vérifié et navigation propre sur ce domaine ;
+- [ ] automatiser le rattachement et la vérification DNS/Vercel avant passage à `verified` ;
+- [x] back-office administrateur protégé par rôle RLS, vue sites/offres/domaines et changement d’offre ;
+- [x] aucun rôle administrateur attribué automatiquement : élévation volontaire uniquement ;
 - [ ] suspension automatique en cas d’impayé.
 
 Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
