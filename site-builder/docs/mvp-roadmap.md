@@ -140,12 +140,27 @@ Modules à étudier après validation bêta :
 
 ## Sprint 5 — monétisation
 
-- [ ] plans et droits par offre ;
-- [ ] Stripe ;
-- [ ] quotas stockage / IA par plan commercial ;
+### Itération 5A — socle plans et droits
+État : socle technique livré sur `main`, paiement volontairement non activé
+
+- [x] catalogue `Gratuit` / `Pro` centralisé en base ;
+- [x] abonnements utilisateurs séparés des données éditoriales du site ;
+- [x] RLS : lecture du catalogue authentifiée et lecture limitée à son propre abonnement ;
+- [x] RPC `get_my_entitlements` en SECURITY INVOKER ;
+- [x] quotas IA lus depuis l’offre au lieu de constantes applicatives ;
+- [x] droits préparés pour stockage, domaine personnalisé et AI Site Architect Premium ;
+- [x] page `/plans` et accès « Mon offre » depuis le builder ;
+- [x] types Supabase régénérés et migration versionnée ;
+- [x] audit sécurité/performance post-migration et index de relation ajouté ;
+- [ ] prix commercial, périodicité et éventuel essai à valider avant activation du paiement ;
+- [ ] connecter Stripe et ses webhooks ;
+- [ ] appliquer les droits Premium au runtime une fois le paiement opérationnel ;
+- [ ] mesurer et bloquer le stockage total selon l’offre ;
 - [ ] domaines personnalisés ;
 - [ ] back-office administrateur ;
-- [ ] suspension automatique en cas d'impayé.
+- [ ] suspension automatique en cas d’impayé.
+
+Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
 
 ## Principe de conformité
 
