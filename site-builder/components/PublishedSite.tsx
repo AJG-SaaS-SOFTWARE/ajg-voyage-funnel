@@ -27,7 +27,7 @@ export default function PublishedSite({ config }: { config: SiteConfig }) {
   } as CSSProperties;
 
   return (
-    <div className="public-site" data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
+    <div className="public-site" data-layout={config.design.layout} data-hero-layout={config.design.heroLayout} data-content-width={config.design.contentWidth} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
