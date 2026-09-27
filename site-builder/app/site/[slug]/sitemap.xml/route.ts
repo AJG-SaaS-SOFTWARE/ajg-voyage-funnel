@@ -16,10 +16,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     ? site.config.architecture.pages.filter((page) => page.enabled)
     : [{ slug: "" }];
   const urls = pages.map((page) => page.slug ? `${root}/p/${encodeURIComponent(page.slug)}` : root);
-  if (site.config.legal) {
-    urls.push(`${root}/mentions-legales`, `${root}/confidentialite`, `${root}/cookies`);
-  }
-
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...new Set(urls)].map((url) => `  <url><loc>${xmlEscape(url)}</loc></url>`).join("\n")}\n</urlset>`;
   return new Response(body, { headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=300, s-maxage=300" } });
 }
