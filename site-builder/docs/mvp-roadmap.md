@@ -82,19 +82,19 @@ Objectif de sortie : l’IA peut proposer une structure de site sensiblement dif
 - [x] édition manuelle conservée après application ;
 - [x] upload direct multi-format depuis la bibliothèque : images, audio, PDF et TXT, avec taille/type bornés ;
 - [x] attribution automatique par l’IA des assets autorisés aux pages, validation des IDs et rendu public ;
-- [ ] conversation de révision globale du site (« plus premium », « retire cette page », etc.) ;
+- [x] conversation de révision globale du site (« plus premium », « retire cette page », etc.) avec proposition séparée et validation avant application ;
 - [ ] éditeur visuel de l’arborescence après génération.
 
 Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. Les deux points restants constituent l’itération suivante et ne sont pas présentés comme terminés.
 
 ### Itération 4B — contrôle humain avancé du site Premium
-État : en cours
+État : conversation de révision livrée sur `main`, éditeur visuel restant
 
 - [x] import direct de contenus utilisateur dans la bibliothèque ;
 - [x] affectation IA des contenus autorisés aux pages ;
 - [x] blocage des références vers des assets non autorisés avant publication ;
 - [x] rendu public des images, textes, audios et documents affectés ;
-- [ ] conversation de révision globale avec aperçu avant application ;
+- [x] conversation de révision globale avec aperçu structuré avant application ;
 - [ ] éditeur visuel d’arborescence et réaffectation manuelle des contenus.
 
 ## Modules de contenu
