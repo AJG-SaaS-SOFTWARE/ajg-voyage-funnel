@@ -257,11 +257,20 @@ export async function uploadProfileImage(file: File, siteId: string) {
   return data.publicUrl;
 }
 
+async function assertStorageAllowance(bytes: number) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase.rpc("can_upload_site_media", { p_bytes: bytes });
+  if (error) throw error;
+  if (data !== true) throw new Error("Votre quota de stockage est atteint. Supprimez un média ou passez à une offre avec davantage de stockage.");
+}
+
 export async function uploadSiteImage(file: Blob, siteId: string, category: "background" | "gallery") {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const user = await getCurrentUser();
   if (!user) throw new Error("Vous devez être connecté.");
+  await assertStorageAllowance(file.size);
   const objectPath = `${user.id}/${siteId}/${category}/${crypto.randomUUID()}.webp`;
   const { error } = await supabase.storage.from("site-media").upload(objectPath, file, {
     contentType: "image/webp", cacheControl: "31536000"
@@ -279,6 +288,7 @@ export async function uploadContentAsset(file: File, siteId: string) {
 
   const allowed = new Set(["image/jpeg","image/png","image/webp","image/avif","audio/mpeg","audio/mp4","audio/ogg","audio/wav","application/pdf","text/plain"]);
   if (!allowed.has(file.type)) throw new Error("Format non pris en charge. Utilisez JPG, PNG, WebP, AVIF, MP3, M4A, OGG, WAV, PDF ou TXT.");
+  await assertStorageAllowance(file.size);
   const extension = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
   const objectPath = `${user.id}/${siteId}/library/${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage.from("site-media").upload(objectPath, file, { contentType: file.type, cacheControl: "31536000" });
