@@ -296,6 +296,42 @@ export async function uploadContentAsset(file: File, siteId: string) {
   return supabase.storage.from("site-media").getPublicUrl(objectPath).data.publicUrl;
 }
 
+
+export type SiteDomain = { id: string; hostname: string; kind: "managed_subdomain" | "custom_domain"; verificationStatus: "pending" | "verified" | "failed"; isPrimary: boolean };
+
+export async function getMyDomains(): Promise<SiteDomain[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+  const site = await getMySite();
+  if (!site) return [];
+  const { data, error } = await supabase.from("domains").select("id,hostname,kind,verification_status,is_primary").eq("site_id", site.id).order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data || []).map((row: any) => ({ id: row.id, hostname: row.hostname, kind: row.kind, verificationStatus: row.verification_status, isPrimary: row.is_primary }));
+}
+
+export async function requestCustomDomain(hostname: string): Promise<SiteDomain> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const site = await getMySite();
+  if (!site) throw new Error("Créez d’abord votre site.");
+  const normalized = hostname.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
+  if (!/^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(normalized)) throw new Error("Saisissez un nom de domaine valide, sans https:// ni chemin.");
+  const { data: entitlements, error: entitlementError } = await supabase.rpc("get_my_entitlements");
+  if (entitlementError) throw entitlementError;
+  const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
+  if (entitlement?.custom_domain !== true) throw new Error("Le domaine personnalisé est réservé à l’offre Pro.");
+  const { data, error } = await supabase.from("domains").upsert({ site_id: site.id, hostname: normalized, kind: "custom_domain", verification_status: "pending", is_primary: false }, { onConflict: "hostname" }).select("id,hostname,kind,verification_status,is_primary").single();
+  if (error) throw error;
+  return { id: data.id, hostname: data.hostname, kind: data.kind as "custom_domain", verificationStatus: data.verification_status as SiteDomain["verificationStatus"], isPrimary: data.is_primary };
+}
+
+export async function removeCustomDomain(id: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { error } = await supabase.from("domains").delete().eq("id", id).eq("kind", "custom_domain");
+  if (error) throw error;
+}
+
 export async function signOut() {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return;
