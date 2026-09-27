@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const page = site?.config.architecture.pages.find((item) => item.enabled && item.slug === pageSlug);
   if (!site || !page || site.config.architecture.mode !== "multi") return { title: "Page introuvable | AJG Site Builder", robots: { index: false, follow: false } };
   const title = `${page.title} | ${site.config.brandName}`;
-  const description = page.purpose || site.config.heroSubtitle;
+  const description = site.config.heroSubtitle || site.config.aboutText.slice(0, 160);
   return { title, description, alternates: { canonical: `${publicSiteUrl(slug)}/p/${encodeURIComponent(pageSlug)}` }, robots: { index: true, follow: true } };
 }
 
