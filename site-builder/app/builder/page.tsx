@@ -26,7 +26,8 @@ import {
   saveMySite,
   signOut,
   uploadProfileImage,
-  uploadSiteImage
+  uploadSiteImage,
+  uploadContentAsset
 } from "../../lib/supabase-site-repository";
 
 const steps = [
@@ -955,7 +956,10 @@ export default function BuilderPage() {
 
             {step === "story" ? (
               <>
-                <ContentLibraryEditor value={config.contentLibrary} onChange={(contentLibrary) => update("contentLibrary", contentLibrary)} />
+                <ContentLibraryEditor value={config.contentLibrary} onChange={(contentLibrary) => update("contentLibrary", contentLibrary)} onUpload={async (_asset, file) => {
+                  if (!remoteMode || !config.slug) throw new Error("Enregistrez d’abord l’adresse du site avant d’importer un fichier.");
+                  return uploadContentAsset(file, config.slug);
+                }} />
                 <details className="guided-writing-card ai-architect-card">
                   <summary>
                     <span className="guided-writing-icon">✦</span>
