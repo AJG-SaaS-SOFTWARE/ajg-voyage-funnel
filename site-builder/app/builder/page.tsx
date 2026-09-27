@@ -162,7 +162,13 @@ export default function BuilderPage() {
   });
   const [guidedDraftReady, setGuidedDraftReady] = useState(false);
   const [architectBrief, setArchitectBrief] = useState("");
-  const [architectProposal, setArchitectProposal] = useState<any>(null);
+  type ArchitectProposal = {
+    heroTagline: string; heroTitle: string; heroSubtitle: string; aboutHeading: string; aboutText: string; bookingLabel: string;
+    recommendedModules: string[];
+    faq: { title: string; items: { question: string; answer: string }[] };
+    benefits: { title: string; items: { title: string; text: string }[] };
+  };
+  const [architectProposal, setArchitectProposal] = useState<ArchitectProposal | null>(null);
   const [architectLoading, setArchitectLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [reviewResult, setReviewResult] = useState<{ issues: { field: keyof SiteConfig; reason: string }[]; suggestions: Record<string, string> } | null>(null);
@@ -441,6 +447,10 @@ export default function BuilderPage() {
     setSaved(false);
     setPublished(false);
     setArchitectProposal(null);
+    setChangeVersion((version) => version + 1);
+    latestVersion.current += 1;
+    setReviewResult(null);
+    setStep("review");
   };
 
   const guidedDraftEnabled =
