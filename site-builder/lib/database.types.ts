@@ -108,6 +108,38 @@ export type Database = {
           },
         ]
       }
+      product_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: number
+          site_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: never
+          site_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: never
+          site_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_events_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_drafts: {
         Row: {
           config: Json
@@ -313,6 +345,47 @@ export type Database = {
           },
           {
             foreignKeyName: "travel_journals_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          message: string
+          rating: number | null
+          site_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          rating?: number | null
+          site_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          rating?: number | null
+          site_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_feedback_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: false
             referencedRelation: "sites"
