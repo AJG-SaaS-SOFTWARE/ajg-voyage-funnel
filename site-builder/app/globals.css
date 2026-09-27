@@ -2466,3 +2466,8 @@ button.active .step-label small{color:#63817f}
 .site-preview[data-layout="showcase"] .module-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
 .site-preview[data-layout="conversion"] nav{position:sticky;top:0;z-index:5}
 @media(max-width:700px){.public-site[data-layout="showcase"] .module-gallery,.site-preview[data-layout="showcase"] .module-gallery{grid-template-columns:1fr}.public-site[data-layout="showcase"] .module-gallery figure:nth-child(3n+1){grid-column:auto}.public-site[data-hero-layout="immersive"] .public-hero,.site-preview[data-hero-layout="immersive"] .preview-hero{min-height:62vh}}
+
+.public-header nav a[aria-current="page"]{color:var(--site-accent);text-decoration:underline;text-underline-offset:6px}
+.public-page-intro{width:min(100% - 40px,1100px);margin:0 auto;padding:clamp(70px,10vw,130px) 0 clamp(32px,6vw,70px)}
+.public-page-intro h1{max-width:15ch;margin:8px 0 18px;font-family:Georgia,serif;font-size:clamp(3rem,8vw,6.8rem);line-height:.92;font-weight:500}
+.public-page-intro>p:last-child{max-width:720px;font-size:clamp(1rem,2vw,1.25rem);line-height:1.7;color:var(--site-muted)}
