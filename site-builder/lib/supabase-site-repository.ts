@@ -143,19 +143,15 @@ export async function getCurrentUser() {
   return data.user;
 }
 
-export async function getMySite(): Promise<RemoteSite | null> {
+export async function getMySite(siteId?: string): Promise<RemoteSite | null> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return null;
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
-    .from("sites")
-    .select("*")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  let query = supabase.from("sites").select("*").eq("owner_id", user.id);
+  query = siteId ? query.eq("id", siteId) : query.order("created_at", { ascending: true }).limit(1);
+  const { data, error } = await query.maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
@@ -164,14 +160,14 @@ export async function getMySite(): Promise<RemoteSite | null> {
   return toRemote(data, draft?.config);
 }
 
-export async function saveMySite(config: SiteConfig, publish = false): Promise<RemoteSite> {
+export async function saveMySite(config: SiteConfig, publish = false, siteId?: string): Promise<RemoteSite> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
 
   const user = await getCurrentUser();
   if (!user) throw new Error("Vous devez être connecté.");
 
-  const existing = await getMySite();
+  const existing = await getMySite(siteId);
   const publishConfig = config;
   if (existing?.id) {
     const { data: capabilities, error: capabilityError } = await supabase.rpc("get_my_site_capabilities", { p_site_id: existing.id });
