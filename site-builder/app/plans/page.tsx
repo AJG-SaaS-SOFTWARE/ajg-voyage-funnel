@@ -11,7 +11,7 @@ export default function PlansPage() {
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
   const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
   useEffect(() => {
-    getMySite().then(site => Promise.all([site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements), getMyAiUsage(), getMyStorageUsage()]))
+    getMySite().then(site => Promise.all([site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements), getMyAiUsage(), getMyStorageUsage(site?.id)]))
       .then(([entitlements, aiUsage, storageUsage]) => { setCurrent(entitlements); setUsage(aiUsage); setStorage(storageUsage); })
       .catch(() => setCurrent(freeEntitlements))
       .finally(() => setLoaded(true));
