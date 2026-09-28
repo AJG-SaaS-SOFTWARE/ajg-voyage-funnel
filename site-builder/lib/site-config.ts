@@ -80,7 +80,7 @@ export const defaultSiteConfig: SiteConfig = {
 export function normalizeSiteArchitecture(value: unknown): SiteArchitecture {
   const input = value && typeof value === "object" ? value as Record<string, unknown> : {};
   const allowedKinds = new Set<SitePageKind>(["home","about","services","gallery","faq","contact","custom"]);
-  const rawPages = Array.isArray(input.pages) ? input.pages.slice(0, 8) : [];
+  const rawPages = Array.isArray(input.pages) ? input.pages.slice(0, 6) : [];
   const clean = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
   const usedSlugs = new Set<string>();
   let homeSeen = false;
