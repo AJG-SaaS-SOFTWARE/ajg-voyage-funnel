@@ -36,3 +36,13 @@ select private.start_builder_payment_grace(:'site_id'::uuid,:'owner_id'::uuid,no
 select private.advance_builder_billing_states();
 select bs.state,s.public_access_state from public.site_billing_states bs join public.sites s on s.id=bs.site_id where bs.site_id=:'site_id'::uuid;
 rollback;
+
+
+-- Site-scoped provider adapter: only the targeted site may enter grace.
+-- Run with a second disposable site owned by the same account when validating multi-site isolation.
+-- Expected: target site -> grace/past_due; sibling site unchanged.
+-- The legacy account-wide adapter has no EXECUTE privilege, including for service_role.
+
+-- Contact form matrix:
+-- J13: public submit_contact_message accepts a valid consented message.
+-- J14+: submit_contact_message returns site_not_available while the public site can remain visible until J28.
