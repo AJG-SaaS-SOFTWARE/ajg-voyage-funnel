@@ -336,14 +336,11 @@ export async function requestCustomDomain(hostname: string): Promise<SiteDomain>
   const site = await getMySite();
   if (!site) throw new Error("Créez d’abord votre site.");
   const normalized = hostname.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
-  if (!/^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(normalized)) throw new Error("Saisissez un nom de domaine valide, sans https:// ni chemin.");
-  const { data: entitlements, error: entitlementError } = await supabase.rpc("get_my_site_entitlements", { p_site_id: site.id });
-  if (entitlementError) throw entitlementError;
-  const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
-  if (entitlement?.custom_domain !== true) throw new Error("Le domaine personnalisé est réservé à l’offre Pro.");
-  const { data, error } = await supabase.from("domains").upsert({ site_id: site.id, hostname: normalized, kind: "custom_domain", verification_status: "pending", is_primary: false }, { onConflict: "hostname" }).select("id,hostname,kind,verification_status,is_primary").single();
+  const { data, error } = await supabase.rpc("request_my_custom_domain", { p_site_id: site.id, p_hostname: normalized });
   if (error) throw error;
-  return { id: data.id, hostname: data.hostname, kind: data.kind as "custom_domain", verificationStatus: data.verification_status as SiteDomain["verificationStatus"], isPrimary: data.is_primary };
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error("Impossible d’enregistrer ce domaine.");
+  return { id: row.id, hostname: row.hostname, kind: "custom_domain", verificationStatus: row.verification_status as SiteDomain["verificationStatus"], isPrimary: row.is_primary };
 }
 
 export async function syncCustomDomain(siteId:string,domainId:string){
