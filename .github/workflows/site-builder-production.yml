@@ -2,6 +2,9 @@ name: Site Builder Production Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - release/site-builder-production
 
 permissions:
   contents: read
@@ -12,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/site-builder-production'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,6 +35,17 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require release branch to match main
+        if: github.ref == 'refs/heads/release/site-builder-production'
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "::error::Release branch must point to the current main commit."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
