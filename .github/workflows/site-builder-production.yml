@@ -40,6 +40,17 @@ jobs:
             exit 1
           fi
 
+      - name: Validate CLI-compatible Vercel token
+        shell: bash
+        run: |
+          if ! curl --fail --silent --show-error "https://api.vercel.com/v2/user" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Accept: application/json" > /tmp/vercel-user.json; then
+            echo "::error::VERCEL_TOKEN cannot resolve the authenticated Vercel user. Create a Personal Access Token with Scope = Full Account and replace the GitHub Actions secret."
+            exit 1
+          fi
+          echo "Vercel CLI identity preflight passed." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Require release branch to match main
         if: github.ref == 'refs/heads/release/site-builder-production'
         run: |
