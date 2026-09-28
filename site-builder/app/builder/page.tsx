@@ -7,7 +7,11 @@ import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
 import ContentLibraryEditor from "../../components/ContentLibraryEditor";
 import ArchitectureEditor from "../../components/ArchitectureEditor";
-import { trackProductEvent } from "../../lib/product-analytics";
+import {
+  submitArchitectQualityFeedback,
+  trackProductEvent,
+  type ArchitectQualityReason
+} from "../../lib/product-analytics";
 import ModulesEditor from "../../components/ModulesEditor";
 import AiTextAssistant from "../../components/AiTextAssistant";
 import ComplianceEditor from "../../components/ComplianceEditor";
@@ -206,6 +210,12 @@ export default function BuilderPage() {
   };
   const [architectProposal, setArchitectProposal] = useState<ArchitectProposal | null>(null);
   const [architectClarifications, setArchitectClarifications] = useState<Record<string, string>>({});
+  const [architectProposalKey, setArchitectProposalKey] = useState("");
+  const [architectAttemptKind, setArchitectAttemptKind] = useState<"first" | "regeneration">("first");
+  const [architectQualityChoice, setArchitectQualityChoice] = useState<"positive" | "negative" | null>(null);
+  const [architectQualityReason, setArchitectQualityReason] = useState<ArchitectQualityReason | null>(null);
+  const [architectQualitySubmitted, setArchitectQualitySubmitted] = useState(false);
+  const [architectQualityBusy, setArchitectQualityBusy] = useState(false);
   const [architectLoading, setArchitectLoading] = useState(false);
   const [revisionRequest, setRevisionRequest] = useState("");
   const [revisionProposal, setRevisionProposal] = useState<ArchitectProposal | null>(null);
@@ -489,6 +499,11 @@ export default function BuilderPage() {
       const result = await response.json();
       if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
       setArchitectProposal(result.proposal);
+      setArchitectProposalKey(crypto.randomUUID());
+      setArchitectAttemptKind(isRegeneration ? "regeneration" : "first");
+      setArchitectQualityChoice(null);
+      setArchitectQualityReason(null);
+      setArchitectQualitySubmitted(false);
       if (extraBrief.trim()) {
         setArchitectBrief(briefForRequest.slice(0, 4000));
         setArchitectClarifications({});
@@ -501,6 +516,43 @@ export default function BuilderPage() {
       setSyncError(error instanceof Error ? error.message : "Impossible de préparer le site complet.");
     } finally {
       setArchitectLoading(false);
+    }
+  };
+
+  const submitArchitectRating = async (
+    verdict: "positive" | "negative",
+    reason?: ArchitectQualityReason | null
+  ) => {
+    if (
+      !architectProposal ||
+      !architectProposalKey ||
+      !remoteSiteId ||
+      architectQualitySubmitted
+    ) return;
+
+    setArchitectQualityBusy(true);
+    setSyncError("");
+    try {
+      await submitArchitectQualityFeedback({
+        proposalKey: architectProposalKey,
+        siteId: remoteSiteId,
+        verdict,
+        reason: reason || null,
+        attemptKind: architectAttemptKind,
+        auditScore: architectProposal.premiumAudit.initialScore,
+        refinementApplied: architectProposal.premiumAudit.refinementApplied
+      });
+      setArchitectQualityChoice(verdict);
+      setArchitectQualityReason(reason || null);
+      setArchitectQualitySubmitted(true);
+    } catch (error) {
+      setSyncError(
+        error instanceof Error
+          ? error.message
+          : "Votre évaluation n’a pas pu être enregistrée."
+      );
+    } finally {
+      setArchitectQualityBusy(false);
     }
   };
 
@@ -1188,6 +1240,68 @@ export default function BuilderPage() {
                           <b>✓ Audit Premium effectué</b>
                           <p>{architectProposal.premiumAudit.qualityNote}</p>
                           {architectProposal.premiumAudit.strengths.length ? <small>Points forts : {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
+                        </div>
+                        <div className="architect-human-eval">
+                          <div>
+                            <b>Cette proposition correspond-elle vraiment à votre besoin ?</b>
+                            <small>Votre réponse aide à améliorer l’Architecte. Aucun texte de votre site n’est envoyé avec cette évaluation.</small>
+                          </div>
+                          {architectQualitySubmitted ? (
+                            <p className="architect-human-eval-thanks">
+                              ✓ Merci. Votre évaluation est enregistrée.
+                            </p>
+                          ) : (
+                            <>
+                              <div className="architect-human-eval-actions">
+                                <button
+                                  type="button"
+                                  className={"button secondary " + (architectQualityChoice === "positive" ? "is-selected" : "")}
+                                  disabled={architectQualityBusy}
+                                  onClick={() => void submitArchitectRating("positive")}
+                                >
+                                  Oui, c’est pertinent
+                                </button>
+                                <button
+                                  type="button"
+                                  className={"button secondary " + (architectQualityChoice === "negative" ? "is-selected" : "")}
+                                  disabled={architectQualityBusy}
+                                  onClick={() => setArchitectQualityChoice("negative")}
+                                >
+                                  À améliorer
+                                </button>
+                              </div>
+                              {architectQualityChoice === "negative" ? (
+                                <div className="architect-human-eval-reasons">
+                                  <span>Qu’est-ce qui vous gêne surtout ?</span>
+                                  {([
+                                    ["need_mismatch", "Compréhension du besoin"],
+                                    ["copy", "Textes"],
+                                    ["structure", "Structure / rubriques"],
+                                    ["design", "Direction visuelle"],
+                                    ["generic", "Trop générique"],
+                                    ["other", "Autre"]
+                                  ] as Array<[ArchitectQualityReason, string]>).map(([reason, label]) => (
+                                    <button
+                                      key={reason}
+                                      type="button"
+                                      className={architectQualityReason === reason ? "is-selected" : ""}
+                                      onClick={() => setArchitectQualityReason(reason)}
+                                    >
+                                      {label}
+                                    </button>
+                                  ))}
+                                  <button
+                                    type="button"
+                                    className="button primary"
+                                    disabled={!architectQualityReason || architectQualityBusy}
+                                    onClick={() => void submitArchitectRating("negative", architectQualityReason)}
+                                  >
+                                    {architectQualityBusy ? "Enregistrement…" : "Envoyer mon évaluation"}
+                                  </button>
+                                </div>
+                              ) : null}
+                            </>
+                          )}
                         </div>
                         {architectProposal.intelligence.missingInformation.length ? (
                           <div className="architect-missing architect-clarification">
