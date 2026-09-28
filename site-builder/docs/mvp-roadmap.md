@@ -226,6 +226,7 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 - [x] rendre le workflow Site Builder CI déclenchable manuellement pour disposer d’une validation indépendante ;
 - [x] CI GitHub validée sur le dernier socle : `tsc --noEmit` puis `next build` réussissent indépendamment de Vercel ;\n- [x] recette automatisée renforcée : test de l’archive de récupération puis démarrage réel de la release via `next start` avec smoke tests HTTP indépendants de Supabase/Vercel ;
 - [x] release production contrôlée : auto-déploiements Git Vercel désactivés, workflow manuel prébuildé avec staging `--skip-domain`, smoke test puis promotion ;
+- [x] branche réservée `release/site-builder-production` comme déclencheur contrôlé alternatif à `workflow_dispatch`, avec vérification stricte qu’elle pointe sur le `main` courant ;
 - [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
 - [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
 - [ ] valider sous-domaines et domaines personnalisés en environnement réel.
