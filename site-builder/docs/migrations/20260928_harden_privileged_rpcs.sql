@@ -74,3 +74,20 @@ returns text language sql security invoker set search_path to 'pg_catalog','priv
 $$;
 revoke all on function public.consume_my_ai_generation() from public,anon;
 grant execute on function public.consume_my_ai_generation() to authenticated,service_role;
+
+
+-- Usage counters stay readable without granting clients direct access to the internal ledger.
+create or replace function private.get_my_ai_usage_internal()
+returns table(today bigint,month bigint) language sql security definer set search_path to 'pg_catalog','public','pg_temp' as $$
+ select
+  (select count(*) from public.ai_usage_events where user_id=auth.uid() and created_at>=date_trunc('day',now()))::bigint,
+  (select count(*) from public.ai_usage_events where user_id=auth.uid() and created_at>=date_trunc('month',now()))::bigint
+$$;
+revoke all on function private.get_my_ai_usage_internal() from public,anon;
+grant execute on function private.get_my_ai_usage_internal() to authenticated,service_role;
+create or replace function public.get_my_ai_usage()
+returns table(today bigint,month bigint) language sql security invoker set search_path to 'pg_catalog','private','pg_temp' as $$
+ select * from private.get_my_ai_usage_internal()
+$$;
+revoke all on function public.get_my_ai_usage() from public,anon;
+grant execute on function public.get_my_ai_usage() to authenticated,service_role;
