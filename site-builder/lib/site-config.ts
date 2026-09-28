@@ -97,7 +97,7 @@ export function normalizeSiteArchitecture(value: unknown): SiteArchitecture {
       while (usedSlugs.has(slug)) slug = `${base}-${suffix++}`.slice(0, 60);
       usedSlugs.add(slug);
     }
-    return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: kind === "home" ? true : page?.enabled !== false, assetIds: [...new Set((Array.isArray(page?.assetIds) ? page.assetIds : []).slice(0, 12).map((id: unknown) => clean(id, 80)).filter(Boolean))] };
+    return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: kind === "home" ? true : page?.enabled !== false, assetIds: [...new Set<string>((Array.isArray(page?.assetIds) ? page.assetIds : []).slice(0, 12).map((id: unknown) => clean(id, 80)).filter((id: string) => Boolean(id)))] };
   }).filter((page, index, all) => index === all.findIndex((item) => item.id === page.id));
   if (!pages.some((page) => page.kind === "home")) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] });
   return { mode: input.mode === "multi" && pages.filter((page) => page.enabled).length > 1 ? "multi" : "single", pages };
