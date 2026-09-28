@@ -64,7 +64,7 @@ Dernière mise à jour : 28 septembre 2026.
 - [ ] amélioration continue du template public sur la base des tests réels.
 
 ## Itération 4A — AI Site Architect, architecture et contenus utilisateur
-État : terminé côté code sur `main` ; recette de déploiement à confirmer
+État : terminé côté code sur `main` ; production synchronisée, recette E2E globale à confirmer
 
 Objectif de sortie : l’IA peut proposer une structure de site sensiblement différente du template historique, sans publier ni inventer silencieusement des informations sensibles.
 
@@ -88,10 +88,10 @@ Objectif de sortie : l’IA peut proposer une structure de site sensiblement dif
 - [x] limite de 6 pages alignée entre IA, normalisation et éditeur ; accueil unique et non déplaçable ;
 - [x] IDs de contenus publiables transmis à l’AI Site Architect afin que l’affectation d’assets soit réellement exploitable.
 
-Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. La révision globale et l’éditeur visuel sont désormais également codés ; la recette du build et de la production reste nécessaire avant validation bêta.
+Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. La révision globale et l’éditeur visuel sont également codés et déployés ; la recette E2E complète reste nécessaire avant validation bêta.
 
 ### Itération 4B — contrôle humain avancé du site Premium
-État : terminé côté code sur `main` ; recette de déploiement à effectuer
+État : terminé côté code sur `main` ; production synchronisée, recette E2E globale à confirmer
 
 - [x] import direct de contenus utilisateur dans la bibliothèque ;
 - [x] affectation IA des contenus autorisés aux pages ;
@@ -121,7 +121,7 @@ Modules à étudier après validation bêta :
 - blocs supplémentaires déterminés par les retours utilisateurs.
 
 ## Itération 4C — durcissement bêta et recette technique
-État : terminé côté code et sécurité contrôlable ; recette production suspendue au quota de build Vercel
+État : terminé côté code et sécurité contrôlable ; production synchronisée, recette E2E complète à terminer
 
 - [x] alignement du bucket Storage avec les formats réellement acceptés par la bibliothèque : images, audio, PDF et TXT ;
 - [x] limite Storage conservée à 15 Mo et contrôle MIME côté application + bucket ;
@@ -134,7 +134,8 @@ Modules à étudier après validation bêta :
 - [x] notes internes de planification retirées du rendu public et des metadata ;
 - [x] sitemap nettoyé : exclusion des pages légales noindex ;
 - [x] droits renforcés : source obligatoire avant publication d’un contenu sous licence/domaine public ;
-- [ ] exécuter la recette build + parcours complet sur le dernier `main` dès réouverture du pipeline Vercel ;
+- [x] build et production du dernier `main` validés via la release contrôlée ;
+- [ ] exécuter la recette E2E complète authentification → création → AI Site Architect → médias → publication → site public → feedback → export ; runner admin isolé déployé, nouvelle exécution attendue après le correctif du droit Pro temporaire ;
 - [ ] validation finale des sous-domaines gérés en conditions réelles sur ce même déploiement ;
 - [x] routage des sous-pages et pages légales corrigé sur les sous-domaines gérés, avec URLs de navigation propres ;
 - [x] accès direct à `ai_usage_events` retiré aux clients et RPC de quota explicitement limité à `authenticated` / `service_role`, avec contrôle `auth.uid()` conservé ;
@@ -206,7 +207,7 @@ Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc systèm
 Le développement autonome prévu par cette roadmap est arrivé au bout de ce qui peut être finalisé sans décisions commerciales, accès/quotas externes ou observation d’utilisateurs réels.
 
 Restent volontairement ouverts :
-- recette du dernier `main` et validation réelle des sous-domaines dès qu’un nouveau build Vercel est disponible ;
+- recette E2E complète du dernier `main` et validation réelle des sous-domaines sur la production synchronisée ;
 - tests de plusieurs sites bêta et amélioration du template fondée sur ces observations ;
 - activation du réglage Supabase Auth « leaked password protection » si l’offre le permet ;
 - prix, périodicité, essai éventuel et délais de grâce à décider avant activation Stripe ;
@@ -232,7 +233,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Release production débloquée et Storage privé validé : le workflow REST Vercel passe le préflight, construit en `cdg1`, vérifie le SHA, promeut l’artefact et valide les routes publiques. Le compte actif propriétaire du site est admin ; le prochain jalon réel est la recette E2E complète du parcours utilisateur.
+Release production débloquée et Storage privé validé : le workflow REST Vercel passe le préflight, construit en `cdg1`, vérifie le SHA, promeut l’artefact et valide les routes publiques. La production sert désormais `91ac1c3…`, incluant le runner E2E corrigé avec droit Pro temporaire ; le prochain jalon réel est sa nouvelle exécution complète depuis une session administrateur authentifiée.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
@@ -253,7 +254,7 @@ Release production débloquée et Storage privé validé : le workflow REST Verc
 - [x] cause HTTP 402 identifiée : `functionFailoverRegions` exige Enterprise ; failover `fra1` retiré, région principale `cdg1` conservée ;
 - [x] release production contrôlée réussie sur `main` : build Production, SHA, promotion REST et contrôles HTTP publics validés ;
 - [x] bootstrap privé exposé dans le back-office admin : création via l’API Storage Supabase avec le secret serveur Vercel ; la CI ne tente pas d’extraire une variable Sensitive ;
-- [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
+- [x] dernier `main` déployé en production via la release contrôlée ; `/api/health` expose le SHA attendu et la base répond `ok` ;
 - [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback → export ; runner admin isolé prêt, avec nettoyage automatique et 1 génération IA réelle explicitement comptabilisée.
 - [ ] valider sous-domaines et domaines personnalisés en environnement réel.
 
@@ -354,7 +355,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] rattachement et vérification Vercel préparés côté serveur, avec instructions DNS et relance de vérification dans l’UI ;
 - [x] un seul domaine primaire conservé après vérification ;
 - [x] suppression préparée côté serveur : détachement Vercel avant suppression Supabase ;
-- [ ] recette réelle Vercel/DNS bloquée tant que le déploiement du `main` est rate-limité et tant que `VERCEL_TOKEN` n’est pas configuré côté serveur.
+- [ ] recette réelle Vercel/DNS à exécuter sur un domaine de test ; confirmer d’abord dans le diagnostic admin la présence du token Vercel runtime à périmètre minimal puis valider rattachement, instructions DNS, vérification et retrait.
 
 ### Blocages externes avant release candidate réelle
 - [x] Vercel : production synchronisée avec le `main` via le workflow contrôlé ; token GitHub Actions, build, vérification SHA, promotion et rollback sont opérationnels ;
@@ -389,8 +390,9 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;
 - [x] récupération client : archive TAR.GZ streamée avec manifeste v3 et copie des médias publics/privés, sans nouvelle dépendance ;
 - [x] domaines : endpoints Vercel utilisés conformes à la documentation actuelle ;
-- [ ] Vercel : production encore bloquée sur l’ancien SHA `0b16e3b…`, donc aucune recette HTTP des nouveautés ne peut être déclarée terminée ;
-- [ ] Storage privé : bootstrap réel et recette import/promotion attendent ce déploiement ;
-- [ ] secrets de production : validation/configuration côté Vercel attendue ; `VERCEL_TOKEN` doit être ajouté comme secret GitHub Actions avant de relancer la release contrôlée ;
+- [x] Vercel : production synchronisée sur `91ac1c3…` ; `/api/health` retourne HTTP 200, `database: ok`, environnement `production` et région `cdg1` ;
+- [x] Storage privé : bucket réel, politiques RLS et recette privée → promotion publique → nettoyage validés ;
+- [x] secrets de release : `SUPABASE_SECRET_KEY` runtime et `VERCEL_TOKEN` GitHub Actions ont permis la release contrôlée et la recette Storage ;
+- [ ] secrets opérationnels restants : confirmer/configurer `CRON_SECRET`, Resend, `NEXT_PUBLIC_APP_URL` et le token Vercel runtime à périmètre minimal pour les domaines personnalisés ;
 - [ ] paiement réel : volontairement non activé avant validation prix/périodicité/essai et nombre de sites inclus par offre ;
 - [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
