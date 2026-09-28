@@ -314,3 +314,17 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] promotion contrôlée privée → publique branchée à la publication : session + ownership + capacité de publication + droits/licence vérifiés côté serveur ;
 - [x] références `private://` exclues du rendu public et copie rendue répétable pour les republications ;
 - [ ] exécuter le bootstrap du bucket privé sur l’environnement déployé puis effectuer la recette réelle import privé → publication → URL publique.
+
+### Domaines personnalisés — automatisation
+- [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;
+- [x] auto-vérification directe par le propriétaire bloquée en RLS et par révocation du privilège UPDATE ;
+- [x] rattachement et vérification Vercel préparés côté serveur, avec instructions DNS et relance de vérification dans l’UI ;
+- [x] un seul domaine primaire conservé après vérification ;
+- [x] suppression préparée côté serveur : détachement Vercel avant suppression Supabase ;
+- [ ] recette réelle Vercel/DNS bloquée tant que le déploiement du `main` est rate-limité et tant que `VERCEL_TOKEN` n’est pas configuré côté serveur.
+
+### Blocages externes avant release candidate réelle
+- [ ] Vercel : production toujours sur l’ancien commit ; statut GitHub actuel = `Deployment rate limited`, pas une erreur de compilation ;
+- [ ] Storage : exécuter le bootstrap SDK de `site-private-media` une fois le nouveau serveur déployé ;
+- [ ] Secrets serveur : configurer/valider sans exposition `SUPABASE_SECRET_KEY`, `CRON_SECRET`, Resend, `VERCEL_TOKEN` et secrets fournisseur de paiement lorsque ce fournisseur sera choisi ;
+- [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
