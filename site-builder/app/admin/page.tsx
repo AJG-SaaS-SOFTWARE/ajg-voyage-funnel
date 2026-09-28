@@ -5,17 +5,27 @@ import { useEffect, useState } from "react";
 import {
   adminSetFeedbackStatus,
   adminSetPlan,
+  getAdminBetaMetrics,
   getAdminFeedback,
   getAdminMetrics,
   getAdminSites,
   getReleaseReadiness,
   isCurrentUserAdmin,
+  type AdminBetaMetrics,
   type AdminFeedback,
   type AdminMetrics,
   type AdminSiteRow,
   type ReleaseReadiness,
   type ReleaseReadinessCheck
 } from "../../lib/admin";
+
+const stageLabel: Record<AdminBetaMetrics["sites"]["activity"][number]["stage"], string> = {
+  opened: "Ouvert",
+  engaged: "Engagé",
+  review: "Revue",
+  published: "Publié",
+  feedback: "Feedback"
+};
 
 const readinessLabel: Record<ReleaseReadinessCheck["status"], string> = {
   pass: "Prêt",
@@ -28,6 +38,7 @@ export default function AdminPage() {
   const [rows, setRows] = useState<AdminSiteRow[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [feedback, setFeedback] = useState<AdminFeedback[]>([]);
+  const [betaMetrics, setBetaMetrics] = useState<AdminBetaMetrics | null>(null);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
@@ -47,11 +58,12 @@ export default function AdminPage() {
     setMetrics(nextMetrics);
     setFeedback(nextFeedback);
 
-    try {
-      setReadiness(await getReleaseReadiness());
-    } catch {
-      setReadiness(null);
-    }
+    const [nextReadiness, nextBetaMetrics] = await Promise.all([
+      getReleaseReadiness().catch(() => null),
+      getAdminBetaMetrics().catch(() => null)
+    ]);
+    setReadiness(nextReadiness);
+    setBetaMetrics(nextBetaMetrics);
 
     setState("ready");
   };
@@ -117,6 +129,125 @@ export default function AdminPage() {
           <article><b>{metrics.architectApplies30d}</b><span>applications IA · 30 j</span></article>
           <article><b>{metrics.events30d}</b><span>événements produit · 30 j</span></article>
           <article><b>{metrics.feedbackOpen}</b><span>retours à traiter</span></article>
+        </section>
+      ) : null}
+
+      {state === "ready" ? (
+        <section className="panel admin-beta-funnel">
+          <div className="admin-readiness-heading">
+            <div>
+              <p className="eyebrow">Bêta · 30 derniers jours</p>
+              <h2>Funnel d’activation</h2>
+              <p>
+                Mesure sur utilisateurs distincts connectés. Les taux sont descriptifs :
+                avec une petite cohorte, ils servent à repérer une friction, pas à tirer une
+                conclusion statistique.
+              </p>
+            </div>
+            {betaMetrics ? (
+              <div className="beta-side-metrics">
+                <span><b>{betaMetrics.ai.generations}</b> générations IA</span>
+                <span><b>{betaMetrics.feedback.count}</b> retours</span>
+                <span><b>{betaMetrics.feedback.averageRating ?? "—"}</b> note moyenne</span>
+              </div>
+            ) : null}
+          </div>
+
+          {betaMetrics ? (
+            <>
+              <div className="beta-funnel-grid">
+                <article>
+                  <span>1</span>
+                  <b>{betaMetrics.funnel.opened}</b>
+                  <strong>Ouverture</strong>
+                  <small>100 % base</small>
+                </article>
+                <article>
+                  <span>2</span>
+                  <b>{betaMetrics.funnel.engaged}</b>
+                  <strong>Engagement</strong>
+                  <small>{betaMetrics.funnel.engagementRate} % des ouvertures</small>
+                </article>
+                <article>
+                  <span>3</span>
+                  <b>{betaMetrics.funnel.reviewed}</b>
+                  <strong>Revue</strong>
+                  <small>{betaMetrics.funnel.reviewRate} % des ouvertures</small>
+                </article>
+                <article>
+                  <span>4</span>
+                  <b>{betaMetrics.funnel.published}</b>
+                  <strong>Publication</strong>
+                  <small>{betaMetrics.funnel.publishRate} % des ouvertures</small>
+                </article>
+              </div>
+
+              <div className="beta-observation-grid">
+                <article>
+                  <b>{betaMetrics.funnel.openedWithoutEngagement}</b>
+                  <span>ouvertures sans engagement détecté</span>
+                </article>
+                <article>
+                  <b>{betaMetrics.funnel.openedWithoutPublication}</b>
+                  <span>ouvertures sans publication sur la période</span>
+                </article>
+                <article>
+                  <b>{betaMetrics.ai.users}</b>
+                  <span>utilisateurs ayant consommé de l’IA</span>
+                </article>
+                <article>
+                  <b>{betaMetrics.sites.active}</b>
+                  <span>sites avec activité instrumentée</span>
+                </article>
+              </div>
+
+              {betaMetrics.sites.activity.length ? (
+                <div className="beta-site-activity">
+                  <h3>Activité récente par site</h3>
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Site</th>
+                          <th>Étape atteinte</th>
+                          <th>Événements</th>
+                          <th>IA appliquée</th>
+                          <th>Feedback</th>
+                          <th>Dernière activité</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {betaMetrics.sites.activity.map((item) => (
+                          <tr key={item.siteId}>
+                            <td><b>{item.slug}</b><small>{item.status}</small></td>
+                            <td>{stageLabel[item.stage]}</td>
+                            <td>{item.eventCount}</td>
+                            <td>{item.aiApplyCount}</td>
+                            <td>{item.feedbackCount}</td>
+                            <td>{new Date(item.lastActivity).toLocaleDateString("fr-FR")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <p className="plans-note">
+                  Aucune activité bêta instrumentée sur les 30 derniers jours. Le tableau se
+                  remplira automatiquement dès les prochains tests.
+                </p>
+              )}
+
+              <details className="beta-definitions">
+                <summary>Définitions des étapes</summary>
+                {Object.entries(betaMetrics.definitions).map(([key, value]) => (
+                  <p key={key}><b>{key}</b> — {value}</p>
+                ))}
+              </details>
+            </>
+          ) : (
+            <p className="plans-note">Les métriques bêta serveur sont indisponibles dans cet environnement.</p>
+          )}
         </section>
       ) : null}
 

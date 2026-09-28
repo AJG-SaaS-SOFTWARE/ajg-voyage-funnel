@@ -2524,3 +2524,26 @@ button.active .step-label small{color:#63817f}
 .admin-readiness-meta{margin:14px 0 0;color:#778184;font-size:.7rem}
 .admin-readiness-meta code{font-size:.68rem}
 @media(max-width:760px){.admin-readiness-heading{display:grid}.readiness-summary{justify-content:flex-start}.readiness-list{grid-template-columns:1fr}}
+
+/* Admin beta funnel */
+.admin-beta-funnel{margin:22px 0;padding:24px}
+.beta-side-metrics{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.beta-side-metrics span{display:grid;gap:2px;min-width:110px;padding:10px 12px;border:1px solid #e1ddd5;border-radius:12px;background:#faf9f6;color:#687579;font-size:.68rem}
+.beta-side-metrics b{font-size:1rem;color:#173039}
+.beta-funnel-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.beta-funnel-grid article{position:relative;display:grid;gap:4px;min-height:128px;padding:16px;border:1px solid #dedbd4;border-radius:15px;background:#faf9f6}
+.beta-funnel-grid article>span{position:absolute;right:12px;top:10px;width:24px;height:24px;display:grid;place-items:center;border-radius:999px;background:#e4f4f1;color:#0a8077;font-size:.66rem;font-weight:900}
+.beta-funnel-grid article>b{font-family:Georgia,serif;font-size:2rem;color:#152e36}
+.beta-funnel-grid article>strong{font-size:.8rem}
+.beta-funnel-grid article>small{color:#768184;font-size:.67rem}
+.beta-observation-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.beta-observation-grid article{display:grid;gap:3px;padding:12px 14px;border-left:3px solid #57d4c9;background:#f7faf8;border-radius:0 12px 12px 0}
+.beta-observation-grid b{font-size:1.05rem}
+.beta-observation-grid span{color:#687579;font-size:.69rem;line-height:1.35}
+.beta-site-activity{margin-top:18px}
+.beta-site-activity h3{font-size:.9rem;margin:0 0 10px}
+.beta-definitions{margin-top:14px;border-top:1px solid #e7e3dc;padding-top:12px;color:#667579;font-size:.72rem}
+.beta-definitions summary{cursor:pointer;font-weight:800;color:#31464c}
+.beta-definitions p{margin:8px 0;line-height:1.45}
+@media(max-width:900px){.beta-funnel-grid,.beta-observation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.beta-side-metrics{justify-content:flex-start}}
+@media(max-width:560px){.beta-funnel-grid,.beta-observation-grid{grid-template-columns:1fr}}
