@@ -32,6 +32,56 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_notifications: {
+        Row: {
+          attempts: number
+          created_at: string
+          due_at: string
+          id: number
+          last_error: string | null
+          notification_key: string
+          owner_id: string
+          sent_at: string | null
+          site_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          due_at: string
+          id?: number
+          last_error?: string | null
+          notification_key: string
+          owner_id: string
+          sent_at?: string | null
+          site_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          due_at?: string
+          id?: number
+          last_error?: string | null
+          notification_key?: string
+          owner_id?: string
+          sent_at?: string | null
+          site_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_notifications_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_state_events: {
         Row: {
           created_at: string
@@ -607,7 +657,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_modify_site_media: { Args: { p_site_id: string }; Returns: boolean }
       can_upload_site_media: { Args: { p_bytes: number }; Returns: boolean }
+      claim_due_billing_notifications: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          due_at: string
+          id: number
+          notification_key: string
+          owner_id: string
+          site_id: string
+        }[]
+      }
       consume_ai_generation: {
         Args: {
           p_daily_limit?: number
@@ -618,6 +680,10 @@ export type Database = {
         Returns: string
       }
       consume_my_ai_generation: { Args: never; Returns: string }
+      finish_billing_notification: {
+        Args: { p_error?: string; p_id: number; p_success: boolean }
+        Returns: undefined
+      }
       get_my_ai_usage: {
         Args: never
         Returns: {
