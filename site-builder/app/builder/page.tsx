@@ -461,6 +461,7 @@ export default function BuilderPage() {
 
   const createSiteWithAi = async () => {
     if (!architectBrief.trim()) return;
+    const isRegeneration = architectProposal !== null;
     setArchitectLoading(true);
     setSyncError("");
     try {
@@ -468,11 +469,14 @@ export default function BuilderPage() {
       if (!supabase) throw new Error("La création complète par IA nécessite une connexion.");
       const { data } = await supabase.auth.getSession();
       if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la création complète par IA.");
+      const architectSiteId = remoteSiteId || (await saveMySite(config, false)).id;
+      if (!remoteSiteId) setRemoteSiteId(architectSiteId);
       const response = await fetch("/api/ai/write", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
         body: JSON.stringify({
           field: "siteArchitect",
+          siteId: architectSiteId,
           instruction: "Construis une première proposition cohérente de site à partir du besoin décrit. N'invente aucune information absente. Utilise en priorité les contenus utilisateur publiables dont les droits sont connus et ne recommande jamais pour publication un média aux droits inconnus.",
           context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, architectBrief, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, text: asset.kind === "text" ? asset.text : "", rights: asset.rights, publishable: asset.publishable, sourceUrl: asset.sourceUrl, notes: asset.notes })), siteContext: aiSiteContext }
         })
@@ -480,6 +484,10 @@ export default function BuilderPage() {
       const result = await response.json();
       if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
       setArchitectProposal(result.proposal);
+      void trackProductEvent(isRegeneration ? "architect_regenerated" : "architect_generated", architectSiteId);
+      if (result.proposal?.premiumAudit?.refinementApplied === true) {
+        void trackProductEvent("architect_refined", architectSiteId);
+      }
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "Impossible de préparer le site complet.");
     } finally {
@@ -496,6 +504,8 @@ export default function BuilderPage() {
       if (!supabase) throw new Error("La révision globale nécessite une connexion.");
       const { data } = await supabase.auth.getSession();
       if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la révision globale.");
+      const revisionSiteId = remoteSiteId || (await saveMySite(config, false)).id;
+      if (!remoteSiteId) setRemoteSiteId(revisionSiteId);
       const existingProposal = {
         heroTagline: config.heroTagline, heroTitle: config.heroTitle, heroSubtitle: config.heroSubtitle, aboutHeading: config.aboutHeading, aboutText: config.aboutText, bookingLabel: config.bookingLabel,
         architecture: config.architecture,
@@ -505,7 +515,7 @@ export default function BuilderPage() {
         benefits: config.design.modules.benefits
       };
       const response = await fetch("/api/ai/write", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({
-        field: "siteRevision", instruction: revisionRequest,
+        field: "siteRevision", siteId: revisionSiteId, instruction: revisionRequest,
         context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
       }) });
       const result = await response.json();
