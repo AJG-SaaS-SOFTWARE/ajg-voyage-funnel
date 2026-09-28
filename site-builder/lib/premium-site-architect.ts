@@ -361,7 +361,9 @@ function safeAssets(assets: PremiumArchitectAsset[] = []) {
   }));
 }
 
-function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]) {
+type PremiumArchitectCore = Omit<PremiumArchitectProposal, "intelligence" | "premiumAudit">;
+
+function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumArchitectCore {
   const allowedModules = ["gallery", "faq", "testimonials", "contact", "video", "figures", "benefits"];
   const allowedKinds = ["home", "about", "services", "gallery", "faq", "contact", "custom"];
   const clearedAssetIds = new Set(
@@ -439,21 +441,21 @@ function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]) {
     });
   }
 
-  const recommendedModules = [
-    ...new Set(
+  const recommendedModules = Array.from(
+    new Set<string>(
       (Array.isArray(raw?.recommendedModules) ? raw.recommendedModules : []).filter(
         (item: unknown): item is string => typeof item === "string" && allowedModules.includes(item)
       )
     )
-  ].slice(0, 7);
+  ).slice(0, 7);
 
-  const requestedOrder = [
-    ...new Set(
+  const requestedOrder = Array.from(
+    new Set<string>(
       (Array.isArray(raw?.moduleOrder) ? raw.moduleOrder : []).filter(
         (item: unknown): item is string => typeof item === "string" && allowedModules.includes(item)
       )
     )
-  ];
+  );
   const moduleOrder = [
     ...requestedOrder,
     ...allowedModules.filter((item) => !requestedOrder.includes(item))
@@ -523,12 +525,12 @@ function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]) {
     throw new PremiumArchitectError("Incomplete premium architect proposal", 502, "incomplete_proposal");
   }
 
-  return proposal;
+  return proposal as PremiumArchitectCore;
 }
 
-function compactStrategy(raw: any) {
+function compactStrategy(raw: any): PremiumArchitectProposal["intelligence"] {
   return {
-    readiness: ["strong", "usable", "thin"].includes(raw?.readiness) ? raw.readiness : "usable",
+    readiness: (["strong", "usable", "thin"].includes(raw?.readiness) ? raw.readiness : "usable") as "strong" | "usable" | "thin",
     understoodNeed: clean(raw?.understoodNeed, 500),
     audience: clean(raw?.audience, 320),
     primaryGoal: clean(raw?.primaryGoal, 280),
