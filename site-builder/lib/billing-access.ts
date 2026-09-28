@@ -14,10 +14,10 @@ export type BillingState = {
   providerStatus: string | null;
 };
 
-export async function getMyBillingState(): Promise<BillingState | null> {
+export async function getMyBillingState(siteId?: string): Promise<BillingState | null> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return null;
-  const site = await getMySite();
+  const site = await getMySite(siteId);
   if (!site) return null;
   const { data, error } = await supabase.from("site_billing_states").select("state,paid_through,grace_until,restricted_at,public_suspend_at,export_until,delete_after,provider_status").eq("site_id", site.id).maybeSingle();
   if (error) throw error;
@@ -28,12 +28,12 @@ export async function getMyBillingState(): Promise<BillingState | null> {
   };
 }
 
-export async function downloadMySiteExport() {
+export async function downloadMySiteExport(siteId?: string) {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session?.access_token) throw new Error("Votre session a expiré.");
-  const site = await getMySite();
+  const site = await getMySite(siteId);
   if (!site) throw new Error("Site introuvable.");
   const response = await fetch(`/api/export/site?siteId=${encodeURIComponent(site.id)}`, { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
   if (!response.ok) {
