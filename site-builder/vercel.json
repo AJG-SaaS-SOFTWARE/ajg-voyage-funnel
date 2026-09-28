@@ -4,9 +4,6 @@
   "regions": [
     "cdg1"
   ],
-  "functionFailoverRegions": [
-    "fra1"
-  ],
   "crons": [
     {
       "path": "/api/cron/billing-notifications",
