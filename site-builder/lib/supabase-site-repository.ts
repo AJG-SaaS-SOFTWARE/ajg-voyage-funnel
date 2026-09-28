@@ -120,16 +120,6 @@ async function ensureManagedDomain(siteId: string, slug: string) {
   if (readError) throw readError;
 
   if (existing) {
-    const { error } = await supabase
-      .from("domains")
-      .update({
-        hostname,
-        verification_status: "verified",
-        is_primary: true
-      })
-      .eq("id", existing.id);
-
-    if (error) throw error;
     return hostname;
   }
 
