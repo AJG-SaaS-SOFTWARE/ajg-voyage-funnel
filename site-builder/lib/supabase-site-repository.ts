@@ -314,9 +314,7 @@ export async function uploadContentAsset(file: File, siteId: string) {
   const objectPath = `${user.id}/${siteId}/library/${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage.from("site-private-media").upload(objectPath, file, { contentType: file.type, cacheControl: "3600" });
   if (error) throw error;
-  const { data: signed, error: signedError } = await supabase.storage.from("site-private-media").createSignedUrl(objectPath, 60 * 60);
-  if (signedError) throw signedError;
-  return signed.signedUrl;
+  return `private://${objectPath}`;
 }
 
 
