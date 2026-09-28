@@ -25,7 +25,7 @@ jobs:
       VERCEL_ORG_ID: team_T1xBMzY6HJCAkUStrmkUgj60
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
       VERCEL_SCOPE: ajg-saas-software
-      VERCEL_CLI_VERSION: 59.15.1
+      VERCEL_CLI_VERSION: 59.20.0
       PRODUCTION_ALIAS: ajg-site-builder.vercel.app
 
     steps:
