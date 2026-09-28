@@ -134,10 +134,14 @@ Modules à étudier après validation bêta :
 - [x] droits renforcés : source obligatoire avant publication d’un contenu sous licence/domaine public ;
 - [ ] exécuter la recette build + parcours complet sur le dernier `main` dès réouverture du pipeline Vercel ;
 - [ ] validation finale des sous-domaines gérés en conditions réelles sur ce même déploiement ;
+- [x] routage des sous-pages et pages légales corrigé sur les sous-domaines gérés, avec URLs de navigation propres ;
 - [x] accès direct à `ai_usage_events` retiré aux clients et RPC de quota explicitement limité à `authenticated` / `service_role`, avec contrôle `auth.uid()` conservé ;
 - [x] vérification des privilèges effective après migration : anon sans RPC, utilisateur connecté sans accès direct au ledger ;
 - [ ] activer la protection Supabase contre les mots de passe compromis si elle est disponible sur l’offre utilisée (réglage Auth externe au code) ;
-- [ ] décider après recette si le RPC de quota doit être déplacé vers un schéma API/interne dédié afin d’éliminer également l’avertissement `SECURITY DEFINER`.
+- [x] logique privilégiée du quota déplacée dans le schéma `private` derrière un wrapper public `SECURITY INVOKER` ; accès anon refusé et accès authenticated restauré/vérifié ;
+- [x] même durcissement appliqué au RPC public de formulaire de contact : wrapper invoker exposé, logique definer isolée hors schéma API ;
+- [x] audit sécurité relancé : aucun avertissement `SECURITY DEFINER` exposé restant ;
+- [x] dépendances npm directes figées sur les versions réellement verrouillées pour des builds reproductibles.
 
 ## Sprint 5 — monétisation
 
