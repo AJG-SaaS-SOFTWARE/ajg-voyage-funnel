@@ -182,7 +182,16 @@ export async function saveMySite(config: SiteConfig, publish = false): Promise<R
   if (!user) throw new Error("Vous devez être connecté.");
 
   const existing = await getMySite();
-  const nextPayload = payload(user, config, publish ? "published" : "draft");
+  let publishConfig = config;
+  if (publish) {
+    const { data: entitlements, error: entitlementError } = await supabase.rpc("get_my_entitlements");
+    if (entitlementError) throw entitlementError;
+    const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
+    if (entitlement?.subscription_status && !["active", "trialing"].includes(entitlement.subscription_status)) {
+      throw new Error("Votre abonnement nécessite une régularisation avant une nouvelle publication. Votre site existant reste accessible pendant la période prévue par votre offre.");
+    }
+  }
+  const nextPayload = payload(user, publishConfig, publish ? "published" : "draft");
 
   if (existing) {
     if (!publish && existing.status === "published") {
