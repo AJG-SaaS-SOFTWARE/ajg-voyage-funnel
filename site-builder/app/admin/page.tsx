@@ -421,9 +421,10 @@ export default function AdminPage() {
               <p className="eyebrow">Recette E2E</p>
               <h2>Parcours Builder complet</h2>
               <p>
-                Crée un site temporaire isolé, consomme une génération AI Site Architect,
-                teste un média privé, publie, contrôle le rendu public, enregistre un feedback,
-                génère l’archive de récupération puis supprime toutes les données temporaires.
+                Crée un site temporaire isolé, lui attribue un droit Pro interne éphémère,
+                consomme une génération AI Site Architect, teste un média privé, publie,
+                contrôle le rendu public, enregistre un feedback, génère l’archive de récupération
+                puis supprime toutes les données temporaires.
               </p>
             </div>
           </div>
@@ -442,9 +443,9 @@ export default function AdminPage() {
             </button>
           </div>
           <p className="admin-readiness-meta">
-            Ce contrôle consomme exactement une génération IA réelle. Le site, le domaine,
-            le feedback et les médias de test sont supprimés à la fin ; la consommation IA
-            reste comptabilisée normalement.
+            Ce contrôle consomme exactement une génération IA réelle. Le droit Pro est limité
+            au site temporaire de recette et disparaît avec lui. Ton offre réelle, le site existant,
+            le feedback et les médias hors recette ne sont pas modifiés.
           </p>
           {builderE2EError ? (
             <p className="plans-note" role="alert" data-state="error">
