@@ -38,14 +38,56 @@ jobs:
             exit 1
           fi
 
-      - name: Validate Vercel project API access
+      - name: Validate and protect Builder Vercel project
         shell: bash
         run: |
+          PROJECT_URL="https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+
           curl --fail --silent --show-error \
-            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
+            "$PROJECT_URL" \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             -H "Accept: application/json" > /tmp/vercel-project.json
-          echo "Vercel project API preflight passed." >> "$GITHUB_STEP_SUMMARY"
+
+          PROJECT_NAME="$(node -e 'const x=require("/tmp/vercel-project.json");process.stdout.write(String(x.name||""))')"
+          ROOT_DIRECTORY="$(node -e 'const x=require("/tmp/vercel-project.json");process.stdout.write(String(x.rootDirectory||""))')"
+
+          if [ "$PROJECT_NAME" != "ajg-site-builder" ]; then
+            echo "::error::Unexpected Vercel project identity: $PROJECT_NAME"
+            exit 1
+          fi
+
+          if [ "$ROOT_DIRECTORY" != "site-builder" ]; then
+            echo "::warning::Builder rootDirectory drift detected: '${ROOT_DIRECTORY:-<root>}'. Restoring 'site-builder'."
+
+            HTTP_CODE="$(curl --silent --show-error \
+              --output /tmp/vercel-project-update.json \
+              --write-out "%{http_code}" \
+              --request PATCH \
+              "$PROJECT_URL" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data '{"rootDirectory":"site-builder"}')"
+
+            if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+              echo "::error::Unable to restore the AJG Site Builder Vercel rootDirectory (HTTP $HTTP_CODE)."
+              cat /tmp/vercel-project-update.json
+              exit 1
+            fi
+
+            curl --fail --silent --show-error \
+              "$PROJECT_URL" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Accept: application/json" > /tmp/vercel-project.json
+
+            ROOT_DIRECTORY="$(node -e 'const x=require("/tmp/vercel-project.json");process.stdout.write(String(x.rootDirectory||""))')"
+          fi
+
+          if [ "$ROOT_DIRECTORY" != "site-builder" ]; then
+            echo "::error::AJG Site Builder Vercel rootDirectory is '$ROOT_DIRECTORY', expected 'site-builder'."
+            exit 1
+          fi
+
+          echo "Vercel project identity and rootDirectory validated: ajg-site-builder / site-builder." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Validate Vercel production environment keys
         shell: bash
