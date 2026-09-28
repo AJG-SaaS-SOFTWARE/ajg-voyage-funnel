@@ -77,10 +77,12 @@ export async function getMyAiUsage(): Promise<AiUsage> {
 
 export type StorageUsage = { usedBytes: number; limitMb: number };
 
-export async function getMyStorageUsage(): Promise<StorageUsage> {
+export async function getMyStorageUsage(siteId?: string): Promise<StorageUsage> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return { usedBytes: 0, limitMb: freeEntitlements.storageMb };
-  const { data, error } = await supabase.rpc("get_my_storage_usage");
+  const { data, error } = siteId
+    ? await supabase.rpc("get_my_site_storage_usage", { p_site_id: siteId })
+    : await supabase.rpc("get_my_storage_usage");
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   return { usedBytes: Number(row?.used_bytes) || 0, limitMb: Number(row?.storage_limit_mb) || freeEntitlements.storageMb };
