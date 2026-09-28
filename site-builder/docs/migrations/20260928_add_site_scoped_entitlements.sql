@@ -30,3 +30,10 @@ create or replace function public.consume_my_site_ai_generation(p_site_id uuid)
 returns text language sql security invoker set search_path='pg_catalog','private','pg_temp' as $$select private.consume_my_site_ai_generation_internal(p_site_id)$$;
 revoke all on function public.consume_my_site_ai_generation(uuid) from public,anon;
 grant execute on function public.consume_my_site_ai_generation(uuid) to authenticated,service_role;
+
+-- Public invoker wrappers need schema USAGE, while execution remains allow-listed per internal primitive.
+grant usage on schema private to authenticated;
+revoke execute on all functions in schema private from authenticated;
+grant execute on function private.consume_my_ai_generation_internal() to authenticated;
+grant execute on function private.get_my_ai_usage_internal() to authenticated;
+grant execute on function private.consume_my_site_ai_generation_internal(uuid) to authenticated;
