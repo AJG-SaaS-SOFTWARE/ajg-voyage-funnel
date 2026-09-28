@@ -15,7 +15,7 @@ Dernière mise à jour : 27 septembre 2026.
 - Déclenchement possible sans l’interface GitHub : la branche réservée `release/site-builder-production` doit pointer exactement sur le `main` courant ; le workflow refuse une branche de release obsolète.
 - Avant promotion, le workflow résout l’alias public actuel et mémorise son `deploymentId` comme cible de rollback. Si `/api/health` ou `/login` échoue après promotion, il demande automatiquement le rollback vers cette version puis termine en échec.
 - Prérequis externe : secret GitHub Actions `VERCEL_TOKEN` autorisé sur l’équipe/projet AJG. Le workflow vérifie l’accès projet via REST avant toute création de déploiement.
-- Après validation publique, le workflow récupère temporairement les credentials Supabase Production via l’API Vercel, crée `site-private-media` par l’API Storage si nécessaire, vérifie que le bucket reste privé puis détruit le fichier temporaire ; aucune valeur secrète n’est imprimée.
+- `site-private-media` est initialisé depuis le back-office admin authentifié via `/api/admin/storage-bootstrap`. La clé Supabase Production est une variable Vercel Sensitive et n’est volontairement pas récupérable par le workflow CI.
 - Le token GitHub Actions est opérationnel sur l’API projet Vercel. Le chemin CLI a été abandonné car les PAT récemment émis retournaient `User not found` sur `/v2/user`, alors que les endpoints projet fonctionnaient.
 - Aucun secret de production requis pour compiler : la CI utilise uniquement des valeurs publiques factices pour Supabase.
 
