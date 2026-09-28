@@ -214,3 +214,41 @@ Restent volontairement ouverts :
 - automatisation de l’ajout et de la vérification des domaines personnalisés chez Vercel.
 
 Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas été vérifiés dans leur environnement réel.
+
+
+## Sprint 6 — passage en SaaS commercialisable
+
+État : démarré le 28 septembre 2026
+
+### Itération 6A — release candidate et recette
+- [x] identifier le blocage du dernier `main` : quota Vercel `build-rate-limit`, et non erreur applicative connue ;
+- [x] conserver le dernier déploiement READY comme production de repli tant que la release candidate n’est pas validée ;
+- [x] rendre le workflow Site Builder CI déclenchable manuellement pour disposer d’une validation indépendante ;
+- [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
+- [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
+- [ ] valider sous-domaines et domaines personnalisés en environnement réel.
+
+### Itération 6B — bêta mesurée
+- [x] instrumentation first-party et feedback déjà disponibles ;
+- [ ] faire tester 5 à 10 comptes réels ;
+- [ ] mesurer activation, publication, usage IA, abandons et retours ;
+- [ ] corriger uniquement les frictions confirmées par ces observations.
+
+### Itération 6C — billing
+- [x] modèle de droits et statuts d’abonnement prêt pour la synchronisation ;
+- [x] quotas Gratuit/Pro séparés du prix commercial ;
+- [ ] figer prix, périodicité, essai éventuel et délai de grâce ;
+- [ ] connecter Stripe ;
+- [ ] créer Checkout/portail client et webhook signé ;
+- [ ] synchroniser les événements Stripe vers `user_subscriptions` ;
+- [ ] tester renouvellement, échec de paiement, régularisation, annulation et suspension.
+
+### Itération 6D — domaines personnalisés automatisés
+- [x] modèle de données, entitlement, demande et routage applicatif déjà prêts ;
+- [ ] ajouter automatiquement le domaine au projet Vercel ;
+- [ ] présenter les enregistrements DNS requis ;
+- [ ] vérifier réellement le domaine avant passage à `verified` ;
+- [ ] gérer retrait, échec et nouvelle tentative.
+
+### Gate de lancement
+Le lancement commercial ne sera marqué prêt qu’après validation réelle de 6A, 6B, 6C et 6D. Les décisions tarifaires et les actions externes payantes ne sont jamais inventées par le code.
