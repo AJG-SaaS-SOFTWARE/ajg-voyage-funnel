@@ -360,7 +360,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 ### Blocages externes avant release candidate réelle
 - [x] Vercel : production synchronisée avec le `main` via le workflow contrôlé ; token GitHub Actions, build, vérification SHA, promotion et rollback sont opérationnels ;
 - [x] Storage : `site-private-media` créé, vérifié privé et recette de promotion réelle validée ;
-- [ ] Secrets serveur : `SUPABASE_SECRET_KEY` et `VERCEL_TOKEN` GitHub Actions validés ; restent à configurer côté runtime `CRON_SECRET`, Resend, `NEXT_PUBLIC_APP_URL` et un token Vercel serveur à périmètre minimal pour les domaines personnalisés ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
+- [ ] Secrets serveur : `SUPABASE_SECRET_KEY` et `VERCEL_TOKEN` GitHub Actions validés ; `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` et `VERCEL_TEAM_ID` runtime ajoutés en Production, validation active attendue après redéploiement ; restent `CRON_SECRET`, Resend et `NEXT_PUBLIC_APP_URL` à compléter ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
 - [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
 
 ### Cohérence multi-site complémentaire
