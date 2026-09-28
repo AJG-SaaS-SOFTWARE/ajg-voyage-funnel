@@ -315,15 +315,22 @@ export async function POST(request: Request) {
         architecture: (() => {
           const allowedKinds = ["home","about","services","gallery","faq","contact","custom"];
           const source = Array.isArray(raw.architecture?.pages) ? raw.architecture.pages.slice(0, 6) : [];
+          const clearedAssetIds = new Set((Array.isArray(context.contentLibrary) ? context.contentLibrary : []).filter((asset: any) => asset?.publishable && asset?.rights && asset.rights !== "unknown").map((asset: any) => clean(asset?.id, 80)).filter(Boolean));
+          const usedIds = new Set<string>();
+          const usedSlugs = new Set<string>();
+          let homeSeen = false;
           const pages = source.map((page: any, index: number) => {
-            const kind = allowedKinds.includes(page?.kind) ? page.kind : "custom";
-            const slug = kind === "home" ? "" : clean(page?.slug, 60).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-            const clearedAssetIds = new Set((Array.isArray(context.contentLibrary) ? context.contentLibrary : []).filter((asset: any) => asset?.publishable && asset?.rights && asset.rights !== "unknown").map((asset: any) => clean(asset?.id, 80)).filter(Boolean));
-            const assetIds = (Array.isArray(page?.assetIds) ? page.assetIds : []).map((id: unknown) => clean(id, 80)).filter((id: string) => clearedAssetIds.has(id)).slice(0, 12);
-            return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: true, assetIds };
+            let kind = allowedKinds.includes(page?.kind) ? page.kind : "custom";
+            if (kind === "home") { if (homeSeen) kind = "custom"; else homeSeen = true; }
+            let id = clean(page?.id, 60) || `page-${index + 1}`;
+            const idBase = id; let idSuffix = 2; while (usedIds.has(id)) id = `${idBase}-${idSuffix++}`.slice(0, 60); usedIds.add(id);
+            let slug = kind === "home" ? "" : clean(page?.slug, 60).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || `page-${index + 1}`;
+            if (kind !== "home") { const slugBase = slug; let slugSuffix = 2; while (usedSlugs.has(slug)) slug = `${slugBase}-${slugSuffix++}`.slice(0, 60); usedSlugs.add(slug); }
+            const assetIds = [...new Set((Array.isArray(page?.assetIds) ? page.assetIds : []).map((id: unknown) => clean(id, 80)).filter((id: string) => clearedAssetIds.has(id)))].slice(0, 12);
+            return { id, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: kind === "home" ? true : page?.enabled !== false, assetIds };
           });
-          if (!pages.some((page: any) => page.kind === "home")) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] });
-          return { mode: raw.architecture?.mode === "multi" && pages.length > 1 ? "multi" : "single", pages };
+          if (!homeSeen) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] });
+          return { mode: raw.architecture?.mode === "multi" && pages.filter((page: any) => page.enabled).length > 1 ? "multi" : "single", pages };
         })(),
         design: {
           layout: ["classic","editorial","showcase","conversion"].includes(raw.design?.layout) ? raw.design.layout : "classic",
