@@ -43,6 +43,7 @@ await get("/ci-route-that-does-not-exist", [404]);
 await get("/api/export/site?siteId=ci&format=archive", [401]);
 await get("/api/admin/release-readiness", [401]);
 await get("/api/admin/beta-metrics", [401]);
+await get("/api/admin/beta-cohort", [401]);
 
 console.log(JSON.stringify({
   ok: true,
