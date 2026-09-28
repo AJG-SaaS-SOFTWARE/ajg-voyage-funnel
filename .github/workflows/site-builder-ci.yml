@@ -13,10 +13,12 @@ on:
     paths:
       - "site-builder/**"
       - ".github/workflows/site-builder-ci.yml"
+      - ".github/workflows/site-builder-production.yml"
   pull_request:
     paths:
       - "site-builder/**"
       - ".github/workflows/site-builder-ci.yml"
+      - ".github/workflows/site-builder-production.yml"
 
 jobs:
   build:
