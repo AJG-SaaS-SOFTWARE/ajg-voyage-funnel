@@ -92,25 +92,26 @@ jobs:
         run: |
           BODY="$(node -e 'process.stdout.write(JSON.stringify({
             name:"ajg-site-builder",
-            project:process.env.VERCEL_PROJECT_ID,
             deploymentId:process.env.PREVIOUS_DEPLOYMENT_ID,
-            withLatestCommit:true,
-            gitMetadata:{
-              commitRef:"main",
-              commitSha:process.env.GITHUB_SHA,
-              ci:"true",
-              ciType:"github-actions"
-            }
+            withLatestCommit:true
           }))')"
 
-          RESPONSE="$(curl --fail-with-body --silent --show-error \
+          HTTP_CODE="$(curl --silent --show-error \
+            --output /tmp/stage-create.json \
+            --write-out "%{http_code}" \
             --request POST \
             "https://api.vercel.com/v13/deployments?forceNew=1&teamId=$VERCEL_ORG_ID" \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$BODY")"
 
-          printf '%s' "$RESPONSE" > /tmp/stage-create.json
+          RESPONSE="$(cat /tmp/stage-create.json)"
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Vercel deployment creation failed with HTTP $HTTP_CODE."
+            printf '%s\n' "$RESPONSE"
+            exit 1
+          fi
+
           DEPLOYMENT_ID="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.id!=="string"||!x.id.startsWith("dpl_")){console.error(s);process.exit(2)}process.stdout.write(x.id)})')"
           DEPLOYMENT_HOST="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.url!=="string"){console.error(s);process.exit(2)}process.stdout.write(x.url)})')"
 
