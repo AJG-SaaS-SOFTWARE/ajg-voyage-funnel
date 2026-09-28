@@ -143,6 +143,20 @@ export async function getCurrentUser() {
   return data.user;
 }
 
+export async function getMySites(): Promise<RemoteSite[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+  const user = await getCurrentUser();
+  if (!user) return [];
+  const { data, error } = await supabase.from("sites").select("*").eq("owner_id", user.id).order("created_at", { ascending: true });
+  if (error) throw error;
+  return Promise.all((data || []).map(async (row: any) => {
+    const { data: draft, error: draftError } = await supabase.from("site_drafts").select("config").eq("site_id", row.id).maybeSingle();
+    if (draftError) throw draftError;
+    return toRemote(row, draft?.config);
+  }));
+}
+
 export async function getMySite(siteId?: string): Promise<RemoteSite | null> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return null;
