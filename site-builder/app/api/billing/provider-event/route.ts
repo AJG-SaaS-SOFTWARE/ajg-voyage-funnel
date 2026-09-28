@@ -16,11 +16,15 @@ export async function POST(request:Request){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
  const serviceKey=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!secret||!url||!serviceKey) return NextResponse.json({error:"Billing provider adapter not configured"},{status:503});
+ const length=Number(request.headers.get("content-length")||0);
+ if(length>64*1024) return NextResponse.json({error:"Payload too large"},{status:413});
  const raw=await request.text();
+ if(Buffer.byteLength(raw,"utf8")>64*1024) return NextResponse.json({error:"Payload too large"},{status:413});
  if(!validSignature(raw,request.headers.get("x-ajg-billing-signature"),secret)) return NextResponse.json({error:"Invalid signature"},{status:400});
  let body:any; try{body=JSON.parse(raw)}catch{return NextResponse.json({error:"Invalid payload"},{status:400})}
  const allowed=new Set(["payment_failed","subscription_past_due","payment_succeeded","subscription_active"]);
- if(typeof body.eventId!=="string"||!allowed.has(body.type)||typeof body.siteId!=="string"||typeof body.ownerId!=="string"||typeof body.status!=="string") return NextResponse.json({error:"Invalid payload"},{status:400});
+ if(typeof body.eventId!=="string"||body.eventId.length>200||!allowed.has(body.type)||typeof body.siteId!=="string"||typeof body.ownerId!=="string"||typeof body.status!=="string"||body.status.length>80) return NextResponse.json({error:"Invalid payload"},{status:400});
+ for(const key of ["paidThrough","failedAt"]){if(body[key]!=null&&(typeof body[key]!=="string"||Number.isNaN(Date.parse(body[key]))))return NextResponse.json({error:"Invalid timestamp"},{status:400});}
  const supabase=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data,error}=await supabase.rpc("apply_builder_site_billing_provider_event",{
   p_provider:typeof body.provider==="string"?body.provider:"adapter",
