@@ -17,3 +17,7 @@ drop policy if exists "owners or admins update domains" on public.domains;
 create policy "admins update domains" on public.domains for update to authenticated
 using(exists(select 1 from public.user_roles r where r.user_id=(select auth.uid()) and r.role='admin'))
 with check(exists(select 1 from public.user_roles r where r.user_id=(select auth.uid()) and r.role='admin'));
+
+revoke update,truncate,references,trigger on public.domains from authenticated;
+grant select,insert,delete on public.domains to authenticated;
+grant select,insert,update,delete on public.domains to service_role;
