@@ -44,10 +44,10 @@ Dernière mise à jour : 28 septembre 2026.
 - [x] page introuvable pour un site non publié ;
 - [x] sitemap par site ;
 - [ ] validation complète des sous-domaines en conditions réelles ;
-- [ ] domaine personnalisé en option.
+- [x] domaine personnalisé en option côté produit, droits, données et routage ; automatisation DNS/Vercel encore externe.
 
 ## Sprint 4 — onboarding, IA et qualité bêta
-État : socle fonctionnel, validation bêta à poursuivre
+État : développement produit terminé ; observation bêta réelle à poursuivre après déploiement
 
 - [x] questionnaire guidé 3+1 pour préparer les textes ;
 - [x] transformation de réponses courtes ou mots-clés en textes structurés ;
@@ -64,7 +64,7 @@ Dernière mise à jour : 28 septembre 2026.
 - [ ] amélioration continue du template public sur la base des tests réels.
 
 ## Itération 4A — AI Site Architect, architecture et contenus utilisateur
-État : code fonctionnel livré sur `main`, recette de déploiement à confirmer
+État : terminé côté code sur `main` ; recette de déploiement à confirmer
 
 Objectif de sortie : l’IA peut proposer une structure de site sensiblement différente du template historique, sans publier ni inventer silencieusement des informations sensibles.
 
@@ -91,7 +91,7 @@ Objectif de sortie : l’IA peut proposer une structure de site sensiblement dif
 Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. La révision globale et l’éditeur visuel sont désormais également codés ; la recette du build et de la production reste nécessaire avant validation bêta.
 
 ### Itération 4B — contrôle humain avancé du site Premium
-État : terminé en code sur `main`, recette de déploiement à effectuer
+État : terminé côté code sur `main` ; recette de déploiement à effectuer
 
 - [x] import direct de contenus utilisateur dans la bibliothèque ;
 - [x] affectation IA des contenus autorisés aux pages ;
@@ -149,7 +149,7 @@ Modules à étudier après validation bêta :
 ## Sprint 5 — monétisation
 
 ### Itération 5A — socle plans et droits
-État : socle technique livré sur `main`, paiement volontairement non activé
+État : moteur de plans et droits terminé ; activation commerciale suspendue aux paramètres de vente et à Stripe
 
 - [x] catalogue `Gratuit` / `Pro` centralisé en base ;
 - [x] abonnements utilisateurs séparés des données éditoriales du site ;
@@ -180,7 +180,7 @@ Modules à étudier après validation bêta :
 Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
 
 ### Itération 5B — exploitation SaaS et domaines
-État : socle livré sur `main`, intégrations externes finales à connecter
+État : exploitation applicative terminée ; intégrations externes Vercel/Stripe à connecter
 
 - [x] quota de stockage mesuré et bloquant avant upload ;
 - [x] demande de domaine personnalisé réservée au droit Pro ;
@@ -199,3 +199,18 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 ## Principe de conformité
 
 Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc système. Les logos sont facultatifs et leur activation suppose que le membre dispose du droit d'utiliser les visuels. Pour une autre activité, les mentions MWR sont supprimées. L'éditeur ne génère pas encore toutes les informations légales propres à une activité indépendante ; elles doivent être vérifiées avant diffusion.
+
+
+## Checkpoint fin des sprints codables — 28 septembre 2026
+
+Le développement autonome prévu par cette roadmap est arrivé au bout de ce qui peut être finalisé sans décisions commerciales, accès/quotas externes ou observation d’utilisateurs réels.
+
+Restent volontairement ouverts :
+- recette du dernier `main` et validation réelle des sous-domaines dès qu’un nouveau build Vercel est disponible ;
+- tests de plusieurs sites bêta et amélioration du template fondée sur ces observations ;
+- activation du réglage Supabase Auth « leaked password protection » si l’offre le permet ;
+- prix, périodicité, essai éventuel et délais de grâce à décider avant activation Stripe ;
+- connexion Stripe/webhooks puis synchronisation de ses statuts ;
+- automatisation de l’ajout et de la vérification des domaines personnalisés chez Vercel.
+
+Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas été vérifiés dans leur environnement réel.
