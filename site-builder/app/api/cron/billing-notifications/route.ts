@@ -36,3 +36,5 @@ export async function POST(request: Request) {
  }
  return NextResponse.json({claimed:(jobs||[]).length,sent,failed});
 }
+
+export const GET = POST;
