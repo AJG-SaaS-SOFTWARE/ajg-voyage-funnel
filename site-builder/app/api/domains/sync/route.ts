@@ -22,6 +22,11 @@ export async function POST(request:NextRequest){
  const verification=await verify.json().catch(()=>({}));
  const verified=Boolean(verification?.verified);
  const service=createClient(url,serverKey,{auth:{persistSession:false,autoRefreshToken:false}});
- await service.from("domains").update({verification_status:verified?"verified":"pending",is_primary:verified}).eq("id",domain.id);
+ if(verified){
+   await service.from("domains").update({is_primary:false}).eq("site_id",body.siteId);
+   await service.from("domains").update({verification_status:"verified",is_primary:true}).eq("id",domain.id);
+ }else{
+   await service.from("domains").update({verification_status:"pending",is_primary:false}).eq("id",domain.id);
+ }
  return NextResponse.json({ok:true,verified,verification:verified?[]:(verification?.verification||result?.verification||[])});
 }
