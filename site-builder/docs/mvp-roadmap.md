@@ -266,7 +266,7 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 - [x] dashboard bêta admin prêt : funnel utilisateurs distincts, usage IA réel, abandons descriptifs, feedback et activité par site sur 30 jours ;
 - [x] gestion de cohorte bêta préparée dans l’administration : invitation e-mail volontaire, ajout d’un compte existant sans renvoi d’e-mail, retrait sans suppression du compte et limite de sécurité à 25 comptes ;
 - [x] métriques isolées automatiquement sur la cohorte dès qu’au moins un testeur est marqué bêta ; avant cela, le dashboard indique explicitement qu’il couvre tous les utilisateurs ;
-- [x] gate bêta privé ajouté : les invitations sont désactivées si un prérequis technique critique n’est pas au vert ; warnings non bloquants et fonctions commerciales différées restent séparés ;
+- [x] gate bêta privé ajouté et doublé côté serveur : l’interface désactive les invitations si un prérequis critique n’est pas au vert et l’API refait les contrôles avant toute invitation ; warnings non bloquants et fonctions commerciales différées restent séparés ;
 - [x] cohorte opérationnelle volontairement plafonnée à 10 testeurs pour cette phase malgré la limite technique supérieure ;
 - [ ] inviter puis faire tester 5 à 10 comptes réels ;
 - [ ] mesurer activation, publication, usage IA, abandons et retours ;
