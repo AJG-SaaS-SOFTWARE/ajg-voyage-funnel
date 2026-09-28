@@ -228,7 +228,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 4. **Storage privé validé de bout en bout** : `site-private-media` privé + RLS + test réel privé → `/api/media/promote` → public → nettoyage, tous en succès.
 5. **Recette E2E réelle validée** : session admin → création isolée → droit Pro temporaire → AI Site Architect réel → médias → publication → site public → feedback → export → nettoyage.
 6. **Routage réel AJG validé** : sous-domaine canari rattaché, CNAME configuré, domaine `verified + primary`, canonical automatique et contrôle HTTPS intégré au pipeline. Le domaine personnalisé utilisateur reste à recetter séparément avant lancement commercial.
-7. **Lancer la bêta 5–10 comptes** et observer le dashboard 30 jours ; corriger uniquement les frictions confirmées par ces tests.
+7. **Lancer la bêta 5–10 comptes** : l’administration sait désormais constituer la cohorte et isoler ses métriques ; il reste à choisir/inviter les testeurs réels puis observer le dashboard 30 jours et corriger uniquement les frictions confirmées.
 8. **Décisions commerciales utilisateur requises** : prix, périodicité, essai éventuel, nombre de sites inclus. La politique d’impayés reste J0/J14/J28/J104 sauf décision explicite signalée.
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
@@ -262,7 +262,9 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 ### Itération 6B — bêta mesurée
 - [x] instrumentation first-party et feedback déjà disponibles ;
 - [x] dashboard bêta admin prêt : funnel utilisateurs distincts, usage IA réel, abandons descriptifs, feedback et activité par site sur 30 jours ;
-- [ ] faire tester 5 à 10 comptes réels ;
+- [x] gestion de cohorte bêta préparée dans l’administration : invitation e-mail volontaire, ajout d’un compte existant sans renvoi d’e-mail, retrait sans suppression du compte et limite de sécurité à 25 comptes ;
+- [x] métriques isolées automatiquement sur la cohorte dès qu’au moins un testeur est marqué bêta ; avant cela, le dashboard indique explicitement qu’il couvre tous les utilisateurs ;
+- [ ] inviter puis faire tester 5 à 10 comptes réels ;
 - [ ] mesurer activation, publication, usage IA, abandons et retours ;
 - [ ] corriger uniquement les frictions confirmées par ces observations.
 
