@@ -12,6 +12,11 @@ export function middleware(request:NextRequest){
    const slug=hostname.slice(0,-suffix.length);
    if(!slug||slug.includes(".")||reservedSubdomains.has(slug))return NextResponse.next();
    const url=request.nextUrl.clone();
+   const legacyPrefix="/site/"+encodeURIComponent(slug);
+   if(request.nextUrl.pathname===legacyPrefix||request.nextUrl.pathname.startsWith(legacyPrefix+"/")){
+     url.pathname=request.nextUrl.pathname.slice(legacyPrefix.length)||"/";
+     return NextResponse.redirect(url,308);
+   }
    url.pathname="/site/"+encodeURIComponent(slug)+(request.nextUrl.pathname==="/"?"":request.nextUrl.pathname);
    const requestHeaders=new Headers(request.headers);requestHeaders.set("x-ajg-clean-public","1");
    return NextResponse.rewrite(url,{request:{headers:requestHeaders}});
