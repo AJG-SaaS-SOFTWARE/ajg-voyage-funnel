@@ -305,3 +305,8 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] textes de rétention J74/J97 alignés avec la politique sans suppression automatique ;
 - [x] dernier état contrôlé : TypeScript et build Next.js réussissent sur la CI indépendante ;
 - [ ] production Vercel toujours à resynchroniser avec le `main` actuel avant recette HTTP finale.
+
+### Stockage média — dette préproduction
+- [ ] séparer les médias publics destinés au site publié des fichiers privés de bibliothèque/brouillon ; le bucket historique `site-media` est public et une URL connue reste accessible directement ;
+- [ ] créer le bucket privé via l’API/SDK Storage (pas par mutation SQL de `storage.buckets`), appliquer les RLS propriétaire, puis migrer les nouveaux imports privés ;
+- [ ] conserver le bucket public uniquement pour les assets réellement publiables et prévoir la promotion/copie d’un asset privé lors de sa publication.
