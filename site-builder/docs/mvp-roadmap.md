@@ -342,10 +342,10 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] séparer dans le code les médias publiables et la bibliothèque privée ; activation physique du bucket privé encore à effectuer après déploiement ;
 - [x] RLS propriétaire du bucket privé préparées et imports de bibliothèque basculés vers des références privées stables ;
 - [x] bootstrap serveur idempotent de `site-private-media` via le SDK Storage, déclenchable uniquement par un administrateur authentifié ;
-- [ ] après déploiement du `main`, déclencher le bootstrap depuis l’administration puis vérifier le bucket privé réel ;
+- [x] après déploiement du `main`, bootstrap exécuté depuis l’administration ; bucket `site-private-media` réel vérifié privé, limite 15 Mo et politiques RLS SELECT/INSERT/UPDATE/DELETE présentes ;
 - [x] promotion contrôlée privée → publique branchée à la publication : session + ownership + capacité de publication + droits/licence vérifiés côté serveur ;
 - [x] références `private://` exclues du rendu public et copie rendue répétable pour les republications ;
-- [ ] exécuter le bootstrap du bucket privé sur l’environnement déployé puis effectuer la recette réelle import privé → publication → URL publique.
+- [ ] effectuer la recette réelle import privé → publication → URL publique ; un contrôle admin dédié crée un fichier temporaire, vérifie qu’il reste privé, appelle la vraie route `/api/media/promote`, vérifie l’URL publique puis nettoie les fichiers.
 
 ### Domaines personnalisés — automatisation
 - [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;

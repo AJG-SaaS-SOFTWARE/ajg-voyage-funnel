@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   adminBootstrapPrivateStorage,
+  adminRunStorageE2E,
   adminSetFeedbackStatus,
   adminSetPlan,
   getAdminBetaMetrics,
@@ -42,6 +43,7 @@ export default function AdminPage() {
   const [betaMetrics, setBetaMetrics] = useState<AdminBetaMetrics | null>(null);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
   const [storageBootstrapping, setStorageBootstrapping] = useState(false);
+  const [storageTesting, setStorageTesting] = useState(false);
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
 
@@ -96,6 +98,26 @@ export default function AdminPage() {
       );
     } finally {
       setStorageBootstrapping(false);
+    }
+  };
+
+  const testPrivateStorageFlow = async () => {
+    setMessage("");
+    setStorageTesting(true);
+    try {
+      const result = await adminRunStorageE2E();
+      setMessage(
+        `Flux Storage validé : privé inaccessible publiquement (HTTP ${result.privatePublicStatus}), promotion publique HTTP ${result.promotedPublicStatus}, nettoyage OK.`
+      );
+      setReadiness(await getReleaseReadiness().catch(() => null));
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Validation du flux Storage impossible."
+      );
+    } finally {
+      setStorageTesting(false);
     }
   };
 
@@ -323,6 +345,16 @@ export default function AdminPage() {
                     ) : null}
                   </article>
                 ))}
+              </div>
+              <div className="builder-actions">
+                <button
+                  type="button"
+                  className="button secondary"
+                  disabled={storageTesting || readiness.checks.some((item) => item.key === "bucket-site-private-media" && item.status === "blocker")}
+                  onClick={() => void testPrivateStorageFlow()}
+                >
+                  {storageTesting ? "Test Storage en cours…" : "Tester le flux média privé → public"}
+                </button>
               </div>
               <p className="admin-readiness-meta">
                 Environnement : <b>{readiness.environment}</b>
