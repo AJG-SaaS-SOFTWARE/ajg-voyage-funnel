@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import {
   syncVercelDomain,
-  VercelDomainSyncError,
-  type VercelDomainKind
+  VercelDomainSyncError
 } from "../../../../lib/vercel-domain-sync";
 
 export const runtime = "nodejs";
@@ -90,10 +89,7 @@ export async function POST(request: NextRequest) {
 
   let syncResult;
   try {
-    syncResult = await syncVercelDomain(
-      domain.hostname,
-      "custom_domain" as VercelDomainKind
-    );
+    syncResult = await syncVercelDomain(domain.hostname, "custom_domain");
   } catch (error) {
     if (error instanceof VercelDomainSyncError) {
       return NextResponse.json(
