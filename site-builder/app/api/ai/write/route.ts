@@ -160,7 +160,7 @@ export async function POST(request: Request) {
   const firstName = clean(context.firstName, 80);
   const brandName = clean(context.brandName, 120);
   const moduleType = clean(context.moduleType, 30);
-  const architectBrief = clean(context.architectBrief, 1800);
+  const architectBrief = clean(context.architectBrief, 4000);
   const revisionRequest = clean(context.revisionRequest, 1200);
   const existingProposal = context.existingProposal && typeof context.existingProposal === "object" ? context.existingProposal : null;
   const moduleBrief = clean(context.moduleBrief, 1000);
