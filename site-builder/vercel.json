@@ -1,7 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["cdg1"],
-  "functionFailoverRegions": ["fra1"],
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
+  "regions": [
+    "cdg1"
+  ],
+  "functionFailoverRegions": [
+    "fra1"
+  ],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./",
+  "crons": [
+    {
+      "path": "/api/cron/billing-notifications",
+      "schedule": "15 8 * * *"
+    }
+  ]
 }
