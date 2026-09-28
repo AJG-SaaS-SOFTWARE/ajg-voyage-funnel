@@ -232,7 +232,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Blocage actif immédiat : `VERCEL_TOKEN` est présent dans GitHub Actions, mais le token actuellement stocké ne passe pas l’identité CLI Vercel (`GET /v2/user` → 404). Remplacer ce secret par un Personal Access Token Vercel avec Scope = Full Account ; le workflow valide désormais ce prérequis avant toute installation/build. Tant que ce point n’est pas levé, aucune validation production, Storage privé ou E2E réelle ne doit être marquée terminée.
+Blocage actif immédiat : la release REST Vercel authentifie correctement le projet, mais Vercel refuse le redéploiement avec HTTP 402 car `functionFailoverRegions` est une fonctionnalité Enterprise. Le failover `fra1` a été retiré du code ; `cdg1` reste la région principale. La prochaine release doit confirmer que ce blocage est levé.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
@@ -249,6 +249,8 @@ Blocage actif immédiat : `VERCEL_TOKEN` est présent dans GitHub Actions, mais 
 - [x] rollback automatique vers le déploiement qui servait réellement l’alias production si la santé échoue après promotion ;
 - [x] branche réservée `release/site-builder-production` comme déclencheur contrôlé alternatif à `workflow_dispatch`, avec vérification stricte qu’elle pointe sur le `main` courant ;
 - [x] premier déclenchement de release contrôlée exécuté : workflow lancé correctement, arrêt avant Vercel car le secret GitHub Actions `VERCEL_TOKEN` est absent ; préflight corrigé pour s’exécuter après checkout ;
+- [x] chemin de release basculé sur l’API REST Vercel pour contourner le bug PAT/CLI `/v2/user` tout en conservant staging, vérification SHA, promotion et rollback ;
+- [x] cause HTTP 402 identifiée : `functionFailoverRegions` exige Enterprise ; failover `fra1` retiré, région principale `cdg1` conservée ;
 - [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
 - [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
 - [ ] valider sous-domaines et domaines personnalisés en environnement réel.
