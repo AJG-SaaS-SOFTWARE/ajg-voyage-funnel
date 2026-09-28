@@ -43,7 +43,7 @@ Dernière mise à jour : 28 septembre 2026.
 - [x] statuts brouillon / publié / suspendu côté données ;
 - [x] page introuvable pour un site non publié ;
 - [x] sitemap par site ;
-- [ ] validation complète des sous-domaines en conditions réelles ; canari applicatif OK mais wildcard DNS externe non résolu ;
+- [ ] validation complète des sous-domaines en conditions réelles ; canari applicatif OK, sous-domaine désormais vérifiable individuellement chez Vercel mais DNS externe à configurer ;
 - [x] domaine personnalisé en option côté produit, droits, données et routage ; automatisation DNS/Vercel encore externe.
 
 ## Sprint 4 — onboarding, IA et qualité bêta
@@ -227,13 +227,13 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA et buckets Storage sont prêts ; Resend, cron, URL applicative et Vercel runtime restent des warnings opérationnels à compléter.
 4. **Storage privé validé de bout en bout** : `site-private-media` privé + RLS + test réel privé → `/api/media/promote` → public → nettoyage, tous en succès.
 5. **Recette E2E réelle validée** : session admin → création isolée → droit Pro temporaire → AI Site Architect réel → médias → publication → site public → feedback → export → nettoyage.
-6. **Valider routage réel** : sous-domaines gérés, canonical/metadata, domaine personnalisé et DNS/Vercel.
+6. **Valider routage réel** : rattacher/vérifier individuellement le sous-domaine AJG chez Vercel, configurer le wildcard CNAME chez le fournisseur DNS, puis activer les canonical/rewrites gérés ; ensuite valider un domaine personnalisé.
 7. **Lancer la bêta 5–10 comptes** et observer le dashboard 30 jours ; corriger uniquement les frictions confirmées par ces tests.
 8. **Décisions commerciales utilisateur requises** : prix, périodicité, essai éventuel, nombre de sites inclus. La politique d’impayés reste J0/J14/J28/J104 sauf décision explicite signalée.
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Release production, Storage privé et recette E2E sont validés. Le prochain jalon réel est le routage public : le code sait router les hostnames, mais le wildcard `*.voyage.ajgsolutionsgroup.com` n’est pas encore résolu côté DNS. Tant que cette infrastructure n’est pas prête, le canonical doit rester sur l’URL Vercel de repli.
+Release production, Storage privé et recette E2E sont validés. Le prochain jalon réel est le routage public : chaque sous-domaine AJG peut être rattaché individuellement à Vercel afin d’éviter une dépendance au wildcard Vercel natif et à ses nameservers. Un wildcard CNAME externe reste à configurer ; tant qu’il n’est pas validé, le canonical reste sur l’URL Vercel de repli.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
@@ -256,7 +256,7 @@ Release production, Storage privé et recette E2E sont validés. Le prochain jal
 - [x] bootstrap privé exposé dans le back-office admin : création via l’API Storage Supabase avec le secret serveur Vercel ; la CI ne tente pas d’extraire une variable Sensitive ;
 - [x] dernier `main` déployé en production via la release contrôlée ; `/api/health` expose le SHA attendu et la base répond `ok` ;
 - [x] recette E2E production validée : toutes les étapes du runner passent, 1 génération IA réelle comptabilisée et aucun résidu site/abonnement/feedback/média après nettoyage.
-- [ ] valider sous-domaines et domaines personnalisés en environnement réel ; le premier canari confirme un blocage DNS externe du wildcard géré.
+- [ ] valider sous-domaines et domaines personnalisés en environnement réel ; le canari est désormais préparé pour une vérification Vercel individuelle, puis un wildcard CNAME externe doit être ajouté.
 
 ### Itération 6B — bêta mesurée
 - [x] instrumentation first-party et feedback déjà disponibles ;
