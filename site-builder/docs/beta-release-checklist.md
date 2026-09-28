@@ -12,6 +12,7 @@ Dernière mise à jour : 27 septembre 2026.
 - CI GitHub dédiée au dossier `site-builder/`.
 - Déploiements Git automatiques Vercel désactivés pour éviter de consommer le quota Hobby à chaque commit.
 - Release production dédiée : workflow manuel `Site Builder Production Release`, build précompilé dans GitHub Actions, déploiement production en mode staged (`--skip-domain`), smoke test, puis promotion seulement si les contrôles passent.
+- Déclenchement possible sans l’interface GitHub : la branche réservée `release/site-builder-production` doit pointer exactement sur le `main` courant ; le workflow refuse une branche de release obsolète.
 - Prérequis externe : secret GitHub Actions `VERCEL_TOKEN` autorisé sur l’équipe/projet AJG ; les IDs équipe/projet ne sont pas secrets et restent versionnés dans le workflow.
 - Aucun secret de production requis pour compiler : la CI utilise uniquement des valeurs publiques factices pour Supabase.
 
