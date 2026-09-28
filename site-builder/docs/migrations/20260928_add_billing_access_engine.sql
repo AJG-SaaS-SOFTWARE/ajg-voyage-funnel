@@ -130,3 +130,34 @@ with check(bucket_id='site-media' and (storage.foldername(name))[1]=(select auth
 drop policy if exists "owners delete site media objects" on storage.objects;
 create policy "owners delete site media objects" on storage.objects for delete to authenticated
 using(bucket_id='site-media' and (storage.foldername(name))[1]=(select auth.uid())::text and array_length(storage.foldername(name),1)>=2 and public.can_modify_site_media(((storage.foldername(name))[2])::uuid));
+
+
+-- Defense in depth: suspended sites are not exposed by the Data API and restricted owners cannot bypass the app to mutate site content.
+drop policy if exists "anon read published sites" on public.sites;
+create policy "anon read published live sites" on public.sites for select to anon using(status='published' and public_access_state='live');
+drop policy if exists "authenticated read accessible sites" on public.sites;
+create policy "authenticated read accessible sites" on public.sites for select to authenticated
+using(owner_id=(select auth.uid()) or (status='published' and public_access_state='live') or exists(select 1 from public.user_roles r where r.user_id=(select auth.uid()) and r.role='admin'));
+drop policy if exists "owners update sites" on public.sites;
+create policy "owners update sites" on public.sites for update to authenticated
+using(owner_id=(select auth.uid()) and not exists(select 1 from public.site_billing_states bs where bs.site_id=sites.id and bs.state in ('restricted','public_suspended','retention','closed')))
+with check(owner_id=(select auth.uid()) and not exists(select 1 from public.site_billing_states bs where bs.site_id=sites.id and bs.state in ('restricted','public_suspended','retention','closed')));
+drop policy if exists "owners create site drafts" on public.site_drafts;
+create policy "owners create site drafts" on public.site_drafts for insert to authenticated
+with check(owner_id=(select auth.uid()) and exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id where s.id=site_drafts.site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace')));
+drop policy if exists "owners update site drafts" on public.site_drafts;
+create policy "owners update site drafts" on public.site_drafts for update to authenticated
+using(owner_id=(select auth.uid()) and exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id where s.id=site_drafts.site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace')))
+with check(owner_id=(select auth.uid()) and exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id where s.id=site_drafts.site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace')));
+
+-- Domain settings are also frozen at J14, while admins retain operational access.
+drop policy if exists "owners insert domains" on public.domains;
+create policy "owners insert domains" on public.domains for insert to authenticated
+with check(exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id where s.id=domains.site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace')));
+drop policy if exists "owners delete domains" on public.domains;
+create policy "owners delete domains" on public.domains for delete to authenticated
+using(exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id where s.id=domains.site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace')));
+drop policy if exists "owners or admins update domains" on public.domains;
+create policy "owners or admins update domains" on public.domains for update to authenticated
+using(exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id where s.id=domains.site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace')) or exists(select 1 from public.user_roles r where r.user_id=(select auth.uid()) and r.role='admin'))
+with check(exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id where s.id=domains.site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace')) or exists(select 1 from public.user_roles r where r.user_id=(select auth.uid()) and r.role='admin'));
