@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { appBaseUrl } from "../../../../lib/app-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -129,10 +130,10 @@ export async function GET(request: Request) {
     check(
       "app-url",
       "URL applicative",
-      present(process.env.NEXT_PUBLIC_APP_URL),
+      Boolean(appBaseUrl()),
       "beta",
-      "URL publique de l’application configurée.",
-      "NEXT_PUBLIC_APP_URL manque.",
+      `URL publique résolue : ${appBaseUrl()}.`,
+      "Impossible de résoudre l’URL publique de l’application.",
       "warn"
     ),
     check(
@@ -225,15 +226,41 @@ export async function GET(request: Request) {
       .limit(1)
       .maybeSingle();
 
-    checks.push({
-      key: "managed-subdomains",
-      label: "Sous-domaines gérés",
-      scope: "beta",
-      status: managedDomain && !managedDomainError ? "pass" : "warn",
-      detail: managedDomain && !managedDomainError
-        ? `Routage automatique actif ; domaine canari vérifié : ${managedDomain.hostname}.`
-        : "Aucun sous-domaine AJG vérifié et primaire n'est encore disponible."
-    });
+    if (managedDomain && !managedDomainError) {
+      try {
+        const publicResponse = await fetch(`https://${managedDomain.hostname}/`, {
+          cache: "no-store",
+          redirect: "manual",
+          signal: AbortSignal.timeout(7000)
+        });
+        checks.push({
+          key: "managed-subdomains",
+          label: "Sous-domaines gérés",
+          scope: "beta",
+          status: publicResponse.status >= 200 && publicResponse.status < 400 ? "pass" : "warn",
+          detail:
+            publicResponse.status >= 200 && publicResponse.status < 400
+              ? `Domaine canari vérifié et accessible en HTTPS : ${managedDomain.hostname} (HTTP ${publicResponse.status}).`
+              : `Domaine vérifié mais réponse HTTPS inattendue : ${managedDomain.hostname} (HTTP ${publicResponse.status}).`
+        });
+      } catch {
+        checks.push({
+          key: "managed-subdomains",
+          label: "Sous-domaines gérés",
+          scope: "beta",
+          status: "warn",
+          detail: `Domaine primaire vérifié en base mais contrôle HTTPS impossible : ${managedDomain.hostname}.`
+        });
+      }
+    } else {
+      checks.push({
+        key: "managed-subdomains",
+        label: "Sous-domaines gérés",
+        scope: "beta",
+        status: "warn",
+        detail: "Aucun sous-domaine AJG vérifié et primaire n'est encore disponible."
+      });
+    }
 
     for (const bucket of [
       { id: "site-media", label: "Storage public", required: true },
