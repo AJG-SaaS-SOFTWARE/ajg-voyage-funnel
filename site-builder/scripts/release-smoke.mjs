@@ -54,6 +54,7 @@ try {
   await expectStatus("/ci-route-that-does-not-exist", 404);
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   await expectStatus("/api/admin/release-readiness", 401);
+  await expectStatus("/api/admin/beta-metrics", 401);
   console.log("AJG Builder release smoke passed.");
 } finally {
   child.kill("SIGTERM");
