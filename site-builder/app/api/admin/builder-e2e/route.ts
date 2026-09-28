@@ -114,11 +114,51 @@ export async function POST(request: NextRequest) {
 
     if (createError || !site) throw createError || new Error("Temporary site creation failed.");
     siteId = site.id;
+
+    const { error: entitlementError } = await service
+      .from("site_subscriptions")
+      .upsert(
+        {
+          site_id: siteId,
+          owner_id: user.id,
+          plan_key: "pro",
+          status: "active",
+          provider: "internal-e2e",
+          provider_customer_id: null,
+          provider_subscription_id: null,
+          current_period_end: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: "site_id" }
+      );
+    if (entitlementError) throw entitlementError;
+
+    const { data: e2eEntitlements, error: e2eEntitlementError } = await userClient.rpc(
+      "get_my_site_entitlements",
+      { p_site_id: siteId }
+    );
+    const e2eEntitlement = Array.isArray(e2eEntitlements)
+      ? e2eEntitlements[0]
+      : e2eEntitlements;
+    if (
+      e2eEntitlementError ||
+      e2eEntitlement?.plan_key !== "pro" ||
+      e2eEntitlement?.premium_architect !== true
+    ) {
+      throw e2eEntitlementError || new Error("Temporary Pro entitlement verification failed.");
+    }
+
     steps.push({
       key: "create",
       label: "Création",
       status: "pass",
       detail: "Site temporaire créé via la session authentifiée et les RLS."
+    });
+    steps.push({
+      key: "entitlement",
+      label: "Droit Pro temporaire",
+      status: "pass",
+      detail: "Le site E2E reçoit uniquement pendant la recette un droit Pro interne, supprimé avec le site."
     });
 
     let proposal: any = null;
