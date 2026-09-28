@@ -170,7 +170,7 @@ Modules à étudier après validation bêta :
 - [x] conserver les restrictions Storage/RLS existantes et calculer l’usage depuis les métadonnées Storage en lecture seule ;
 - [x] socle domaines personnalisés : droit Pro, demande normalisée, état pending/verified/failed et écran utilisateur ;
 - [x] résolution publique d’un hostname personnalisé vérifié et navigation propre sur ce domaine ;
-- [ ] automatiser le rattachement et la vérification DNS/Vercel avant passage à `verified` ;
+- [x] automatiser le rattachement et la vérification DNS/Vercel avant passage à `verified` ;
 - [x] back-office administrateur protégé par rôle RLS, vue sites/offres/domaines et changement d’offre ;
 - [x] aucun rôle administrateur attribué automatiquement : élévation volontaire uniquement ;
 - [x] droits Premium retombent automatiquement sur le niveau gratuit lorsque l’abonnement n’est plus `active`/`trialing`, tout en conservant le vrai statut (`past_due`, `canceled`, `suspended`) pour l’interface ;
@@ -191,7 +191,7 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 - [x] instrumentation first-party du funnel bêta, sans enregistrer les contenus éditoriaux ;
 - [x] formulaire de feedback volontaire et vue admin des retours ;
 - [x] audit Supabase post-implémentation : aucun nouveau warning sécurité applicatif ;
-- [ ] rattachement/vérification Vercel automatisé des domaines ;
+- [x] rattachement/vérification Vercel automatisé des domaines ;
 - [ ] activation Stripe après validation de l’offre commerciale ;
 - [x] moteur de droits déjà prêt pour `past_due` / `canceled` / `suspended` et blocage de nouvelle publication ;
 - [ ] synchronisation Stripe → statuts et délais de grâce dès validation des paramètres commerciaux.
@@ -246,10 +246,10 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 
 ### Itération 6D — domaines personnalisés automatisés
 - [x] modèle de données, entitlement, demande et routage applicatif déjà prêts ;
-- [ ] ajouter automatiquement le domaine au projet Vercel ;
-- [ ] présenter les enregistrements DNS requis ;
-- [ ] vérifier réellement le domaine avant passage à `verified` ;
-- [ ] gérer retrait, échec et nouvelle tentative.
+- [x] ajouter automatiquement le domaine au projet Vercel ;
+- [x] présenter les enregistrements DNS requis ;
+- [x] vérifier réellement le domaine avant passage à `verified` ;
+- [x] gérer retrait, échec et nouvelle tentative.
 
 ### Gate de lancement
 Le lancement commercial ne sera marqué prêt qu’après validation réelle de 6A, 6B, 6C et 6D. Les décisions tarifaires et les actions externes payantes ne sont jamais inventées par le code.
@@ -274,7 +274,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] file de notifications J0/J3/J7/J12/J74/J97 + réactivation, dédupliquée et avec worker Resend idempotent ; activation réelle après présence des secrets serveur et déploiement ;
 - [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
 - [x] primitive serveur de réactivation après paiement confirmé : droits, site public et relances rétablis/annulés de façon idempotente ; branchement fournisseur restant à faire ;
-- [ ] recette temporelle complète : J13, J14, J28/J104, réactivation, isolation de deux sites et blocage d’un UPDATE direct vérifiés transactionnellement ; appels HTTP de production et paiement fournisseur à finaliser avec le déploiement ;
+- [x] recette temporelle transactionnelle : J13, J14, J28/J104, réactivation, isolation de deux sites et blocage d’un UPDATE direct ; appels HTTP de production et fournisseur à finaliser après déploiement ;
 - [x] RLS durcies : un site suspendu n’est plus lisible anonymement via Data API et les mutations directes sites/drafts/domaines/Storage sont bloquées à partir de J14 ;
 - [x] formulaire anonyme retesté : accès minimal au schéma privé corrigé, soumission active validée et rejet J14 validé ;
 - [x] événements de facturation désormais ciblables par site : un impayé sur le site A ne suspend pas le site B du même propriétaire ;
@@ -307,7 +307,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [ ] production Vercel toujours à resynchroniser avec le `main` actuel avant recette HTTP finale.
 
 ### Stockage média — dette préproduction
-- [ ] séparer les médias publics destinés au site publié des fichiers privés de bibliothèque/brouillon ; le bucket historique `site-media` est public et une URL connue reste accessible directement ;
+- [x] séparer dans le code les médias publiables et la bibliothèque privée ; activation physique du bucket privé encore à effectuer après déploiement ;
 - [x] RLS propriétaire du bucket privé préparées et imports de bibliothèque basculés vers des références privées stables ;
 - [x] bootstrap serveur one-shot préparé pour créer `site-private-media` via le SDK Storage, sans mutation directe de `storage.buckets` ;
 - [ ] exécuter le bootstrap après déploiement du `main`, vérifier le bucket privé réel, puis retirer `STORAGE_BOOTSTRAP_SECRET` ;
