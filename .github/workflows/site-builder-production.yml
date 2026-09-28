@@ -24,8 +24,6 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_T1xBMzY6HJCAkUStrmkUgj60
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
-      VERCEL_SCOPE: ajg-saas-software
-      VERCEL_CLI_VERSION: 59.20.0
       PRODUCTION_ALIAS: ajg-site-builder.vercel.app
 
     steps:
@@ -40,16 +38,14 @@ jobs:
             exit 1
           fi
 
-      - name: Validate CLI-compatible Vercel token
+      - name: Validate Vercel project API access
         shell: bash
         run: |
-          if ! curl --fail --silent --show-error "https://api.vercel.com/v2/user" \
+          curl --fail --silent --show-error \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
-            -H "Accept: application/json" > /tmp/vercel-user.json; then
-            echo "::error::VERCEL_TOKEN cannot resolve the authenticated Vercel user. Create a Personal Access Token with Scope = Full Account and replace the GitHub Actions secret."
-            exit 1
-          fi
-          echo "Vercel CLI identity preflight passed." >> "$GITHUB_STEP_SUMMARY"
+            -H "Accept: application/json" > /tmp/vercel-project.json
+          echo "Vercel project API preflight passed." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Require release branch to match main
         if: github.ref == 'refs/heads/release/site-builder-production'
@@ -88,28 +84,63 @@ jobs:
           echo "deployment_id=$PREVIOUS_ID" >> "$GITHUB_OUTPUT"
           echo "Rollback target captured: $PREVIOUS_ID" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Pull Vercel production configuration
-        run: >
-          npx --yes vercel@$VERCEL_CLI_VERSION pull
-          --yes
-          --environment=production
-          --token="$VERCEL_TOKEN"
-          --scope="$VERCEL_SCOPE"
-
-      - name: Build production artifact in GitHub Actions
-        run: >
-          npx --yes vercel@$VERCEL_CLI_VERSION build
-          --prod
-          --token="$VERCEL_TOKEN"
-          --scope="$VERCEL_SCOPE"
-
-      - name: Stage production deployment without assigning domains
+      - name: Create staged deployment through Vercel REST API
         id: stage
         shell: bash
+        env:
+          PREVIOUS_DEPLOYMENT_ID: ${{ steps.previous.outputs.deployment_id }}
         run: |
-          DEPLOYMENT_URL="$(npx --yes vercel@$VERCEL_CLI_VERSION deploy --prebuilt --prod --skip-domain --token="$VERCEL_TOKEN" --scope="$VERCEL_SCOPE")"
-          echo "url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
-          echo "Staged deployment: $DEPLOYMENT_URL" >> "$GITHUB_STEP_SUMMARY"
+          BODY="$(node -e 'process.stdout.write(JSON.stringify({
+            name:"ajg-site-builder",
+            project:process.env.VERCEL_PROJECT_ID,
+            deploymentId:process.env.PREVIOUS_DEPLOYMENT_ID,
+            withLatestCommit:true,
+            gitMetadata:{
+              commitRef:"main",
+              commitSha:process.env.GITHUB_SHA,
+              ci:"true",
+              ciType:"github-actions"
+            }
+          }))')"
+
+          RESPONSE="$(curl --fail-with-body --silent --show-error \
+            --request POST \
+            "https://api.vercel.com/v13/deployments?forceNew=1&teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$BODY")"
+
+          printf '%s' "$RESPONSE" > /tmp/stage-create.json
+          DEPLOYMENT_ID="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.id!=="string"||!x.id.startsWith("dpl_")){console.error(s);process.exit(2)}process.stdout.write(x.id)})')"
+          DEPLOYMENT_HOST="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.url!=="string"){console.error(s);process.exit(2)}process.stdout.write(x.url)})')"
+
+          echo "deployment_id=$DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
+          echo "url=https://$DEPLOYMENT_HOST" >> "$GITHUB_OUTPUT"
+          echo "Staged deployment created: $DEPLOYMENT_ID / https://$DEPLOYMENT_HOST" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Wait for staged deployment to become READY
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.stage.outputs.deployment_id }}
+        run: |
+          for attempt in $(seq 1 60); do
+            RESPONSE="$(curl --fail-with-body --silent --show-error \
+              "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Accept: application/json")"
+            STATE="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);process.stdout.write(String(x.readyState||x.status||"UNKNOWN"))})')"
+            echo "Deployment state: $STATE"
+            if [ "$STATE" = "READY" ]; then
+              exit 0
+            fi
+            if [ "$STATE" = "ERROR" ] || [ "$STATE" = "CANCELED" ]; then
+              printf '%s\n' "$RESPONSE"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::Timed out waiting for staged Vercel deployment."
+          exit 1
 
       - name: Verify staged production artifact and revision
         shell: bash
@@ -117,15 +148,17 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.stage.outputs.url }}
         run: npm run verify:deployment -- --url="$DEPLOYMENT_URL" --sha="$GITHUB_SHA"
 
-      - name: Promote staged deployment
+      - name: Promote staged deployment through Vercel REST API
+        shell: bash
         env:
-          DEPLOYMENT_URL: ${{ steps.stage.outputs.url }}
-        run: >
-          npx --yes vercel@$VERCEL_CLI_VERSION promote
-          "$DEPLOYMENT_URL"
-          --yes
-          --token="$VERCEL_TOKEN"
-          --scope="$VERCEL_SCOPE"
+          DEPLOYMENT_ID: ${{ steps.stage.outputs.deployment_id }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json"
+          echo "Promotion requested for $DEPLOYMENT_ID." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify live production or rollback
         shell: bash
@@ -138,7 +171,10 @@ jobs:
           fi
 
           echo "::error::Production revision/health verification failed after promotion. Rolling back to $PREVIOUS_DEPLOYMENT_ID."
-          curl --fail --silent --show-error --request POST "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/rollback/$PREVIOUS_DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json"
+          curl --fail-with-body --silent --show-error --request POST \
+            "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/rollback/$PREVIOUS_DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json"
           curl --fail --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors "https://$PRODUCTION_ALIAS/login" > /dev/null
           echo "Rollback requested to $PREVIOUS_DEPLOYMENT_ID after failed production revision/health verification." >> "$GITHUB_STEP_SUMMARY"
           exit 1
