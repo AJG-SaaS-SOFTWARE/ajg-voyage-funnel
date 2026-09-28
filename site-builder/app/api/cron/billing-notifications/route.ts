@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { appBaseUrl } from "../../../../lib/app-url";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,7 @@ const copy: Record<string,{subject:string;body:string}> = {
 export async function POST(request: Request) {
  const secret=process.env.CRON_SECRET;
  if(!secret || request.headers.get("authorization")!==`Bearer ${secret}`) return NextResponse.json({error:"Unauthorized"},{status:401});
- const url=process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY, resend=process.env.RESEND_API_KEY, from=process.env.RESEND_FROM_EMAIL, appUrl=(process.env.NEXT_PUBLIC_APP_URL||"").replace(/\/$/,"");
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY, resend=process.env.RESEND_API_KEY, from=process.env.RESEND_FROM_EMAIL, appUrl=appBaseUrl();
  if(!url||!serviceKey||!resend||!from) return NextResponse.json({error:"Notification service not configured"},{status:503});
  const supabase=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:jobs,error}=await supabase.rpc("claim_due_billing_notifications",{p_limit:20});
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
    const {data:userData,error:userError}=await supabase.auth.admin.getUserById(job.owner_id);
    if(userError||!userData.user?.email) throw new Error("owner_email_unavailable");
    const message=copy[job.notification_key]; if(!message) throw new Error("unknown_notification");
-   const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":`Bearer ${resend}`,"Content-Type":"application/json","Idempotency-Key":`billing-${job.id}`},body:JSON.stringify({from,to:[userData.user.email],subject:message.subject,text:`${message.body}\n\nAccéder à votre espace : ${appUrl ? `${appUrl}/billing` : "AJG Builder > Facturation"}\n\nAJG Builder`})});
+   const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":`Bearer ${resend}`,"Content-Type":"application/json","Idempotency-Key":`billing-${job.id}`},body:JSON.stringify({from,to:[userData.user.email],subject:message.subject,text:`${message.body}\n\nAccéder à votre espace : ${appUrl}/billing\n\nAJG Builder`})});
    if(!response.ok) throw new Error(`resend_${response.status}`);
    await supabase.rpc("finish_billing_notification",{p_id:job.id,p_success:true,p_error:null}); sent++;
   }catch(error){

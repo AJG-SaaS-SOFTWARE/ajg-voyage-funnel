@@ -24,6 +24,7 @@ import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import { legalMissingFields } from "../../lib/site-legal";
 import {
   getCurrentUser,
+  getMyDomains,
   getMySite,
   getMySites,
   saveMySite,
@@ -157,6 +158,7 @@ export default function BuilderPage() {
   const [ownedSites,setOwnedSites]=useState<Array<{id:string;slug:string}>>([]);
   const [userEmail, setUserEmail] = useState("");
   const [origin, setOrigin] = useState("");
+  const [verifiedPublicUrl, setVerifiedPublicUrl] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [brandTouched, setBrandTouched] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
@@ -189,6 +191,18 @@ export default function BuilderPage() {
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const latestVersion = useRef(0);
   const trackedProductEvents = useRef(new Set<string>());
+
+  const refreshVerifiedPublicUrl = async (siteId: string) => {
+    try {
+      const domains = await getMyDomains(siteId);
+      const primary = domains.find(
+        (domain) => domain.isPrimary && domain.verificationStatus === "verified"
+      );
+      setVerifiedPublicUrl(primary ? `https://${primary.hostname}` : "");
+    } catch {
+      setVerifiedPublicUrl("");
+    }
+  };
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
@@ -250,6 +264,7 @@ export default function BuilderPage() {
           setSlugTouched(Boolean(remote.config.slug));
           setRemoteSiteId(remote.id);
           setPublished(remote.status === "published");
+          await refreshVerifiedPublicUrl(remote.id);
         } else {
           setConfig(local.config);
           setBrandTouched(Boolean(local.config.brandName));
@@ -275,7 +290,7 @@ export default function BuilderPage() {
   }, [remoteMode, router]);
 
   const publicPath = "/site/" + config.slug;
-  const betaPublicUrl = origin ? origin + publicPath : publicPath;
+  const betaPublicUrl = verifiedPublicUrl || (origin ? origin + publicPath : publicPath);
 
   const copyPublicUrl = async () => {
     try {
@@ -731,6 +746,7 @@ export default function BuilderPage() {
         publishedSiteId = remote.id;
         setRemoteSiteId(remote.id);
         setConfig(publishConfig);
+        await refreshVerifiedPublicUrl(remote.id);
       }
       publishDraft(publishConfig);
       setSaved(true);
@@ -872,6 +888,7 @@ export default function BuilderPage() {
             const next=await getMySite(e.target.value);
             if(!next)return;
             setRemoteSiteId(next.id);setConfig(next.config);setPublished(next.status==="published");setSaved(true);
+            await refreshVerifiedPublicUrl(next.id);
           }}>{ownedSites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select>:null}
           <Link className="preview-shortcut" href="/preview">Aperçu</Link>
           <span className={"cloud-pill " + (remoteMode ? "online" : "local")}>

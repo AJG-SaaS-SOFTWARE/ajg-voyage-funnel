@@ -1,6 +1,6 @@
 # Roadmap MVP — AJG Site Builder
 
-Dernière mise à jour : 28 septembre 2026.
+Dernière mise à jour : 29 septembre 2026.
 
 ## Sprint 1 — configurateur utilisable
 État : terminé pour le prototype bêta
@@ -43,7 +43,7 @@ Dernière mise à jour : 28 septembre 2026.
 - [x] statuts brouillon / publié / suspendu côté données ;
 - [x] page introuvable pour un site non publié ;
 - [x] sitemap par site ;
-- [ ] validation complète des sous-domaines en conditions réelles ; vérification renforcée pour exiger propriété Vercel + configuration DNS réellement exploitable avant activation ; DNS externe du canari encore à configurer ;
+- [x] sous-domaine canari réel rattaché à Vercel, CNAME externe propagé, `verified + primary` en base et activation conditionnée à une configuration DNS exploitable ; contrôle HTTPS automatique ajouté au diagnostic/release ;
 - [x] domaine personnalisé en option côté produit, droits, données et routage ; automatisation DNS/Vercel encore externe.
 
 ## Sprint 4 — onboarding, IA et qualité bêta
@@ -207,7 +207,7 @@ Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc systèm
 Le développement autonome prévu par cette roadmap est arrivé au bout de ce qui peut être finalisé sans décisions commerciales, accès/quotas externes ou observation d’utilisateurs réels.
 
 Restent volontairement ouverts :
-- validation réelle des sous-domaines sur la production synchronisée ; le canari `test-julien.voyage.ajgsolutionsgroup.com` ne résout pas encore en DNS ;
+- sous-domaine canari `test-julien.voyage.ajgsolutionsgroup.com` validé côté Vercel/DNS ; la release contrôle désormais automatiquement son accessibilité HTTPS lorsqu’un alias AJG est attaché ;
 - tests de plusieurs sites bêta et amélioration du template fondée sur ces observations ;
 - activation du réglage Supabase Auth « leaked password protection » si l’offre le permet ;
 - prix, périodicité, essai éventuel et délais de grâce à décider avant activation Stripe ;
@@ -224,10 +224,10 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 
 1. **Release contrôlée débloquée** : `VERCEL_TOKEN` GitHub Actions opérationnel, pipeline REST sécurisé avec vérification SHA/HTTP et rollback.
 2. **Production synchronisée avec `main`** : dernière release contrôlée réussie et SHA exposé par `/api/health`.
-3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA et buckets Storage sont prêts ; Resend, cron, URL applicative et Vercel runtime restent des warnings opérationnels à compléter.
+3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA, buckets Storage et Vercel runtime sont prêts ; l’URL applicative dispose d’un repli production sûr ; Resend et `CRON_SECRET` restent les warnings opérationnels à compléter.
 4. **Storage privé validé de bout en bout** : `site-private-media` privé + RLS + test réel privé → `/api/media/promote` → public → nettoyage, tous en succès.
 5. **Recette E2E réelle validée** : session admin → création isolée → droit Pro temporaire → AI Site Architect réel → médias → publication → site public → feedback → export → nettoyage.
-6. **Valider routage réel** : sous-domaine AJG canari rattaché à Vercel, DNS CNAME configuré et vérifié ; routage/canonical désormais activés automatiquement par domaine primaire vérifié. Reste à confirmer le rendu HTTPS réel puis à valider un domaine personnalisé.
+6. **Routage réel AJG validé** : sous-domaine canari rattaché, CNAME configuré, domaine `verified + primary`, canonical automatique et contrôle HTTPS intégré au pipeline. Le domaine personnalisé utilisateur reste à recetter séparément avant lancement commercial.
 7. **Lancer la bêta 5–10 comptes** et observer le dashboard 30 jours ; corriger uniquement les frictions confirmées par ces tests.
 8. **Décisions commerciales utilisateur requises** : prix, périodicité, essai éventuel, nombre de sites inclus. La politique d’impayés reste J0/J14/J28/J104 sauf décision explicite signalée.
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
@@ -256,7 +256,8 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 - [x] bootstrap privé exposé dans le back-office admin : création via l’API Storage Supabase avec le secret serveur Vercel ; la CI ne tente pas d’extraire une variable Sensitive ;
 - [x] dernier `main` déployé en production via la release contrôlée ; `/api/health` expose le SHA attendu et la base répond `ok` ;
 - [x] recette E2E production validée : toutes les étapes du runner passent, 1 génération IA réelle comptabilisée et aucun résidu site/abonnement/feedback/média après nettoyage.
-- [ ] finaliser la validation réelle : canari AJG vérifié et DNS opérationnel ; confirmer le rendu HTTPS sur le hostname, puis tester un domaine personnalisé de bout en bout.
+- [x] canari AJG vérifié, DNS opérationnel et alias attaché au déploiement production ; diagnostic et release contrôlée vérifient désormais le HTTPS réel lorsqu’un canari est disponible.
+- [ ] tester un domaine personnalisé utilisateur de bout en bout avant lancement commercial.
 
 ### Itération 6B — bêta mesurée
 - [x] instrumentation first-party et feedback déjà disponibles ;
@@ -355,12 +356,13 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] rattachement et vérification Vercel préparés côté serveur, avec instructions DNS et relance de vérification dans l’UI ;
 - [x] un seul domaine primaire conservé après vérification ;
 - [x] suppression préparée côté serveur : détachement Vercel avant suppression Supabase ;
-- [ ] recette réelle Vercel/DNS à terminer sur le canari : token runtime validé, rattachement Vercel effectué ; le backend vérifie désormais aussi `/v6/domains/{domain}/config` et n’active qu’avec `misconfigured=false` ; DNS externe restant à poser puis retrait à tester.
+- [x] canari géré `test-julien` : token runtime, rattachement Vercel, CNAME externe, `misconfigured=false`, `verified + primary` et canonical validés ; le pipeline contrôle désormais le HTTPS de l’alias attaché.
+- [ ] domaine personnalisé utilisateur : exécuter une recette ajout → DNS → vérification → primaire → retrait.
 
 ### Blocages externes avant release candidate réelle
 - [x] Vercel : production synchronisée avec le `main` via le workflow contrôlé ; token GitHub Actions, build, vérification SHA, promotion et rollback sont opérationnels ;
 - [x] Storage : `site-private-media` créé, vérifié privé et recette de promotion réelle validée ;
-- [ ] Secrets serveur : `SUPABASE_SECRET_KEY` et `VERCEL_TOKEN` GitHub Actions validés ; `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` et `VERCEL_TEAM_ID` runtime ajoutés en Production, validation active attendue après redéploiement ; restent `CRON_SECRET`, Resend et `NEXT_PUBLIC_APP_URL` à compléter ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
+- [ ] Secrets serveur : `SUPABASE_SECRET_KEY`, token de release GitHub et `VERCEL_TOKEN / PROJECT_ID / TEAM_ID` runtime validés ; l’URL applicative a un repli production sûr ; restent `CRON_SECRET` et Resend à configurer avant activation des notifications ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
 - [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
 
 ### Cohérence multi-site complémentaire
