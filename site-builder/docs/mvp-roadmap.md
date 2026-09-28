@@ -249,7 +249,7 @@ Blocage actif immédiat : la release REST Vercel authentifie correctement le pro
 - [x] rollback automatique vers le déploiement qui servait réellement l’alias production si la santé échoue après promotion ;
 - [x] branche réservée `release/site-builder-production` comme déclencheur contrôlé alternatif à `workflow_dispatch`, avec vérification stricte qu’elle pointe sur le `main` courant ;
 - [x] premier déclenchement de release contrôlée exécuté : workflow lancé correctement, arrêt avant Vercel car le secret GitHub Actions `VERCEL_TOKEN` est absent ; préflight corrigé pour s’exécuter après checkout ;
-- [x] chemin de release basculé sur l’API REST Vercel pour contourner le bug PAT/CLI `/v2/user` tout en conservant staging, vérification SHA, promotion et rollback ;
+- [x] chemin de release basculé sur l’API REST Vercel pour contourner le bug PAT/CLI `/v2/user` ; après validation CI, déploiement production atomique, vérification SHA/HTTP et rollback automatique ;
 - [x] cause HTTP 402 identifiée : `functionFailoverRegions` exige Enterprise ; failover `fra1` retiré, région principale `cdg1` conservée ;
 - [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
 - [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
