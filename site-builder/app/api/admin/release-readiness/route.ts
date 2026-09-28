@@ -127,17 +127,6 @@ export async function GET(request: Request) {
       "warn"
     ),
     check(
-      "vercel-domain",
-      "Domaines personnalisés",
-      present(process.env.VERCEL_TOKEN) &&
-        present(process.env.VERCEL_PROJECT_ID) &&
-        present(process.env.VERCEL_TEAM_ID),
-      "beta",
-      "Jeton et identifiants Vercel présents.",
-      "VERCEL_TOKEN / PROJECT_ID / TEAM_ID incomplets : l’automatisation DNS reste inactive.",
-      "warn"
-    ),
-    check(
       "app-url",
       "URL applicative",
       present(process.env.NEXT_PUBLIC_APP_URL),
@@ -173,6 +162,53 @@ export async function GET(request: Request) {
       scope: "beta",
       detail: `Commit Vercel détecté : ${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12)}…`
     });
+  }
+
+  const vercelToken = process.env.VERCEL_TOKEN;
+  const vercelProjectId = process.env.VERCEL_PROJECT_ID;
+  const vercelTeamId = process.env.VERCEL_TEAM_ID;
+
+  if (!present(vercelToken) || !present(vercelProjectId) || !present(vercelTeamId)) {
+    checks.push({
+      key: "vercel-domain",
+      label: "Vercel · accès API",
+      status: "warn",
+      scope: "beta",
+      detail:
+        "VERCEL_TOKEN / PROJECT_ID / TEAM_ID incomplets : domaines personnalisés et vérification active Vercel indisponibles."
+    });
+  } else {
+    try {
+      const response = await fetch(
+        `https://api.vercel.com/v9/projects/${encodeURIComponent(vercelProjectId!)}?teamId=${encodeURIComponent(vercelTeamId!)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${vercelToken}`,
+            Accept: "application/json"
+          },
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000)
+        }
+      );
+
+      checks.push({
+        key: "vercel-domain",
+        label: "Vercel · accès API",
+        status: response.ok ? "pass" : "warn",
+        scope: "beta",
+        detail: response.ok
+          ? "Jeton serveur validé en lecture sur le projet AJG Site Builder."
+          : `Jeton ou périmètre Vercel invalide pour ce projet (HTTP ${response.status}).`
+      });
+    } catch {
+      checks.push({
+        key: "vercel-domain",
+        label: "Vercel · accès API",
+        status: "warn",
+        scope: "beta",
+        detail: "Impossible de joindre l’API Vercel pendant ce contrôle."
+      });
+    }
   }
 
   if (serviceKey) {
