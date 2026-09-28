@@ -228,6 +228,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Décrivez d'abord votre activité, votre objectif et quelques mots-clés." }, { status: 400 });
   }
 
+  if (field === "siteArchitect" || field === "siteRevision") {
+    const { data: entitlements, error: entitlementError } = await auth.supabase.rpc("get_my_entitlements");
+    if (entitlementError) return NextResponse.json({ error: "Impossible de vérifier votre offre." }, { status: 503 });
+    const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
+    if (entitlement?.premium_architect !== true) return NextResponse.json({ error: "AI Site Architect est disponible avec l’offre Pro." }, { status: 403 });
+  }
+
   const prompt = [
     `Field to write: ${fieldSpec.name}.`,
     `Goal: ${fieldSpec.purpose}`,
