@@ -43,7 +43,7 @@ Dernière mise à jour : 28 septembre 2026.
 - [x] statuts brouillon / publié / suspendu côté données ;
 - [x] page introuvable pour un site non publié ;
 - [x] sitemap par site ;
-- [ ] validation complète des sous-domaines en conditions réelles ;
+- [ ] validation complète des sous-domaines en conditions réelles ; canari applicatif OK mais wildcard DNS externe non résolu ;
 - [x] domaine personnalisé en option côté produit, droits, données et routage ; automatisation DNS/Vercel encore externe.
 
 ## Sprint 4 — onboarding, IA et qualité bêta
@@ -64,7 +64,7 @@ Dernière mise à jour : 28 septembre 2026.
 - [ ] amélioration continue du template public sur la base des tests réels.
 
 ## Itération 4A — AI Site Architect, architecture et contenus utilisateur
-État : terminé côté code sur `main` ; production synchronisée, recette E2E globale à confirmer
+État : terminé côté code sur `main` ; recette E2E production validée
 
 Objectif de sortie : l’IA peut proposer une structure de site sensiblement différente du template historique, sans publier ni inventer silencieusement des informations sensibles.
 
@@ -88,10 +88,10 @@ Objectif de sortie : l’IA peut proposer une structure de site sensiblement dif
 - [x] limite de 6 pages alignée entre IA, normalisation et éditeur ; accueil unique et non déplaçable ;
 - [x] IDs de contenus publiables transmis à l’AI Site Architect afin que l’affectation d’assets soit réellement exploitable.
 
-Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. La révision globale et l’éditeur visuel sont également codés et déployés ; la recette E2E complète reste nécessaire avant validation bêta.
+Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. La révision globale, l’éditeur visuel et la recette E2E de production sont validés.
 
 ### Itération 4B — contrôle humain avancé du site Premium
-État : terminé côté code sur `main` ; production synchronisée, recette E2E globale à confirmer
+État : terminé côté code sur `main` ; recette E2E production validée
 
 - [x] import direct de contenus utilisateur dans la bibliothèque ;
 - [x] affectation IA des contenus autorisés aux pages ;
@@ -121,7 +121,7 @@ Modules à étudier après validation bêta :
 - blocs supplémentaires déterminés par les retours utilisateurs.
 
 ## Itération 4C — durcissement bêta et recette technique
-État : terminé côté code et sécurité contrôlable ; production synchronisée, recette E2E complète à terminer
+État : terminé côté code, sécurité et recette E2E production
 
 - [x] alignement du bucket Storage avec les formats réellement acceptés par la bibliothèque : images, audio, PDF et TXT ;
 - [x] limite Storage conservée à 15 Mo et contrôle MIME côté application + bucket ;
@@ -135,7 +135,7 @@ Modules à étudier après validation bêta :
 - [x] sitemap nettoyé : exclusion des pages légales noindex ;
 - [x] droits renforcés : source obligatoire avant publication d’un contenu sous licence/domaine public ;
 - [x] build et production du dernier `main` validés via la release contrôlée ;
-- [ ] exécuter la recette E2E complète authentification → création → AI Site Architect → médias → publication → site public → feedback → export ; runner admin isolé déployé, nouvelle exécution attendue après le correctif du droit Pro temporaire ;
+- [x] recette E2E complète production validée : authentification → création → droit Pro temporaire → AI Site Architect réel → média privé/public → publication → rendu public → feedback → archive → nettoyage ; HTTP 200 confirmé côté runtime ;
 - [ ] validation finale des sous-domaines gérés en conditions réelles sur ce même déploiement ;
 - [x] routage des sous-pages et pages légales corrigé sur les sous-domaines gérés, avec URLs de navigation propres ;
 - [x] accès direct à `ai_usage_events` retiré aux clients et RPC de quota explicitement limité à `authenticated` / `service_role`, avec contrôle `auth.uid()` conservé ;
@@ -186,7 +186,7 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 - [x] quota de stockage mesuré et bloquant avant upload ;
 - [x] demande de domaine personnalisé réservée au droit Pro ;
 - [x] routage applicatif d’un hostname personnalisé vérifié ;
-- [x] canonical des sites gérés aligné sur le sous-domaine public ;
+- [x] canonical des sites gérés aligné sur le sous-domaine public uniquement lorsque l’infrastructure wildcard est explicitement activée ; repli sûr vers `/site/{slug}` sinon ;
 - [x] rôles administrateur séparés et protégés par RLS ;
 - [x] back-office sites / offres / domaines ;
 - [x] instrumentation first-party du funnel bêta, sans enregistrer les contenus éditoriaux ;
@@ -207,7 +207,7 @@ Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc systèm
 Le développement autonome prévu par cette roadmap est arrivé au bout de ce qui peut être finalisé sans décisions commerciales, accès/quotas externes ou observation d’utilisateurs réels.
 
 Restent volontairement ouverts :
-- recette E2E complète du dernier `main` et validation réelle des sous-domaines sur la production synchronisée ;
+- validation réelle des sous-domaines sur la production synchronisée ; le canari `test-julien.voyage.ajgsolutionsgroup.com` ne résout pas encore en DNS ;
 - tests de plusieurs sites bêta et amélioration du template fondée sur ces observations ;
 - activation du réglage Supabase Auth « leaked password protection » si l’offre le permet ;
 - prix, périodicité, essai éventuel et délais de grâce à décider avant activation Stripe ;
@@ -226,14 +226,14 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 2. **Production synchronisée avec `main`** : dernière release contrôlée réussie et SHA exposé par `/api/health`.
 3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA et buckets Storage sont prêts ; Resend, cron, URL applicative et Vercel runtime restent des warnings opérationnels à compléter.
 4. **Storage privé validé de bout en bout** : `site-private-media` privé + RLS + test réel privé → `/api/media/promote` → public → nettoyage, tous en succès.
-5. **Exécuter la recette E2E réelle** : magic link → création → AI Site Architect → médias → publication → site public → feedback → export de récupération.
+5. **Recette E2E réelle validée** : session admin → création isolée → droit Pro temporaire → AI Site Architect réel → médias → publication → site public → feedback → export → nettoyage.
 6. **Valider routage réel** : sous-domaines gérés, canonical/metadata, domaine personnalisé et DNS/Vercel.
 7. **Lancer la bêta 5–10 comptes** et observer le dashboard 30 jours ; corriger uniquement les frictions confirmées par ces tests.
 8. **Décisions commerciales utilisateur requises** : prix, périodicité, essai éventuel, nombre de sites inclus. La politique d’impayés reste J0/J14/J28/J104 sauf décision explicite signalée.
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Release production débloquée et Storage privé validé : le workflow REST Vercel passe le préflight, construit en `cdg1`, vérifie le SHA, promeut l’artefact et valide les routes publiques. La production sert désormais `91ac1c3…`, incluant le runner E2E corrigé avec droit Pro temporaire ; le prochain jalon réel est sa nouvelle exécution complète depuis une session administrateur authentifiée.
+Release production, Storage privé et recette E2E sont validés. Le prochain jalon réel est le routage public : le code sait router les hostnames, mais le wildcard `*.voyage.ajgsolutionsgroup.com` n’est pas encore résolu côté DNS. Tant que cette infrastructure n’est pas prête, le canonical doit rester sur l’URL Vercel de repli.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
@@ -255,8 +255,8 @@ Release production débloquée et Storage privé validé : le workflow REST Verc
 - [x] release production contrôlée réussie sur `main` : build Production, SHA, promotion REST et contrôles HTTP publics validés ;
 - [x] bootstrap privé exposé dans le back-office admin : création via l’API Storage Supabase avec le secret serveur Vercel ; la CI ne tente pas d’extraire une variable Sensitive ;
 - [x] dernier `main` déployé en production via la release contrôlée ; `/api/health` expose le SHA attendu et la base répond `ok` ;
-- [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback → export ; runner admin isolé prêt, avec nettoyage automatique et 1 génération IA réelle explicitement comptabilisée.
-- [ ] valider sous-domaines et domaines personnalisés en environnement réel.
+- [x] recette E2E production validée : toutes les étapes du runner passent, 1 génération IA réelle comptabilisée et aucun résidu site/abonnement/feedback/média après nettoyage.
+- [ ] valider sous-domaines et domaines personnalisés en environnement réel ; le premier canari confirme un blocage DNS externe du wildcard géré.
 
 ### Itération 6B — bêta mesurée
 - [x] instrumentation first-party et feedback déjà disponibles ;
@@ -347,7 +347,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] promotion contrôlée privée → publique branchée à la publication : session + ownership + capacité de publication + droits/licence vérifiés côté serveur ;
 - [x] références `private://` exclues du rendu public et copie rendue répétable pour les republications ;
 - [x] recette réelle Storage validée : le contrôle admin a exécuté plusieurs fois `site-private-media` → `/api/media/promote` → URL publique avec HTTP 200, puis nettoyage complet sans résidu.
-- [x] runner E2E complet admin prêt : site temporaire + droit Pro interne éphémère + IA réelle + média + publication + rendu public + feedback + archive de récupération + nettoyage ; premier essai a confirmé le nettoyage mais a révélé l’absence de droit Premium sur le site temporaire, corrigée côté runner ; nouvelle exécution production à confirmer.
+- [x] runner E2E complet admin validé en production après correctif du droit Pro temporaire ; toutes les étapes sont passées et le nettoyage final est confirmé sans résidu.
 
 ### Domaines personnalisés — automatisation
 - [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;

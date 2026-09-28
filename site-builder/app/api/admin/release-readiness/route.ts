@@ -136,6 +136,15 @@ export async function GET(request: Request) {
       "warn"
     ),
     check(
+      "managed-subdomains",
+      "Sous-domaines gérés",
+      process.env.NEXT_PUBLIC_MANAGED_SUBDOMAINS_ENABLED === "true",
+      "beta",
+      "Activation applicative des sous-domaines gérés active.",
+      "Activation désactivée tant que le wildcard DNS/Vercel n'est pas réellement prêt.",
+      "warn"
+    ),
+    check(
       "billing-provider",
       "Fournisseur de paiement",
       present(process.env.BILLING_PROVIDER_WEBHOOK_SECRET),

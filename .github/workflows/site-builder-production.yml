@@ -87,6 +87,7 @@ jobs:
             "RESEND_FROM_EMAIL",
             "CRON_SECRET",
             "NEXT_PUBLIC_APP_URL",
+            "NEXT_PUBLIC_MANAGED_SUBDOMAINS_ENABLED",
             "VERCEL_TOKEN",
             "VERCEL_PROJECT_ID",
             "VERCEL_TEAM_ID"

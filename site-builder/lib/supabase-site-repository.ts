@@ -109,6 +109,8 @@ async function ensureManagedDomain(siteId: string, slug: string) {
     process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
     "voyage.ajgsolutionsgroup.com";
   const hostname = `${slug}.${root}`;
+  const managedSubdomainsEnabled =
+    process.env.NEXT_PUBLIC_MANAGED_SUBDOMAINS_ENABLED === "true";
 
   const { data: existing, error: readError } = await supabase
     .from("domains")
@@ -127,8 +129,8 @@ async function ensureManagedDomain(siteId: string, slug: string) {
     site_id: siteId,
     hostname,
     kind: "managed_subdomain",
-    verification_status: "verified",
-    is_primary: true
+    verification_status: managedSubdomainsEnabled ? "verified" : "pending",
+    is_primary: managedSubdomainsEnabled
   });
 
   if (error) throw error;

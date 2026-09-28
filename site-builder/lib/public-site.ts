@@ -90,6 +90,18 @@ export async function getPublicSiteByHostname(hostname: string): Promise<PublicS
 }
 
 export function publicSiteUrl(slug: string) {
-  const root = process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN || "voyage.ajgsolutionsgroup.com";
-  return `https://${encodeURIComponent(slug)}.${root}`;
+  const managedSubdomainsEnabled =
+    process.env.NEXT_PUBLIC_MANAGED_SUBDOMAINS_ENABLED === "true";
+
+  if (managedSubdomainsEnabled) {
+    const root =
+      process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
+      "voyage.ajgsolutionsgroup.com";
+    return `https://${encodeURIComponent(slug)}.${root}`;
+  }
+
+  const base =
+    process.env.NEXT_PUBLIC_SITE_BUILDER_URL ||
+    "https://ajg-site-builder.vercel.app";
+  return `${base.replace(/\/$/, "")}/site/${encodeURIComponent(slug)}`;
 }
