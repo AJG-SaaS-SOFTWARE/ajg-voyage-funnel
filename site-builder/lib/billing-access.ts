@@ -28,21 +28,22 @@ export async function getMyBillingState(): Promise<BillingState | null> {
   };
 }
 
-export async function exportMySiteData() {
+export async function downloadMySiteExport() {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
-  const site = await getMySite();
-  if (!site) throw new Error("Aucun site à exporter.");
-  const { data: caps, error: capError } = await supabase.rpc("get_my_site_capabilities", { p_site_id: site.id });
-  if (capError) throw capError;
-  const cap = Array.isArray(caps) ? caps[0] : caps;
-  if (!cap?.can_export) throw new Error("L’export n’est plus disponible pour ce site.");
-  const { data: domains, error: domainError } = await supabase.from("domains").select("hostname,kind,verification_status,is_primary").eq("site_id", site.id);
-  if (domainError) throw domainError;
-  return {
-    format: "ajg-builder-export-v1", exportedAt: new Date().toISOString(),
-    site: { id: site.id, slug: site.slug, status: site.status, updatedAt: site.updatedAt, config: site.config },
-    domains: domains || [],
-    note: "Les URLs de médias présentes dans config.contentLibrary permettent de récupérer les fichiers encore conservés. Les droits/licences attachés à chaque média restent décrits dans la configuration."
-  };
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  const response = await fetch("/api/export/site", { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || "Export impossible.");
+  }
+  const payload = await response.json();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ajg-builder-export-${payload.site?.slug || "site"}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
