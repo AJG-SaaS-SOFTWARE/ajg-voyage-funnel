@@ -58,3 +58,7 @@ Une bêta n’est pas validée si : le build/typecheck échoue ; un site non pub
 
 - Dernier blocage identifié : `functionFailoverRegions` demandait une région passive `fra1`, fonctionnalité réservée à Enterprise. Ce réglage a été retiré ; `cdg1` reste la région principale et la release doit être retentée.
 - La protection Supabase contre les mots de passe compromis doit être activée depuis la configuration Auth si l’offre du projet la rend disponible.
+## Recette E2E automatisée du Builder
+
+Le back-office admin expose un contrôle isolé qui crée un site temporaire et exécute : session authentifiée/RLS → création → une génération AI Site Architect réelle → média privé → promotion → publication → rendu public → feedback → archive de récupération → nettoyage. La génération IA reste comptabilisée ; le site, le domaine, le feedback et les médias temporaires sont supprimés. Cette recette ne remplace pas les tests humains de fluidité avec 5–10 bêta-testeurs.
+

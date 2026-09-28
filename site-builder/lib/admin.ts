@@ -1,5 +1,42 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
+export type BuilderE2EStep = {
+  key: string;
+  label: string;
+  status: "pass" | "skipped";
+  detail: string;
+};
+
+export type BuilderE2EResult = {
+  ok: true;
+  includeAi: boolean;
+  steps: BuilderE2EStep[];
+};
+
+export async function adminRunBuilderE2E(includeAi: boolean): Promise<BuilderE2EResult> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/builder-e2e", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ includeAi }),
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const stage = body?.stage ? ` (étape : ${body.stage})` : "";
+    const detail = body?.detail ? ` — ${body.detail}` : "";
+    throw new Error((body?.error || "Recette E2E impossible.") + stage + detail);
+  }
+  return body as BuilderE2EResult;
+}
+
 export type AdminBetaMetrics = {
   periodDays: number;
   generatedAt: string;

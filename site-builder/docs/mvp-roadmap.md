@@ -254,7 +254,7 @@ Release production débloquée et Storage privé validé : le workflow REST Verc
 - [x] release production contrôlée réussie sur `main` : build Production, SHA, promotion REST et contrôles HTTP publics validés ;
 - [x] bootstrap privé exposé dans le back-office admin : création via l’API Storage Supabase avec le secret serveur Vercel ; la CI ne tente pas d’extraire une variable Sensitive ;
 - [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
-- [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
+- [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback → export ; runner admin isolé prêt, avec nettoyage automatique et 1 génération IA réelle explicitement comptabilisée.
 - [ ] valider sous-domaines et domaines personnalisés en environnement réel.
 
 ### Itération 6B — bêta mesurée
@@ -346,6 +346,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] promotion contrôlée privée → publique branchée à la publication : session + ownership + capacité de publication + droits/licence vérifiés côté serveur ;
 - [x] références `private://` exclues du rendu public et copie rendue répétable pour les republications ;
 - [x] recette réelle Storage validée : le contrôle admin a exécuté plusieurs fois `site-private-media` → `/api/media/promote` → URL publique avec HTTP 200, puis nettoyage complet sans résidu.
+- [x] runner E2E complet admin prêt : site temporaire + IA réelle + média + publication + rendu public + feedback + archive de récupération + nettoyage ; exécution production encore à confirmer.
 
 ### Domaines personnalisés — automatisation
 - [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;
