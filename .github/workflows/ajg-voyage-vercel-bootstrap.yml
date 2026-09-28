@@ -1,0 +1,158 @@
+name: Bootstrap AJG Voyage on Vercel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ajg-voyage-vercel-bootstrap.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ajg-voyage-vercel-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TEAM_ID: team_T1xBMzY6HJCAkUStrmkUgj60
+      SOURCE_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
+      TARGET_PROJECT_NAME: ajg-voyage
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Require Vercel token
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          test -n "$VERCEL_TOKEN" || (echo "::error::Missing repository/org secret VERCEL_TOKEN"; exit 1)
+
+      - name: Create or find AJG Voyage project
+        id: project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          STATUS="$(curl --silent --output /tmp/project.json --write-out "%{http_code}"             "https://api.vercel.com/v9/projects/$TARGET_PROJECT_NAME?teamId=$VERCEL_TEAM_ID"             -H "Authorization: Bearer $VERCEL_TOKEN")"
+
+          if [ "$STATUS" = "404" ]; then
+            node <<'NODE' > /tmp/create-project.json
+          const body = {
+            name: process.env.TARGET_PROJECT_NAME,
+            framework: null,
+            gitRepository: {
+              type: "github",
+              repo: "AJG-SaaS-SOFTWARE/ajg-voyage-funnel"
+            },
+            serverlessFunctionRegion: "cdg1",
+            commandForIgnoringBuildStep: "git diff --quiet HEAD^ HEAD -- . ':!site-builder/**'"
+          };
+          process.stdout.write(JSON.stringify(body));
+          NODE
+            curl --fail-with-body --silent --show-error               --request POST "https://api.vercel.com/v11/projects?teamId=$VERCEL_TEAM_ID"               -H "Authorization: Bearer $VERCEL_TOKEN"               -H "Content-Type: application/json"               --data-binary @/tmp/create-project.json > /tmp/project.json
+          elif [ "$STATUS" != "200" ]; then
+            cat /tmp/project.json
+            exit 1
+          fi
+
+          PROJECT_ID="$(node -e 'const x=require("/tmp/project.json"); if(!x.id) process.exit(2); process.stdout.write(x.id)')"
+          echo "project_id=$PROJECT_ID" >> "$GITHUB_OUTPUT"
+          echo "AJG Voyage Vercel project: $PROJECT_ID" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Copy required server environment from AJG Site Builder
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          TARGET_PROJECT_ID: ${{ steps.project.outputs.project_id }}
+        run: |
+          curl --fail-with-body --silent --show-error             "https://api.vercel.com/v10/projects/$SOURCE_PROJECT_ID/env?decrypt=true&teamId=$VERCEL_TEAM_ID"             -H "Authorization: Bearer $VERCEL_TOKEN" > /tmp/source-env.json
+
+          node <<'NODE' > /tmp/env-items.json
+          const fs = require("node:fs");
+          const payload = JSON.parse(fs.readFileSync("/tmp/source-env.json", "utf8"));
+          const rows = Array.isArray(payload) ? payload : (payload.envs || payload.data || []);
+          const wanted = new Set([
+            "NEXT_PUBLIC_SUPABASE_URL",
+            "SUPABASE_SECRET_KEY",
+            "SUPABASE_SERVICE_ROLE_KEY",
+            "RESEND_API_KEY",
+            "RESEND_FROM_EMAIL"
+          ]);
+          const items = rows
+            .filter((row) => wanted.has(row.key) && Array.isArray(row.target) && row.target.includes("production") && row.value)
+            .map((row) => ({
+              key: row.key,
+              value: row.value,
+              type: row.type === "plain" ? "plain" : "encrypted",
+              target: ["production"]
+            }));
+          const keys = new Set(items.map((x) => x.key));
+          if (!keys.has("NEXT_PUBLIC_SUPABASE_URL")) {
+            console.error("Missing NEXT_PUBLIC_SUPABASE_URL in source Vercel project.");
+            process.exit(2);
+          }
+          if (!keys.has("SUPABASE_SECRET_KEY") && !keys.has("SUPABASE_SERVICE_ROLE_KEY")) {
+            console.error("Missing Supabase server secret in source Vercel project.");
+            process.exit(3);
+          }
+          fs.writeFileSync("/tmp/env-items.json", JSON.stringify(items));
+          console.error("Prepared environment keys: " + [...keys].join(", "));
+          NODE
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const items = JSON.parse(fs.readFileSync("/tmp/env-items.json", "utf8"));
+          fs.writeFileSync("/tmp/env-count.txt", String(items.length));
+          NODE
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const { spawnSync } = require("node:child_process");
+          const items = JSON.parse(fs.readFileSync("/tmp/env-items.json", "utf8"));
+          for (const item of items) {
+            const result = spawnSync("curl", [
+              "--fail-with-body", "--silent", "--show-error",
+              "--request", "POST",
+              `https://api.vercel.com/v10/projects/${process.env.TARGET_PROJECT_ID}/env?upsert=true&teamId=${process.env.VERCEL_TEAM_ID}`,
+              "-H", `Authorization: Bearer ${process.env.VERCEL_TOKEN}`,
+              "-H", "Content-Type: application/json",
+              "--data-binary", JSON.stringify(item)
+            ], { stdio: ["ignore", "ignore", "inherit"] });
+            if (result.status !== 0) process.exit(result.status || 1);
+          }
+          NODE
+
+          echo "Copied $(cat /tmp/env-count.txt) required/optional environment variables without printing secret values." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Link target Vercel project
+        env:
+          TARGET_PROJECT_ID: ${{ steps.project.outputs.project_id }}
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_TEAM_ID" "$TARGET_PROJECT_ID" > .vercel/project.json
+
+      - name: Deploy AJG Voyage to Vercel production
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          URL="$(npx --yes vercel@latest deploy --prod --yes --archive=tgz --token="$VERCEL_TOKEN")"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "AJG Voyage deployment: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify static site and lead API
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 "$DEPLOYMENT_URL/" > /dev/null
+
+          STATUS="$(curl --silent --output /tmp/api-check.json --write-out "%{http_code}"             "$DEPLOYMENT_URL/api/travel-presentation")"
+          test "$STATUS" = "405" || (cat /tmp/api-check.json; echo "::error::Lead API did not answer 405 to GET"; exit 1)
+
+          echo "Static site and lead API are reachable." >> "$GITHUB_STEP_SUMMARY"
