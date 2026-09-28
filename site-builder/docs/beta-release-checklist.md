@@ -11,14 +11,19 @@ Dernière mise à jour : 27 septembre 2026.
 - `npm run test:smoke` : démarrage réel du build avec `next start`, contrôle des pages principales, 404 et garde d’authentification de l’export.
 - CI GitHub dédiée au dossier `site-builder/`.
 - Déploiements Git automatiques Vercel désactivés pour éviter de consommer le quota Hobby à chaque commit.
-- Release production dédiée : workflow manuel `Site Builder Production Release`, build précompilé dans GitHub Actions, déploiement production en mode staged (`--skip-domain`), smoke test, puis promotion seulement si les contrôles passent.
+- Release production dédiée : workflow `Site Builder Production Release` via l’API REST Vercel. Il redéploie la production actuelle avec le dernier commit en héritant de ses réglages/envs, attend `READY`, vérifie le SHA et les routes, puis promeut explicitement.
 - Déclenchement possible sans l’interface GitHub : la branche réservée `release/site-builder-production` doit pointer exactement sur le `main` courant ; le workflow refuse une branche de release obsolète.
 - Avant promotion, le workflow résout l’alias public actuel et mémorise son `deploymentId` comme cible de rollback. Si `/api/health` ou `/login` échoue après promotion, il demande automatiquement le rollback vers cette version puis termine en échec.
-- Prérequis externe : secret GitHub Actions `VERCEL_TOKEN` autorisé sur l’équipe/projet AJG ; les IDs équipe/projet ne sont pas secrets et restent versionnés dans le workflow.
-- Premier déclenchement contrôlé du 28 septembre 2026 : workflow correctement lancé par la branche réservée, arrêté au préflight car `VERCEL_TOKEN` est absent des secrets GitHub Actions ; aucune requête de déploiement Vercel n’a été envoyée.
+- Prérequis externe : secret GitHub Actions `VERCEL_TOKEN` autorisé sur l’équipe/projet AJG. Le workflow vérifie l’accès projet via REST avant toute création de déploiement.
+- Le token GitHub Actions est opérationnel sur l’API projet Vercel. Le chemin CLI a été abandonné car les PAT récemment émis retournaient `User not found` sur `/v2/user`, alors que les endpoints projet fonctionnaient.
 - Aucun secret de production requis pour compiler : la CI utilise uniquement des valeurs publiques factices pour Supabase.
 
-## Vérification du déploiement\n\nAvant toute recette réelle, exécuter `npm run verify:deployment -- --url=https://<deployment> --sha=<sha-main>` afin de vérifier `/api/health`, le SHA réellement servi et les routes critiques non authentifiées. Une recette ne doit pas être déclarée valide si le SHA attendu n’est pas celui exposé par l’environnement.\n\n## Parcours de recette après réouverture du build Vercel\n
+## Vérification du déploiement
+
+Avant toute recette réelle, exécuter `npm run verify:deployment -- --url=https://<deployment> --sha=<sha-main>` afin de vérifier `/api/health`, le SHA réellement servi et les routes critiques non authentifiées. Une recette ne doit pas être déclarée valide si le SHA attendu n’est pas celui exposé par l’environnement.
+
+## Parcours de recette après réouverture du build Vercel
+
 1. Authentification par magic link et reprise d’un brouillon existant.
 2. Création guidée 3+1, génération des textes puis modification manuelle.
 3. AI Site Architect : génération complète, refus de l’application, nouvelle génération, application explicite.
@@ -48,5 +53,5 @@ Une bêta n’est pas validée si : le build/typecheck échoue ; un site non pub
 
 ## Blocages externes actuels
 
-- Vercel refuse actuellement les nouveaux builds pour limite de build du compte ; la dernière production READY est donc antérieure aux itérations 4A–4C.
+- Dernier blocage identifié : `functionFailoverRegions` demandait une région passive `fra1`, fonctionnalité réservée à Enterprise. Ce réglage a été retiré ; `cdg1` reste la région principale et la release doit être retentée.
 - La protection Supabase contre les mots de passe compromis doit être activée depuis la configuration Auth si l’offre du projet la rend disponible.
