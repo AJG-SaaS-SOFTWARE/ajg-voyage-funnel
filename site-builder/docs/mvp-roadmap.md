@@ -298,3 +298,10 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] régularisation vérifiée : retour `active`, accès public rétabli et rappels en attente annulés ;
 - [x] adaptateur historique compte-entier désactivé ; seuls les événements de paiement ciblés par site restent exécutables ;
 - [x] formulaire public testé : accepté pendant la grâce, refusé dès J14 ; wrapper anonyme conforme au linter Supabase.
+
+### Préproduction — cohérence serveur
+- [x] export de récupération désormais explicitement ciblé par `siteId` et ownership vérifié côté serveur ;
+- [x] routes serveur compatibles avec `SUPABASE_SECRET_KEY` actuelle, avec repli temporaire sur l’ancienne clé service-role ;
+- [x] textes de rétention J74/J97 alignés avec la politique sans suppression automatique ;
+- [x] dernier état contrôlé : TypeScript et build Next.js réussissent sur la CI indépendante ;
+- [ ] production Vercel toujours à resynchroniser avec le `main` actuel avant recette HTTP finale.
