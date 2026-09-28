@@ -344,8 +344,11 @@ export async function syncCustomDomain(siteId:string,domainId:string){
 export async function removeCustomDomain(id: string) {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
-  const { error } = await supabase.from("domains").delete().eq("id", id).eq("kind", "custom_domain");
-  if (error) throw error;
+  const { data } = await supabase.auth.getSession();
+  if (!data.session?.access_token) throw new Error("Reconnectez-vous pour retirer le domaine.");
+  const response = await fetch("/api/domains/remove", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ domainId: id }) });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Suppression impossible.");
 }
 
 export async function signOut() {
