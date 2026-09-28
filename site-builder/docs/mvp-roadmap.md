@@ -335,3 +335,10 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] job Postgres quotidien d’avancement des états d’impayé confirmé actif à 02:15 ;
 - [x] audit sécurité Supabase relancé : seule l’option externe de mots de passe compromis reste en avertissement ;
 - [x] audit performance relancé : uniquement des index encore peu/non utilisés en bêta, aucune suppression prématurée effectuée.
+
+### Multi-site UI — isolation opérationnelle
+- [x] repository capable de cibler explicitement un `siteId` et de lister les sites du compte ;
+- [x] autosave et sauvegardes Builder liés au site actif ;
+- [x] sélecteur de site ajouté au Builder pour les comptes possédant plusieurs sites ;
+- [x] Domaines, Facturation/Récupération et Offres/quotas ciblent le site sélectionné ;
+- [ ] création d’un site supplémentaire volontairement différée jusqu’à validation du nombre de sites inclus par offre commerciale.
