@@ -461,6 +461,7 @@ export default function BuilderPage() {
 
   const createSiteWithAi = async () => {
     if (!architectBrief.trim()) return;
+    const isRegeneration = architectProposal !== null;
     setArchitectLoading(true);
     setSyncError("");
     try {
@@ -480,6 +481,10 @@ export default function BuilderPage() {
       const result = await response.json();
       if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
       setArchitectProposal(result.proposal);
+      void trackProductEvent(isRegeneration ? "architect_regenerated" : "architect_generated", remoteSiteId);
+      if (result.proposal?.premiumAudit?.refinementApplied === true) {
+        void trackProductEvent("architect_refined", remoteSiteId);
+      }
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "Impossible de préparer le site complet.");
     } finally {
