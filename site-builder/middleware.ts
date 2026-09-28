@@ -13,7 +13,8 @@ export function middleware(request:NextRequest){
    if(!slug||slug.includes(".")||reservedSubdomains.has(slug))return NextResponse.next();
    const url=request.nextUrl.clone();
    url.pathname="/site/"+encodeURIComponent(slug)+(request.nextUrl.pathname==="/"?"":request.nextUrl.pathname);
-   return NextResponse.rewrite(url);
+   const requestHeaders=new Headers(request.headers);requestHeaders.set("x-ajg-clean-public","1");
+   return NextResponse.rewrite(url,{request:{headers:requestHeaders}});
  }
  const isAppHost=hostname===appHostname||hostname===rootDomain||hostname==="localhost"||hostname.endsWith(".vercel.app");
  if(isAppHost)return NextResponse.next();
