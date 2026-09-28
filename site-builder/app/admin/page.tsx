@@ -592,6 +592,48 @@ export default function AdminPage() {
                 </article>
               </div>
 
+              <div className="premium-ai-metrics">
+                <div className="premium-ai-metrics-heading">
+                  <div>
+                    <p className="eyebrow">Architecte Premium · qualité réelle</p>
+                    <h3>La première proposition convainc-elle ?</h3>
+                    <p>
+                      Ces événements ne stockent ni le brief ni le contenu du client. Ils mesurent
+                      uniquement la génération, la régénération, le raffinement interne et
+                      l’application d’une proposition.
+                    </p>
+                  </div>
+                  <span>{betaMetrics.ai.architect.attempts} tentative{betaMetrics.ai.architect.attempts > 1 ? "s" : ""}</span>
+                </div>
+                <div className="premium-ai-kpis">
+                  <article>
+                    <b>{betaMetrics.ai.architect.userAdoptionRate} %</b>
+                    <strong>adoption utilisateurs</strong>
+                    <small>{betaMetrics.ai.architect.appliedUsers} / {betaMetrics.ai.architect.users} utilisateurs ont appliqué une proposition</small>
+                  </article>
+                  <article>
+                    <b>{betaMetrics.ai.architect.regenerationRate} %</b>
+                    <strong>régénérations</strong>
+                    <small>{betaMetrics.ai.architect.regenerations} nouvelle{betaMetrics.ai.architect.regenerations > 1 ? "s" : ""} proposition{betaMetrics.ai.architect.regenerations > 1 ? "s" : ""} demandée{betaMetrics.ai.architect.regenerations > 1 ? "s" : ""}</small>
+                  </article>
+                  <article>
+                    <b>{betaMetrics.ai.architect.refinementRate} %</b>
+                    <strong>raffinement automatique</strong>
+                    <small>{betaMetrics.ai.architect.refinements} proposition{betaMetrics.ai.architect.refinements > 1 ? "s" : ""} corrigée{betaMetrics.ai.architect.refinements > 1 ? "s" : ""} après audit interne</small>
+                  </article>
+                  <article>
+                    <b>{betaMetrics.ai.architect.applicationRate} %</b>
+                    <strong>applications / tentatives</strong>
+                    <small>{betaMetrics.ai.architect.applications} application{betaMetrics.ai.architect.applications > 1 ? "s" : ""} pour {betaMetrics.ai.architect.attempts} tentative{betaMetrics.ai.architect.attempts > 1 ? "s" : ""}</small>
+                  </article>
+                </div>
+                <p className="plans-note">
+                  Sur une petite cohorte, ces taux servent à détecter une tendance, pas à conclure
+                  statistiquement. Une baisse des régénérations combinée à une hausse de l’adoption
+                  sera le signal principal d’amélioration de la première proposition.
+                </p>
+              </div>
+
               {betaMetrics.sites.activity.length ? (
                 <div className="beta-site-activity">
                   <h3>Activité récente par site</h3>
