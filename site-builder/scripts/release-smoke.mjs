@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 
 const port = Number(process.env.SMOKE_PORT || 3107);
-const origin = `http://127.0.0.1:${port}`;
+const origin = `http://localhost:${port}`;
 let stdout = "";
 let stderr = "";
 
