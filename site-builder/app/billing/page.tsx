@@ -18,11 +18,8 @@ export default function BillingPage() {
 
   async function downloadExport() {
     try {
-      const payload = await exportMySiteData();
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = `ajg-builder-export-${payload.site.slug}.json`; a.click();
-      URL.revokeObjectURL(url); setMessage("Export préparé.");
+      await downloadMySiteExport();
+      setMessage("Export préparé avec l’inventaire des médias.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Export impossible."); }
   }
 
