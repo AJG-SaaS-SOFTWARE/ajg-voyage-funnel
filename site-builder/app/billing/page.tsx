@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { downloadMySiteExport, getMyBillingState, type BillingState } from "../../lib/billing-access";
+import { getMySites } from "../../lib/supabase-site-repository";
 
 function date(value: string | null) {
   return value ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(value)) : "—";
@@ -11,14 +12,15 @@ function date(value: string | null) {
 export default function BillingPage() {
   const [billing, setBilling] = useState<BillingState | null>(null);
   const [message, setMessage] = useState("Chargement…");
+  const [sites,setSites]=useState<Array<{id:string;slug:string}>>([]);
+  const [siteId,setSiteId]=useState("");
 
-  useEffect(() => {
-    getMyBillingState().then((value) => { setBilling(value); setMessage(""); }).catch(() => setMessage("Impossible de charger l’état de facturation."));
-  }, []);
+  const load=async(selectedId?:string)=>{const owned=await getMySites();const chosen=owned.find(s=>s.id===(selectedId||siteId))||owned[0];setSites(owned.map(s=>({id:s.id,slug:s.slug})));if(chosen&&!siteId)setSiteId(chosen.id);setBilling(chosen?await getMyBillingState(chosen.id):null);setMessage("");};
+  useEffect(() => { void load().catch(() => setMessage("Impossible de charger l’état de facturation.")); }, []);
 
   async function downloadExport() {
     try {
-      await downloadMySiteExport();
+      await downloadMySiteExport(siteId);
       setMessage("Export préparé avec l’inventaire des médias.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Export impossible."); }
   }
@@ -29,6 +31,7 @@ export default function BillingPage() {
       <p>Les restrictions sont appliquées au site concerné. Vos données ne sont jamais supprimées au premier échec de paiement.</p>
       <div className="builder-actions"><Link className="secondary-link" href="/builder">Retour au Builder</Link><Link className="secondary-link" href="/plans">Voir mon offre</Link></div>
     </section>
+    {sites.length>1?<section className="panel"><label>Site<select value={siteId} onChange={e=>{setSiteId(e.target.value);void load(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
     {message ? <p className="plans-note">{message}</p> : null}
     {billing ? <section className="usage-card"><div><p className="eyebrow">État</p><h2>{billing.state}</h2>
       {limited ? <p>L’IA est coupée pendant la grâce. À la restriction, l’édition, les imports, la publication et les nouveaux formulaires sont également arrêtés. Le site public reste en ligne jusqu’à sa date de suspension.</p> : <p>Votre site dispose de ses capacités normales selon votre offre.</p>}
