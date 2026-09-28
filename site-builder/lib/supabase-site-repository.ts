@@ -320,20 +320,20 @@ export async function uploadContentAsset(file: File, siteId: string) {
 
 export type SiteDomain = { id: string; hostname: string; kind: "managed_subdomain" | "custom_domain"; verificationStatus: "pending" | "verified" | "failed"; isPrimary: boolean };
 
-export async function getMyDomains(): Promise<SiteDomain[]> {
+export async function getMyDomains(siteId?: string): Promise<SiteDomain[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return [];
-  const site = await getMySite();
+  const site = await getMySite(siteId);
   if (!site) return [];
   const { data, error } = await supabase.from("domains").select("id,hostname,kind,verification_status,is_primary").eq("site_id", site.id).order("created_at", { ascending: true });
   if (error) throw error;
   return (data || []).map((row: any) => ({ id: row.id, hostname: row.hostname, kind: row.kind, verificationStatus: row.verification_status, isPrimary: row.is_primary }));
 }
 
-export async function requestCustomDomain(hostname: string): Promise<SiteDomain> {
+export async function requestCustomDomain(hostname: string, siteId?: string): Promise<SiteDomain> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
-  const site = await getMySite();
+  const site = await getMySite(siteId);
   if (!site) throw new Error("Créez d’abord votre site.");
   const normalized = hostname.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
   const { data, error } = await supabase.rpc("request_my_custom_domain", { p_site_id: site.id, p_hostname: normalized });
