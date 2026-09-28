@@ -32,6 +32,53 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          abuse_fingerprint: string
+          consent_at: string
+          created_at: string
+          id: string
+          message: string
+          owner_id: string
+          sender_email: string
+          sender_name: string
+          site_id: string
+          subject: string
+        }
+        Insert: {
+          abuse_fingerprint: string
+          consent_at: string
+          created_at?: string
+          id?: string
+          message: string
+          owner_id: string
+          sender_email: string
+          sender_name: string
+          site_id: string
+          subject?: string
+        }
+        Update: {
+          abuse_fingerprint?: string
+          consent_at?: string
+          created_at?: string
+          id?: string
+          message?: string
+          owner_id?: string
+          sender_email?: string
+          sender_name?: string
+          site_id?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_messages_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       domains: {
         Row: {
           created_at: string
@@ -468,6 +515,13 @@ export type Database = {
         Returns: string
       }
       consume_my_ai_generation: { Args: never; Returns: string }
+      get_my_ai_usage: {
+        Args: never
+        Returns: {
+          month: number
+          today: number
+        }[]
+      }
       get_my_entitlements: {
         Args: never
         Returns: {
@@ -488,6 +542,18 @@ export type Database = {
           storage_limit_mb: number
           used_bytes: number
         }[]
+      }
+      submit_contact_message: {
+        Args: {
+          p_abuse_fingerprint: string
+          p_consent: boolean
+          p_message: string
+          p_sender_email: string
+          p_sender_name: string
+          p_site_id: string
+          p_subject: string
+        }
+        Returns: string
       }
     }
     Enums: {
