@@ -34,7 +34,7 @@ export default function PlansPage() {
       </article>
       <article className={current.planKey === "pro" ? "plan-card current" : "plan-card"}>
         <p className="eyebrow">Pro</p><h2>Créer avec l’IA avancée</h2>
-        <ul><li>500 générations IA / mois</li><li>2 Go de stockage</li><li>AI Site Architect Premium</li><li>Domaine personnalisé</li></ul>
+        <ul><li>500 générations IA / mois</li><li>2 Go de stockage</li><li>Architecte Premium : stratégie → création → audit → raffinement</li><li>Architecture, textes, modules et direction visuelle cohérents</li><li>Domaine personnalisé</li></ul>
         <p className="plan-status">{loaded && current.planKey === "pro" ? "Votre offre actuelle" : "Paiement à connecter — aucun achat possible pour le moment"}</p>
       </article>
     </section>
