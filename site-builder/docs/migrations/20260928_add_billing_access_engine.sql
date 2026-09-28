@@ -47,3 +47,34 @@ as $$
 $$;
 revoke all on function public.get_my_site_capabilities(uuid) from public,anon;
 grant execute on function public.get_my_site_capabilities(uuid) to authenticated,service_role;
+
+
+-- Public suspension is denormalized on the site so anonymous public routes never need access to billing data.
+alter table public.sites add column if not exists public_access_state text not null default 'live' check (public_access_state in ('live','suspended'));
+
+-- Privileged scheduler logic lives outside the exposed public schema. It never deletes service data automatically.
+create schema if not exists private;
+revoke all on schema private from public,anon,authenticated;
+create or replace function private.advance_builder_billing_states()
+returns void language plpgsql security definer set search_path='' as $$
+declare r record;
+begin
+ for r in
+   select bs.site_id,bs.owner_id,bs.state,
+     case when bs.export_until is not null and bs.export_until<=now() and bs.state not in ('retention','closed') then 'retention'
+          when bs.public_suspend_at is not null and bs.public_suspend_at<=now() and bs.state in ('grace','restricted') then 'public_suspended'
+          when bs.grace_until is not null and bs.grace_until<=now() and bs.state='grace' then 'restricted'
+          else bs.state end as next_state
+   from public.site_billing_states bs where bs.state not in ('free','trial','active','closed')
+ loop
+   if r.next_state<>r.state then
+     update public.site_billing_states set state=r.next_state,updated_at=now() where site_id=r.site_id and state=r.state;
+     insert into public.billing_state_events(site_id,owner_id,from_state,to_state,reason)
+       values(r.site_id,r.owner_id,r.state,r.next_state,'scheduler');
+   end if;
+   update public.sites set public_access_state=case when r.next_state in ('public_suspended','retention','closed') then 'suspended' else 'live' end where id=r.site_id;
+ end loop;
+end $$;
+revoke all on function private.advance_builder_billing_states() from public,anon,authenticated;
+grant usage on schema private to service_role;
+grant execute on function private.advance_builder_billing_states() to service_role;
