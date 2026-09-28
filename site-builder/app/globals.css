@@ -2558,3 +2558,16 @@ button.active .step-label small{color:#63817f}
   .beta-invite-form{grid-template-columns:1fr}
   .beta-invite-form .button{width:100%}
 }
+
+.beta-launch-gate{margin:22px 0;padding:24px}
+.beta-launch-gate.is-ready{border:1px solid rgba(22,128,96,.22)}
+.beta-launch-gate.is-blocked{border:1px solid rgba(180,72,54,.28)}
+.beta-gate-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+.beta-gate-grid article{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.52)}
+.beta-gate-grid article.pass b{color:#08765f}
+.beta-gate-grid article.warn b{color:#9b6700}
+.beta-gate-grid article.blocker b{color:#a23b2b}
+.beta-gate-grid span{font-size:.88rem;color:var(--muted)}
+.beta-gate-issues{margin-top:14px;padding:14px 16px;border-radius:14px;background:rgba(162,59,43,.06)}
+.beta-gate-issues p{margin:4px 0}
+@media (max-width:820px){.beta-gate-grid{grid-template-columns:1fr}}
