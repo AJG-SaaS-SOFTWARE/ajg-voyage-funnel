@@ -627,6 +627,45 @@ export default function AdminPage() {
                     <small>{betaMetrics.ai.architect.applications} application{betaMetrics.ai.architect.applications > 1 ? "s" : ""} pour {betaMetrics.ai.architect.attempts} tentative{betaMetrics.ai.architect.attempts > 1 ? "s" : ""}</small>
                   </article>
                 </div>
+                <div className="premium-ai-human-eval">
+                  <div>
+                    <b>Évaluation directe des propositions</b>
+                    <p>
+                      Signal explicite donné par les utilisateurs après lecture d’une proposition,
+                      sans enregistrer leur brief ni le texte généré.
+                    </p>
+                  </div>
+                  <div className="premium-ai-human-eval-kpis">
+                    <span>
+                      <b>{betaMetrics.ai.architect.humanEvaluation.positiveRate} %</b>
+                      propositions jugées pertinentes
+                    </span>
+                    <span>
+                      <b>{betaMetrics.ai.architect.humanEvaluation.responseRate} %</b>
+                      taux de réponse
+                    </span>
+                    <span>
+                      <b>{betaMetrics.ai.architect.humanEvaluation.positive}</b>
+                      évaluations positives
+                    </span>
+                    <span>
+                      <b>{betaMetrics.ai.architect.humanEvaluation.negative}</b>
+                      à améliorer
+                    </span>
+                  </div>
+                  {betaMetrics.ai.architect.humanEvaluation.reasons.length ? (
+                    <div className="premium-ai-human-eval-reasons">
+                      <span>Motifs principaux des évaluations « à améliorer »</span>
+                      <div>
+                        {betaMetrics.ai.architect.humanEvaluation.reasons.map((item) => (
+                          <em key={item.reason}>
+                            <b>{item.count}</b> {item.reason}
+                          </em>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
                 <div className="premium-ai-provider">
                   <div>
                     <b>Empreinte technique Premium</b>

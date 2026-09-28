@@ -206,6 +206,14 @@ export type AdminBetaMetrics = {
       refinementRate: number;
       applicationRate: number;
       userAdoptionRate: number;
+      humanEvaluation: {
+        responses: number;
+        positive: number;
+        negative: number;
+        positiveRate: number;
+        responseRate: number;
+        reasons: Array<{ reason: string; count: number }>;
+      };
       provider: {
         calls: number;
         inputTokens: number;

@@ -85,6 +85,122 @@ export type Database = {
         }
         Relationships: []
       }
+      ajg_voyage_leads: {
+        Row: {
+          activity_goal: string
+          contact_request: boolean
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          landing_url: string | null
+          language: string
+          lead_score: number
+          main_interest: string
+          marketing_consent: boolean
+          phone: string | null
+          referrer_url: string | null
+          status: string
+          travel_frequency: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          activity_goal: string
+          contact_request?: boolean
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          landing_url?: string | null
+          language?: string
+          lead_score?: number
+          main_interest: string
+          marketing_consent?: boolean
+          phone?: string | null
+          referrer_url?: string | null
+          status?: string
+          travel_frequency: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          activity_goal?: string
+          contact_request?: boolean
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          landing_url?: string | null
+          language?: string
+          lead_score?: number
+          main_interest?: string
+          marketing_consent?: boolean
+          phone?: string | null
+          referrer_url?: string | null
+          status?: string
+          travel_frequency?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
+      architect_quality_feedback: {
+        Row: {
+          attempt_kind: string
+          audit_score: number
+          created_at: string
+          id: number
+          proposal_key: string
+          reason: string | null
+          refinement_applied: boolean
+          site_id: string
+          user_id: string
+          verdict: string
+        }
+        Insert: {
+          attempt_kind: string
+          audit_score?: number
+          created_at?: string
+          id?: never
+          proposal_key: string
+          reason?: string | null
+          refinement_applied?: boolean
+          site_id: string
+          user_id: string
+          verdict: string
+        }
+        Update: {
+          attempt_kind?: string
+          audit_score?: number
+          created_at?: string
+          id?: never
+          proposal_key?: string
+          reason?: string | null
+          refinement_applied?: boolean
+          site_id?: string
+          user_id?: string
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "architect_quality_feedback_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_notifications: {
         Row: {
           attempts: number

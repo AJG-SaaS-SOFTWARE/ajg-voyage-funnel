@@ -70,7 +70,8 @@ export async function GET(request: Request) {
     { data: aiUsage, error: aiError },
     { data: feedback, error: feedbackError },
     { data: sites, error: sitesError },
-    { data: providerUsage, error: providerUsageError }
+    { data: providerUsage, error: providerUsageError },
+    { data: architectFeedback, error: architectFeedbackError }
   ] = await Promise.all([
     service
       .from("product_events")
@@ -90,10 +91,21 @@ export async function GET(request: Request) {
     service
       .from("ai_provider_usage")
       .select("user_id,site_id,operation,model,input_tokens,cached_input_tokens,output_tokens,reasoning_tokens,total_tokens,duration_ms,created_at")
+      .gte("created_at", since),
+    service
+      .from("architect_quality_feedback")
+      .select("user_id,site_id,verdict,reason,attempt_kind,audit_score,refinement_applied,created_at")
       .gte("created_at", since)
   ]);
 
-  if (eventsError || aiError || feedbackError || sitesError || providerUsageError) {
+  if (
+    eventsError ||
+    aiError ||
+    feedbackError ||
+    sitesError ||
+    providerUsageError ||
+    architectFeedbackError
+  ) {
     return NextResponse.json({ error: "Beta metrics unavailable" }, { status: 503 });
   }
 
@@ -119,6 +131,12 @@ export async function GET(request: Request) {
           (item) => typeof item.user_id === "string" && betaUserIds.has(item.user_id)
         )
       : providerUsage || [];
+  const architectFeedbackRows =
+    cohortScope === "beta"
+      ? (architectFeedback || []).filter(
+          (item) => typeof item.user_id === "string" && betaUserIds.has(item.user_id)
+        )
+      : architectFeedback || [];
 
   const usersFor = (...names: string[]) =>
     new Set(
@@ -165,6 +183,32 @@ export async function GET(request: Request) {
   const architectAppliedUsers = new Set(
     architectAppliedRows.map((item) => item.user_id)
   );
+
+  const positiveArchitectFeedback = architectFeedbackRows.filter(
+    (item) => item.verdict === "positive"
+  );
+  const negativeArchitectFeedback = architectFeedbackRows.filter(
+    (item) => item.verdict === "negative"
+  );
+  const reasonLabels: Record<string, string> = {
+    need_mismatch: "Compréhension du besoin",
+    copy: "Textes",
+    structure: "Structure / rubriques",
+    design: "Direction visuelle",
+    generic: "Trop générique",
+    other: "Autre"
+  };
+  const reasonCounts = new Map<string, number>();
+  for (const item of negativeArchitectFeedback) {
+    const reason = item.reason || "other";
+    reasonCounts.set(reason, (reasonCounts.get(reason) || 0) + 1);
+  }
+  const architectFeedbackReasons = [...reasonCounts.entries()]
+    .map(([reason, count]) => ({
+      reason: reasonLabels[reason] || reason,
+      count
+    }))
+    .sort((a, b) => b.count - a.count);
 
   const ratings = feedbackRows
     .map((item) => item.rating)
@@ -331,6 +375,20 @@ export async function GET(request: Request) {
             architectAppliedUsers.size,
             architectUsers.size
           ),
+          humanEvaluation: {
+            responses: architectFeedbackRows.length,
+            positive: positiveArchitectFeedback.length,
+            negative: negativeArchitectFeedback.length,
+            positiveRate: percent(
+              positiveArchitectFeedback.length,
+              architectFeedbackRows.length
+            ),
+            responseRate: percent(
+              architectFeedbackRows.length,
+              architectAttemptRows.length
+            ),
+            reasons: architectFeedbackReasons
+          },
           provider: {
             calls: providerRows.length,
             inputTokens: providerInputTokens,
@@ -380,6 +438,7 @@ export async function GET(request: Request) {
         architectApplicationRate: "Applications de propositions Premium rapportées au nombre de tentatives sur la période.",
         architectUserAdoptionRate: "Part des utilisateurs de l’Architecte Premium ayant appliqué au moins une proposition.",
         architectProviderUsage: "Télémétrie serveur limitée aux modèles, tokens et durées. Aucun prompt, brief, texte généré ou contenu client n’est enregistré.",
+        architectHumanEvaluation: "Évaluation structurée Oui / À améliorer et motif catégorisé. Aucun commentaire libre ni contenu du site n’est stocké dans cette mesure.",
         cohort: cohortScope === "beta"
           ? "Métriques limitées aux comptes explicitement marqués dans la cohorte bêta."
           : "Aucune cohorte bêta définie : métriques calculées sur l’ensemble des utilisateurs."
