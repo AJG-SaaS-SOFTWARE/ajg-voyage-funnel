@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  adminBootstrapPrivateStorage,
   adminSetFeedbackStatus,
   adminSetPlan,
   getAdminBetaMetrics,
@@ -40,6 +41,7 @@ export default function AdminPage() {
   const [feedback, setFeedback] = useState<AdminFeedback[]>([]);
   const [betaMetrics, setBetaMetrics] = useState<AdminBetaMetrics | null>(null);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
+  const [storageBootstrapping, setStorageBootstrapping] = useState(false);
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
 
@@ -74,6 +76,28 @@ export default function AdminPage() {
       setState("denied");
     });
   }, []);
+
+  const bootstrapPrivateStorage = async () => {
+    setMessage("");
+    setStorageBootstrapping(true);
+    try {
+      const result = await adminBootstrapPrivateStorage();
+      setReadiness(await getReleaseReadiness().catch(() => null));
+      setMessage(
+        result.created
+          ? "Storage privé initialisé et vérifié."
+          : "Storage privé déjà présent et vérifié."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Initialisation du Storage privé impossible."
+      );
+    } finally {
+      setStorageBootstrapping(false);
+    }
+  };
 
   const changeFeedback = async (
     id: string,
@@ -287,6 +311,16 @@ export default function AdminPage() {
                       <em>{readinessLabel[item.status]}</em>
                     </div>
                     <p>{item.detail}</p>
+                    {item.key === "bucket-site-private-media" && item.status === "blocker" ? (
+                      <button
+                        type="button"
+                        className="button secondary readiness-action"
+                        disabled={storageBootstrapping}
+                        onClick={() => void bootstrapPrivateStorage()}
+                      >
+                        {storageBootstrapping ? "Initialisation…" : "Initialiser le Storage privé"}
+                      </button>
+                    ) : null}
                   </article>
                 ))}
               </div>
