@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { freeEntitlements, getMyAiUsage, getMyEntitlements, getMyStorageUsage, type AiUsage, type StorageUsage, type SubscriptionEntitlements } from "../../lib/subscription";
+import { freeEntitlements, getMyAiUsage, getMySiteEntitlements, getMyStorageUsage, type AiUsage, type StorageUsage, type SubscriptionEntitlements } from "../../lib/subscription";
+import { getMySite } from "../../lib/supabase-site-repository";
 
 export default function PlansPage() {
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
@@ -10,7 +11,7 @@ export default function PlansPage() {
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
   const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
   useEffect(() => {
-    Promise.all([getMyEntitlements(), getMyAiUsage(), getMyStorageUsage()])
+    getMySite().then(site => Promise.all([site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements), getMyAiUsage(), getMyStorageUsage()]))
       .then(([entitlements, aiUsage, storageUsage]) => { setCurrent(entitlements); setUsage(aiUsage); setStorage(storageUsage); })
       .catch(() => setCurrent(freeEntitlements))
       .finally(() => setLoaded(true));
