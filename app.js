@@ -324,11 +324,11 @@
     submit.textContent = copy.sending;
 
     try {
-      const formData = new FormData(form);
-      const response = await fetch('/', {
+      const payload = Object.fromEntries(new FormData(form).entries());
+      const response = await fetch('/api/travel-presentation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(formData).toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
