@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const writableFields = {
   heroTagline: {
