@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { exportMySiteData, getMyBillingState, type BillingState } from "../../lib/billing-access";
+import { downloadMySiteExport, getMyBillingState, type BillingState } from "../../lib/billing-access";
 
 function date(value: string | null) {
   return value ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(value)) : "—";
