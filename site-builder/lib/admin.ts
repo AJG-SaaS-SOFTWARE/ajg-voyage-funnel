@@ -48,6 +48,24 @@ export async function getAdminBetaMetrics(): Promise<AdminBetaMetrics> {
   return body as AdminBetaMetrics;
 }
 
+export async function adminBootstrapPrivateStorage(): Promise<{ created: boolean; bucket: string }> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/storage-bootstrap", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(body?.error || "Initialisation du Storage privé impossible.");
+  }
+  return body as { created: boolean; bucket: string };
+}
+
 export type ReleaseReadinessCheck = {
   key: string;
   label: string;
