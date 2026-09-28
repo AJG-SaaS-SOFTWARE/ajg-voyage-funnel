@@ -868,6 +868,11 @@ export default function BuilderPage() {
         </div>
 
         <div className="topbar-account premium-topbar-account">
+          {ownedSites.length>1?<select aria-label="Site actif" value={remoteSiteId||""} onChange={async e=>{
+            const next=await getMySite(e.target.value);
+            if(!next)return;
+            setRemoteSiteId(next.id);setConfig(next.config);setPublished(next.status==="published");setSaved(true);
+          }}>{ownedSites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select>:null}
           <Link className="preview-shortcut" href="/preview">Aperçu</Link>
           <span className={"cloud-pill " + (remoteMode ? "online" : "local")}>
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
