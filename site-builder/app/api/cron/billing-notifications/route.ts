@@ -8,8 +8,8 @@ const copy: Record<string,{subject:string;body:string}> = {
  reminder_j3:{subject:"Rappel — règlement AJG Builder",body:"Votre règlement reste à régulariser. Votre site continue de fonctionner pendant la période de grâce."},
  reminder_j7:{subject:"Rappel — accès AJG Builder",body:"Votre règlement n’est pas encore régularisé. Pensez à mettre à jour votre moyen de paiement avant la fin de la période de grâce."},
  reminder_j12:{subject:"AJG Builder — restriction prochaine",body:"Sans régularisation, l’édition, les nouvelles publications, les imports et la collecte de nouveaux formulaires seront prochainement suspendus. Votre site public restera encore accessible pendant la période prévue."},
- retention_j74:{subject:"AJG Builder — vos données sont toujours conservées",body:"Votre site est suspendu, mais vos données sont toujours conservées et exportables. Vous pouvez encore régulariser votre abonnement ou récupérer vos données."},
- retention_j97:{subject:"AJG Builder — fin prochaine de la période de conservation",body:"La période de conservation arrive à son terme. Exportez vos données ou régularisez votre abonnement avant la date indiquée dans votre espace de facturation."},
+ retention_j74:{subject:"AJG Builder — vos données sont toujours conservées",body:"Votre site est suspendu, mais vos données restent conservées. Vous pouvez régulariser votre abonnement ou récupérer vos données depuis votre espace de facturation."},
+ retention_j97:{subject:"AJG Builder — rappel concernant vos données",body:"Votre site reste suspendu et vos données sont toujours conservées. Aucune suppression automatique n’est déclenchée par ce rappel. Vous pouvez régulariser votre abonnement ou préparer votre export depuis votre espace de facturation."},
  reactivated:{subject:"Votre site AJG Builder est réactivé",body:"Votre règlement a été confirmé. Les capacités de votre site et son accès public ont été rétablis."}
 };
 
