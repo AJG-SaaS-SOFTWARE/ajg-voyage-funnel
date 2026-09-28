@@ -135,6 +135,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ce champ n'est pas compatible avec l'assistant IA." }, { status: 400 });
   }
 
+  let siteId = typeof body?.siteId === "string" ? body.siteId : "";
+  if (!siteId) {
+    const { data: ownedSites, error: siteError } = await auth.supabase.from("sites").select("id").eq("owner_id", auth.user.id).limit(2);
+    if (siteError) return NextResponse.json({ error: "Impossible de vérifier les droits du site." }, { status: 503 });
+    if ((ownedSites || []).length !== 1) return NextResponse.json({ error: "Le site concerné doit être identifié pour utiliser l’IA." }, { status: 400 });
+    siteId = ownedSites![0].id;
+  }
+  const { data: capabilities, error: capabilityError } = await auth.supabase.rpc("get_my_site_capabilities", { p_site_id: siteId });
+  if (capabilityError) return NextResponse.json({ error: "Impossible de vérifier les droits du site." }, { status: 503 });
+  const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
+  if (!capability?.can_generate_ai) return NextResponse.json({ error: "Les fonctions IA sont temporairement indisponibles pour ce site. Vous pouvez régulariser l’accès depuis votre espace de facturation." }, { status: 402 });
+
   const instruction = clean(body?.instruction, 800);
   if (!instruction) {
     return NextResponse.json({ error: "Décrivez le texte que vous souhaitez obtenir." }, { status: 400 });
