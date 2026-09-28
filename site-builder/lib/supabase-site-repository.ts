@@ -312,9 +312,11 @@ export async function uploadContentAsset(file: File, siteId: string) {
   await assertStorageAllowance(siteId, file.size);
   const extension = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
   const objectPath = `${user.id}/${siteId}/library/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from("site-media").upload(objectPath, file, { contentType: file.type, cacheControl: "31536000" });
+  const { error } = await supabase.storage.from("site-private-media").upload(objectPath, file, { contentType: file.type, cacheControl: "3600" });
   if (error) throw error;
-  return supabase.storage.from("site-media").getPublicUrl(objectPath).data.publicUrl;
+  const { data: signed, error: signedError } = await supabase.storage.from("site-private-media").createSignedUrl(objectPath, 60 * 60);
+  if (signedError) throw signedError;
+  return signed.signedUrl;
 }
 
 
