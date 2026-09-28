@@ -688,7 +688,7 @@ export default function BuilderPage() {
       await saveQueue.current;
       saveDraft(config);
       if (remoteMode) {
-        const remote = await saveMySite(config, false);
+        const remote = await saveMySite(config, false, remoteSiteId || undefined);
         setRemoteSiteId(remote.id);
       }
       setSaved(true);
@@ -712,7 +712,7 @@ export default function BuilderPage() {
         const supabase = getSupabaseBrowserClient();
         const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
         if (!data.session?.access_token) throw new Error("Reconnectez-vous pour publier.");
-        const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false);
+        const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false, remoteSiteId || undefined);
         publishedSiteId = site.id;
         setRemoteSiteId(site.id);
         const promotedAssets = await Promise.all(config.contentLibrary.assets.map(async (asset) => {
@@ -727,7 +727,7 @@ export default function BuilderPage() {
           return { ...asset, url: result.url };
         }));
         publishConfig = { ...config, contentLibrary: { assets: promotedAssets } };
-        const remote = await saveMySite(publishConfig, true);
+        const remote = await saveMySite(publishConfig, true, publishedSiteId || undefined);
         publishedSiteId = remote.id;
         setRemoteSiteId(remote.id);
         setConfig(publishConfig);
@@ -783,7 +783,7 @@ export default function BuilderPage() {
     try {
       const site = remoteSiteId
         ? { id: remoteSiteId }
-        : await saveMySite(config, false);
+        : await saveMySite(config, false, remoteSiteId || undefined);
 
       if (!remoteSiteId) setRemoteSiteId(site.id);
 
@@ -791,7 +791,7 @@ export default function BuilderPage() {
       const nextConfig = { ...config, profileImageUrl: publicUrl };
       setConfig(nextConfig);
       saveDraft(nextConfig);
-      const savedRemote = await saveMySite(nextConfig, false);
+      const savedRemote = await saveMySite(nextConfig, false, remoteSiteId || undefined);
       setRemoteSiteId(savedRemote.id);
       setSaved(true);
     } catch (error) {
@@ -812,7 +812,7 @@ export default function BuilderPage() {
       const prepared = category === "background"
         ? await optimizeBackgroundImage(file)
         : { blob: await optimizeImage(file), focus: null };
-      const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false);
+      const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false, remoteSiteId || undefined);
       setRemoteSiteId(site.id);
       const url = await uploadSiteImage(prepared.blob, site.id, category);
       const design = category === "background"
@@ -1040,7 +1040,7 @@ export default function BuilderPage() {
               <>
                 <ContentLibraryEditor value={config.contentLibrary} onChange={(contentLibrary) => update("contentLibrary", contentLibrary)} onUpload={async (_asset, file) => {
                   if (!remoteMode) throw new Error("Connectez-vous pour importer un fichier.");
-                  const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false);
+                  const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false, remoteSiteId || undefined);
                   setRemoteSiteId(site.id);
                   return uploadContentAsset(file, site.id);
                 }} />
