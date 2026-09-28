@@ -66,6 +66,34 @@ export async function adminBootstrapPrivateStorage(): Promise<{ created: boolean
   return body as { created: boolean; bucket: string };
 }
 
+export type StorageE2EResult = {
+  ok: true;
+  siteId: string;
+  privateBucket: string;
+  privatePublicStatus: number;
+  promotedPublicStatus: number;
+  cleanupOk: boolean;
+};
+
+export async function adminRunStorageE2E(): Promise<StorageE2EResult> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/storage-e2e", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const stage = body?.stage ? ` (étape : ${body.stage})` : "";
+    throw new Error((body?.error || "Validation Storage impossible.") + stage);
+  }
+  return body as StorageE2EResult;
+}
+
 export type ReleaseReadinessCheck = {
   key: string;
   label: string;
