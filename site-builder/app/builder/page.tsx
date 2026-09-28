@@ -205,6 +205,7 @@ export default function BuilderPage() {
     };
   };
   const [architectProposal, setArchitectProposal] = useState<ArchitectProposal | null>(null);
+  const [architectClarifications, setArchitectClarifications] = useState<Record<string, string>>({});
   const [architectLoading, setArchitectLoading] = useState(false);
   const [revisionRequest, setRevisionRequest] = useState("");
   const [revisionProposal, setRevisionProposal] = useState<ArchitectProposal | null>(null);
@@ -459,8 +460,12 @@ export default function BuilderPage() {
     }
   };
 
-  const createSiteWithAi = async () => {
+  const createSiteWithAi = async (extraBrief = "") => {
     if (!architectBrief.trim()) return;
+    const briefForRequest = [architectBrief.trim(), extraBrief.trim()]
+      .filter(Boolean)
+      .join("\n\n")
+      .slice(0, 7000);
     const isRegeneration = architectProposal !== null;
     setArchitectLoading(true);
     setSyncError("");
@@ -478,12 +483,16 @@ export default function BuilderPage() {
           field: "siteArchitect",
           siteId: architectSiteId,
           instruction: "Construis une première proposition cohérente de site à partir du besoin décrit. N'invente aucune information absente. Utilise en priorité les contenus utilisateur publiables dont les droits sont connus et ne recommande jamais pour publication un média aux droits inconnus.",
-          context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, architectBrief, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, text: asset.kind === "text" ? asset.text : "", rights: asset.rights, publishable: asset.publishable, sourceUrl: asset.sourceUrl, notes: asset.notes })), siteContext: aiSiteContext }
+          context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, architectBrief: briefForRequest, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, text: asset.kind === "text" ? asset.text : "", rights: asset.rights, publishable: asset.publishable, sourceUrl: asset.sourceUrl, notes: asset.notes })), siteContext: aiSiteContext }
         })
       });
       const result = await response.json();
       if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
       setArchitectProposal(result.proposal);
+      if (extraBrief.trim()) {
+        setArchitectBrief(briefForRequest.slice(0, 4000));
+        setArchitectClarifications({});
+      }
       void trackProductEvent(isRegeneration ? "architect_regenerated" : "architect_generated", architectSiteId);
       if (result.proposal?.premiumAudit?.refinementApplied === true) {
         void trackProductEvent("architect_refined", architectSiteId);
@@ -493,6 +502,25 @@ export default function BuilderPage() {
     } finally {
       setArchitectLoading(false);
     }
+  };
+
+  const improveArchitectWithClarifications = async () => {
+    if (!architectProposal?.intelligence.missingInformation.length) return;
+    const answered = architectProposal.intelligence.missingInformation
+      .map((question) => ({
+        question,
+        answer: (architectClarifications[question] || "").trim()
+      }))
+      .filter((item) => item.answer);
+
+    if (!answered.length) return;
+
+    const extraBrief = [
+      "Informations complémentaires fournies après l'analyse du premier brief :",
+      ...answered.map((item) => `- ${item.question}\n  Réponse : ${item.answer}`)
+    ].join("\n");
+
+    await createSiteWithAi(extraBrief);
   };
 
   const requestGlobalRevision = async () => {
@@ -1124,7 +1152,7 @@ export default function BuilderPage() {
                       <span>ce que vous proposez · à qui · l’action attendue · ce qui vous différencie · le ton souhaité · les contraintes à respecter</span>
                     </div>
                     <label className="guided-question"><span>Votre besoin</span><textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." /></label>
-                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={createSiteWithAi}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
+                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={() => void createSiteWithAi()}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
                     {architectProposal ? (
                       <div className="ai-current-note architect-premium-result" role="status">
                         <div className="architect-result-heading">
@@ -1162,13 +1190,46 @@ export default function BuilderPage() {
                           {architectProposal.premiumAudit.strengths.length ? <small>Points forts : {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
                         </div>
                         {architectProposal.intelligence.missingInformation.length ? (
-                          <div className="architect-missing">
-                            <b>Pour aller encore plus loin</b>
-                            <p>L’IA n’a pas inventé les informations absentes. Vous pouvez les ajouter au brief puis demander une nouvelle proposition :</p>
-                            <ul>{architectProposal.intelligence.missingInformation.map((item) => <li key={item}>{item}</li>)}</ul>
+                          <div className="architect-missing architect-clarification">
+                            <b>L’Architecte a encore quelques questions</b>
+                            <p>
+                              Ces réponses sont facultatives. Répondez uniquement à ce que vous
+                              connaissez : l’IA réutilisera vos réponses pour reconstruire et
+                              réauditer la proposition sans inventer le reste.
+                            </p>
+                            <div className="architect-clarification-list">
+                              {architectProposal.intelligence.missingInformation.map((question, index) => (
+                                <label key={question}>
+                                  <span><i>{index + 1}</i>{question}</span>
+                                  <textarea
+                                    rows={2}
+                                    maxLength={500}
+                                    value={architectClarifications[question] || ""}
+                                    onChange={(event) =>
+                                      setArchitectClarifications((current) => ({
+                                        ...current,
+                                        [question]: event.target.value
+                                      }))
+                                    }
+                                    placeholder="Votre réponse, si vous la connaissez…"
+                                  />
+                                </label>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              className="button secondary architect-clarification-button"
+                              disabled={
+                                architectLoading ||
+                                !Object.values(architectClarifications).some((value) => value.trim())
+                              }
+                              onClick={() => void improveArchitectWithClarifications()}
+                            >
+                              {architectLoading ? "Nouvelle analyse en cours…" : "Améliorer avec mes réponses"}
+                            </button>
                           </div>
                         ) : null}
-                        <div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div>
+                        <div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={() => void createSiteWithAi()}>Nouvelle proposition</button></div>
                         <small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small>
                       </div>
                     ) : null}

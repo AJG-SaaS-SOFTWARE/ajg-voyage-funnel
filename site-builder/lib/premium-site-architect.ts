@@ -587,7 +587,7 @@ export async function generatePremiumSiteArchitect(
         "Act as a senior website strategist combining UX, information architecture, conversion design and editorial positioning.",
         "Diagnose the visitor need before any copy is written.",
         "Use only supplied facts. Never create evidence, credentials, numbers, offers, prices, testimonials or product capabilities.",
-        "When information is missing, identify it explicitly instead of guessing. Conservative assumptions are allowed only when they concern presentation or structure, never factual claims.",
+        "When information is missing, identify it explicitly instead of guessing. Every missingInformation item must be a short, concrete question addressed directly to the user in the requested site language. Ask only questions whose answer could materially improve the website. Conservative assumptions are allowed only when they concern presentation or structure, never factual claims.",
         "Recommend the smallest useful site architecture, not the largest.",
         "The result must be practical enough for a second model to create the website.",
         input.affiliationRules
