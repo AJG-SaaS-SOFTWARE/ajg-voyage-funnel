@@ -301,9 +301,7 @@ export async function POST(request: Request) {
     editorialContext ? `Relevant site context:\n${editorialContext}` : "",
     currentText ? `Current editable text: ${currentText}` : "No current text.",
     `User request: ${instruction}`,
-    field === "siteArchitect" || field === "siteRevision"
-      ? `Return ONLY valid JSON with this exact shape: {\"heroTagline\":\"\",\"heroTitle\":\"\",\"heroSubtitle\":\"\",\"aboutHeading\":\"\",\"aboutText\":\"\",\"bookingLabel\":\"\",\"recommendedModules\":[\"faq\",\"benefits\",\"contact\"],\"faq\":{\"title\":\"\",\"items\":[{\"question\":\"\",\"answer\":\"\"}]},\"benefits\":{\"title\":\"\",\"items\":[{\"title\":\"\",\"text\":\"\"}]},\"architecture\":{\"mode\":\"single\",\"pages\":[{\"id\":\"home\",\"slug\":\"\",\"title\":\"Accueil\",\"kind\":\"home\",\"purpose\":\"\",\"assetIds\":[]}]},\"design\":{\"layout\":\"classic\",\"heroLayout\":\"split\",\"contentWidth\":\"balanced\",\"accent\":\"#57d4c9\",\"background\":\"ivory\",\"pattern\":\"none\",\"patternStrength\":\"soft\"}}. Choose the information architecture first. architecture.mode must be single or multi. Propose 1 to 6 pages only when separate pages genuinely improve the visitor journey. Every page must have id, slug, title, kind, purpose and assetIds. assetIds may contain only IDs from user content that is explicitly publishable and has known rights. Assign assets only where they materially improve that page; never fabricate an asset ID. kind must be home, about, services, gallery, faq, contact or custom. There must be exactly one home page with an empty slug. Do not create pages just to make the site look larger. Do not invent content for pages that require missing evidence; the purpose may state what user-provided content is still needed. Choose the site composition too: layout must be classic, editorial, showcase or conversion; heroLayout must be split, centered or immersive; contentWidth must be compact, balanced or wide. Use editorial for story-led content, showcase for visual portfolios, conversion for focused lead generation, and classic for balanced general-purpose sites. Then choose design only from these safe values: accent must be one of #57d4c9, #e9ae65, #90b8ef, #d99bb2, #b8cb83, #264653, #2a9d8f, #e76f51, #6b705c, #111827; background must be ivory, sand, mist, sage or slate; pattern must be none, dots, lines, grid or rays; patternStrength must be soft or bold. Choose a restrained combination matching the requested tone. Use only recommendedModules from gallery, faq, testimonials, contact, video, figures, benefits. Recommend only modules justified by supplied information. Never fabricate testimonials, gallery images, videos, contact details, numbers, prices, savings, credentials or claims. FAQ answers and benefits must be supported by the brief. bookingLabel is only a label, never invent a booking URL. Write a polished first version, not hype. The user must review before applying.`
-      : field === "qualityReview"
+    field === "qualityReview"
       ? "Return ONLY valid JSON: {\"issues\":[{\"field\":\"heroTitle\",\"reason\":\"brief actionable reason\"}],\"suggestions\":{\"heroTitle\":\"corrected full field text\"}}. Allowed field keys: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText, bookingLabel. Check spelling, grammar, coherence between fields, redundant ideas, clarity of the visitor benefit, credibility of marketing language and the CTA. Prefer concrete natural wording over hype or generic claims. Include a suggestion only for an actual error or worthwhile editorial improvement. Maximum six issues. Preserve facts and never invent claims. If all is good, return empty arrays and object."
       : field === "guidedDraft"
       ? "Return ONLY valid JSON with keys heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText. Treat the guided answers as notes, not copy to paste. Turn even one or two keywords into fluent complete sentences, but never invent facts. Give each field a distinct role: heroTagline = very short mood/angle; heroTitle = clear memorable promise or point of view; heroSubtitle = 2 or 3 sentences explaining what the visitor will discover; aboutHeading = personal section title; aboutText = 70 to 130 words connecting the person's travel profile, discovery and motivation naturally. Use the audience answer only if it was supplied. Avoid repeating the same phrase, benefit or opening across fields. Every prose sentence must begin with a capital letter and be grammatically complete. Use a polished, natural, moderately formal register by default; the user can simplify it later."
@@ -333,7 +331,7 @@ export async function POST(request: Request) {
       input: prompt,
       reasoning: { effort: "low" },
       text: { verbosity: "low" },
-      max_output_tokens: field === "siteArchitect" ? 1100 : field === "guidedDraft" ? 650 : field === "qualityReview" ? 800 : field === "moduleDraft" ? 900 : field === "aboutText" ? 320 : 140
+      max_output_tokens: field === "guidedDraft" ? 650 : field === "qualityReview" ? 800 : field === "moduleDraft" ? 900 : field === "aboutText" ? 320 : 140
     })
   });
 
@@ -361,65 +359,6 @@ export async function POST(request: Request) {
       { error: "L'IA n'a pas renvoyé de texte exploitable. Reformulez votre demande." },
       { status: 502 }
     );
-  }
-
-  if (field === "siteArchitect" || field === "siteRevision") {
-    try {
-      const cleaned = text.replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, "");
-      const raw = JSON.parse(cleaned);
-      const allowedModules = ["gallery", "faq", "testimonials", "contact", "video", "figures", "benefits"];
-      const proposal = {
-        heroTagline: clean(raw.heroTagline, 90),
-        heroTitle: clean(raw.heroTitle, 90),
-        heroSubtitle: clean(raw.heroSubtitle, 420),
-        aboutHeading: clean(raw.aboutHeading, 100),
-        aboutText: clean(raw.aboutText, 1800),
-        bookingLabel: clean(raw.bookingLabel, 45),
-        architecture: (() => {
-          const allowedKinds = ["home","about","services","gallery","faq","contact","custom"];
-          const source = Array.isArray(raw.architecture?.pages) ? raw.architecture.pages.slice(0, 6) : [];
-          const clearedAssetIds = new Set((Array.isArray(context.contentLibrary) ? context.contentLibrary : []).filter((asset: any) => asset?.publishable && asset?.rights && asset.rights !== "unknown").map((asset: any) => clean(asset?.id, 80)).filter(Boolean));
-          const usedIds = new Set<string>();
-          const usedSlugs = new Set<string>();
-          let homeSeen = false;
-          const pages = source.map((page: any, index: number) => {
-            let kind = allowedKinds.includes(page?.kind) ? page.kind : "custom";
-            if (kind === "home") { if (homeSeen) kind = "custom"; else homeSeen = true; }
-            let id = clean(page?.id, 60) || `page-${index + 1}`;
-            const idBase = id; let idSuffix = 2; while (usedIds.has(id)) id = `${idBase}-${idSuffix++}`.slice(0, 60); usedIds.add(id);
-            let slug = kind === "home" ? "" : clean(page?.slug, 60).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || `page-${index + 1}`;
-            if (kind !== "home") { const slugBase = slug; let slugSuffix = 2; while (usedSlugs.has(slug)) slug = `${slugBase}-${slugSuffix++}`.slice(0, 60); usedSlugs.add(slug); }
-            const assetIds = [...new Set((Array.isArray(page?.assetIds) ? page.assetIds : []).map((id: unknown) => clean(id, 80)).filter((id: string) => clearedAssetIds.has(id)))].slice(0, 12);
-            return { id, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: kind === "home" ? true : page?.enabled !== false, assetIds };
-          });
-          if (!homeSeen) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] });
-          return { mode: raw.architecture?.mode === "multi" && pages.filter((page: any) => page.enabled).length > 1 ? "multi" : "single", pages };
-        })(),
-        design: {
-          layout: ["classic","editorial","showcase","conversion"].includes(raw.design?.layout) ? raw.design.layout : "classic",
-          heroLayout: ["split","centered","immersive"].includes(raw.design?.heroLayout) ? raw.design.heroLayout : "split",
-          contentWidth: ["compact","balanced","wide"].includes(raw.design?.contentWidth) ? raw.design.contentWidth : "balanced",
-          accent: ["#57d4c9","#e9ae65","#90b8ef","#d99bb2","#b8cb83","#264653","#2a9d8f","#e76f51","#6b705c","#111827"].includes(raw.design?.accent) ? raw.design.accent : "#57d4c9",
-          background: ["ivory","sand","mist","sage","slate"].includes(raw.design?.background) ? raw.design.background : "ivory",
-          pattern: ["none","dots","lines","grid","rays"].includes(raw.design?.pattern) ? raw.design.pattern : "none",
-          patternStrength: raw.design?.patternStrength === "bold" ? "bold" : "soft"
-        },
-        recommendedModules: (Array.isArray(raw.recommendedModules) ? raw.recommendedModules : []).filter((item: unknown) => typeof item === "string" && allowedModules.includes(item)).slice(0, 5),
-        faq: {
-          title: clean(raw.faq?.title, 100),
-          items: (Array.isArray(raw.faq?.items) ? raw.faq.items : []).slice(0, 6).map((item: any) => ({ question: clean(item?.question, 200), answer: clean(item?.answer, 1200) })).filter((item: any) => item.question && item.answer)
-        },
-        benefits: {
-          title: clean(raw.benefits?.title, 100),
-          items: (Array.isArray(raw.benefits?.items) ? raw.benefits.items : []).slice(0, 5).map((item: any) => ({ title: clean(item?.title, 100), text: clean(item?.text, 500) })).filter((item: any) => item.title && item.text)
-        }
-      };
-      if (!proposal.heroTitle || !proposal.heroSubtitle || !proposal.aboutText) throw new Error("Incomplete site proposal");
-      return NextResponse.json({ proposal });
-    } catch (error) {
-      console.error("Invalid site architect output", error);
-      return NextResponse.json({ error: "L'IA n'a pas pu structurer le site complet. Réessayez." }, { status: 502 });
-    }
   }
 
   if (field === "qualityReview") {
