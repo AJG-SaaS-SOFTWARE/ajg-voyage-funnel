@@ -50,3 +50,10 @@ export async function getAdminFeedback():Promise<AdminFeedback[]>{
  const {data,error}=await supabase.from("user_feedback").select("id,category,rating,message,status,created_at").order("created_at",{ascending:false}).limit(50);
  if(error)throw error;return (data||[]).map((x:any)=>({id:x.id,category:x.category,rating:x.rating,message:x.message,status:x.status,createdAt:x.created_at}));
 }
+
+
+export async function adminSetFeedbackStatus(id:string,status:"new"|"reviewed"|"planned"|"done"){
+ const supabase=getSupabaseBrowserClient();if(!supabase||!await isCurrentUserAdmin())throw new Error("Accès administrateur requis.");
+ const {error}=await supabase.from("user_feedback").update({status}).eq("id",id);
+ if(error)throw error;
+}
