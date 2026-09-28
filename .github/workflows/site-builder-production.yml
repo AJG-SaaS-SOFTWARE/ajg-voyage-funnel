@@ -47,6 +47,66 @@ jobs:
             -H "Accept: application/json" > /tmp/vercel-project.json
           echo "Vercel project API preflight passed." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Validate Vercel production environment keys
+        shell: bash
+        run: |
+          RESPONSE="$(curl --fail-with-body --silent --show-error \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?decrypt=false&teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Accept: application/json")"
+
+          printf '%s' "$RESPONSE" > /tmp/vercel-production-envs.json
+          node <<'NODE'
+          const fs = require("node:fs");
+          const payload = JSON.parse(fs.readFileSync("/tmp/vercel-production-envs.json", "utf8"));
+          const rows = Array.isArray(payload) ? payload : (payload.envs || payload.data || []);
+          const productionKeys = new Set(
+            rows
+              .filter((item) => Array.isArray(item.target) && item.target.includes("production"))
+              .map((item) => item.key)
+          );
+
+          const hasAny = (...keys) => keys.some((key) => productionKeys.has(key));
+          const blockers = [];
+          const warnings = [];
+
+          if (!productionKeys.has("NEXT_PUBLIC_SUPABASE_URL")) blockers.push("NEXT_PUBLIC_SUPABASE_URL");
+          if (!hasAny("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY")) {
+            blockers.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (ou NEXT_PUBLIC_SUPABASE_ANON_KEY)");
+          }
+          if (!hasAny("SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY")) {
+            blockers.push("SUPABASE_SECRET_KEY (ou SUPABASE_SERVICE_ROLE_KEY)");
+          }
+          if (!productionKeys.has("OPENAI_API_KEY")) blockers.push("OPENAI_API_KEY");
+          if (!productionKeys.has("NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN")) {
+            blockers.push("NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN");
+          }
+
+          for (const key of [
+            "RESEND_API_KEY",
+            "RESEND_FROM_EMAIL",
+            "CRON_SECRET",
+            "NEXT_PUBLIC_APP_URL",
+            "VERCEL_TOKEN",
+            "VERCEL_PROJECT_ID",
+            "VERCEL_TEAM_ID"
+          ]) {
+            if (!productionKeys.has(key)) warnings.push(key);
+          }
+
+          console.log("Production environment preflight:");
+          console.log("  blockers:", blockers.length ? blockers.join(", ") : "none");
+          console.log("  warnings:", warnings.length ? warnings.join(", ") : "none");
+          console.log("  BILLING_PROVIDER_WEBHOOK_SECRET: deferred until commercial activation");
+
+          if (blockers.length) {
+            console.error("Missing blocking Vercel Production environment keys: " + blockers.join(", "));
+            process.exit(1);
+          }
+          NODE
+
+          echo "Vercel Production environment blockers are configured." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Require release branch to match main
         if: github.ref == 'refs/heads/release/site-builder-production'
         run: |
