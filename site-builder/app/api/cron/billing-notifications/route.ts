@@ -16,7 +16,7 @@ const copy: Record<string,{subject:string;body:string}> = {
 export async function POST(request: Request) {
  const secret=process.env.CRON_SECRET;
  if(!secret || request.headers.get("authorization")!==`Bearer ${secret}`) return NextResponse.json({error:"Unauthorized"},{status:401});
- const url=process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY, resend=process.env.RESEND_API_KEY, from=process.env.RESEND_FROM_EMAIL, appUrl=(process.env.NEXT_PUBLIC_APP_URL||"").replace(/\/$/,"");
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY, resend=process.env.RESEND_API_KEY, from=process.env.RESEND_FROM_EMAIL, appUrl=(process.env.NEXT_PUBLIC_APP_URL||"").replace(/\/$/,"");
  if(!url||!serviceKey||!resend||!from) return NextResponse.json({error:"Notification service not configured"},{status:503});
  const supabase=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:jobs,error}=await supabase.rpc("claim_due_billing_notifications",{p_limit:20});
