@@ -703,12 +703,32 @@ export default function BuilderPage() {
     try {
       await saveQueue.current;
       let publishedSiteId = remoteSiteId;
+      let publishConfig = config;
       if (remoteMode) {
-        const remote = await saveMySite(config, true);
+        const supabase = getSupabaseBrowserClient();
+        const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+        if (!data.session?.access_token) throw new Error("Reconnectez-vous pour publier.");
+        const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false);
+        publishedSiteId = site.id;
+        setRemoteSiteId(site.id);
+        const promotedAssets = await Promise.all(config.contentLibrary.assets.map(async (asset) => {
+          if (!asset.publishable || asset.kind === "text" || !asset.url.startsWith("private://")) return asset;
+          const response = await fetch("/api/media/promote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+            body: JSON.stringify({ siteId: site.id, privateRef: asset.url, assetId: asset.id, rights: asset.rights, sourceUrl: asset.sourceUrl })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Impossible de préparer un média pour la publication.");
+          return { ...asset, url: result.url };
+        }));
+        publishConfig = { ...config, contentLibrary: { assets: promotedAssets } };
+        const remote = await saveMySite(publishConfig, true);
         publishedSiteId = remote.id;
         setRemoteSiteId(remote.id);
+        setConfig(publishConfig);
       }
-      publishDraft(config);
+      publishDraft(publishConfig);
       setSaved(true);
       setPublished(true);
       void trackProductEvent("publish_success", publishedSiteId);
