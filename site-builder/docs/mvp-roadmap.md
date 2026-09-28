@@ -232,7 +232,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Blocage actif immédiat : `VERCEL_TOKEN` n’est pas présent dans les secrets GitHub Actions du workflow de release. Tant que ce point n’est pas levé, aucune validation production, Storage privé ou E2E réelle ne doit être marquée terminée.
+Blocage actif immédiat : `VERCEL_TOKEN` est présent dans GitHub Actions, mais le token actuellement stocké ne passe pas l’identité CLI Vercel (`GET /v2/user` → 404). Remplacer ce secret par un Personal Access Token Vercel avec Scope = Full Account ; le workflow valide désormais ce prérequis avant toute installation/build. Tant que ce point n’est pas levé, aucune validation production, Storage privé ou E2E réelle ne doit être marquée terminée.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
