@@ -311,4 +311,6 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] RLS propriétaire du bucket privé préparées et imports de bibliothèque basculés vers des références privées stables ;
 - [x] bootstrap serveur one-shot préparé pour créer `site-private-media` via le SDK Storage, sans mutation directe de `storage.buckets` ;
 - [ ] exécuter le bootstrap après déploiement du `main`, vérifier le bucket privé réel, puis retirer `STORAGE_BOOTSTRAP_SECRET` ;
-- [ ] conserver le bucket public uniquement pour les assets réellement publiables et implémenter la promotion/copie d’un asset privé lors de sa publication ; les références `private://` sont déjà exclues du rendu public.
+- [x] promotion contrôlée privée → publique branchée à la publication : session + ownership + capacité de publication + droits/licence vérifiés côté serveur ;
+- [x] références `private://` exclues du rendu public et copie rendue répétable pour les republications ;
+- [ ] exécuter le bootstrap du bucket privé sur l’environnement déployé puis effectuer la recette réelle import privé → publication → URL publique.
