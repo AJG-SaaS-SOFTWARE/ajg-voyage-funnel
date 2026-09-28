@@ -270,7 +270,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] test transactionnel du passage `grace → public_suspended` et de la suspension publique ;
 - [x] écran propriétaire avec état et dates J14/J28/J104, export et emplacement de l’action de régularisation ; bouton paiement volontairement inactif avant Stripe ;
 - [x] export structuré JSON v2 derrière endpoint serveur authentifié : configuration, domaines, carnets, messages de contact et inventaire récursif des médias ;
-- [ ] export d’archive avec copie binaire des médias à ajouter avant lancement commercial ;
+- [x] export d’archive TAR.GZ avec copie binaire des médias publics et privés, manifeste JSON et rapport d’échec partiel ;
 - [x] file de notifications J0/J3/J7/J12/J74/J97 + réactivation, dédupliquée et avec worker Resend idempotent ; activation réelle après présence des secrets serveur et déploiement ;
 - [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
 - [x] primitive serveur de réactivation après paiement confirmé : droits, site public et relances rétablis/annulés de façon idempotente ; branchement fournisseur restant à faire ;
@@ -353,7 +353,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] CI indépendante : TypeScript + build Next.js verts sur les derniers changements fonctionnels ;
 - [x] sécurité DB : fonctions critiques impayés/queue exécutables uniquement par `service_role` ; audit RLS sans erreur ;
 - [x] multi-site : isolation DB + ciblage UI Builder/Domaines/Facturation/Offres ;
-- [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;
+- [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;\n- [x] récupération client : archive TAR.GZ streamée avec manifeste v3 et copie des médias publics/privés, sans nouvelle dépendance ;
 - [x] domaines : endpoints Vercel utilisés conformes à la documentation actuelle ;
 - [ ] Vercel : production encore bloquée sur l’ancien SHA `0b16e3b…`, donc aucune recette HTTP des nouveautés ne peut être déclarée terminée ;
 - [ ] Storage privé : bootstrap réel et recette import/promotion attendent ce déploiement ;
