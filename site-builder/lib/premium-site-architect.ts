@@ -11,6 +11,17 @@ export type PremiumArchitectAsset = {
   notes?: string;
 };
 
+export type PremiumArchitectUsage = {
+  operation: "premium_strategy" | "premium_creation" | "premium_review" | "premium_refinement";
+  model: string;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  totalTokens: number;
+  durationMs: number;
+};
+
 export type PremiumArchitectInput = {
   apiKey: string;
   mode: ArchitectMode;
@@ -25,6 +36,7 @@ export type PremiumArchitectInput = {
   editorialContext?: string;
   currentText?: string;
   contentLibrary?: PremiumArchitectAsset[];
+  onUsage?: (usage: PremiumArchitectUsage) => Promise<void> | void;
 };
 
 export type PremiumArchitectProposal = {
@@ -301,7 +313,10 @@ async function structuredResponse(args: {
   input: string;
   maxOutputTokens: number;
   effort: "low" | "medium";
+  operation: PremiumArchitectUsage["operation"];
+  onUsage?: PremiumArchitectInput["onUsage"];
 }) {
+  const startedAt = Date.now();
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -334,6 +349,30 @@ async function structuredResponse(args: {
       response.status,
       code
     );
+  }
+
+  if (args.onUsage) {
+    const usage = data?.usage || {};
+    try {
+      await args.onUsage({
+        operation: args.operation,
+        model: clean(data?.model, 100) || args.model,
+        inputTokens: Math.max(0, Number(usage?.input_tokens) || 0),
+        cachedInputTokens: Math.max(
+          0,
+          Number(usage?.input_tokens_details?.cached_tokens) || 0
+        ),
+        outputTokens: Math.max(0, Number(usage?.output_tokens) || 0),
+        reasoningTokens: Math.max(
+          0,
+          Number(usage?.output_tokens_details?.reasoning_tokens) || 0
+        ),
+        totalTokens: Math.max(0, Number(usage?.total_tokens) || 0),
+        durationMs: Math.max(0, Date.now() - startedAt)
+      });
+    } catch (error) {
+      console.warn("Premium Architect usage telemetry unavailable", error);
+    }
   }
 
   const text = extractText(data);
@@ -582,6 +621,8 @@ export async function generatePremiumSiteArchitect(
       schema: strategySchema as unknown as Record<string, unknown>,
       maxOutputTokens: 1300,
       effort: "medium",
+      operation: "premium_strategy",
+      onUsage: input.onUsage,
       instructions: [
         "You are the strategy layer of AJG Premium Site Architect.",
         "Act as a senior website strategist combining UX, information architecture, conversion design and editorial positioning.",
@@ -609,6 +650,8 @@ export async function generatePremiumSiteArchitect(
       schema: proposalSchema as unknown as Record<string, unknown>,
       maxOutputTokens: 3000,
       effort: "medium",
+      operation: "premium_creation",
+      onUsage: input.onUsage,
       instructions: [
         "You are AJG Premium Site Architect, an expert website creator for non-expert customers.",
         "Build a polished, credible website proposal from the approved strategy.",
@@ -638,6 +681,8 @@ export async function generatePremiumSiteArchitect(
     schema: reviewSchema as unknown as Record<string, unknown>,
     maxOutputTokens: 1200,
     effort: "low",
+    operation: "premium_review",
+    onUsage: input.onUsage,
     instructions: [
       "You are the independent QA critic for AJG Premium Site Architect.",
       "Audit the proposal against the source context and strategy.",
@@ -668,6 +713,8 @@ export async function generatePremiumSiteArchitect(
         schema: proposalSchema as unknown as Record<string, unknown>,
         maxOutputTokens: 3000,
         effort: "medium",
+        operation: "premium_refinement",
+        onUsage: input.onUsage,
         instructions: [
           "You are the final refinement layer of AJG Premium Site Architect.",
           "Return a complete corrected proposal, not a commentary.",

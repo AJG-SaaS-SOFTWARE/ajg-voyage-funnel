@@ -264,7 +264,33 @@ export async function POST(request: Request) {
         existingProposal,
         editorialContext,
         currentText,
-        contentLibrary: Array.isArray(context.contentLibrary) ? context.contentLibrary : []
+        contentLibrary: Array.isArray(context.contentLibrary) ? context.contentLibrary : [],
+        onUsage: async (usage) => {
+          const serviceKey =
+            process.env.SUPABASE_SECRET_KEY ||
+            process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          if (!serviceKey || !supabaseUrl) return;
+
+          const service = createClient(supabaseUrl, serviceKey, {
+            auth: { persistSession: false, autoRefreshToken: false }
+          });
+          const { error } = await service.from("ai_provider_usage").insert({
+            user_id: auth.user.id,
+            site_id: siteId,
+            operation: usage.operation,
+            model: usage.model,
+            input_tokens: usage.inputTokens,
+            cached_input_tokens: usage.cachedInputTokens,
+            output_tokens: usage.outputTokens,
+            reasoning_tokens: usage.reasoningTokens,
+            total_tokens: usage.totalTokens,
+            duration_ms: usage.durationMs
+          });
+          if (error) {
+            console.warn("AI provider usage telemetry insert failed", error.message);
+          }
+        }
       });
       return NextResponse.json({ proposal, premium: true });
     } catch (error) {

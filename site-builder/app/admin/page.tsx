@@ -627,6 +627,32 @@ export default function AdminPage() {
                     <small>{betaMetrics.ai.architect.applications} application{betaMetrics.ai.architect.applications > 1 ? "s" : ""} pour {betaMetrics.ai.architect.attempts} tentative{betaMetrics.ai.architect.attempts > 1 ? "s" : ""}</small>
                   </article>
                 </div>
+                <div className="premium-ai-provider">
+                  <div>
+                    <b>Empreinte technique Premium</b>
+                    <p>
+                      Mesure serveur sans prompt ni contenu client. Les prix ne sont volontairement
+                      pas figés ici : les tokens permettront de recalculer le coût avec le tarif
+                      fournisseur en vigueur au moment de la décision commerciale.
+                    </p>
+                  </div>
+                  <div className="premium-ai-provider-kpis">
+                    <span><b>{betaMetrics.ai.architect.provider.avgCallsPerAttempt}</b> appels modèle / tentative</span>
+                    <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.architect.provider.avgTokensPerAttempt)}</b> tokens / tentative</span>
+                    <span><b>{(betaMetrics.ai.architect.provider.avgDurationMsPerCall / 1000).toFixed(1)} s</b> / appel en moyenne</span>
+                    <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.architect.provider.cachedInputTokens)}</b> tokens d’entrée mis en cache</span>
+                  </div>
+                  {betaMetrics.ai.architect.provider.byModel.length ? (
+                    <div className="premium-ai-models">
+                      {betaMetrics.ai.architect.provider.byModel.map((item) => (
+                        <span key={item.model}>
+                          <b>{item.model}</b>
+                          {item.calls} appel{item.calls > 1 ? "s" : ""} · {new Intl.NumberFormat("fr-FR").format(item.totalTokens)} tokens
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <p className="plans-note">
                   Sur une petite cohorte, ces taux servent à détecter une tendance, pas à conclure
                   statistiquement. Une baisse des régénérations combinée à une hausse de l’adoption

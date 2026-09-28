@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_provider_usage: {
+        Row: {
+          cached_input_tokens: number
+          created_at: string
+          duration_ms: number
+          id: number
+          input_tokens: number
+          model: string
+          operation: string
+          output_tokens: number
+          reasoning_tokens: number
+          site_id: string | null
+          total_tokens: number
+          user_id: string
+        }
+        Insert: {
+          cached_input_tokens?: number
+          created_at?: string
+          duration_ms?: number
+          id?: never
+          input_tokens?: number
+          model: string
+          operation: string
+          output_tokens?: number
+          reasoning_tokens?: number
+          site_id?: string | null
+          total_tokens?: number
+          user_id: string
+        }
+        Update: {
+          cached_input_tokens?: number
+          created_at?: string
+          duration_ms?: number
+          id?: never
+          input_tokens?: number
+          model?: string
+          operation?: string
+          output_tokens?: number
+          reasoning_tokens?: number
+          site_id?: string | null
+          total_tokens?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_provider_usage_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_events: {
         Row: {
           created_at: string
