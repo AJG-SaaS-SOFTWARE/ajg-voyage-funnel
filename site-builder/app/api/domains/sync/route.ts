@@ -21,7 +21,15 @@ export async function POST(request:NextRequest){
  if(!res.ok && res.status!==400)return NextResponse.json({error:"Unable to attach domain",details:result},{status:502});
  const verify=await fetch(`https://api.vercel.com/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(domain.hostname)}/verify?teamId=${encodeURIComponent(team)}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"}});
  const verification=await verify.json().catch(()=>({}));
- const verified=Boolean(verification?.verified);
+ const ownershipVerified=Boolean(verification?.verified);
+ const configRes=await fetch(`https://api.vercel.com/v6/domains/${encodeURIComponent(domain.hostname)}/config?projectIdOrName=${encodeURIComponent(project)}&teamId=${encodeURIComponent(team)}`,{headers:{Authorization:`Bearer ${token}`,"Accept":"application/json"}});
+ const config=await configRes.json().catch(()=>({}));
+ const verified=ownershipVerified&&configRes.ok&&config?.misconfigured===false;
+ const dnsInstructions:Array<{type?:string;domain?:string;value?:string;reason?:string}>=[];
+ const addValues=(type:string,items:unknown)=>{if(!Array.isArray(items))return;for(const item of items){const value=typeof item==="string"?item:(item as any)?.value||(item as any)?.target||(item as any)?.cname||(item as any)?.address;if(value)dnsInstructions.push({type,domain:domain.hostname,value:String(value)});}};
+ addValues("CNAME",config?.recommendedCNAME);
+ addValues("A",config?.recommendedIPv4);
+ if(config?.misconfigured===true&&!dnsInstructions.length)dnsInstructions.push({type:"DNS",domain:domain.hostname,reason:"Configuration DNS Vercel encore incomplète."});
  const service=createClient(url,serverKey,{auth:{persistSession:false,autoRefreshToken:false}});
  if(verified){
    if(domain.kind==="custom_domain"){
@@ -39,5 +47,5 @@ export async function POST(request:NextRequest){
  }else{
    await service.from("domains").update({verification_status:"pending",is_primary:false}).eq("id",domain.id);
  }
- return NextResponse.json({ok:true,verified,verification:verified?[]:(verification?.verification||result?.verification||[])});
+ return NextResponse.json({ok:true,verified,ownershipVerified,misconfigured:config?.misconfigured??null,verification:verified?[]:(dnsInstructions.length?dnsInstructions:(verification?.verification||result?.verification||[]))});
 }
