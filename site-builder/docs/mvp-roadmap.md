@@ -342,3 +342,9 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] sélecteur de site ajouté au Builder pour les comptes possédant plusieurs sites ;
 - [x] Domaines, Facturation/Récupération et Offres/quotas ciblent le site sélectionné ;
 - [ ] création d’un site supplémentaire volontairement différée jusqu’à validation du nombre de sites inclus par offre commerciale.
+
+### Résilience facturation — recette complémentaire
+- [x] les échecs de paiement répétés ne redémarrent plus J0/J14/J28 et ne peuvent plus faire repasser un site restreint en grâce ; test transactionnel validé ;
+- [x] les notifications restées `processing` après interruption d’un worker sont récupérées après 30 minutes, dans la limite de 5 tentatives ; test transactionnel validé ;
+- [x] webhook provider limité à 64 Ko, timestamps validés et longueurs d’identifiants bornées ;
+- [x] audit sécurité Supabase après modifications : aucun défaut SQL/RLS, seul le contrôle de mots de passe compromis reste indisponible tant que le projet n’est pas sur Supabase Pro.
