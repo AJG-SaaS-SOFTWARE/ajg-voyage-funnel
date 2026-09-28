@@ -45,7 +45,12 @@ export async function POST(request:NextRequest){
  const dnsInstructions:Array<{type?:string;domain?:string;value?:string;reason?:string}>=[];
  const addValues=(type:string,items:unknown)=>{if(!Array.isArray(items))return;for(const item of items){const value=typeof item==="string"?item:(item as any)?.value||(item as any)?.target||(item as any)?.cname||(item as any)?.address;if(value)dnsInstructions.push({type,domain:domain.hostname,value:String(value)});}};
  addValues("CNAME",config?.recommendedCNAME);
- addValues("A",config?.recommendedIPv4);
+ if(domain.kind==="custom_domain"&&!domain.hostname.includes("."))addValues("A",config?.recommendedIPv4);
+ if(domain.kind==="managed_subdomain"&&dnsInstructions.length>1){
+   const projectSpecific=dnsInstructions.find(item=>item.type==="CNAME"&&item.value?.includes(".vercel-dns-"));
+   if(projectSpecific){dnsInstructions.splice(0,dnsInstructions.length,projectSpecific);}
+   else{dnsInstructions.splice(1);}
+ }
  if(config?.misconfigured===true&&!dnsInstructions.length)dnsInstructions.push({type:"DNS",domain:domain.hostname,reason:"Configuration DNS Vercel encore incomplète."});
  const service=createClient(url,serverKey,{auth:{persistSession:false,autoRefreshToken:false}});
  if(verified){
