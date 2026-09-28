@@ -231,6 +231,7 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 
 ### Itération 6B — bêta mesurée
 - [x] instrumentation first-party et feedback déjà disponibles ;
+- [x] dashboard bêta admin prêt : funnel utilisateurs distincts, usage IA réel, abandons descriptifs, feedback et activité par site sur 30 jours ;
 - [ ] faire tester 5 à 10 comptes réels ;
 - [ ] mesurer activation, publication, usage IA, abandons et retours ;
 - [ ] corriger uniquement les frictions confirmées par ces observations.
