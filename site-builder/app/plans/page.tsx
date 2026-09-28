@@ -25,11 +25,11 @@ export default function PlansPage() {
     </section>
     {loaded ? <section className="usage-card" aria-label="Utilisation IA"><div><p className="eyebrow">Votre utilisation</p><h2>{usage.month} / {current.aiMonthlyLimit} générations IA ce mois-ci</h2><p>{usage.today} / {current.aiDailyLimit} aujourd’hui · limite instantanée {current.aiMinuteLimit}/min</p></div><progress max={current.aiMonthlyLimit} value={Math.min(usage.month,current.aiMonthlyLimit)} aria-label="Quota IA mensuel utilisé" /></section> : null}
     {loaded ? <section className="usage-card" aria-label="Utilisation stockage"><div><p className="eyebrow">Stockage</p><h2>{(storage.usedBytes / 1024 / 1024).toFixed(storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} Mo / {storage.limitMb} Mo</h2><p>Photos, images, audio et documents importés dans AJG.</p></div><progress max={storage.limitMb * 1024 * 1024} value={Math.min(storage.usedBytes,storage.limitMb * 1024 * 1024)} aria-label="Quota de stockage utilisé" /></section> : null}
-    <section className="plans-grid" aria-label="Offres">
+    {loaded && !["active","trialing"].includes(current.status) ? <section className="usage-card" role="status"><div><p className="eyebrow">Abonnement à régulariser</p><h2>Les fonctions Premium sont temporairement désactivées</h2><p>Vous conservez l’accès à votre espace et à vos données. Une nouvelle publication est bloquée jusqu’à régularisation ; les modalités définitives de grâce et de suspension seront appliquées lors de la connexion du paiement.</p></div></section> : null}\n    <section className="plans-grid" aria-label="Offres">
       <article className={current.planKey === "free" ? "plan-card current" : "plan-card"}>
         <p className="eyebrow">Gratuit</p><h2>Créer et tester</h2>
         <ul><li>Site et sous-domaine géré</li><li>80 générations IA / mois</li><li>250 Mo de stockage</li><li>Édition et publication essentielles</li></ul>
-        <p className="plan-status">{loaded && current.planKey === "free" ? "Votre offre actuelle" : "Offre disponible"}</p>
+        <p className="plan-status">{loaded && current.planKey === "free" ? (["active","trialing"].includes(current.status) ? "Votre offre actuelle" : `Accès de repli · statut ${current.status}`) : "Offre disponible"}</p>
       </article>
       <article className={current.planKey === "pro" ? "plan-card current" : "plan-card"}>
         <p className="eyebrow">Pro</p><h2>Créer avec l’IA avancée</h2>
