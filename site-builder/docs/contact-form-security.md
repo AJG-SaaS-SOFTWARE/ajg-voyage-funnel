@@ -1,0 +1,1 @@
+Contact form security plan: server-side validation, same-origin checks, honeypot, minimum-fill-time heuristic, database rate limiting, owner-only inbox access through RLS, and data minimisation. No payment or commercial activation is involved.
