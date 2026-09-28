@@ -348,3 +348,15 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] les notifications restées `processing` après interruption d’un worker sont récupérées après 30 minutes, dans la limite de 5 tentatives ; test transactionnel validé ;
 - [x] webhook provider limité à 64 Ko, timestamps validés et longueurs d’identifiants bornées ;
 - [x] audit sécurité Supabase après modifications : aucun défaut SQL/RLS, seul le contrôle de mots de passe compromis reste indisponible tant que le projet n’est pas sur Supabase Pro.
+
+### Release gate — état courant
+- [x] CI indépendante : TypeScript + build Next.js verts sur les derniers changements fonctionnels ;
+- [x] sécurité DB : fonctions critiques impayés/queue exécutables uniquement par `service_role` ; audit RLS sans erreur ;
+- [x] multi-site : isolation DB + ciblage UI Builder/Domaines/Facturation/Offres ;
+- [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;
+- [x] domaines : endpoints Vercel utilisés conformes à la documentation actuelle ;
+- [ ] Vercel : production encore bloquée sur l’ancien SHA `0b16e3b…`, donc aucune recette HTTP des nouveautés ne peut être déclarée terminée ;
+- [ ] Storage privé : bootstrap réel et recette import/promotion attendent ce déploiement ;
+- [ ] secrets de production : validation/configuration côté Vercel attendue, le connecteur actuel ne permet pas leur gestion ;
+- [ ] paiement réel : volontairement non activé avant validation prix/périodicité/essai et nombre de sites inclus par offre ;
+- [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
