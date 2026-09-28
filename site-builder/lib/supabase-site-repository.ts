@@ -129,8 +129,8 @@ async function ensureManagedDomain(siteId: string, slug: string) {
     site_id: siteId,
     hostname,
     kind: "managed_subdomain",
-    verification_status: managedSubdomainsEnabled ? "verified" : "pending",
-    is_primary: managedSubdomainsEnabled
+    verification_status: "pending",
+    is_primary: false
   });
 
   if (error) throw error;
@@ -345,13 +345,15 @@ export async function requestCustomDomain(hostname: string, siteId?: string): Pr
   return { id: row.id, hostname: row.hostname, kind: "custom_domain", verificationStatus: row.verification_status as SiteDomain["verificationStatus"], isPrimary: row.is_primary };
 }
 
-export async function syncCustomDomain(siteId:string,domainId:string){
+export async function syncSiteDomain(siteId:string,domainId:string){
  const supabase=getSupabaseBrowserClient();if(!supabase)throw new Error("Supabase n'est pas configuré.");
  const {data}=await supabase.auth.getSession();if(!data.session?.access_token)throw new Error("Reconnectez-vous pour vérifier le domaine.");
  const response=await fetch("/api/domains/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${data.session.access_token}`},body:JSON.stringify({siteId,domainId})});
  const result=await response.json();if(!response.ok)throw new Error(result.error||"Vérification du domaine impossible.");
  return result as {ok:boolean;verified:boolean;verification:Array<{type?:string;domain?:string;value?:string;reason?:string}>};
 }
+
+export const syncCustomDomain = syncSiteDomain;
 
 export async function removeCustomDomain(id: string) {
   const supabase = getSupabaseBrowserClient();
