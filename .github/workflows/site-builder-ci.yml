@@ -1,5 +1,9 @@
 name: Site Builder CI
 
+concurrency:
+  group: site-builder-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
