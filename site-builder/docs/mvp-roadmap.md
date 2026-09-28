@@ -275,4 +275,6 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] primitive serveur de réactivation après paiement confirmé : droits, site public et relances rétablis/annulés de façon idempotente ; branchement fournisseur restant à faire ;
 - [ ] recette temporelle complète : J13, J14, J28/J104, réactivation, isolation de deux sites et blocage d’un UPDATE direct vérifiés transactionnellement ; appels HTTP de production et paiement fournisseur à finaliser avec le déploiement ;
 - [x] RLS durcies : un site suspendu n’est plus lisible anonymement via Data API et les mutations directes sites/drafts/domaines/Storage sont bloquées à partir de J14 ;
+- [x] formulaire anonyme retesté : accès minimal au schéma privé corrigé, soumission active validée et rejet J14 validé ;
+- [x] événements de facturation désormais ciblables par site : un impayé sur le site A ne suspend pas le site B du même propriétaire ;
 - [ ] validation production après réouverture du pipeline Vercel.
