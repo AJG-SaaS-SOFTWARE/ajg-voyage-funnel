@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   adminBootstrapPrivateStorage,
+  adminRunBuilderE2E,
   adminRunStorageE2E,
   adminSetFeedbackStatus,
   adminSetPlan,
@@ -17,6 +18,7 @@ import {
   type AdminFeedback,
   type AdminMetrics,
   type AdminSiteRow,
+  type BuilderE2EResult,
   type ReleaseReadiness,
   type ReleaseReadinessCheck
 } from "../../lib/admin";
@@ -46,6 +48,9 @@ export default function AdminPage() {
   const [storageTesting, setStorageTesting] = useState(false);
   const [storageTestMessage, setStorageTestMessage] = useState("");
   const [storageTestOk, setStorageTestOk] = useState<boolean | null>(null);
+  const [builderE2ERunning, setBuilderE2ERunning] = useState(false);
+  const [builderE2EResult, setBuilderE2EResult] = useState<BuilderE2EResult | null>(null);
+  const [builderE2EError, setBuilderE2EError] = useState("");
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
 
@@ -124,6 +129,24 @@ export default function AdminPage() {
       );
     } finally {
       setStorageTesting(false);
+    }
+  };
+
+  const runBuilderE2E = async () => {
+    setMessage("");
+    setBuilderE2EError("");
+    setBuilderE2EResult(null);
+    setBuilderE2ERunning(true);
+    try {
+      const result = await adminRunBuilderE2E(true);
+      setBuilderE2EResult(result);
+      await load();
+    } catch (error) {
+      setBuilderE2EError(
+        error instanceof Error ? error.message : "Recette E2E impossible."
+      );
+    } finally {
+      setBuilderE2ERunning(false);
     }
   };
 
@@ -388,6 +411,62 @@ export default function AdminPage() {
               back-office demeure utilisable.
             </p>
           )}
+        </section>
+      ) : null}
+
+      {state === "ready" ? (
+        <section className="panel admin-readiness">
+          <div className="admin-readiness-heading">
+            <div>
+              <p className="eyebrow">Recette E2E</p>
+              <h2>Parcours Builder complet</h2>
+              <p>
+                Crée un site temporaire isolé, consomme une génération AI Site Architect,
+                teste un média privé, publie, contrôle le rendu public, enregistre un feedback,
+                génère l’archive de récupération puis supprime toutes les données temporaires.
+              </p>
+            </div>
+          </div>
+          <div className="builder-actions">
+            <button
+              type="button"
+              className="button primary"
+              disabled={builderE2ERunning}
+              onClick={() => void runBuilderE2E()}
+            >
+              {builderE2ERunning
+                ? "Recette E2E en cours…"
+                : builderE2EResult
+                  ? "Recette E2E validée ✓"
+                  : "Lancer la recette E2E complète"}
+            </button>
+          </div>
+          <p className="admin-readiness-meta">
+            Ce contrôle consomme exactement une génération IA réelle. Le site, le domaine,
+            le feedback et les médias de test sont supprimés à la fin ; la consommation IA
+            reste comptabilisée normalement.
+          </p>
+          {builderE2EError ? (
+            <p className="plans-note" role="alert" data-state="error">
+              {builderE2EError}
+            </p>
+          ) : null}
+          {builderE2EResult ? (
+            <div className="readiness-list">
+              {builderE2EResult.steps.map((item) => (
+                <article
+                  className={"readiness-row " + (item.status === "pass" ? "pass" : "deferred")}
+                  key={item.key}
+                >
+                  <div className="readiness-row-heading">
+                    <span><b>{item.label}</b><small>E2E</small></span>
+                    <em>{item.status === "pass" ? "Validé" : "Ignoré"}</em>
+                  </div>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </section>
       ) : null}
 
