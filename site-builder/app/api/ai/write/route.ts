@@ -84,8 +84,8 @@ async function authenticatedContext(request: Request) {
   return { user: data.user, supabase };
 }
 
-async function consumeAiAllowance(supabase: any) {
-  const { data, error } = await supabase.rpc("consume_my_ai_generation");
+async function consumeAiAllowance(supabase: any, siteId: string) {
+  const { data, error } = await supabase.rpc("consume_my_site_ai_generation", { p_site_id: siteId });
   if (error) throw error;
   return typeof data === "string" ? data : "unavailable";
 }
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
 
   let allowance: string;
   try {
-    allowance = await consumeAiAllowance(auth.supabase);
+    allowance = await consumeAiAllowance(auth.supabase, siteId);
   } catch (error) {
     console.error("AI allowance check failed", error);
     return NextResponse.json({ error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." }, { status: 503 });
@@ -241,7 +241,7 @@ export async function POST(request: Request) {
   }
 
   if (field === "siteArchitect" || field === "siteRevision") {
-    const { data: entitlements, error: entitlementError } = await auth.supabase.rpc("get_my_entitlements");
+    const { data: entitlements, error: entitlementError } = await auth.supabase.rpc("get_my_site_entitlements", { p_site_id: siteId });
     if (entitlementError) return NextResponse.json({ error: "Impossible de vérifier votre offre." }, { status: 503 });
     const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
     if (entitlement?.premium_architect !== true) return NextResponse.json({ error: "AI Site Architect est disponible avec l’offre Pro." }, { status: 403 });
