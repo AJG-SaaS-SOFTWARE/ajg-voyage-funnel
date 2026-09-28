@@ -25,12 +25,20 @@ export async function GET(request: Request) {
  if(capError||!cap?.can_export) return NextResponse.json({error:"Export unavailable"},{status:403});
  const service=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
  const prefix=`${user.id}/${site.id}`;
- const listed=await service.storage.from("site-media").list(prefix,{limit:1000,sortBy:{column:"name",order:"asc"}});
- const media=(listed.data||[]).filter(item=>item.name&&item.id).map(item=>{
-   const path=`${prefix}/${item.name}`;
-   const {data}=service.storage.from("site-media").getPublicUrl(path);
-   return {path,name:item.name,size:item.metadata?.size??null,mimeType:item.metadata?.mimetype??null,url:data.publicUrl};
- });
+ async function walk(folder:string): Promise<Array<{path:string;name:string;size:number|null;mimeType:string|null;url:string}>> {
+   const {data,error}=await service.storage.from("site-media").list(folder,{limit:1000,sortBy:{column:"name",order:"asc"}});
+   if(error) throw error;
+   const out:Array<{path:string;name:string;size:number|null;mimeType:string|null;url:string}>=[];
+   for(const item of data||[]){
+     const path=`${folder}/${item.name}`;
+     if(item.id){
+       const {data:publicData}=service.storage.from("site-media").getPublicUrl(path);
+       out.push({path,name:item.name,size:item.metadata?.size??null,mimeType:item.metadata?.mimetype??null,url:publicData.publicUrl});
+     } else out.push(...await walk(path));
+   }
+   return out;
+ }
+ const media=await walk(prefix);
  const {data:domains}=await service.from("domains").select("hostname,kind,verification_status,is_primary").eq("site_id",site.id);
  return NextResponse.json({format:"ajg-builder-export-v2",exportedAt:new Date().toISOString(),site:{id:site.id,slug:site.slug,status:site.status,updatedAt:site.updated_at,config:{slug:site.slug,firstName:site.first_name,lastName:site.last_name,brandName:site.brand_name,heroTitle:site.hero_title,heroSubtitle:site.hero_subtitle,heroTagline:site.hero_tagline,aboutText:site.about_text,aboutHeading:site.about_heading,bookingLabel:site.booking_label,bookingUrl:site.booking_url,instagramUrl:site.instagram_url,facebookUrl:site.facebook_url,profileImageUrl:site.profile_image_url,showTravelJournals:site.show_travel_journals,primaryLanguage:site.primary_language,enabledLanguages:site.enabled_languages,designAssets:site.design_assets,legalConfig:site.legal_config,complianceProfile:site.compliance_profile}},domains:domains||[],media,note:"Export de récupération : configuration, domaines et inventaire des médias conservés. Les URL média permettent de récupérer les fichiers tant qu’ils restent conservés."},{headers:{"Cache-Control":"private, no-store"}});
 }
