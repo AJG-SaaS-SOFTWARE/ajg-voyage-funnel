@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublishedSite from "../../../../../components/PublishedSite";
 import { getPublicSite, publicSiteUrl } from "../../../../../lib/public-site";
+import { publicRouteBase } from "../../../../../lib/public-request";
 
 export const dynamic = "force-dynamic";
 
@@ -19,5 +20,5 @@ export default async function SiteSubPage({ params }: { params: Promise<{ slug: 
   const { slug, pageSlug } = await params;
   const site = await getPublicSite(slug);
   if (!site || site.config.architecture.mode !== "multi" || !site.config.architecture.pages.some((page) => page.enabled && page.slug === pageSlug)) notFound();
-  return <PublishedSite config={site.config} pageSlug={pageSlug} />;
+  return <PublishedSite config={site.config} pageSlug={pageSlug} routeBase={await publicRouteBase(slug)} />;
 }
