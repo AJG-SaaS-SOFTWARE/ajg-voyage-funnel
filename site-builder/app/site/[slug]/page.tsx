@@ -25,7 +25,7 @@ export async function generateMetadata({
   const description =
     site.config.heroSubtitle ||
     `Découvrez le site de ${site.config.firstName} ${site.config.lastName}.`;
-  const canonical = publicSiteUrl(slug);
+  const canonical = await publicSiteUrl(site.id, slug);
 
   return {
     title,
