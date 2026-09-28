@@ -30,6 +30,8 @@ export async function POST(request:NextRequest){
  const ext=(source.split(".").pop()||"bin").replace(/[^a-z0-9]/gi,"").toLowerCase();
  const destination=`${user.id}/${body.siteId}/published/${body.assetId}.${ext}`;
  const service=createClient(url,serverKey,{auth:{persistSession:false,autoRefreshToken:false}});
+ const {error:removeError}=await service.storage.from("site-media").remove([destination]);
+ if(removeError && !/not found/i.test(removeError.message)) return NextResponse.json({error:"Unable to prepare media destination"},{status:500});
  const {error:copyError}=await service.storage.from("site-private-media").copy(source,destination,{destinationBucket:"site-media"});
  if(copyError)return NextResponse.json({error:"Unable to promote media"},{status:500});
  const publicUrl=service.storage.from("site-media").getPublicUrl(destination).data.publicUrl;
