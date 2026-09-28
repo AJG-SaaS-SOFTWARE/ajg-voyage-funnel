@@ -60,6 +60,7 @@ export async function getPublicSite(slug: string): Promise<PublicSiteRecord | nu
     .select("*")
     .eq("slug", slug)
     .eq("status", "published")
+    .eq("public_access_state", "live")
     .maybeSingle();
 
   if (error) throw error;
@@ -83,7 +84,7 @@ export async function getPublicSiteByHostname(hostname: string): Promise<PublicS
   const { data: domain, error: domainError } = await supabase.from("domains").select("site_id").eq("hostname", normalized).eq("verification_status", "verified").eq("is_primary", true).maybeSingle();
   if (domainError) throw domainError;
   if (!domain) return null;
-  const { data, error } = await supabase.from("sites").select("*").eq("id", domain.site_id).eq("status", "published").maybeSingle();
+  const { data, error } = await supabase.from("sites").select("*").eq("id", domain.site_id).eq("status", "published").eq("public_access_state", "live").maybeSingle();
   if (error) throw error;
   return data ? { id: data.id, slug: data.slug, config: configFromRow(data), publishedAt: data.published_at, updatedAt: data.updated_at } : null;
 }
