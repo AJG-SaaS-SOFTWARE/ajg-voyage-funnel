@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, type User } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { appBaseUrl } from "../../../../lib/app-url";
 
 export const runtime = "nodejs";
@@ -23,7 +23,11 @@ function member(user: User) {
   };
 }
 
-async function requireAdmin(request: Request) {
+type AdminContext =
+  | { ok: false; response: NextResponse }
+  | { ok: true; service: SupabaseClient };
+
+async function requireAdmin(request: Request): Promise<AdminContext> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishable =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -33,12 +37,12 @@ async function requireAdmin(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !publishable || !serviceKey) {
-    return { response: NextResponse.json({ error: "Admin unavailable" }, { status: 503 }) };
+    return { ok: false, response: NextResponse.json({ error: "Admin unavailable" }, { status: 503 }) };
   }
 
   const token = bearer(request);
   if (!token) {
-    return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+    return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
   const userClient = createClient(url, publishable, {
@@ -52,7 +56,7 @@ async function requireAdmin(request: Request) {
   } = await userClient.auth.getUser(token);
 
   if (userError || !user) {
-    return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+    return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
   const { data: role, error: roleError } = await userClient
@@ -62,17 +66,17 @@ async function requireAdmin(request: Request) {
     .maybeSingle();
 
   if (roleError || role?.role !== "admin") {
-    return { response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+    return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
   const service = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
-  return { service };
+  return { ok: true, service };
 }
 
-async function listBetaUsers(service: ReturnType<typeof createClient>) {
+async function listBetaUsers(service: SupabaseClient) {
   const { data, error } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (error) throw error;
   return (data.users || []).filter((user) => user.app_metadata?.ajg_beta === true);
@@ -80,7 +84,7 @@ async function listBetaUsers(service: ReturnType<typeof createClient>) {
 
 export async function GET(request: Request) {
   const auth = await requireAdmin(request);
-  if ("response" in auth) return auth.response;
+  if (!auth.ok) return auth.response;
 
   try {
     const users = await listBetaUsers(auth.service);
@@ -100,7 +104,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const auth = await requireAdmin(request);
-  if ("response" in auth) return auth.response;
+  if (!auth.ok) return auth.response;
 
   const body = await request.json().catch(() => null);
   const email =
@@ -199,7 +203,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const auth = await requireAdmin(request);
-  if ("response" in auth) return auth.response;
+  if (!auth.ok) return auth.response;
 
   const body = await request.json().catch(() => null);
   const userId = typeof body?.userId === "string" ? body.userId : "";
