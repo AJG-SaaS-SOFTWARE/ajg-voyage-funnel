@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!site) return { title: "Site introuvable", robots: { index: false, follow: false } };
   return {
     title: `Mentions légales | ${site.config.brandName}`,
-    alternates: { canonical: `${publicSiteUrl(slug)}/mentions-legales` },
+    alternates: { canonical: `${await publicSiteUrl(site.id, slug)}/mentions-legales` },
     robots: { index: false, follow: true }
   };
 }

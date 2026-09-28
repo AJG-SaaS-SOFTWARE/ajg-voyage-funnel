@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!site || !page || site.config.architecture.mode !== "multi") return { title: "Page introuvable | AJG Site Builder", robots: { index: false, follow: false } };
   const title = `${page.title} | ${site.config.brandName}`;
   const description = site.config.heroSubtitle || site.config.aboutText.slice(0, 160);
-  return { title, description, alternates: { canonical: `${publicSiteUrl(slug)}/p/${encodeURIComponent(pageSlug)}` }, robots: { index: true, follow: true } };
+  return { title, description, alternates: { canonical: `${await publicSiteUrl(site.id, slug)}/p/${encodeURIComponent(pageSlug)}` }, robots: { index: true, follow: true } };
 }
 
 export default async function SiteSubPage({ params }: { params: Promise<{ slug: string; pageSlug: string }> }) {

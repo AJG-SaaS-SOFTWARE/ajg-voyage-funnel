@@ -89,15 +89,26 @@ export async function getPublicSiteByHostname(hostname: string): Promise<PublicS
   return data ? { id: data.id, slug: data.slug, config: configFromRow(data), publishedAt: data.published_at, updatedAt: data.updated_at } : null;
 }
 
-export function publicSiteUrl(slug: string) {
-  const managedSubdomainsEnabled =
-    process.env.NEXT_PUBLIC_MANAGED_SUBDOMAINS_ENABLED === "true";
+export async function publicSiteUrl(siteId: string, slug: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (managedSubdomainsEnabled) {
-    const root =
-      process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
-      "voyage.ajgsolutionsgroup.com";
-    return `https://${encodeURIComponent(slug)}.${root}`;
+  if (url && key) {
+    const supabase = createClient<Database>(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+
+    const { data: domain } = await supabase
+      .from("domains")
+      .select("hostname")
+      .eq("site_id", siteId)
+      .eq("verification_status", "verified")
+      .eq("is_primary", true)
+      .maybeSingle();
+
+    if (domain?.hostname) {
+      return `https://${domain.hostname}`;
+    }
   }
 
   const base =

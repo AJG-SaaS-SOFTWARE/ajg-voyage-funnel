@@ -186,7 +186,7 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 - [x] quota de stockage mesuré et bloquant avant upload ;
 - [x] demande de domaine personnalisé réservée au droit Pro ;
 - [x] routage applicatif d’un hostname personnalisé vérifié ;
-- [x] canonical des sites gérés aligné sur le sous-domaine public uniquement lorsque l’infrastructure wildcard est explicitement activée ; repli sûr vers `/site/{slug}` sinon ;
+- [x] canonical public piloté par le domaine primaire réellement vérifié ; repli sûr vers `/site/{slug}` lorsqu’aucun domaine primaire vérifié n’existe ;
 - [x] rôles administrateur séparés et protégés par RLS ;
 - [x] back-office sites / offres / domaines ;
 - [x] instrumentation first-party du funnel bêta, sans enregistrer les contenus éditoriaux ;
@@ -227,13 +227,13 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA et buckets Storage sont prêts ; Resend, cron, URL applicative et Vercel runtime restent des warnings opérationnels à compléter.
 4. **Storage privé validé de bout en bout** : `site-private-media` privé + RLS + test réel privé → `/api/media/promote` → public → nettoyage, tous en succès.
 5. **Recette E2E réelle validée** : session admin → création isolée → droit Pro temporaire → AI Site Architect réel → médias → publication → site public → feedback → export → nettoyage.
-6. **Valider routage réel** : rattacher/vérifier individuellement le sous-domaine AJG chez Vercel, configurer le wildcard CNAME chez le fournisseur DNS, puis activer les canonical/rewrites gérés ; ensuite valider un domaine personnalisé.
+6. **Valider routage réel** : sous-domaine AJG canari rattaché à Vercel, DNS CNAME configuré et vérifié ; routage/canonical désormais activés automatiquement par domaine primaire vérifié. Reste à confirmer le rendu HTTPS réel puis à valider un domaine personnalisé.
 7. **Lancer la bêta 5–10 comptes** et observer le dashboard 30 jours ; corriger uniquement les frictions confirmées par ces tests.
 8. **Décisions commerciales utilisateur requises** : prix, périodicité, essai éventuel, nombre de sites inclus. La politique d’impayés reste J0/J14/J28/J104 sauf décision explicite signalée.
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Release production, Storage privé et recette E2E sont validés. Le prochain jalon réel est le routage public : chaque sous-domaine AJG peut être rattaché individuellement à Vercel afin d’éviter une dépendance au wildcard Vercel natif et à ses nameservers. Un wildcard CNAME externe reste à configurer ; tant qu’il n’est pas validé, le canonical reste sur l’URL Vercel de repli.
+Release production, Storage privé et recette E2E sont validés. Le sous-domaine canari AJG est désormais rattaché à Vercel et validé DNS. Le routage et les canonical n’utilisent plus de feature flag global : ils s’appuient sur le domaine primaire réellement vérifié, avec repli Vercel sinon.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
@@ -256,7 +256,7 @@ Release production, Storage privé et recette E2E sont validés. Le prochain jal
 - [x] bootstrap privé exposé dans le back-office admin : création via l’API Storage Supabase avec le secret serveur Vercel ; la CI ne tente pas d’extraire une variable Sensitive ;
 - [x] dernier `main` déployé en production via la release contrôlée ; `/api/health` expose le SHA attendu et la base répond `ok` ;
 - [x] recette E2E production validée : toutes les étapes du runner passent, 1 génération IA réelle comptabilisée et aucun résidu site/abonnement/feedback/média après nettoyage.
-- [ ] valider sous-domaines et domaines personnalisés en environnement réel ; le canari est désormais préparé pour une vérification Vercel individuelle, puis un wildcard CNAME externe doit être ajouté.
+- [ ] finaliser la validation réelle : canari AJG vérifié et DNS opérationnel ; confirmer le rendu HTTPS sur le hostname, puis tester un domaine personnalisé de bout en bout.
 
 ### Itération 6B — bêta mesurée
 - [x] instrumentation first-party et feedback déjà disponibles ;

@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const site = await getPublicSite(slug);
   if (!site) return new Response("Not found", { status: 404 });
 
-  const root = publicSiteUrl(slug).replace(/\/$/, "");
+  const root = (await publicSiteUrl(site.id, slug)).replace(/\/$/, "");
   const pages = site.config.architecture.mode === "multi"
     ? site.config.architecture.pages.filter((page) => page.enabled)
     : [{ slug: "" }];

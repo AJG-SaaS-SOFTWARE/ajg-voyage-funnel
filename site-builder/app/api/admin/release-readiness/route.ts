@@ -136,15 +136,6 @@ export async function GET(request: Request) {
       "warn"
     ),
     check(
-      "managed-subdomains",
-      "Sous-domaines gérés",
-      process.env.NEXT_PUBLIC_MANAGED_SUBDOMAINS_ENABLED === "true",
-      "beta",
-      "Activation applicative des sous-domaines gérés active.",
-      "Activation désactivée tant que le wildcard DNS/Vercel n'est pas réellement prêt.",
-      "warn"
-    ),
-    check(
       "billing-provider",
       "Fournisseur de paiement",
       present(process.env.BILLING_PROVIDER_WEBHOOK_SECRET),
@@ -223,6 +214,25 @@ export async function GET(request: Request) {
   if (serviceKey) {
     const service = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false }
+    });
+
+    const { data: managedDomain, error: managedDomainError } = await service
+      .from("domains")
+      .select("hostname")
+      .eq("kind", "managed_subdomain")
+      .eq("verification_status", "verified")
+      .eq("is_primary", true)
+      .limit(1)
+      .maybeSingle();
+
+    checks.push({
+      key: "managed-subdomains",
+      label: "Sous-domaines gérés",
+      scope: "beta",
+      status: managedDomain && !managedDomainError ? "pass" : "warn",
+      detail: managedDomain && !managedDomainError
+        ? `Routage automatique actif ; domaine canari vérifié : ${managedDomain.hostname}.`
+        : "Aucun sous-domaine AJG vérifié et primaire n'est encore disponible."
     });
 
     for (const bucket of [
