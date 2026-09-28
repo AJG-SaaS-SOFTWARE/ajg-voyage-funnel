@@ -37,8 +37,83 @@ export async function adminRunBuilderE2E(includeAi: boolean): Promise<BuilderE2E
   return body as BuilderE2EResult;
 }
 
+export type AdminBetaCohortMember = {
+  id: string;
+  email: string;
+  createdAt: string;
+  lastSignInAt: string | null;
+  invitedAt: string | null;
+};
+
+export type AdminBetaCohort = {
+  limit: number;
+  members: AdminBetaCohortMember[];
+};
+
+export async function getAdminBetaCohort(): Promise<AdminBetaCohort> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/beta-cohort", {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Cohorte bêta indisponible.");
+  return body as AdminBetaCohort;
+}
+
+export async function adminInviteBetaMember(email: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/beta-cohort", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email }),
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = body?.detail ? ` — ${body.detail}` : "";
+    throw new Error((body?.error || "Invitation bêta impossible.") + detail);
+  }
+  return body as { invited: boolean; existing: boolean; member: AdminBetaCohortMember };
+}
+
+export async function adminRemoveBetaMember(userId: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/beta-cohort", {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ userId }),
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Retrait de la cohorte impossible.");
+}
+
 export type AdminBetaMetrics = {
   periodDays: number;
+  cohort: {
+    scope: "beta" | "all";
+    size: number;
+    activated: number;
+  };
   generatedAt: string;
   funnel: {
     opened: number;

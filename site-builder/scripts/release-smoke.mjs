@@ -56,6 +56,8 @@ try {
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   await expectStatus("/api/admin/release-readiness", 401);
   await expectStatus("/api/admin/beta-metrics", 401);
+  await expectStatus("/api/admin/beta-cohort", 401);
+  await expectStatus("/api/admin/beta-cohort", 401, { method: "POST" });
   await expectStatus("/api/admin/storage-bootstrap", 401, { method: "POST" });
   console.log("AJG Builder release smoke passed.");
 } finally {

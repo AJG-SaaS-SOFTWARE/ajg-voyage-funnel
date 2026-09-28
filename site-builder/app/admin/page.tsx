@@ -4,16 +4,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   adminBootstrapPrivateStorage,
+  adminInviteBetaMember,
+  adminRemoveBetaMember,
   adminRunBuilderE2E,
   adminRunStorageE2E,
   adminSetFeedbackStatus,
   adminSetPlan,
+  getAdminBetaCohort,
   getAdminBetaMetrics,
   getAdminFeedback,
   getAdminMetrics,
   getAdminSites,
   getReleaseReadiness,
   isCurrentUserAdmin,
+  type AdminBetaCohort,
   type AdminBetaMetrics,
   type AdminFeedback,
   type AdminMetrics,
@@ -43,6 +47,9 @@ export default function AdminPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [feedback, setFeedback] = useState<AdminFeedback[]>([]);
   const [betaMetrics, setBetaMetrics] = useState<AdminBetaMetrics | null>(null);
+  const [betaCohort, setBetaCohort] = useState<AdminBetaCohort | null>(null);
+  const [betaEmail, setBetaEmail] = useState("");
+  const [betaInviteBusy, setBetaInviteBusy] = useState(false);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
   const [storageBootstrapping, setStorageBootstrapping] = useState(false);
   const [storageTesting, setStorageTesting] = useState(false);
@@ -69,12 +76,14 @@ export default function AdminPage() {
     setMetrics(nextMetrics);
     setFeedback(nextFeedback);
 
-    const [nextReadiness, nextBetaMetrics] = await Promise.all([
+    const [nextReadiness, nextBetaMetrics, nextBetaCohort] = await Promise.all([
       getReleaseReadiness().catch(() => null),
-      getAdminBetaMetrics().catch(() => null)
+      getAdminBetaMetrics().catch(() => null),
+      getAdminBetaCohort().catch(() => null)
     ]);
     setReadiness(nextReadiness);
     setBetaMetrics(nextBetaMetrics);
+    setBetaCohort(nextBetaCohort);
 
     setState("ready");
   };
@@ -150,6 +159,41 @@ export default function AdminPage() {
     }
   };
 
+  const inviteBetaMember = async () => {
+    const email = betaEmail.trim();
+    if (!email) return;
+    setMessage("");
+    setBetaInviteBusy(true);
+    try {
+      const result = await adminInviteBetaMember(email);
+      setBetaEmail("");
+      await load();
+      setMessage(
+        result.invited
+          ? `Invitation bêta envoyée à ${result.member.email}.`
+          : `${result.member.email} faisait déjà partie des comptes AJG ; le compte a été ajouté à la cohorte bêta sans nouvel e-mail.`
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Invitation bêta impossible.");
+    } finally {
+      setBetaInviteBusy(false);
+    }
+  };
+
+  const removeBetaMember = async (userId: string) => {
+    setMessage("");
+    setBetaInviteBusy(true);
+    try {
+      await adminRemoveBetaMember(userId);
+      await load();
+      setMessage("Compte retiré de la cohorte bêta. Le compte AJG n’a pas été supprimé.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Retrait impossible.");
+    } finally {
+      setBetaInviteBusy(false);
+    }
+  };
+
   const changeFeedback = async (
     id: string,
     status: "new" | "reviewed" | "planned" | "done"
@@ -208,6 +252,93 @@ export default function AdminPage() {
       ) : null}
 
       {state === "ready" ? (
+        <section className="panel admin-beta-cohort">
+          <div className="admin-readiness-heading">
+            <div>
+              <p className="eyebrow">Bêta privée</p>
+              <h2>Cohorte de test</h2>
+              <p>
+                Invitez uniquement les testeurs choisis. Les métriques du funnel se limitent
+                automatiquement à cette cohorte dès qu’au moins un compte y est inscrit.
+              </p>
+            </div>
+            <div className="beta-side-metrics">
+              <span><b>{betaCohort?.members.length ?? 0}</b> comptes bêta</span>
+              <span><b>{betaCohort?.members.filter((item) => item.lastSignInAt).length ?? 0}</b> activés</span>
+              <span><b>{betaCohort?.limit ?? 25}</b> limite sécurité</span>
+            </div>
+          </div>
+
+          <form
+            className="beta-invite-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void inviteBetaMember();
+            }}
+          >
+            <label className="field">
+              <span>Adresse e-mail du testeur</span>
+              <input
+                type="email"
+                autoComplete="email"
+                value={betaEmail}
+                onChange={(event) => setBetaEmail(event.target.value)}
+                placeholder="testeur@exemple.fr"
+                disabled={betaInviteBusy}
+              />
+            </label>
+            <button
+              type="submit"
+              className="button primary"
+              disabled={betaInviteBusy || !betaEmail.trim() || (betaCohort?.members.length ?? 0) >= (betaCohort?.limit ?? 25)}
+            >
+              {betaInviteBusy ? "Traitement…" : "Inviter à la bêta"}
+            </button>
+          </form>
+          <p className="plans-note">
+            Un nouveau compte reçoit l’invitation Supabase vers le Builder. Un compte AJG déjà
+            existant est seulement ajouté à la cohorte : aucun second e-mail n’est envoyé.
+          </p>
+
+          {betaCohort?.members.length ? (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Testeur</th>
+                    <th>État</th>
+                    <th>Invitation</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {betaCohort.members.map((item) => (
+                    <tr key={item.id}>
+                      <td><b>{item.email}</b></td>
+                      <td>{item.lastSignInAt ? "Compte activé" : "Invitation en attente"}</td>
+                      <td>{new Date(item.invitedAt || item.createdAt).toLocaleDateString("fr-FR")}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="text-button"
+                          disabled={betaInviteBusy}
+                          onClick={() => void removeBetaMember(item.id)}
+                        >
+                          Retirer de la cohorte
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="plans-note">Aucun testeur n’est encore inscrit dans la cohorte bêta.</p>
+          )}
+        </section>
+      ) : null}
+
+      {state === "ready" ? (
         <section className="panel admin-beta-funnel">
           <div className="admin-readiness-heading">
             <div>
@@ -221,6 +352,8 @@ export default function AdminPage() {
             </div>
             {betaMetrics ? (
               <div className="beta-side-metrics">
+                <span><b>{betaMetrics.cohort.size}</b> comptes cohorte</span>
+                <span><b>{betaMetrics.cohort.activated}</b> activés</span>
                 <span><b>{betaMetrics.ai.generations}</b> générations IA</span>
                 <span><b>{betaMetrics.feedback.count}</b> retours</span>
                 <span><b>{betaMetrics.feedback.averageRating ?? "—"}</b> note moyenne</span>
@@ -312,6 +445,14 @@ export default function AdminPage() {
                   remplira automatiquement dès les prochains tests.
                 </p>
               )}
+
+              {betaMetrics.cohort.scope === "all" ? (
+                <p className="plans-note">
+                  Aucune cohorte bêta n’est encore définie : les chiffres affichés couvrent
+                  temporairement tous les utilisateurs. Dès la première invitation bêta, le
+                  dashboard sera automatiquement isolé sur la cohorte.
+                </p>
+              ) : null}
 
               <details className="beta-definitions">
                 <summary>Définitions des étapes</summary>

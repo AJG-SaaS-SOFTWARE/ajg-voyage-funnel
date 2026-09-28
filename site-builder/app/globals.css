@@ -2549,3 +2549,12 @@ button.active .step-label small{color:#63817f}
 @media(max-width:560px){.beta-funnel-grid,.beta-observation-grid{grid-template-columns:1fr}}
 
 .readiness-action{margin-top:10px;padding:8px 12px;font-size:.72rem}
+
+.admin-beta-cohort{margin:22px 0;padding:24px}
+.beta-invite-form{display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:12px;align-items:end;margin:18px 0 8px}
+.beta-invite-form .field{margin:0}
+.beta-invite-form .button{min-height:46px}
+@media (max-width:760px){
+  .beta-invite-form{grid-template-columns:1fr}
+  .beta-invite-form .button{width:100%}
+}
