@@ -258,6 +258,7 @@ export async function uploadProfileImage(file: File, siteId: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Vous devez être connecté.");
   await assertSiteCapability(siteId, "can_import");
+  await assertStorageAllowance(siteId, file.size);
 
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const objectPath = `${user.id}/${siteId}/profile/profile.${extension}`;
