@@ -787,6 +787,10 @@ export type Database = {
         Returns: string
       }
       consume_my_ai_generation: { Args: never; Returns: string }
+      consume_my_site_ai_generation: {
+        Args: { p_site_id: string }
+        Returns: string
+      }
       finish_billing_notification: {
         Args: { p_error?: string; p_id: number; p_success: boolean }
         Returns: undefined
@@ -825,6 +829,20 @@ export type Database = {
           can_read: boolean
           can_view_billing: boolean
           public_site_available: boolean
+        }[]
+      }
+      get_my_site_entitlements: {
+        Args: { p_site_id: string }
+        Returns: {
+          ai_daily_limit: number
+          ai_minute_limit: number
+          ai_monthly_limit: number
+          custom_domain: boolean
+          plan_key: string
+          plan_name: string
+          premium_architect: boolean
+          storage_mb: number
+          subscription_status: string
         }[]
       }
       get_my_storage_usage: {
