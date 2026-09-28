@@ -26,6 +26,8 @@ jobs:
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
       VERCEL_SCOPE: ajg-saas-software
       VERCEL_CLI_VERSION: 59.6.0
+      PRODUCTION_ALIAS: ajg-site-builder.vercel.app
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,6 +64,19 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Capture current production rollback target
+        id: previous
+        shell: bash
+        run: |
+          RESPONSE="$(curl --fail --silent --show-error "https://api.vercel.com/v4/aliases/$PRODUCTION_ALIAS?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID" -H "Authorization: Bearer $VERCEL_TOKEN" -H "Accept: application/json")"
+          PREVIOUS_ID="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.deploymentId!=="string"||!x.deploymentId.startsWith("dpl_"))process.exit(2);process.stdout.write(x.deploymentId)})')"
+          if [ -z "$PREVIOUS_ID" ]; then
+            echo "::error::Unable to resolve the deployment currently serving $PRODUCTION_ALIAS."
+            exit 1
+          fi
+          echo "deployment_id=$PREVIOUS_ID" >> "$GITHUB_OUTPUT"
+          echo "Rollback target captured: $PREVIOUS_ID" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Pull Vercel production configuration
         run: >
           npx --yes vercel@$VERCEL_CLI_VERSION pull
@@ -81,7 +96,7 @@ jobs:
         id: stage
         shell: bash
         run: |
-          DEPLOYMENT_URL="$(npx --yes vercel@$VERCEL_CLI_VERSION deploy             --prebuilt             --prod             --skip-domain             --token="$VERCEL_TOKEN"             --scope="$VERCEL_SCOPE")"
+          DEPLOYMENT_URL="$(npx --yes vercel@$VERCEL_CLI_VERSION deploy --prebuilt --prod --skip-domain --token="$VERCEL_TOKEN" --scope="$VERCEL_SCOPE")"
           echo "url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
           echo "Staged deployment: $DEPLOYMENT_URL" >> "$GITHUB_STEP_SUMMARY"
 
@@ -90,9 +105,9 @@ jobs:
         env:
           DEPLOYMENT_URL: ${{ steps.stage.outputs.url }}
         run: |
-          curl --fail --silent --show-error             --retry 5 --retry-delay 2 --retry-all-errors             "$DEPLOYMENT_URL/api/health" > /tmp/health.json
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors "$DEPLOYMENT_URL/api/health" > /tmp/health.json
           cat /tmp/health.json
-          curl --fail --silent --show-error             --retry 5 --retry-delay 2 --retry-all-errors             "$DEPLOYMENT_URL/login" > /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors "$DEPLOYMENT_URL/login" > /dev/null
 
       - name: Promote staged deployment
         env:
@@ -104,7 +119,19 @@ jobs:
           --token="$VERCEL_TOKEN"
           --scope="$VERCEL_SCOPE"
 
-      - name: Verify live production health
+      - name: Verify live production or rollback
+        shell: bash
+        env:
+          PREVIOUS_DEPLOYMENT_ID: ${{ steps.previous.outputs.deployment_id }}
         run: |
-          curl --fail --silent --show-error             --retry 5 --retry-delay 2 --retry-all-errors             "https://ajg-site-builder.vercel.app/api/health"
-          echo "Production release promoted from commit ${GITHUB_SHA}." >> "$GITHUB_STEP_SUMMARY"
+          if curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors "https://$PRODUCTION_ALIAS/api/health" > /tmp/live-health.json && curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors "https://$PRODUCTION_ALIAS/login" > /dev/null; then
+            cat /tmp/live-health.json
+            echo "Production release promoted from commit ${GITHUB_SHA}." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "::error::Production health verification failed after promotion. Rolling back to $PREVIOUS_DEPLOYMENT_ID."
+          curl --fail --silent --show-error --request POST "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/rollback/$PREVIOUS_DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json"
+          curl --fail --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors "https://$PRODUCTION_ALIAS/login" > /dev/null
+          echo "Rollback requested to $PREVIOUS_DEPLOYMENT_ID after failed production health check." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
