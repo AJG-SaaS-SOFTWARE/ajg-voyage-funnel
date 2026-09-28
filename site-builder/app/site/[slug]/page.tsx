@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublishedSite from "../../../components/PublishedSite";
 import { getPublicSite, publicSiteUrl } from "../../../lib/public-site";
+import { publicRouteBase } from "../../../lib/public-request";
 
 export const dynamic = "force-dynamic";
 
@@ -50,5 +51,5 @@ export default async function PublishedSitePage({
   const site = await getPublicSite(slug);
   if (!site) notFound();
 
-  return <PublishedSite config={site.config} />;
+  return <PublishedSite config={site.config} routeBase={await publicRouteBase(slug)} />;
 }
