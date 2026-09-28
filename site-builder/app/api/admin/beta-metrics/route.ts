@@ -69,7 +69,8 @@ export async function GET(request: Request) {
     { data: events, error: eventsError },
     { data: aiUsage, error: aiError },
     { data: feedback, error: feedbackError },
-    { data: sites, error: sitesError }
+    { data: sites, error: sitesError },
+    { data: providerUsage, error: providerUsageError }
   ] = await Promise.all([
     service
       .from("product_events")
@@ -85,10 +86,14 @@ export async function GET(request: Request) {
       .gte("created_at", since),
     service
       .from("sites")
-      .select("id,slug,owner_id,status,created_at,published_at,updated_at")
+      .select("id,slug,owner_id,status,created_at,published_at,updated_at"),
+    service
+      .from("ai_provider_usage")
+      .select("user_id,site_id,operation,model,input_tokens,cached_input_tokens,output_tokens,reasoning_tokens,total_tokens,duration_ms,created_at")
+      .gte("created_at", since)
   ]);
 
-  if (eventsError || aiError || feedbackError || sitesError) {
+  if (eventsError || aiError || feedbackError || sitesError || providerUsageError) {
     return NextResponse.json({ error: "Beta metrics unavailable" }, { status: 503 });
   }
 
@@ -108,6 +113,12 @@ export async function GET(request: Request) {
     cohortScope === "beta"
       ? (sites || []).filter((item) => typeof item.owner_id === "string" && betaUserIds.has(item.owner_id))
       : sites || [];
+  const providerRows =
+    cohortScope === "beta"
+      ? (providerUsage || []).filter(
+          (item) => typeof item.user_id === "string" && betaUserIds.has(item.user_id)
+        )
+      : providerUsage || [];
 
   const usersFor = (...names: string[]) =>
     new Set(
@@ -217,6 +228,60 @@ export async function GET(request: Request) {
   const reviewed = reviewUsers.size;
   const published = publishedUsers.size;
 
+  const providerTotalTokens = providerRows.reduce(
+    (sum, item) => sum + (Number(item.total_tokens) || 0),
+    0
+  );
+  const providerInputTokens = providerRows.reduce(
+    (sum, item) => sum + (Number(item.input_tokens) || 0),
+    0
+  );
+  const providerCachedTokens = providerRows.reduce(
+    (sum, item) => sum + (Number(item.cached_input_tokens) || 0),
+    0
+  );
+  const providerOutputTokens = providerRows.reduce(
+    (sum, item) => sum + (Number(item.output_tokens) || 0),
+    0
+  );
+  const providerReasoningTokens = providerRows.reduce(
+    (sum, item) => sum + (Number(item.reasoning_tokens) || 0),
+    0
+  );
+  const providerDurationMs = providerRows.reduce(
+    (sum, item) => sum + (Number(item.duration_ms) || 0),
+    0
+  );
+  const modelMap = new Map<
+    string,
+    {
+      model: string;
+      calls: number;
+      inputTokens: number;
+      cachedInputTokens: number;
+      outputTokens: number;
+      totalTokens: number;
+    }
+  >();
+
+  for (const row of providerRows) {
+    const model = row.model || "unknown";
+    const current = modelMap.get(model) || {
+      model,
+      calls: 0,
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0
+    };
+    current.calls += 1;
+    current.inputTokens += Number(row.input_tokens) || 0;
+    current.cachedInputTokens += Number(row.cached_input_tokens) || 0;
+    current.outputTokens += Number(row.output_tokens) || 0;
+    current.totalTokens += Number(row.total_tokens) || 0;
+    modelMap.set(model, current);
+  }
+
   return NextResponse.json(
     {
       periodDays: 30,
@@ -265,7 +330,28 @@ export async function GET(request: Request) {
           userAdoptionRate: percent(
             architectAppliedUsers.size,
             architectUsers.size
-          )
+          ),
+          provider: {
+            calls: providerRows.length,
+            inputTokens: providerInputTokens,
+            cachedInputTokens: providerCachedTokens,
+            outputTokens: providerOutputTokens,
+            reasoningTokens: providerReasoningTokens,
+            totalTokens: providerTotalTokens,
+            avgCallsPerAttempt:
+              architectAttemptRows.length > 0
+                ? Math.round((providerRows.length / architectAttemptRows.length) * 10) / 10
+                : 0,
+            avgTokensPerAttempt:
+              architectAttemptRows.length > 0
+                ? Math.round(providerTotalTokens / architectAttemptRows.length)
+                : 0,
+            avgDurationMsPerCall:
+              providerRows.length > 0
+                ? Math.round(providerDurationMs / providerRows.length)
+                : 0,
+            byModel: [...modelMap.values()].sort((a, b) => b.calls - a.calls)
+          }
         }
       },
       feedback: {
@@ -293,6 +379,7 @@ export async function GET(request: Request) {
         architectRefinementRate: "Part des propositions où l’audit Premium a déclenché un raffinement automatique avant affichage.",
         architectApplicationRate: "Applications de propositions Premium rapportées au nombre de tentatives sur la période.",
         architectUserAdoptionRate: "Part des utilisateurs de l’Architecte Premium ayant appliqué au moins une proposition.",
+        architectProviderUsage: "Télémétrie serveur limitée aux modèles, tokens et durées. Aucun prompt, brief, texte généré ou contenu client n’est enregistré.",
         cohort: cohortScope === "beta"
           ? "Métriques limitées aux comptes explicitement marqués dans la cohorte bêta."
           : "Aucune cohorte bêta définie : métriques calculées sur l’ensemble des utilisateurs."
