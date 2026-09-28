@@ -188,19 +188,28 @@ export async function POST(request: NextRequest) {
           }
         }),
         cache: "no-store",
-        signal: AbortSignal.timeout(35000)
+        signal: AbortSignal.timeout(58000)
       });
 
       const aiBody = await aiResponse.json().catch(() => null);
       if (!aiResponse.ok || !aiBody?.proposal) {
         throw new Error(aiBody?.error || `AI Site Architect returned HTTP ${aiResponse.status}.`);
       }
+      if (
+        !aiBody.proposal?.intelligence?.understoodNeed ||
+        aiBody.proposal?.premiumAudit?.reviewed !== true
+      ) {
+        throw new Error("Premium Architect strategy/audit metadata is missing.");
+      }
       proposal = aiBody.proposal;
       steps.push({
         key: "ai",
-        label: "AI Site Architect",
+        label: "AI Site Architect Premium",
         status: "pass",
-        detail: "Une génération réelle a renvoyé une proposition structurée."
+        detail:
+          aiBody.proposal.premiumAudit.refinementApplied
+            ? "Stratégie, génération structurée, audit critique et raffinement automatique validés."
+            : "Stratégie, génération structurée et audit critique validés sans raffinement nécessaire."
       });
     } else {
       steps.push({
