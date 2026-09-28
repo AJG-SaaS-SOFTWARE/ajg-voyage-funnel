@@ -62,3 +62,35 @@ begin
 end $$;
 revoke all on function private.reactivate_builder_site(uuid,uuid,timestamptz,text,text) from public,anon,authenticated;
 grant execute on function private.reactivate_builder_site(uuid,uuid,timestamptz,text,text) to service_role;
+
+
+-- Queue claiming uses SKIP LOCKED and a service-role-only public invoker wrapper for the server worker.
+create or replace function private.claim_due_billing_notifications(p_limit integer default 20)
+returns table(id bigint,site_id uuid,owner_id uuid,notification_key text,due_at timestamptz,attempts integer)
+language plpgsql security definer set search_path='' as $$
+begin
+ return query with due as (
+  select n.id from public.billing_notifications n where n.status in ('pending','failed') and n.due_at<=now() and n.attempts<5
+  order by n.due_at for update skip locked limit greatest(1,least(p_limit,100))
+ ), claimed as (
+  update public.billing_notifications n set status='processing',attempts=n.attempts+1,updated_at=now()
+  from due where n.id=due.id returning n.id,n.site_id,n.owner_id,n.notification_key,n.due_at,n.attempts
+ ) select * from claimed;
+end $$;
+revoke all on function private.claim_due_billing_notifications(integer) from public,anon,authenticated;
+grant execute on function private.claim_due_billing_notifications(integer) to service_role;
+create or replace function private.finish_billing_notification(p_id bigint,p_success boolean,p_error text default null)
+returns void language sql security definer set search_path='' as $$
+ update public.billing_notifications set status=case when p_success then 'sent' else 'failed' end,sent_at=case when p_success then now() else sent_at end,last_error=case when p_success then null else left(coalesce(p_error,'unknown'),500) end,updated_at=now() where id=p_id and status='processing'
+$$;
+revoke all on function private.finish_billing_notification(bigint,boolean,text) from public,anon,authenticated;
+grant execute on function private.finish_billing_notification(bigint,boolean,text) to service_role;
+create or replace function public.claim_due_billing_notifications(p_limit integer default 20)
+returns table(id bigint,site_id uuid,owner_id uuid,notification_key text,due_at timestamptz,attempts integer)
+language sql security invoker set search_path='pg_catalog','private','pg_temp' as $$select * from private.claim_due_billing_notifications(p_limit)$$;
+revoke all on function public.claim_due_billing_notifications(integer) from public,anon,authenticated;
+grant execute on function public.claim_due_billing_notifications(integer) to service_role;
+create or replace function public.finish_billing_notification(p_id bigint,p_success boolean,p_error text default null)
+returns void language sql security invoker set search_path='pg_catalog','private','pg_temp' as $$select private.finish_billing_notification(p_id,p_success,p_error)$$;
+revoke all on function public.finish_billing_notification(bigint,boolean,text) from public,anon,authenticated;
+grant execute on function public.finish_billing_notification(bigint,boolean,text) to service_role;
