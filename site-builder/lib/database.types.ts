@@ -82,6 +82,36 @@ export type Database = {
           },
         ]
       }
+      billing_provider_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          last_error: string | null
+          processed_at: string | null
+          processing_status: string
+          provider: string
+          received_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          last_error?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          provider: string
+          received_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          last_error?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          provider?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
       billing_state_events: {
         Row: {
           created_at: string
@@ -359,6 +389,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "site_drafts_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: true
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_subscriptions: {
+        Row: {
+          current_period_end: string | null
+          owner_id: string
+          plan_key: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          site_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          current_period_end?: string | null
+          owner_id: string
+          plan_key: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          site_id: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          current_period_end?: string | null
+          owner_id?: string
+          plan_key?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          site_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_subscriptions_plan_key_fkey"
+            columns: ["plan_key"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "site_subscriptions_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: true
             referencedRelation: "sites"
@@ -657,6 +738,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_builder_billing_provider_event: {
+        Args: {
+          p_event_id: string
+          p_event_type: string
+          p_failed_at?: string
+          p_owner_id: string
+          p_paid_through?: string
+          p_provider: string
+          p_provider_status: string
+        }
+        Returns: string
+      }
+      apply_builder_site_billing_provider_event: {
+        Args: {
+          p_event_id: string
+          p_event_type: string
+          p_failed_at?: string
+          p_owner_id: string
+          p_paid_through?: string
+          p_provider: string
+          p_provider_status: string
+          p_provider_subscription_id?: string
+          p_site_id: string
+        }
+        Returns: string
+      }
       can_modify_site_media: { Args: { p_site_id: string }; Returns: boolean }
       can_upload_site_media: { Args: { p_bytes: number }; Returns: boolean }
       claim_due_billing_notifications: {
