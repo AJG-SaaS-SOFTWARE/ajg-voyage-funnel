@@ -221,10 +221,10 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 
 Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs dans la roadmap conservent l’historique détaillé, mais ne changent pas l’ordre de travail ci-dessous.
 
-1. **Débloquer la release contrôlée** : ajouter `VERCEL_TOKEN` aux secrets GitHub Actions et conserver le token serveur Vercel côté environnement de production.
-2. **Déployer exactement le `main` courant** via le workflow `Site Builder Production Release`. Le staging et la production doivent exposer le SHA attendu ; sinon la promotion échoue ou déclenche le rollback.
-3. **Valider la préproduction** depuis l’admin : Supabase, IA, Resend, cron, Vercel, buckets Storage et SHA déployé.
-4. **Créer/vérifier `site-private-media`** depuis l’action admin, puis effectuer la recette import privé → promotion → URL publique.
+1. **Release contrôlée débloquée** : `VERCEL_TOKEN` GitHub Actions opérationnel, pipeline REST sécurisé avec vérification SHA/HTTP et rollback.
+2. **Production synchronisée avec `main`** : dernière release contrôlée réussie et SHA exposé par `/api/health`.
+3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA et buckets Storage sont prêts ; Resend, cron, URL applicative et Vercel runtime restent des warnings opérationnels à compléter.
+4. **Storage privé validé de bout en bout** : `site-private-media` privé + RLS + test réel privé → `/api/media/promote` → public → nettoyage, tous en succès.
 5. **Exécuter la recette E2E réelle** : magic link → création → AI Site Architect → médias → publication → site public → feedback → export de récupération.
 6. **Valider routage réel** : sous-domaines gérés, canonical/metadata, domaine personnalisé et DNS/Vercel.
 7. **Lancer la bêta 5–10 comptes** et observer le dashboard 30 jours ; corriger uniquement les frictions confirmées par ces tests.
@@ -232,7 +232,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Release production débloquée : le workflow REST Vercel passe désormais le préflight, construit en `cdg1`, vérifie le SHA, promeut l’artefact et valide les routes publiques. Le compte actif propriétaire du site a reçu le rôle admin ; le prochain jalon réel est l’initialisation de `site-private-media` depuis le back-office.
+Release production débloquée et Storage privé validé : le workflow REST Vercel passe le préflight, construit en `cdg1`, vérifie le SHA, promeut l’artefact et valide les routes publiques. Le compte actif propriétaire du site est admin ; le prochain jalon réel est la recette E2E complète du parcours utilisateur.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
@@ -336,7 +336,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] routes serveur compatibles avec `SUPABASE_SECRET_KEY` actuelle, avec repli temporaire sur l’ancienne clé service-role ;
 - [x] textes de rétention J74/J97 alignés avec la politique sans suppression automatique ;
 - [x] dernier état contrôlé : TypeScript et build Next.js réussissent sur la CI indépendante ;
-- [ ] production Vercel toujours à resynchroniser avec le `main` actuel avant recette HTTP finale.
+- [x] production Vercel resynchronisée avec le `main` courant ; `/api/health`, login, routes critiques et SHA sont validés par la release contrôlée.
 
 ### Stockage média — dette préproduction
 - [x] séparer dans le code les médias publiables et la bibliothèque privée ; activation physique du bucket privé encore à effectuer après déploiement ;
@@ -345,7 +345,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] après déploiement du `main`, bootstrap exécuté depuis l’administration ; bucket `site-private-media` réel vérifié privé, limite 15 Mo et politiques RLS SELECT/INSERT/UPDATE/DELETE présentes ;
 - [x] promotion contrôlée privée → publique branchée à la publication : session + ownership + capacité de publication + droits/licence vérifiés côté serveur ;
 - [x] références `private://` exclues du rendu public et copie rendue répétable pour les republications ;
-- [ ] effectuer la recette réelle import privé → publication → URL publique ; un contrôle admin dédié crée un fichier temporaire, vérifie qu’il reste privé, appelle la vraie route `/api/media/promote`, vérifie l’URL publique puis nettoie les fichiers.
+- [x] recette réelle Storage validée : le contrôle admin a exécuté plusieurs fois `site-private-media` → `/api/media/promote` → URL publique avec HTTP 200, puis nettoyage complet sans résidu.
 
 ### Domaines personnalisés — automatisation
 - [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;
@@ -356,9 +356,9 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [ ] recette réelle Vercel/DNS bloquée tant que le déploiement du `main` est rate-limité et tant que `VERCEL_TOKEN` n’est pas configuré côté serveur.
 
 ### Blocages externes avant release candidate réelle
-- [ ] Vercel : production toujours sur l’ancien commit ; les auto-déploiements sont coupés ; le déclencheur contrôlé fonctionne mais le premier run s’arrête avant Vercel car le secret GitHub Actions `VERCEL_TOKEN` n’est pas configuré ;
-- [ ] Storage : déclencher le bootstrap admin de `site-private-media` une fois le nouveau serveur déployé ;
-- [ ] Secrets serveur : configurer/valider sans exposition `SUPABASE_SECRET_KEY`, `CRON_SECRET`, Resend et `VERCEL_TOKEN` ; ajouter aussi `VERCEL_TOKEN` aux secrets GitHub Actions pour le workflow de release contrôlée ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
+- [x] Vercel : production synchronisée avec le `main` via le workflow contrôlé ; token GitHub Actions, build, vérification SHA, promotion et rollback sont opérationnels ;
+- [x] Storage : `site-private-media` créé, vérifié privé et recette de promotion réelle validée ;
+- [ ] Secrets serveur : `SUPABASE_SECRET_KEY` et `VERCEL_TOKEN` GitHub Actions validés ; restent à configurer côté runtime `CRON_SECRET`, Resend, `NEXT_PUBLIC_APP_URL` et un token Vercel serveur à périmètre minimal pour les domaines personnalisés ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
 - [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
 
 ### Cohérence multi-site complémentaire

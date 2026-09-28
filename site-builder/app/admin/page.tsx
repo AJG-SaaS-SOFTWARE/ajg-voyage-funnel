@@ -44,6 +44,8 @@ export default function AdminPage() {
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
   const [storageBootstrapping, setStorageBootstrapping] = useState(false);
   const [storageTesting, setStorageTesting] = useState(false);
+  const [storageTestMessage, setStorageTestMessage] = useState("");
+  const [storageTestOk, setStorageTestOk] = useState<boolean | null>(null);
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
 
@@ -103,15 +105,19 @@ export default function AdminPage() {
 
   const testPrivateStorageFlow = async () => {
     setMessage("");
+    setStorageTestMessage("");
+    setStorageTestOk(null);
     setStorageTesting(true);
     try {
       const result = await adminRunStorageE2E();
-      setMessage(
-        `Flux Storage validé : privé inaccessible publiquement (HTTP ${result.privatePublicStatus}), promotion publique HTTP ${result.promotedPublicStatus}, nettoyage OK.`
+      setStorageTestOk(true);
+      setStorageTestMessage(
+        `Flux Storage validé : média privé inaccessible publiquement (HTTP ${result.privatePublicStatus}), promotion publique HTTP ${result.promotedPublicStatus}, nettoyage terminé.`
       );
       setReadiness(await getReleaseReadiness().catch(() => null));
     } catch (error) {
-      setMessage(
+      setStorageTestOk(false);
+      setStorageTestMessage(
         error instanceof Error
           ? error.message
           : "Validation du flux Storage impossible."
@@ -353,9 +359,23 @@ export default function AdminPage() {
                   disabled={storageTesting || readiness.checks.some((item) => item.key === "bucket-site-private-media" && item.status === "blocker")}
                   onClick={() => void testPrivateStorageFlow()}
                 >
-                  {storageTesting ? "Test Storage en cours…" : "Tester le flux média privé → public"}
+                  {storageTesting
+                    ? "Test Storage en cours…"
+                    : storageTestOk
+                      ? "Flux Storage validé ✓"
+                      : "Tester le flux média privé → public"}
                 </button>
               </div>
+              {storageTestMessage ? (
+                <p
+                  className="plans-note"
+                  role="status"
+                  aria-live="polite"
+                  data-state={storageTestOk ? "success" : "error"}
+                >
+                  {storageTestMessage}
+                </p>
+              ) : null}
               <p className="admin-readiness-meta">
                 Environnement : <b>{readiness.environment}</b>
                 {readiness.commitSha ? <> · commit <code>{readiness.commitSha.slice(0, 12)}</code></> : null}
