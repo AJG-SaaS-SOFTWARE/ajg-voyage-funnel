@@ -44,10 +44,21 @@ export async function GET() {
         ok: true,
         service: "ajg-site-builder",
         database: "ok",
+        environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+        deployment: {
+          commitSha: process.env.VERCEL_GIT_COMMIT_SHA || null,
+          commitRef: process.env.VERCEL_GIT_COMMIT_REF || null,
+          deploymentId: process.env.VERCEL_DEPLOYMENT_ID || null
+        },
         region: process.env.VERCEL_REGION || "unknown",
         checkedAt: new Date().toISOString()
       },
-      { headers: { "Cache-Control": "no-store, max-age=0" } }
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+          "X-Content-Type-Options": "nosniff"
+        }
+      }
     );
   } catch {
     return NextResponse.json(
