@@ -83,3 +83,28 @@ grant execute on function private.advance_builder_billing_states() to service_ro
 -- Daily, idempotent advancement of J14/J28/J104 states. pg_cron executes inside Postgres.
 create extension if not exists pg_cron;
 select cron.schedule('builder-billing-daily','15 2 * * *',$$select private.advance_builder_billing_states();$$);
+
+
+-- From J14 onward the public site may remain visible, but lead collection is disabled.
+create or replace function private.submit_contact_message_internal(p_site_id uuid,p_sender_name text,p_sender_email text,p_subject text,p_message text,p_consent boolean,p_abuse_fingerprint text)
+returns uuid language plpgsql security definer set search_path='pg_catalog','public','private','pg_temp' as $$
+declare v_owner uuid; v_id uuid;
+begin
+ if p_consent is not true then raise exception 'consent_required' using errcode='22023'; end if;
+ if char_length(trim(p_sender_name)) not between 1 and 100
+ or char_length(trim(p_sender_email)) not between 3 and 254
+ or p_sender_email !~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$'
+ or char_length(coalesce(p_subject,'')) > 160
+ or char_length(trim(p_message)) not between 10 and 4000
+ or char_length(p_abuse_fingerprint) not between 32 and 128
+ then raise exception 'invalid_contact_message' using errcode='22023'; end if;
+ select s.owner_id into v_owner from public.sites s
+ where s.id=p_site_id and s.status='published' and s.public_access_state='live'
+ and not exists(select 1 from public.site_billing_states bs where bs.site_id=s.id and bs.state in ('restricted','public_suspended','retention','closed'));
+ if v_owner is null then raise exception 'site_not_available' using errcode='22023'; end if;
+ if (select count(*) from public.contact_messages where site_id=p_site_id and abuse_fingerprint=p_abuse_fingerprint and created_at > now()-interval '15 minutes') >= 3
+ then raise exception 'rate_limited' using errcode='P0001'; end if;
+ insert into public.contact_messages(site_id,owner_id,sender_name,sender_email,subject,message,consent_at,abuse_fingerprint)
+ values(p_site_id,v_owner,trim(p_sender_name),lower(trim(p_sender_email)),left(coalesce(p_subject,''),160),trim(p_message),now(),p_abuse_fingerprint)
+ returning id into v_id; return v_id;
+end $$;
