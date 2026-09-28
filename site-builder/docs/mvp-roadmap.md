@@ -1,6 +1,6 @@
 # Roadmap MVP — AJG Site Builder
 
-Dernière mise à jour : 27 septembre 2026.
+Dernière mise à jour : 28 septembre 2026.
 
 ## Sprint 1 — configurateur utilisable
 État : terminé pour le prototype bêta
@@ -84,7 +84,9 @@ Objectif de sortie : l’IA peut proposer une structure de site sensiblement dif
 - [x] upload direct multi-format depuis la bibliothèque : images, audio, PDF et TXT, avec taille/type bornés ;
 - [x] attribution automatique par l’IA des assets autorisés aux pages, validation des IDs et rendu public ;
 - [x] conversation de révision globale du site (« plus premium », « retire cette page », etc.) avec proposition séparée et validation avant application ;
-- [x] éditeur visuel de l’arborescence après génération : ordre, activation, suppression, ajout, type, URL, rôle et contenus affectés.
+- [x] éditeur visuel de l’arborescence après génération : ordre, activation, suppression, ajout, type, URL, rôle et contenus affectés ;
+- [x] limite de 6 pages alignée entre IA, normalisation et éditeur ; accueil unique et non déplaçable ;
+- [x] IDs de contenus publiables transmis à l’AI Site Architect afin que l’affectation d’assets soit réellement exploitable.
 
 Checkpoint de l’itération : le modèle de données, le moteur IA, la persistance, le rendu multipage et les garde-fous de droits sont reliés de bout en bout. La révision globale et l’éditeur visuel sont désormais également codés ; la recette du build et de la production reste nécessaire avant validation bêta.
 
@@ -162,7 +164,7 @@ Modules à étudier après validation bêta :
 - [x] audit sécurité/performance post-migration et index de relation ajouté ;
 - [ ] prix commercial, périodicité et éventuel essai à valider avant activation du paiement ;
 - [ ] connecter Stripe et ses webhooks ;
-- [ ] appliquer les droits Premium au runtime une fois le paiement opérationnel ;
+- [x] droits Premium appliqués au runtime : domaine personnalisé côté repository et AI Site Architect côté API serveur ;
 - [x] mesurer le stockage `site-media` par propriétaire et l’afficher dans « Mon offre » ;
 - [x] refuser les nouveaux imports qui dépasseraient le quota de stockage de l’offre ;
 - [x] conserver les restrictions Storage/RLS existantes et calculer l’usage depuis les métadonnées Storage en lecture seule ;
@@ -172,6 +174,7 @@ Modules à étudier après validation bêta :
 - [x] back-office administrateur protégé par rôle RLS, vue sites/offres/domaines et changement d’offre ;
 - [x] aucun rôle administrateur attribué automatiquement : élévation volontaire uniquement ;
 - [x] droits Premium retombent automatiquement sur le niveau gratuit lorsque l’abonnement n’est plus `active`/`trialing`, tout en conservant le vrai statut (`past_due`, `canceled`, `suspended`) pour l’interface ;
+- [x] nouvelle publication bloquée pour un abonnement non régularisé, sans suppression automatique du site ni des données ;
 - [ ] connecter le statut Stripe aux états d’abonnement et appliquer la politique finale de grâce/suspension une fois les délais commerciaux validés.
 
 Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
@@ -190,7 +193,8 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 - [x] audit Supabase post-implémentation : aucun nouveau warning sécurité applicatif ;
 - [ ] rattachement/vérification Vercel automatisé des domaines ;
 - [ ] activation Stripe après validation de l’offre commerciale ;
-- [ ] synchronisation impayé/annulation → droits et suspension selon la politique commerciale.
+- [x] moteur de droits déjà prêt pour `past_due` / `canceled` / `suspended` et blocage de nouvelle publication ;
+- [ ] synchronisation Stripe → statuts et délais de grâce dès validation des paramètres commerciaux.
 
 ## Principe de conformité
 
