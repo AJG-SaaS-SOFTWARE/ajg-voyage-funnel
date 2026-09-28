@@ -192,33 +192,12 @@ export async function GET(request: Request) {
         status: data ? "pass" : error ? "blocker" : "blocker",
         detail: data
           ? `Bucket ${bucket.id} disponible (${data.public ? "public" : "privé"}).`
-          : `Bucket ${bucket.id} absent ou inaccessible.`
+          : bucket.id === "site-private-media"
+            ? "Bucket site-private-media absent : un administrateur peut l’initialiser depuis ce tableau."
+            : `Bucket ${bucket.id} absent ou inaccessible.`
       });
     }
 
-    const privateBucketReady = checks.some(
-      (item) => item.key === "bucket-site-private-media" && item.status === "pass"
-    );
-    const bootstrapSecret = present(process.env.STORAGE_BOOTSTRAP_SECRET);
-    checks.push({
-      key: "storage-bootstrap-secret",
-      label: "Secret bootstrap Storage",
-      scope: "beta",
-      status: privateBucketReady
-        ? bootstrapSecret
-          ? "warn"
-          : "pass"
-        : bootstrapSecret
-          ? "pass"
-          : "blocker",
-      detail: privateBucketReady
-        ? bootstrapSecret
-          ? "Le bucket privé existe : retirez STORAGE_BOOTSTRAP_SECRET après recette du bootstrap."
-          : "Bucket privé présent et secret one-shot retiré."
-        : bootstrapSecret
-          ? "Secret one-shot présent pour initialiser le bucket privé."
-          : "Bucket privé absent et STORAGE_BOOTSTRAP_SECRET manque."
-    });
   } else {
     checks.push({
       key: "storage-verification",

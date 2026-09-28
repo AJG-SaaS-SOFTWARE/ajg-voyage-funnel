@@ -289,6 +289,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] événement `publish_success` rattaché à l’identifiant réellement retourné par la publication ;
 - [x] anciennes URLs `/site/{slug}` sur sous-domaines gérés redirigées vers l’URL publique propre ;
 - [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;\n- [x] diagnostic admin de préproduction : présence des secrets, révision Vercel et buckets Storage vérifiés sans exposer les valeurs ;
+- [x] bootstrap Storage privé directement depuis l’administration, protégé par session + rôle admin et sans secret temporaire supplémentaire ;
 - [ ] activer la protection Supabase contre les mots de passe compromis si le plan/projet le permet.
 
 ### Recette impayés — moteur d’accès
@@ -310,8 +311,8 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 ### Stockage média — dette préproduction
 - [x] séparer dans le code les médias publiables et la bibliothèque privée ; activation physique du bucket privé encore à effectuer après déploiement ;
 - [x] RLS propriétaire du bucket privé préparées et imports de bibliothèque basculés vers des références privées stables ;
-- [x] bootstrap serveur one-shot préparé pour créer `site-private-media` via le SDK Storage, sans mutation directe de `storage.buckets` ;
-- [ ] exécuter le bootstrap après déploiement du `main`, vérifier le bucket privé réel, puis retirer `STORAGE_BOOTSTRAP_SECRET` ;
+- [x] bootstrap serveur idempotent de `site-private-media` via le SDK Storage, déclenchable uniquement par un administrateur authentifié ;
+- [ ] après déploiement du `main`, déclencher le bootstrap depuis l’administration puis vérifier le bucket privé réel ;
 - [x] promotion contrôlée privée → publique branchée à la publication : session + ownership + capacité de publication + droits/licence vérifiés côté serveur ;
 - [x] références `private://` exclues du rendu public et copie rendue répétable pour les republications ;
 - [ ] exécuter le bootstrap du bucket privé sur l’environnement déployé puis effectuer la recette réelle import privé → publication → URL publique.
@@ -326,8 +327,8 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 
 ### Blocages externes avant release candidate réelle
 - [ ] Vercel : production toujours sur l’ancien commit ; statut GitHub actuel = `Deployment rate limited`, pas une erreur de compilation ;
-- [ ] Storage : exécuter le bootstrap SDK de `site-private-media` une fois le nouveau serveur déployé ;
-- [ ] Secrets serveur : configurer/valider sans exposition `SUPABASE_SECRET_KEY`, `CRON_SECRET`, Resend, `VERCEL_TOKEN` et secrets fournisseur de paiement lorsque ce fournisseur sera choisi ;
+- [ ] Storage : déclencher le bootstrap admin de `site-private-media` une fois le nouveau serveur déployé ;
+- [ ] Secrets serveur : configurer/valider sans exposition `SUPABASE_SECRET_KEY`, `CRON_SECRET`, Resend, `VERCEL_TOKEN` et secrets fournisseur de paiement lorsque ce fournisseur sera choisi ; le secret temporaire Storage n’est plus nécessaire ;
 - [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
 
 ### Cohérence multi-site complémentaire

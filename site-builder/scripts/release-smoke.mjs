@@ -32,9 +32,10 @@ async function waitUntilReady() {
   throw new Error(`next start did not become ready\n${stdout}\n${stderr}`);
 }
 
-async function expectStatus(path, expected) {
-  console.log("Smoke:", path);
+async function expectStatus(path, expected, init = {}) {
+  console.log("Smoke:", init.method || "GET", path);
   const response = await fetch(origin + path, {
+    ...init,
     redirect: "manual",
     signal: AbortSignal.timeout(8000)
   });
@@ -55,6 +56,7 @@ try {
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   await expectStatus("/api/admin/release-readiness", 401);
   await expectStatus("/api/admin/beta-metrics", 401);
+  await expectStatus("/api/admin/storage-bootstrap", 401, { method: "POST" });
   console.log("AJG Builder release smoke passed.");
 } finally {
   child.kill("SIGTERM");
