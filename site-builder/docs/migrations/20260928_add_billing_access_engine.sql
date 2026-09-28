@@ -108,3 +108,23 @@ begin
  values(p_site_id,v_owner,trim(p_sender_name),lower(trim(p_sender_email)),left(coalesce(p_subject,''),160),trim(p_message),now(),p_abuse_fingerprint)
  returning id into v_id; return v_id;
 end $$;
+
+
+-- Storage cannot be bypassed by calling Supabase directly after J14.
+create or replace function public.can_modify_site_media(p_site_id uuid)
+returns boolean language sql security invoker set search_path='' stable as $$
+ select exists(select 1 from public.sites s left join public.site_billing_states bs on bs.site_id=s.id
+ where s.id=p_site_id and s.owner_id=(select auth.uid()) and coalesce(bs.state,'active') in ('free','trial','active','grace'))
+$$;
+revoke all on function public.can_modify_site_media(uuid) from public,anon;
+grant execute on function public.can_modify_site_media(uuid) to authenticated,service_role;
+drop policy if exists "authenticated upload site media" on storage.objects;
+create policy "authenticated upload site media" on storage.objects for insert to authenticated
+with check(bucket_id='site-media' and (storage.foldername(name))[1]=(select auth.uid())::text and array_length(storage.foldername(name),1)>=2 and public.can_modify_site_media(((storage.foldername(name))[2])::uuid));
+drop policy if exists "owners update site media objects" on storage.objects;
+create policy "owners update site media objects" on storage.objects for update to authenticated
+using(bucket_id='site-media' and (storage.foldername(name))[1]=(select auth.uid())::text and array_length(storage.foldername(name),1)>=2 and public.can_modify_site_media(((storage.foldername(name))[2])::uuid))
+with check(bucket_id='site-media' and (storage.foldername(name))[1]=(select auth.uid())::text and array_length(storage.foldername(name),1)>=2 and public.can_modify_site_media(((storage.foldername(name))[2])::uuid));
+drop policy if exists "owners delete site media objects" on storage.objects;
+create policy "owners delete site media objects" on storage.objects for delete to authenticated
+using(bucket_id='site-media' and (storage.foldername(name))[1]=(select auth.uid())::text and array_length(storage.foldername(name),1)>=2 and public.can_modify_site_media(((storage.foldername(name))[2])::uuid));
