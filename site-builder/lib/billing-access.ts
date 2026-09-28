@@ -33,7 +33,9 @@ export async function downloadMySiteExport() {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session?.access_token) throw new Error("Votre session a expiré.");
-  const site = await getMySite();\n  if (!site) throw new Error("Site introuvable.");\n  const response = await fetch(`/api/export/site?siteId=${encodeURIComponent(site.id)}`, { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
+  const site = await getMySite();
+  if (!site) throw new Error("Site introuvable.");
+  const response = await fetch(`/api/export/site?siteId=${encodeURIComponent(site.id)}`, { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new Error(body?.error || "Export impossible.");
