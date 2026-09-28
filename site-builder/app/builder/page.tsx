@@ -1015,8 +1015,10 @@ export default function BuilderPage() {
             {step === "story" ? (
               <>
                 <ContentLibraryEditor value={config.contentLibrary} onChange={(contentLibrary) => update("contentLibrary", contentLibrary)} onUpload={async (_asset, file) => {
-                  if (!remoteMode || !config.slug) throw new Error("Enregistrez d’abord l’adresse du site avant d’importer un fichier.");
-                  return uploadContentAsset(file, config.slug);
+                  if (!remoteMode) throw new Error("Connectez-vous pour importer un fichier.");
+                  const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false);
+                  setRemoteSiteId(site.id);
+                  return uploadContentAsset(file, site.id);
                 }} />
                 <ArchitectureEditor value={config.architecture} library={config.contentLibrary} onChange={(architecture) => update("architecture", architecture)} />
                 <details className="guided-writing-card ai-architect-card">
