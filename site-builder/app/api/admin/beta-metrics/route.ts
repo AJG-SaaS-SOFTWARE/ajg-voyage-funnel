@@ -50,6 +50,19 @@ export async function GET(request: Request) {
   const service = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
+
+  const { data: authUsers, error: authUsersError } =
+    await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (authUsersError) {
+    return NextResponse.json({ error: "Beta cohort unavailable" }, { status: 503 });
+  }
+
+  const betaUsers = (authUsers.users || []).filter(
+    (user) => user.app_metadata?.ajg_beta === true
+  );
+  const betaUserIds = new Set(betaUsers.map((user) => user.id));
+  const cohortScope = betaUserIds.size ? "beta" : "all";
+
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
@@ -79,10 +92,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Beta metrics unavailable" }, { status: 503 });
   }
 
-  const eventRows = events || [];
-  const feedbackRows = feedback || [];
-  const aiRows = aiUsage || [];
-  const siteRows = sites || [];
+  const eventRows =
+    cohortScope === "beta"
+      ? (events || []).filter((item) => betaUserIds.has(item.user_id))
+      : events || [];
+  const feedbackRows =
+    cohortScope === "beta"
+      ? (feedback || []).filter((item) => betaUserIds.has(item.user_id))
+      : feedback || [];
+  const aiRows =
+    cohortScope === "beta"
+      ? (aiUsage || []).filter((item) => betaUserIds.has(item.user_id))
+      : aiUsage || [];
+  const siteRows =
+    cohortScope === "beta"
+      ? (sites || []).filter((item) => betaUserIds.has(item.owner_id))
+      : sites || [];
 
   const usersFor = (...names: string[]) =>
     new Set(
@@ -162,6 +187,11 @@ export async function GET(request: Request) {
     {
       periodDays: 30,
       generatedAt: new Date().toISOString(),
+      cohort: {
+        scope: cohortScope,
+        size: betaUsers.length,
+        activated: betaUsers.filter((user) => Boolean(user.last_sign_in_at)).length
+      },
       funnel: {
         opened,
         engaged,
@@ -197,7 +227,10 @@ export async function GET(request: Request) {
           "Utilisateur distinct ayant atteint l’étape Message ou appliqué une proposition AI Site Architect/révision.",
         reviewed: "Utilisateur distinct ayant atteint l’étape Publication / revue.",
         published: "Utilisateur distinct ayant déclenché une publication réussie.",
-        aiGenerations: "Générations IA réellement consommées dans le ledger serveur."
+        aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
+        cohort: cohortScope === "beta"
+          ? "Métriques limitées aux comptes explicitement marqués dans la cohorte bêta."
+          : "Aucune cohorte bêta définie : métriques calculées sur l’ensemble des utilisateurs."
       }
     },
     {
