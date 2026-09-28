@@ -189,7 +189,25 @@ export type AdminBetaMetrics = {
     openedWithoutEngagement: number;
     openedWithoutPublication: number;
   };
-  ai: { generations: number; users: number; appliedUsers: number };
+  ai: {
+    generations: number;
+    users: number;
+    appliedUsers: number;
+    architect: {
+      attempts: number;
+      firstGenerations: number;
+      regenerations: number;
+      refinements: number;
+      applications: number;
+      users: number;
+      regeneratedUsers: number;
+      appliedUsers: number;
+      regenerationRate: number;
+      refinementRate: number;
+      applicationRate: number;
+      userAdoptionRate: number;
+    };
+  };
   feedback: { count: number; users: number; averageRating: number | null; open: number };
   sites: {
     active: number;
