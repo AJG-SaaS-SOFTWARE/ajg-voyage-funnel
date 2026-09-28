@@ -216,6 +216,24 @@ Restent volontairement ouverts :
 Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas été vérifiés dans leur environnement réel.
 
 
+
+## Ordre d’exécution canonique — état au 28 septembre 2026
+
+Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs dans la roadmap conservent l’historique détaillé, mais ne changent pas l’ordre de travail ci-dessous.
+
+1. **Débloquer la release contrôlée** : ajouter `VERCEL_TOKEN` aux secrets GitHub Actions et conserver le token serveur Vercel côté environnement de production.
+2. **Déployer exactement le `main` courant** via le workflow `Site Builder Production Release`. Le staging et la production doivent exposer le SHA attendu ; sinon la promotion échoue ou déclenche le rollback.
+3. **Valider la préproduction** depuis l’admin : Supabase, IA, Resend, cron, Vercel, buckets Storage et SHA déployé.
+4. **Créer/vérifier `site-private-media`** depuis l’action admin, puis effectuer la recette import privé → promotion → URL publique.
+5. **Exécuter la recette E2E réelle** : magic link → création → AI Site Architect → médias → publication → site public → feedback → export de récupération.
+6. **Valider routage réel** : sous-domaines gérés, canonical/metadata, domaine personnalisé et DNS/Vercel.
+7. **Lancer la bêta 5–10 comptes** et observer le dashboard 30 jours ; corriger uniquement les frictions confirmées par ces tests.
+8. **Décisions commerciales utilisateur requises** : prix, périodicité, essai éventuel, nombre de sites inclus. La politique d’impayés reste J0/J14/J28/J104 sauf décision explicite signalée.
+9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
+10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
+
+Blocage actif immédiat : `VERCEL_TOKEN` n’est pas présent dans les secrets GitHub Actions du workflow de release. Tant que ce point n’est pas levé, aucune validation production, Storage privé ou E2E réelle ne doit être marquée terminée.
+
 ## Sprint 6 — passage en SaaS commercialisable
 
 État : démarré le 28 septembre 2026
@@ -224,7 +242,8 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 - [x] identifier le blocage du dernier `main` : quota Vercel `build-rate-limit`, et non erreur applicative connue ;
 - [x] conserver le dernier déploiement READY comme production de repli tant que la release candidate n’est pas validée ;
 - [x] rendre le workflow Site Builder CI déclenchable manuellement pour disposer d’une validation indépendante ;
-- [x] CI GitHub validée sur le dernier socle : `tsc --noEmit` puis `next build` réussissent indépendamment de Vercel ;\n- [x] recette automatisée renforcée : test de l’archive de récupération puis démarrage réel de la release via `next start` avec smoke tests HTTP indépendants de Supabase/Vercel ;
+- [x] CI GitHub validée sur le dernier socle : `tsc --noEmit` puis `next build` réussissent indépendamment de Vercel ;
+- [x] recette automatisée renforcée : test de l’archive de récupération puis démarrage réel de la release via `next start` avec smoke tests HTTP indépendants de Supabase/Vercel ;
 - [x] vérification de révision déployée préparée : `/api/health` expose le SHA Vercel et `verify:deployment` bloque la recette si l’environnement ne sert pas le `main` attendu ;
 - [x] release production contrôlée : auto-déploiements Git Vercel désactivés, workflow manuel prébuildé avec staging `--skip-domain`, smoke test puis promotion ;
 - [x] rollback automatique vers le déploiement qui servait réellement l’alias production si la santé échoue après promotion ;
@@ -293,7 +312,8 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] workflow de triage des retours bêta réservé aux administrateurs ;
 - [x] événement `publish_success` rattaché à l’identifiant réellement retourné par la publication ;
 - [x] anciennes URLs `/site/{slug}` sur sous-domaines gérés redirigées vers l’URL publique propre ;
-- [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;\n- [x] diagnostic admin de préproduction : présence des secrets, révision Vercel et buckets Storage vérifiés sans exposer les valeurs ;
+- [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;
+- [x] diagnostic admin de préproduction : présence des secrets, révision Vercel et buckets Storage vérifiés sans exposer les valeurs ;
 - [x] validation active en lecture du token serveur Vercel contre le projet configuré, avec timeout et sans exposition de la réponse sensible ;
 - [x] bootstrap Storage privé directement depuis l’administration, protégé par session + rôle admin et sans secret temporaire supplémentaire ;
 - [ ] activer la protection Supabase contre les mots de passe compromis si le plan/projet le permet.
@@ -361,7 +381,8 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] CI indépendante : TypeScript + build Next.js verts sur les derniers changements fonctionnels ;
 - [x] sécurité DB : fonctions critiques impayés/queue exécutables uniquement par `service_role` ; audit RLS sans erreur ;
 - [x] multi-site : isolation DB + ciblage UI Builder/Domaines/Facturation/Offres ;
-- [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;\n- [x] récupération client : archive TAR.GZ streamée avec manifeste v3 et copie des médias publics/privés, sans nouvelle dépendance ;
+- [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;
+- [x] récupération client : archive TAR.GZ streamée avec manifeste v3 et copie des médias publics/privés, sans nouvelle dépendance ;
 - [x] domaines : endpoints Vercel utilisés conformes à la documentation actuelle ;
 - [ ] Vercel : production encore bloquée sur l’ancien SHA `0b16e3b…`, donc aucune recette HTTP des nouveautés ne peut être déclarée terminée ;
 - [ ] Storage privé : bootstrap réel et recette import/promotion attendent ce déploiement ;
