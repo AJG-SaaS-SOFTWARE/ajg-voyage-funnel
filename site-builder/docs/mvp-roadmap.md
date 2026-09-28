@@ -122,6 +122,8 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] dashboard admin qualité Premium : adoption utilisateurs, taux de régénération, taux de raffinement et applications/tentatives sur 30 jours ;
 - [x] télémétrie fournisseur server-only : modèle, appels, tokens d’entrée/cache/sortie/raisonnement et durée, sans prompt ni contenu client ;
 - [x] empreinte technique Premium visible dans l’admin pour dimensionner les futurs quotas/prix sur les coûts réels plutôt que sur une hypothèse ;
+- [x] évaluation humaine structurée directement sur chaque proposition : pertinent / à améliorer, avec motif catégorisé mais aucun commentaire libre ni contenu client ;
+- [x] dashboard admin enrichi avec taux positif, taux de réponse et motifs principaux des propositions jugées à améliorer ;
 - [ ] valider une génération Premium v2 réelle en production après CI/release ;
 - [ ] mesurer pendant la bêta le taux proposition → application et les demandes de régénération pour piloter les prochaines améliorations.
 
