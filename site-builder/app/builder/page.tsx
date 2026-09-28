@@ -702,14 +702,16 @@ export default function BuilderPage() {
     setSyncError("");
     try {
       await saveQueue.current;
+      let publishedSiteId = remoteSiteId;
       if (remoteMode) {
         const remote = await saveMySite(config, true);
+        publishedSiteId = remote.id;
         setRemoteSiteId(remote.id);
       }
       publishDraft(config);
       setSaved(true);
       setPublished(true);
-      void trackProductEvent("publish_success", remoteSiteId);
+      void trackProductEvent("publish_success", publishedSiteId);
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "Erreur de publication.");
     } finally {
