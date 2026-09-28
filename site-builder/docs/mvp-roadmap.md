@@ -280,3 +280,12 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] événements de facturation désormais ciblables par site : un impayé sur le site A ne suspend pas le site B du même propriétaire ;
 - [x] entitlements de plan ciblés par site pour IA avancée et domaines ; quotas anti-abus IA restent volontairement agrégés au compte ;
 - [ ] validation production après réouverture du pipeline Vercel.
+
+### Durcissement préproduction — 28 septembre 2026
+- [x] administration des offres alignée sur la facturation par site, sans mutation involontaire des autres sites du propriétaire ;
+- [x] table des rôles admin durcie : clients authentifiés en lecture seule, auto-promotion SQL refusée ;
+- [x] workflow de triage des retours bêta réservé aux administrateurs ;
+- [x] événement `publish_success` rattaché à l’identifiant réellement retourné par la publication ;
+- [x] anciennes URLs `/site/{slug}` sur sous-domaines gérés redirigées vers l’URL publique propre ;
+- [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;
+- [ ] activer la protection Supabase contre les mots de passe compromis si le plan/projet le permet.
