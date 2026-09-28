@@ -227,6 +227,7 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 - [x] CI GitHub validée sur le dernier socle : `tsc --noEmit` puis `next build` réussissent indépendamment de Vercel ;\n- [x] recette automatisée renforcée : test de l’archive de récupération puis démarrage réel de la release via `next start` avec smoke tests HTTP indépendants de Supabase/Vercel ;
 - [x] release production contrôlée : auto-déploiements Git Vercel désactivés, workflow manuel prébuildé avec staging `--skip-domain`, smoke test puis promotion ;
 - [x] branche réservée `release/site-builder-production` comme déclencheur contrôlé alternatif à `workflow_dispatch`, avec vérification stricte qu’elle pointe sur le `main` courant ;
+- [x] premier déclenchement de release contrôlée exécuté : workflow lancé correctement, arrêt avant Vercel car le secret GitHub Actions `VERCEL_TOKEN` est absent ; préflight corrigé pour s’exécuter après checkout ;
 - [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
 - [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
 - [ ] valider sous-domaines et domaines personnalisés en environnement réel.
@@ -291,6 +292,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] événement `publish_success` rattaché à l’identifiant réellement retourné par la publication ;
 - [x] anciennes URLs `/site/{slug}` sur sous-domaines gérés redirigées vers l’URL publique propre ;
 - [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;\n- [x] diagnostic admin de préproduction : présence des secrets, révision Vercel et buckets Storage vérifiés sans exposer les valeurs ;
+- [x] validation active en lecture du token serveur Vercel contre le projet configuré, avec timeout et sans exposition de la réponse sensible ;
 - [x] bootstrap Storage privé directement depuis l’administration, protégé par session + rôle admin et sans secret temporaire supplémentaire ;
 - [ ] activer la protection Supabase contre les mots de passe compromis si le plan/projet le permet.
 
@@ -328,7 +330,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [ ] recette réelle Vercel/DNS bloquée tant que le déploiement du `main` est rate-limité et tant que `VERCEL_TOKEN` n’est pas configuré côté serveur.
 
 ### Blocages externes avant release candidate réelle
-- [ ] Vercel : production toujours sur l’ancien commit ; les auto-déploiements ont été remplacés par une release manuelle afin d’éviter de recréer le quota à chaque merge ; première exécution attend la levée du rate-limit et le secret GitHub `VERCEL_TOKEN` ;
+- [ ] Vercel : production toujours sur l’ancien commit ; les auto-déploiements sont coupés ; le déclencheur contrôlé fonctionne mais le premier run s’arrête avant Vercel car le secret GitHub Actions `VERCEL_TOKEN` n’est pas configuré ;
 - [ ] Storage : déclencher le bootstrap admin de `site-private-media` une fois le nouveau serveur déployé ;
 - [ ] Secrets serveur : configurer/valider sans exposition `SUPABASE_SECRET_KEY`, `CRON_SECRET`, Resend et `VERCEL_TOKEN` ; ajouter aussi `VERCEL_TOKEN` aux secrets GitHub Actions pour le workflow de release contrôlée ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
 - [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
@@ -361,6 +363,6 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] domaines : endpoints Vercel utilisés conformes à la documentation actuelle ;
 - [ ] Vercel : production encore bloquée sur l’ancien SHA `0b16e3b…`, donc aucune recette HTTP des nouveautés ne peut être déclarée terminée ;
 - [ ] Storage privé : bootstrap réel et recette import/promotion attendent ce déploiement ;
-- [ ] secrets de production : validation/configuration côté Vercel attendue ; `VERCEL_TOKEN` doit aussi être ajouté comme secret GitHub Actions avant la première release contrôlée ;
+- [ ] secrets de production : validation/configuration côté Vercel attendue ; `VERCEL_TOKEN` doit être ajouté comme secret GitHub Actions avant de relancer la release contrôlée ;
 - [ ] paiement réel : volontairement non activé avant validation prix/périodicité/essai et nombre de sites inclus par offre ;
 - [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
