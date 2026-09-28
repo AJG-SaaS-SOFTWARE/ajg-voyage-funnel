@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PrivacyPage } from "../../../../components/SiteLegalPages";
 import { getPublicSite, publicSiteUrl } from "../../../../lib/public-site";
 import { legalIsComplete } from "../../../../lib/site-legal";
+import { publicRouteBase } from "../../../../lib/public-request";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +22,5 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const site = await getPublicSite(slug);
   if (!site || !legalIsComplete(site.config.legal, site.config.firstName, site.config.lastName)) notFound();
-  return <PrivacyPage config={site.config} />;
+  return <PrivacyPage config={site.config} routeBase={await publicRouteBase(slug)} />;
 }
