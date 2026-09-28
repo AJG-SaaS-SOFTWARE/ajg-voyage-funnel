@@ -136,8 +136,17 @@ export async function adminInviteBetaMember(email: string) {
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = body?.detail ? ` — ${body.detail}` : "";
-    throw new Error((body?.error || "Invitation bêta impossible.") + detail);
+    const issueDetail = Array.isArray(body?.issues)
+      ? body.issues
+          .map((item: { detail?: string }) => item?.detail)
+          .filter(Boolean)
+          .join(" · ")
+      : "";
+    const detail = body?.detail || issueDetail;
+    throw new Error(
+      (body?.error || "Invitation bêta impossible.") +
+        (detail ? ` — ${detail}` : "")
+    );
   }
   return body as { invited: boolean; existing: boolean; member: AdminBetaCohortMember };
 }
