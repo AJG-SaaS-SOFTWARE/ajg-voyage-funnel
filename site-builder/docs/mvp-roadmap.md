@@ -273,5 +273,6 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] file de notifications J0/J3/J7/J12/J74/J97 + réactivation, dédupliquée et avec worker Resend idempotent ; activation réelle après présence des secrets serveur et déploiement ;
 - [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
 - [x] primitive serveur de réactivation après paiement confirmé : droits, site public et relances rétablis/annulés de façon idempotente ; branchement fournisseur restant à faire ;
-- [~] recette temporelle : J13, J14, J28/J104, réactivation et isolation de deux sites vérifiés transactionnellement ; appels HTTP/Storage et paiement fournisseur à finaliser avec le déploiement ;
+- [ ] recette temporelle complète : J13, J14, J28/J104, réactivation, isolation de deux sites et blocage d’un UPDATE direct vérifiés transactionnellement ; appels HTTP de production et paiement fournisseur à finaliser avec le déploiement ;
+- [x] RLS durcies : un site suspendu n’est plus lisible anonymement via Data API et les mutations directes sites/drafts/domaines/Storage sont bloquées à partir de J14 ;
 - [ ] validation production après réouverture du pipeline Vercel.
