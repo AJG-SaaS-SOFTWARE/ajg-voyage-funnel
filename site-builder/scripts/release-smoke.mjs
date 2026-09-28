@@ -24,7 +24,7 @@ async function waitUntilReady() {
       throw new Error(`next start exited early with code ${child.exitCode}\n${stdout}\n${stderr}`);
     }
     try {
-      const response = await fetch(origin + "/login", { redirect: "manual" });
+      const response = await fetch(origin + "/login", { redirect: "manual", signal: AbortSignal.timeout(1500) });
       if (response.status < 500) return;
     } catch {}
     await new Promise((resolve) => setTimeout(resolve, 350));
@@ -33,7 +33,11 @@ async function waitUntilReady() {
 }
 
 async function expectStatus(path, expected) {
-  const response = await fetch(origin + path, { redirect: "manual" });
+  console.log("Smoke:", path);
+  const response = await fetch(origin + path, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(8000)
+  });
   if (response.status !== expected) {
     const body = await response.text().catch(() => "");
     throw new Error(
