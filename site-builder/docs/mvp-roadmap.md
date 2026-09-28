@@ -138,7 +138,8 @@ Modules à étudier après validation bêta :
 - [x] accès direct à `ai_usage_events` retiré aux clients et RPC de quota explicitement limité à `authenticated` / `service_role`, avec contrôle `auth.uid()` conservé ;
 - [x] vérification des privilèges effective après migration : anon sans RPC, utilisateur connecté sans accès direct au ledger ;
 - [ ] activer la protection Supabase contre les mots de passe compromis si elle est disponible sur l’offre utilisée (réglage Auth externe au code) ;
-- [x] logique privilégiée du quota déplacée dans le schéma `private` derrière un wrapper public `SECURITY INVOKER` ; accès anon refusé et accès authenticated restauré/vérifié ;
+- [x] logique privilégiée du quota déplacée dans le schéma `private` derrière des wrappers publics `SECURITY INVOKER` ; RPC actif `consume_my_ai_generation` testé sous rôle authenticated avec résultat `ok` ;
+- [x] compteur IA déplacé vers un RPC de lecture protégé : le client n’a toujours aucun SELECT/INSERT direct sur `ai_usage_events` ;
 - [x] même durcissement appliqué au RPC public de formulaire de contact : wrapper invoker exposé, logique definer isolée hors schéma API ;
 - [x] audit sécurité relancé : aucun avertissement `SECURITY DEFINER` exposé restant ;
 - [x] dépendances npm directes figées sur les versions réellement verrouillées pour des builds reproductibles.
@@ -170,7 +171,8 @@ Modules à étudier après validation bêta :
 - [ ] automatiser le rattachement et la vérification DNS/Vercel avant passage à `verified` ;
 - [x] back-office administrateur protégé par rôle RLS, vue sites/offres/domaines et changement d’offre ;
 - [x] aucun rôle administrateur attribué automatiquement : élévation volontaire uniquement ;
-- [ ] suspension automatique en cas d’impayé.
+- [x] droits Premium retombent automatiquement sur le niveau gratuit lorsque l’abonnement n’est plus `active`/`trialing`, tout en conservant le vrai statut (`past_due`, `canceled`, `suspended`) pour l’interface ;
+- [ ] connecter le statut Stripe aux états d’abonnement et appliquer la politique finale de grâce/suspension une fois les délais commerciaux validés.
 
 Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
 
