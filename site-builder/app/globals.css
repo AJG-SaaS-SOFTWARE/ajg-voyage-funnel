@@ -2765,3 +2765,34 @@ button.active .step-label small{color:#63817f}
 .premium-ai-models b{margin-right:5px;color:#29484a}
 @media (max-width:900px){.premium-ai-provider-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.premium-ai-provider-kpis{grid-template-columns:1fr}}
+
+.architect-human-eval{
+  display:grid;
+  gap:11px;
+  padding:14px;
+  border:1px solid rgba(42,80,84,.12);
+  border-radius:14px;
+  background:rgba(255,255,255,.66);
+}
+.architect-human-eval>div:first-child{display:grid;gap:4px}
+.architect-human-eval>div:first-child b{font-size:.78rem;color:#29484a}
+.architect-human-eval>div:first-child small{color:#697b7e;line-height:1.45}
+.architect-human-eval-actions{display:flex;gap:8px;flex-wrap:wrap}
+.architect-human-eval-actions .button.is-selected{box-shadow:0 0 0 2px rgba(25,109,101,.18)}
+.architect-human-eval-reasons{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.architect-human-eval-reasons>span{width:100%;font-size:.7rem;font-weight:720;color:#53686b}
+.architect-human-eval-reasons>button:not(.button){
+  padding:7px 10px;
+  border:1px solid rgba(16,33,43,.12);
+  border-radius:999px;
+  background:#fff;
+  color:#5d6d70;
+  font-size:.68rem;
+  cursor:pointer;
+}
+.architect-human-eval-reasons>button.is-selected{
+  border-color:#2a6d68;
+  background:#edf7f4;
+  color:#17634d;
+}
+.architect-human-eval-thanks{margin:0;color:#17634d;font-size:.74rem;font-weight:720}
