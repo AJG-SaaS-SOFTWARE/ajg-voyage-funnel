@@ -20,7 +20,7 @@ export default function ContentLibraryEditor({ value, onChange, onUpload }: { va
   return <details className="guided-writing-card content-library-card">
     <summary><span className="guided-writing-icon">＋</span><span><b>Mes contenus pour l’IA</b><small>Textes, photos, images, musique ou documents que l’IA peut prendre en compte.</small></span><span className="guided-writing-badge">{value.assets.length} contenu{value.assets.length > 1 ? "s" : ""}</span></summary>
     <div className="guided-writing-body">
-      <p className="guided-writing-intro">AJG distingue vos contenus des contenus générés. Un média dont les droits sont inconnus ne sera jamais marqué publiable automatiquement.</p>
+      <p className="guided-writing-intro">AJG distingue vos contenus des contenus générés. Un média dont les droits sont inconnus ne sera jamais marqué publiable automatiquement. Les fichiers importés sont stockés sur l’infrastructure média du site : n’importez pas de document confidentiel ou contenant des données personnelles qui ne doivent pas être accessibles depuis le Web.</p>
       <div className="content-library-actions">
         <button type="button" className="button secondary" onClick={() => add("text")}>+ Texte</button>
         <button type="button" className="button secondary" onClick={() => add("image")}>+ Image / photo</button>
