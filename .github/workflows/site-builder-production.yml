@@ -248,13 +248,15 @@ jobs:
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             -H "Content-Type: application/json")"
 
-          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "202" ] && [ "$HTTP_CODE" != "200" ]; then
+          if [ "$HTTP_CODE" = "409" ] && grep -q "already the current production deployment" /tmp/promote.json; then
+            echo "Deployment $DEPLOYMENT_ID is already current production; promotion is idempotently satisfied." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "200" ]; then
+            echo "Promotion accepted for $DEPLOYMENT_ID (HTTP $HTTP_CODE)." >> "$GITHUB_STEP_SUMMARY"
+          else
             echo "::error::Vercel promotion failed with HTTP $HTTP_CODE."
             cat /tmp/promote.json
             exit 1
           fi
-
-          echo "Promotion accepted for $DEPLOYMENT_ID (HTTP $HTTP_CODE)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify live production or rollback
         shell: bash
