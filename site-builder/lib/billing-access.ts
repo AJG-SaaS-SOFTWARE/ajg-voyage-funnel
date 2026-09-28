@@ -35,17 +35,25 @@ export async function downloadMySiteExport(siteId?: string) {
   if (error || !session?.access_token) throw new Error("Votre session a expiré.");
   const site = await getMySite(siteId);
   if (!site) throw new Error("Site introuvable.");
-  const response = await fetch(`/api/export/site?siteId=${encodeURIComponent(site.id)}`, { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
+  const response = await fetch(
+    `/api/export/site?siteId=${encodeURIComponent(site.id)}&format=archive`,
+    { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" }
+  );
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new Error(body?.error || "Export impossible.");
   }
-  const payload = await response.json();
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") || "";
+  const filename = disposition.match(/filename="([^"]+)"/i)?.[1]
+    || `ajg-builder-export-${site.slug || "site"}.tar.gz`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `ajg-builder-export-${payload.site?.slug || "site"}.json`;
+  a.download = filename;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

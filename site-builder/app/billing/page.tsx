@@ -21,7 +21,7 @@ export default function BillingPage() {
   async function downloadExport() {
     try {
       await downloadMySiteExport(siteId);
-      setMessage("Export préparé avec l’inventaire des médias.");
+      setMessage("Archive complète préparée : configuration et fichiers médias inclus.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Export impossible."); }
   }
 
@@ -36,7 +36,7 @@ export default function BillingPage() {
     {billing ? <section className="usage-card"><div><p className="eyebrow">État</p><h2>{billing.state}</h2>
       {limited ? <p>L’IA est coupée pendant la grâce. À la restriction, l’édition, les imports, la publication et les nouveaux formulaires sont également arrêtés. Le site public reste en ligne jusqu’à sa date de suspension.</p> : <p>Votre site dispose de ses capacités normales selon votre offre.</p>}
       <dl className="billing-dates"><div><dt>Fin de grâce / restriction</dt><dd>{date(billing.graceUntil || billing.restrictedAt)}</dd></div><div><dt>Suspension publique</dt><dd>{date(billing.publicSuspendAt)}</dd></div><div><dt>Export disponible jusqu’au</dt><dd>{date(billing.exportUntil)}</dd></div><div><dt>Fin de la fenêtre de récupération prévue</dt><dd>{date(billing.deleteAfter)}</dd></div></dl>
-      <div className="builder-actions"><button type="button" className="secondary-link" onClick={downloadExport}>Exporter mes données</button>{limited ? <button type="button" className="primary-link" disabled title="Le portail de paiement sera activé avec Stripe.">Mettre à jour mon paiement</button> : null}</div>
+      <div className="builder-actions"><button type="button" className="secondary-link" onClick={downloadExport}>Télécharger l’archive complète</button>{limited ? <button type="button" className="primary-link" disabled title="Le portail de paiement sera activé avec Stripe.">Mettre à jour mon paiement</button> : null}</div>
       {limited ? <p className="plans-note">Le bouton de règlement sera activé uniquement lorsque le portail de paiement signé sera connecté. Aucun paiement n’est simulé pendant la bêta.</p> : null}
     </div></section> : null}
   </main>;
