@@ -2708,3 +2708,34 @@ button.active .step-label small{color:#63817f}
   .premium-ai-metrics-heading>span{justify-self:start}
   .premium-ai-kpis{grid-template-columns:1fr}
 }
+
+.architect-clarification{display:grid;gap:12px}
+.architect-clarification-list{display:grid;gap:10px}
+.architect-clarification-list label{display:grid;gap:6px}
+.architect-clarification-list label>span{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  color:#5f5137;
+  font-size:.73rem;
+  font-weight:680;
+  line-height:1.45;
+}
+.architect-clarification-list i{
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:#7b602d;
+  color:#fff;
+  font-size:.62rem;
+  font-style:normal;
+}
+.architect-clarification-list textarea{
+  width:100%;
+  resize:vertical;
+  min-height:68px;
+}
+.architect-clarification-button{justify-self:start}
