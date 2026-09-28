@@ -47,7 +47,7 @@ try {
   await expectStatus("/login", 200);
   await expectStatus("/plans", 200);
   await expectStatus("/billing", 200);
-  await expectStatus("/site/ci-site-that-does-not-exist", 404);
+  await expectStatus("/ci-route-that-does-not-exist", 404);
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   console.log("AJG Builder release smoke passed.");
 } finally {
