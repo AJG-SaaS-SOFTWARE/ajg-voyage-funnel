@@ -192,7 +192,9 @@ export async function GET(request: Request) {
         status: data ? "pass" : error ? "blocker" : "blocker",
         detail: data
           ? `Bucket ${bucket.id} disponible (${data.public ? "public" : "privé"}).`
-          : bucket.id === "site-private-media"\n            ? "Bucket site-private-media absent : un administrateur peut l’initialiser depuis ce tableau."\n            : `Bucket ${bucket.id} absent ou inaccessible.`
+          : bucket.id === "site-private-media"
+            ? "Bucket site-private-media absent : un administrateur peut l’initialiser depuis ce tableau."
+            : `Bucket ${bucket.id} absent ou inaccessible.`
       });
     }
 
