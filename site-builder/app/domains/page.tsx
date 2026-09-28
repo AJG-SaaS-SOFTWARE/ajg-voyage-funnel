@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { getMyDomains, getMySite, removeCustomDomain, requestCustomDomain, type SiteDomain } from "../../lib/supabase-site-repository";
+import { getMyDomains, getMySite, removeCustomDomain, requestCustomDomain, syncCustomDomain, type SiteDomain } from "../../lib/supabase-site-repository";
 import { freeEntitlements, getMySiteEntitlements, type SubscriptionEntitlements } from "../../lib/subscription";
 
 export default function DomainsPage() {
@@ -13,7 +13,7 @@ export default function DomainsPage() {
   const [busy,setBusy]=useState(false);
   const refresh=async()=>{ const site=await getMySite(); const [items,entitlements]=await Promise.all([getMyDomains(),site?getMySiteEntitlements(site.id):Promise.resolve(freeEntitlements)]); setDomains(items); setPlan(entitlements); };
   useEffect(()=>{ void refresh().catch((e)=>setMessage(e instanceof Error?e.message:"Impossible de charger les domaines.")); },[]);
-  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setMessage("");try{await requestCustomDomain(hostname);setHostname("");await refresh();setMessage("Domaine enregistré. La vérification DNS et le rattachement à l’hébergement restent à effectuer.");}catch(error){setMessage(error instanceof Error?error.message:"Impossible d’enregistrer ce domaine.");}finally{setBusy(false);}};
+  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setMessage("");try{const site=await getMySite();if(!site)throw new Error("Créez d’abord votre site.");const domain=await requestCustomDomain(hostname);const result=await syncCustomDomain(site.id,domain.id);setHostname("");await refresh();setMessage(result.verified?"Domaine rattaché et vérifié.":"Domaine rattaché à Vercel. Configurez les enregistrements DNS demandés puis relancez la vérification.");}catch(error){setMessage(error instanceof Error?error.message:"Impossible d’enregistrer ce domaine.");}finally{setBusy(false);}};
   const remove=async(id:string)=>{setBusy(true);try{await removeCustomDomain(id);await refresh();}catch(error){setMessage(error instanceof Error?error.message:"Suppression impossible.");}finally{setBusy(false);}};
 
   return <main className="plans-page">
