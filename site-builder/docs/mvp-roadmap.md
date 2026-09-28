@@ -267,8 +267,9 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] Storage RLS bloque upload/update/delete direct après restriction ;
 - [x] scheduler PostgreSQL quotidien idempotent pour faire avancer les échéances ;
 - [x] test transactionnel du passage `grace → public_suspended` et de la suspension publique ;
-- [ ] écran propriétaire avec dates J14/J28/J104 et action de régularisation ;
-- [ ] export complet pages/arborescence/textes/SEO/médias/configuration ;
+- [x] écran propriétaire avec état et dates J14/J28/J104, export et emplacement de l’action de régularisation ; bouton paiement volontairement inactif avant Stripe ;
+- [x] export structuré JSON v1 du site, configuration, arborescence, contenus, métadonnées, domaines et références médias ;
+- [ ] export d’archive avec copie binaire des médias à ajouter avant lancement commercial ;
 - [ ] notifications J0/J3/J7/J12/J74/J97 avec journal d’envoi idempotent ;
 - [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
 - [ ] réactivation après paiement confirmé et contrôle du domaine/formulaires ;
