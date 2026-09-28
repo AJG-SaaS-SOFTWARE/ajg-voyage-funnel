@@ -232,7 +232,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
-Blocage actif immédiat : la release REST Vercel authentifie correctement le projet, mais Vercel refuse le redéploiement avec HTTP 402 car `functionFailoverRegions` est une fonctionnalité Enterprise. Le failover `fra1` a été retiré du code ; `cdg1` reste la région principale. La prochaine release doit confirmer que ce blocage est levé.
+Release production débloquée : le workflow REST Vercel passe désormais le préflight, construit en `cdg1`, vérifie le SHA, promeut explicitement l’artefact et valide les routes publiques. Le prochain jalon automatisé est le bootstrap/vérification de `site-private-media`.
 
 ## Sprint 6 — passage en SaaS commercialisable
 
@@ -251,6 +251,8 @@ Blocage actif immédiat : la release REST Vercel authentifie correctement le pro
 - [x] premier déclenchement de release contrôlée exécuté : workflow lancé correctement, arrêt avant Vercel car le secret GitHub Actions `VERCEL_TOKEN` est absent ; préflight corrigé pour s’exécuter après checkout ;
 - [x] chemin de release basculé sur l’API REST Vercel pour contourner le bug PAT/CLI `/v2/user` ; après validation CI, déploiement production atomique, vérification SHA/HTTP et rollback automatique ;
 - [x] cause HTTP 402 identifiée : `functionFailoverRegions` exige Enterprise ; failover `fra1` retiré, région principale `cdg1` conservée ;
+- [x] release production contrôlée réussie sur `main` : build Production, SHA, promotion REST et contrôles HTTP publics validés ;
+- [x] bootstrap privé intégré au pipeline : après une release publique valide, `site-private-media` est créé via l’API Storage Supabase si nécessaire puis vérifié privé ;
 - [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
 - [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
 - [ ] valider sous-domaines et domaines personnalisés en environnement réel.
