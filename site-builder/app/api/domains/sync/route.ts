@@ -15,11 +15,28 @@ export async function POST(request:NextRequest){
  const {data:domain}=await userClient.from("domains").select("id,hostname,kind,verification_status").eq("id",body.domainId).eq("site_id",body.siteId).maybeSingle();if(!domain)return NextResponse.json({error:"Domain unavailable"},{status:404});
  if(domain.kind==="custom_domain"){const {data:ent}=await userClient.rpc("get_my_site_entitlements",{p_site_id:body.siteId});const e=Array.isArray(ent)?ent[0]:ent;if(!e?.custom_domain)return NextResponse.json({error:"Custom domain unavailable"},{status:403});}
  if(domain.kind!=="custom_domain"&&domain.kind!=="managed_subdomain")return NextResponse.json({error:"Unsupported domain kind"},{status:400});
- const endpoint=`https://api.vercel.com/v10/projects/${encodeURIComponent(project)}/domains?teamId=${encodeURIComponent(team)}`;
- let res=await fetch(endpoint,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify({name:domain.hostname})});
- let result=await res.json().catch(()=>({}));
- if(!res.ok && res.status!==400)return NextResponse.json({error:"Unable to attach domain",details:result},{status:502});
- const verify=await fetch(`https://api.vercel.com/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(domain.hostname)}/verify?teamId=${encodeURIComponent(team)}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"}});
+ const authHeaders={Authorization:`Bearer ${token}`,"Content-Type":"application/json"};
+ const projectDomainUrl=`https://api.vercel.com/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(domain.hostname)}?teamId=${encodeURIComponent(team)}`;
+ let existingRes=await fetch(projectDomainUrl,{headers:authHeaders});
+ let result:any=existingRes.ok?await existingRes.json().catch(()=>({})):null;
+ if(!existingRes.ok){
+   const endpoint=`https://api.vercel.com/v10/projects/${encodeURIComponent(project)}/domains?teamId=${encodeURIComponent(team)}`;
+   const attachRes=await fetch(endpoint,{method:"POST",headers:authHeaders,body:JSON.stringify({name:domain.hostname})});
+   const attachResult:any=await attachRes.json().catch(()=>({}));
+   if(attachRes.ok){
+     result=attachResult;
+   }else{
+     existingRes=await fetch(projectDomainUrl,{headers:authHeaders});
+     if(existingRes.ok){
+       result=await existingRes.json().catch(()=>({}));
+     }else{
+       const code=attachResult?.error?.code||attachResult?.code||"vercel_domain_attach_failed";
+       const message=attachResult?.error?.message||attachResult?.message||"Vercel refuse le rattachement de ce domaine.";
+       return NextResponse.json({error:"Unable to attach domain",vercel:{status:attachRes.status,code,message}},{status:502});
+     }
+   }
+ }
+ const verify=await fetch(`https://api.vercel.com/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(domain.hostname)}/verify?teamId=${encodeURIComponent(team)}`,{method:"POST",headers:authHeaders});
  const verification=await verify.json().catch(()=>({}));
  const ownershipVerified=Boolean(verification?.verified);
  const configRes=await fetch(`https://api.vercel.com/v6/domains/${encodeURIComponent(domain.hostname)}/config?projectIdOrName=${encodeURIComponent(project)}&teamId=${encodeURIComponent(team)}`,{headers:{Authorization:`Bearer ${token}`,"Accept":"application/json"}});
