@@ -30,6 +30,8 @@ grant select on public.billing_state_events to authenticated;
 drop policy if exists "Owners can read billing state events" on public.billing_state_events;
 create policy "Owners can read billing state events" on public.billing_state_events for select to authenticated using ((select auth.uid())=owner_id);
 create index if not exists billing_state_events_site_created_idx on public.billing_state_events(site_id,created_at desc);
+create index if not exists site_billing_states_owner_id_idx on public.site_billing_states(owner_id);
+create index if not exists billing_state_events_owner_id_idx on public.billing_state_events(owner_id);
 
 create or replace function public.get_my_site_capabilities(p_site_id uuid)
 returns table(billing_state text,can_read boolean,can_edit boolean,can_publish boolean,can_generate_ai boolean,can_import boolean,can_export boolean,can_collect_leads boolean,can_view_billing boolean,public_site_available boolean)
