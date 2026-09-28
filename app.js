@@ -325,11 +325,23 @@
 
     try {
       const formData = new FormData(form);
-      const response = await fetch('/', {
+      const payload = Object.fromEntries(formData.entries());
+      let response = await fetch('/api/travel-presentation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(formData).toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
+
+      // Transition safety: while the public domain is still served by Netlify,
+      // keep the existing Netlify Forms path alive. Once DNS points to Vercel,
+      // the API route above becomes the normal path.
+      if (response.status === 404) {
+        response = await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(formData).toString()
+        });
+      }
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
