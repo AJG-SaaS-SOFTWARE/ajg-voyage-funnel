@@ -1,5 +1,36 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
+export type ReleaseReadinessCheck = {
+  key: string;
+  label: string;
+  status: "pass" | "warn" | "blocker" | "deferred";
+  scope: "beta" | "commercial";
+  detail: string;
+};
+
+export type ReleaseReadiness = {
+  generatedAt: string;
+  environment: string;
+  commitSha: string | null;
+  summary: { pass: number; warn: number; blocker: number; deferred: number };
+  checks: ReleaseReadinessCheck[];
+};
+
+export async function getReleaseReadiness(): Promise<ReleaseReadiness> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/release-readiness", {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Diagnostic de préproduction indisponible.");
+  return body as ReleaseReadiness;
+}
+
 export type AdminSiteRow = { id:string; ownerId:string; slug:string; status:string; updatedAt:string; planKey:string; subscriptionStatus:string; customDomain:string; domainStatus:string };
 
 export async function isCurrentUserAdmin() {
