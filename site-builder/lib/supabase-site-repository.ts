@@ -347,7 +347,7 @@ export async function syncSiteDomain(siteId:string,domainId:string){
  const supabase=getSupabaseBrowserClient();if(!supabase)throw new Error("Supabase n'est pas configuré.");
  const {data}=await supabase.auth.getSession();if(!data.session?.access_token)throw new Error("Reconnectez-vous pour vérifier le domaine.");
  const response=await fetch("/api/domains/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${data.session.access_token}`},body:JSON.stringify({siteId,domainId})});
- const result=await response.json();if(!response.ok)throw new Error(result.error||"Vérification du domaine impossible.");
+ const result=await response.json();if(!response.ok){const detail=result?.vercel?.message||result?.vercel?.code;throw new Error(detail?`${result.error||"Vérification du domaine impossible."} · ${detail}`:(result.error||"Vérification du domaine impossible."));}
  return result as {ok:boolean;verified:boolean;ownershipVerified?:boolean;misconfigured?:boolean|null;verification:Array<{type?:string;domain?:string;value?:string;reason?:string}>};
 }
 
