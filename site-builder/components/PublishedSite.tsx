@@ -17,7 +17,7 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
   const enabledPages = config.architecture.pages.filter((page) => page.enabled);
   const currentPage = enabledPages.find((page) => page.slug === pageSlug) || enabledPages.find((page) => page.kind === "home");
   const isHome = !currentPage || currentPage.kind === "home";
-  const pageAssets = (currentPage?.assetIds || []).map((id) => config.contentLibrary.assets.find((asset) => asset.id === id)).filter((asset) => asset?.publishable && asset.rights !== "unknown");
+  const pageAssets = (currentPage?.assetIds || []).map((id) => config.contentLibrary.assets.find((asset) => asset.id === id)).filter((asset) => asset?.publishable && asset.rights !== "unknown" && (asset.kind === "text" || !asset.url.startsWith("private://")));
   const base = routeBase ?? `/site/${encodeURIComponent(config.slug)}`;
   const pageHref = (slug: string) => slug ? `${base}/p/${encodeURIComponent(slug)}` : (base || "/");
   const { surface, ink } = surfaceInk(config.design);
