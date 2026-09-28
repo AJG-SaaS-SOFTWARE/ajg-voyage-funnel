@@ -359,7 +359,11 @@ export default function AdminPage() {
                   disabled={storageTesting || readiness.checks.some((item) => item.key === "bucket-site-private-media" && item.status === "blocker")}
                   onClick={() => void testPrivateStorageFlow()}
                 >
-                  {storageTesting ? "Test Storage en cours…" : "Tester le flux média privé → public"}
+                  {storageTesting
+                    ? "Test Storage en cours…"
+                    : storageTestOk
+                      ? "Flux Storage validé ✓"
+                      : "Tester le flux média privé → public"}
                 </button>
               </div>
               {storageTestMessage ? (
