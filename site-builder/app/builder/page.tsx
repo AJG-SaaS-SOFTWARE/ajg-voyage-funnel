@@ -25,6 +25,7 @@ import { legalMissingFields } from "../../lib/site-legal";
 import {
   getCurrentUser,
   getMySite,
+  getMySites,
   saveMySite,
   signOut,
   uploadProfileImage,
@@ -153,6 +154,7 @@ export default function BuilderPage() {
   const [busy, setBusy] = useState(false);
   const [syncError, setSyncError] = useState("");
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
+  const [ownedSites,setOwnedSites]=useState<Array<{id:string;slug:string}>>([]);
   const [userEmail, setUserEmail] = useState("");
   const [origin, setOrigin] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
@@ -204,13 +206,13 @@ export default function BuilderPage() {
     const version = changeVersion;
     const timer = window.setTimeout(() => {
       saveQueue.current = saveQueue.current.catch(() => undefined).then(async () => {
-        const remote = await saveMySite(config, false);
+        const remote = await saveMySite(config, false, remoteSiteId || undefined);
         setRemoteSiteId(remote.id);
         if (version === latestVersion.current) setSaved(true);
       }).catch((error) => setSyncError(error instanceof Error ? error.message : "Sauvegarde automatique impossible."));
     }, 1800);
     return () => window.clearTimeout(timer);
-  }, [config, changeVersion, ready, remoteMode]);
+  }, [config, changeVersion, ready, remoteMode, remoteSiteId]);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -237,7 +239,9 @@ export default function BuilderPage() {
         if (cancelled) return;
 
         setUserEmail(user.email || "");
-        const remote = await getMySite();
+        const sites = await getMySites();
+        setOwnedSites(sites.map(site=>({id:site.id,slug:site.slug})));
+        const remote = sites[0] || null;
         if (cancelled) return;
 
         if (remote) {
