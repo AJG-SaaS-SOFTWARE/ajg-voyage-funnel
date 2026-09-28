@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { appBaseUrl } from "../../../../lib/app-url";
+import { evaluatePrivateBetaGate } from "../../../../lib/private-beta-gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,6 +106,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
+
+  const gate = await evaluatePrivateBetaGate();
+  if (!gate.ready) {
+    return NextResponse.json(
+      {
+        error: "La bêta privée est temporairement verrouillée par les contrôles techniques.",
+        issues: gate.issues
+      },
+      { status: 409 }
+    );
+  }
 
   const body = await request.json().catch(() => null);
   const email =

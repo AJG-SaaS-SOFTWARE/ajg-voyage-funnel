@@ -1,6 +1,6 @@
 # Recette bêta — AJG Site Builder
 
-Dernière mise à jour : 27 septembre 2026.
+Dernière mise à jour : 29 septembre 2026.
 
 ## Pré-déploiement automatisé
 
@@ -54,10 +54,20 @@ Une bêta n’est pas validée si : le build/typecheck échoue ; un site non pub
 - Architecture normalisée : une seule home, slugs non vides et uniques, IDs/assetIds dédupliqués.
 - Contenus licensed/public-domain : source HTTPS requise avant statut publiable.
 
-## Blocages externes actuels
+## État externe actuel
 
-- Dernier blocage identifié : `functionFailoverRegions` demandait une région passive `fra1`, fonctionnalité réservée à Enterprise. Ce réglage a été retiré ; `cdg1` reste la région principale et la release doit être retentée.
+- Aucun blocage technique critique n’est actuellement identifié pour une bêta privée : la release contrôlée, le Storage, la recette E2E Builder, le canari HTTPS et l’accès API Vercel ont été validés.
+- Resend et `CRON_SECRET` restent à configurer avant d’activer les notifications automatiques liées aux impayés ; ces flux ne bloquent pas la bêta privée tant que le paiement réel reste désactivé.
 - La protection Supabase contre les mots de passe compromis doit être activée depuis la configuration Auth si l’offre du projet la rend disponible.
+- Les fonctions commerciales (paiement réel, prix définitifs, essai commercial) restent volontairement hors du gate bêta jusqu’aux décisions produit correspondantes.
+## Gate de lancement bêta
+
+- L’administration affiche séparément les contrôles techniques critiques, les avertissements non bloquants et les éléments commerciaux différés.
+- La cohorte cible de cette phase est limitée à 5–10 testeurs.
+- Le bouton d’invitation est désactivé dans l’interface si un contrôle critique n’est pas au vert.
+- L’API d’invitation refait les contrôles critiques côté serveur avant toute création/invitation de compte : un contournement du bouton ne permet donc pas de lancer la bêta sur une infrastructure dégradée.
+- Les métriques produit, IA, feedback et activité par site sont isolées sur les comptes explicitement marqués bêta dès qu’une cohorte existe.
+
 ## Recette E2E automatisée du Builder
 
 Le back-office admin expose un contrôle isolé qui crée un site temporaire et exécute : session authentifiée/RLS → création → une génération AI Site Architect réelle → média privé → promotion → publication → rendu public → feedback → archive de récupération → nettoyage. La génération IA reste comptabilisée ; le site, le domaine, le feedback et les médias temporaires sont supprimés. Cette recette ne remplace pas les tests humains de fluidité avec 5–10 bêta-testeurs.
