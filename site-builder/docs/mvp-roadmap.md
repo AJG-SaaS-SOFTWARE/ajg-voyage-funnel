@@ -287,7 +287,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] workflow de triage des retours bêta réservé aux administrateurs ;
 - [x] événement `publish_success` rattaché à l’identifiant réellement retourné par la publication ;
 - [x] anciennes URLs `/site/{slug}` sur sous-domaines gérés redirigées vers l’URL publique propre ;
-- [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;
+- [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;\n- [x] diagnostic admin de préproduction : présence des secrets, révision Vercel et buckets Storage vérifiés sans exposer les valeurs ;
 - [ ] activer la protection Supabase contre les mots de passe compromis si le plan/projet le permet.
 
 ### Recette impayés — moteur d’accès
