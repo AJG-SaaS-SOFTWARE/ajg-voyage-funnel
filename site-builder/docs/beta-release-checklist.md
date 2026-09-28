@@ -13,6 +13,7 @@ Dernière mise à jour : 27 septembre 2026.
 - Déploiements Git automatiques Vercel désactivés pour éviter de consommer le quota Hobby à chaque commit.
 - Release production dédiée : workflow manuel `Site Builder Production Release`, build précompilé dans GitHub Actions, déploiement production en mode staged (`--skip-domain`), smoke test, puis promotion seulement si les contrôles passent.
 - Déclenchement possible sans l’interface GitHub : la branche réservée `release/site-builder-production` doit pointer exactement sur le `main` courant ; le workflow refuse une branche de release obsolète.
+- Avant promotion, le workflow résout l’alias public actuel et mémorise son `deploymentId` comme cible de rollback. Si `/api/health` ou `/login` échoue après promotion, il demande automatiquement le rollback vers cette version puis termine en échec.
 - Prérequis externe : secret GitHub Actions `VERCEL_TOKEN` autorisé sur l’équipe/projet AJG ; les IDs équipe/projet ne sont pas secrets et restent versionnés dans le workflow.
 - Premier déclenchement contrôlé du 28 septembre 2026 : workflow correctement lancé par la branche réservée, arrêté au préflight car `VERCEL_TOKEN` est absent des secrets GitHub Actions ; aucune requête de déploiement Vercel n’a été envoyée.
 - Aucun secret de production requis pour compiler : la CI utilise uniquement des valeurs publiques factices pour Supabase.
