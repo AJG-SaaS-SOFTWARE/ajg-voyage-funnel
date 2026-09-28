@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 const rootDomain=process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN||"voyage.ajgsolutionsgroup.com";
 const appHostname=(process.env.NEXT_PUBLIC_SITE_BUILDER_URL||"https://ajg-site-builder.vercel.app").replace(/^https?:\/\//,"").replace(/\/.*$/,"").toLowerCase();
 const reservedSubdomains=new Set(["www","app","builder","admin"]);
+const managedSubdomainsEnabled=process.env.NEXT_PUBLIC_MANAGED_SUBDOMAINS_ENABLED==="true";
 
 export function middleware(request:NextRequest){
  const hostname=(request.headers.get("host")||"").split(":")[0].toLowerCase();
  if(!hostname)return NextResponse.next();
  const suffix="."+rootDomain;
- if(hostname.endsWith(suffix)){
+ if(managedSubdomainsEnabled&&hostname.endsWith(suffix)){
    const slug=hostname.slice(0,-suffix.length);
    if(!slug||slug.includes(".")||reservedSubdomains.has(slug))return NextResponse.next();
    const url=request.nextUrl.clone();
