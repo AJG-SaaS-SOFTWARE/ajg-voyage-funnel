@@ -1,5 +1,9 @@
 name: Site Builder CI
 
+concurrency:
+  group: site-builder-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -24,6 +28,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
       NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN: voyage.ajgsolutionsgroup.com
+      SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,5 +37,7 @@ jobs:
           cache: npm
           cache-dependency-path: site-builder/package-lock.json
       - run: npm ci --no-audit --no-fund
+      - run: npm test
       - run: npx tsc --noEmit
       - run: npm run build
+      - run: npm run test:smoke

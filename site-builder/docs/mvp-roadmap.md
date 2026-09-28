@@ -224,7 +224,7 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 - [x] identifier le blocage du dernier `main` : quota Vercel `build-rate-limit`, et non erreur applicative connue ;
 - [x] conserver le dernier déploiement READY comme production de repli tant que la release candidate n’est pas validée ;
 - [x] rendre le workflow Site Builder CI déclenchable manuellement pour disposer d’une validation indépendante ;
-- [x] CI GitHub validée sur le dernier socle : `tsc --noEmit` puis `next build` réussissent indépendamment de Vercel ;
+- [x] CI GitHub validée sur le dernier socle : `tsc --noEmit` puis `next build` réussissent indépendamment de Vercel ;\n- [x] recette automatisée renforcée : test de l’archive de récupération puis démarrage réel de la release via `next start` avec smoke tests HTTP indépendants de Supabase/Vercel ;
 - [ ] obtenir un build du dernier `main` dès réouverture du quota Vercel ;
 - [ ] exécuter la recette E2E authentification → création → IA → médias → publication → site public → feedback ;
 - [ ] valider sous-domaines et domaines personnalisés en environnement réel.
