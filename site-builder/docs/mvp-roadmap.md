@@ -264,11 +264,11 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] J14 : édition, publication, import et collecte de formulaires bloqués ; lecture/export/paiement conservés ;
 - [x] J28 : suspension publique appliquée aux routes slug et domaines personnalisés via un état serveur ;
 - [x] J104 : passage en rétention/contrôle sans suppression automatique irréversible ;
-- [x] Storage RLS bloque upload/update/delete direct après restriction ;
+- [x] Storage RLS bloque upload/update/delete direct après restriction tout en conservant la lecture des médias existants pour récupération ;
 - [x] scheduler PostgreSQL quotidien idempotent pour faire avancer les échéances ;
 - [x] test transactionnel du passage `grace → public_suspended` et de la suspension publique ;
 - [x] écran propriétaire avec état et dates J14/J28/J104, export et emplacement de l’action de régularisation ; bouton paiement volontairement inactif avant Stripe ;
-- [x] export structuré JSON v1 du site, configuration, arborescence, contenus, métadonnées, domaines et références médias ;
+- [x] export structuré JSON v2 derrière endpoint serveur authentifié : configuration, domaines, carnets, messages de contact et inventaire récursif des médias ;
 - [ ] export d’archive avec copie binaire des médias à ajouter avant lancement commercial ;
 - [x] file de notifications J0/J3/J7/J12/J74/J97 + réactivation, dédupliquée et avec worker Resend idempotent ; activation réelle après présence des secrets serveur et déploiement ;
 - [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
