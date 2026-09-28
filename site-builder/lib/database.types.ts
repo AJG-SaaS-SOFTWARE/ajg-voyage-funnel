@@ -32,6 +32,47 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_state_events: {
+        Row: {
+          created_at: string
+          from_state: string | null
+          id: number
+          owner_id: string
+          provider_event_id: string | null
+          reason: string
+          site_id: string
+          to_state: string
+        }
+        Insert: {
+          created_at?: string
+          from_state?: string | null
+          id?: number
+          owner_id: string
+          provider_event_id?: string | null
+          reason: string
+          site_id: string
+          to_state: string
+        }
+        Update: {
+          created_at?: string
+          from_state?: string | null
+          id?: number
+          owner_id?: string
+          provider_event_id?: string | null
+          reason?: string
+          site_id?: string
+          to_state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_state_events_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           abuse_fingerprint: string
@@ -187,6 +228,65 @@ export type Database = {
           },
         ]
       }
+      site_billing_states: {
+        Row: {
+          cancel_at_period_end: boolean
+          delete_after: string | null
+          export_until: string | null
+          grace_started_at: string | null
+          grace_until: string | null
+          manual_hold_reason: string | null
+          owner_id: string
+          paid_through: string | null
+          provider_status: string | null
+          public_suspend_at: string | null
+          restricted_at: string | null
+          site_id: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          delete_after?: string | null
+          export_until?: string | null
+          grace_started_at?: string | null
+          grace_until?: string | null
+          manual_hold_reason?: string | null
+          owner_id: string
+          paid_through?: string | null
+          provider_status?: string | null
+          public_suspend_at?: string | null
+          restricted_at?: string | null
+          site_id: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          delete_after?: string | null
+          export_until?: string | null
+          grace_started_at?: string | null
+          grace_until?: string | null
+          manual_hold_reason?: string | null
+          owner_id?: string
+          paid_through?: string | null
+          provider_status?: string | null
+          public_suspend_at?: string | null
+          restricted_at?: string | null
+          site_id?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_billing_states_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: true
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_drafts: {
         Row: {
           config: Json
@@ -239,6 +339,7 @@ export type Database = {
           owner_id: string
           primary_language: string
           profile_image_url: string
+          public_access_state: string
           published_at: string | null
           show_travel_journals: boolean
           slug: string
@@ -267,6 +368,7 @@ export type Database = {
           owner_id: string
           primary_language?: string
           profile_image_url?: string
+          public_access_state?: string
           published_at?: string | null
           show_travel_journals?: boolean
           slug: string
@@ -295,6 +397,7 @@ export type Database = {
           owner_id?: string
           primary_language?: string
           profile_image_url?: string
+          public_access_state?: string
           published_at?: string | null
           show_travel_journals?: boolean
           slug?: string
@@ -534,6 +637,21 @@ export type Database = {
           premium_architect: boolean
           storage_mb: number
           subscription_status: string
+        }[]
+      }
+      get_my_site_capabilities: {
+        Args: { p_site_id: string }
+        Returns: {
+          billing_state: string
+          can_collect_leads: boolean
+          can_edit: boolean
+          can_export: boolean
+          can_generate_ai: boolean
+          can_import: boolean
+          can_publish: boolean
+          can_read: boolean
+          can_view_billing: boolean
+          public_site_available: boolean
         }[]
       }
       get_my_storage_usage: {
