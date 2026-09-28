@@ -78,3 +78,8 @@ end $$;
 revoke all on function private.advance_builder_billing_states() from public,anon,authenticated;
 grant usage on schema private to service_role;
 grant execute on function private.advance_builder_billing_states() to service_role;
+
+
+-- Daily, idempotent advancement of J14/J28/J104 states. pg_cron executes inside Postgres.
+create extension if not exists pg_cron;
+select cron.schedule('builder-billing-daily','15 2 * * *',$$select private.advance_builder_billing_states();$$);
