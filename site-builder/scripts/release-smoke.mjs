@@ -54,9 +54,11 @@ try {
   child.kill("SIGTERM");
   await new Promise((resolve) => {
     if (child.exitCode !== null) return resolve();
-    const timer = setTimeout(resolve, 3000);
+    const forceTimer = setTimeout(() => {
+      if (child.exitCode === null) child.kill("SIGKILL");
+    }, 1500);
     child.once("exit", () => {
-      clearTimeout(timer);
+      clearTimeout(forceTimer);
       resolve();
     });
   });
