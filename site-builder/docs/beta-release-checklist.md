@@ -10,6 +10,9 @@ Dernière mise à jour : 27 septembre 2026.
 - `npm test` : validation du format de l’archive de récupération streamée.
 - `npm run test:smoke` : démarrage réel du build avec `next start`, contrôle des pages principales, 404 et garde d’authentification de l’export.
 - CI GitHub dédiée au dossier `site-builder/`.
+- Déploiements Git automatiques Vercel désactivés pour éviter de consommer le quota Hobby à chaque commit.
+- Release production dédiée : workflow manuel `Site Builder Production Release`, build précompilé dans GitHub Actions, déploiement production en mode staged (`--skip-domain`), smoke test, puis promotion seulement si les contrôles passent.
+- Prérequis externe : secret GitHub Actions `VERCEL_TOKEN` autorisé sur l’équipe/projet AJG ; les IDs équipe/projet ne sont pas secrets et restent versionnés dans le workflow.
 - Aucun secret de production requis pour compiler : la CI utilise uniquement des valeurs publiques factices pour Supabase.
 
 ## Parcours de recette après réouverture du build Vercel
