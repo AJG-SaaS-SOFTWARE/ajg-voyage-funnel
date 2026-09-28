@@ -44,6 +44,26 @@ export async function getMyEntitlements(): Promise<SubscriptionEntitlements> {
   };
 }
 
+export async function getMySiteEntitlements(siteId: string): Promise<SubscriptionEntitlements> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return freeEntitlements;
+  const { data, error } = await supabase.rpc("get_my_site_entitlements", { p_site_id: siteId });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return freeEntitlements;
+  return {
+    planKey: row.plan_key === "pro" ? "pro" : "free",
+    planName: row.plan_name || "Gratuit",
+    aiMinuteLimit: Number(row.ai_minute_limit) || 5,
+    aiDailyLimit: Number(row.ai_daily_limit) || 20,
+    aiMonthlyLimit: Number(row.ai_monthly_limit) || 80,
+    storageMb: Number(row.storage_mb) || 250,
+    customDomain: row.custom_domain === true,
+    premiumArchitect: row.premium_architect === true,
+    status: row.subscription_status || "active"
+  };
+}
+
 export type AiUsage = { today: number; month: number };
 
 export async function getMyAiUsage(): Promise<AiUsage> {
