@@ -86,7 +86,6 @@ jobs:
             "RESEND_API_KEY",
             "RESEND_FROM_EMAIL",
             "CRON_SECRET",
-            "NEXT_PUBLIC_APP_URL",
             "VERCEL_TOKEN",
             "VERCEL_PROJECT_ID",
             "VERCEL_TEAM_ID"
@@ -280,3 +279,29 @@ jobs:
           curl --fail --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors "https://$PRODUCTION_ALIAS/login" > /dev/null
           echo "Rollback requested to $PREVIOUS_DEPLOYMENT_ID after failed production revision/health verification." >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+      - name: Verify managed-domain HTTPS canary when available
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.release.outputs.deployment_id }}
+        run: |
+          RESPONSE="$(curl --fail-with-body --silent --show-error             "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID"             -H "Authorization: Bearer $VERCEL_TOKEN"             -H "Accept: application/json")"
+
+          CANARY="$(printf '%s' "$RESPONSE" | node -e '
+            let s="";
+            process.stdin.on("data",d=>s+=d);
+            process.stdin.on("end",()=>{
+              const x=JSON.parse(s);
+              const aliases=Array.isArray(x.alias)?x.alias:[];
+              const match=aliases.find(v=>typeof v==="string" && v.endsWith(".voyage.ajgsolutionsgroup.com") && v!=="voyage.ajgsolutionsgroup.com");
+              if(match) process.stdout.write(match);
+            });
+          ')"
+
+          if [ -z "$CANARY" ]; then
+            echo "No managed-domain canary attached to this deployment; HTTPS canary check skipped." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          curl --fail --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors             "https://$CANARY/" > /dev/null
+          echo "Managed-domain HTTPS canary passed: https://$CANARY/" >> "$GITHUB_STEP_SUMMARY"
