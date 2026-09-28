@@ -94,19 +94,19 @@ export async function GET(request: Request) {
 
   const eventRows =
     cohortScope === "beta"
-      ? (events || []).filter((item) => betaUserIds.has(item.user_id))
+      ? (events || []).filter((item) => typeof item.user_id === "string" && betaUserIds.has(item.user_id))
       : events || [];
   const feedbackRows =
     cohortScope === "beta"
-      ? (feedback || []).filter((item) => betaUserIds.has(item.user_id))
+      ? (feedback || []).filter((item) => typeof item.user_id === "string" && betaUserIds.has(item.user_id))
       : feedback || [];
   const aiRows =
     cohortScope === "beta"
-      ? (aiUsage || []).filter((item) => betaUserIds.has(item.user_id))
+      ? (aiUsage || []).filter((item) => typeof item.user_id === "string" && betaUserIds.has(item.user_id))
       : aiUsage || [];
   const siteRows =
     cohortScope === "beta"
-      ? (sites || []).filter((item) => betaUserIds.has(item.owner_id))
+      ? (sites || []).filter((item) => typeof item.owner_id === "string" && betaUserIds.has(item.owner_id))
       : sites || [];
 
   const usersFor = (...names: string[]) =>
