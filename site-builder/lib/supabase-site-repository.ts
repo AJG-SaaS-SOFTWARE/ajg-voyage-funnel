@@ -336,7 +336,7 @@ export async function requestCustomDomain(hostname: string): Promise<SiteDomain>
   if (!site) throw new Error("Créez d’abord votre site.");
   const normalized = hostname.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
   if (!/^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(normalized)) throw new Error("Saisissez un nom de domaine valide, sans https:// ni chemin.");
-  const { data: entitlements, error: entitlementError } = await supabase.rpc("get_my_entitlements");
+  const { data: entitlements, error: entitlementError } = await supabase.rpc("get_my_site_entitlements", { p_site_id: site.id });
   if (entitlementError) throw entitlementError;
   const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
   if (entitlement?.custom_domain !== true) throw new Error("Le domaine personnalisé est réservé à l’offre Pro.");
