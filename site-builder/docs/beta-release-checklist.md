@@ -17,8 +17,7 @@ Dernière mise à jour : 27 septembre 2026.
 - Premier déclenchement contrôlé du 28 septembre 2026 : workflow correctement lancé par la branche réservée, arrêté au préflight car `VERCEL_TOKEN` est absent des secrets GitHub Actions ; aucune requête de déploiement Vercel n’a été envoyée.
 - Aucun secret de production requis pour compiler : la CI utilise uniquement des valeurs publiques factices pour Supabase.
 
-## Parcours de recette après réouverture du build Vercel
-
+## Vérification du déploiement\n\nAvant toute recette réelle, exécuter `npm run verify:deployment -- --url=https://<deployment> --sha=<sha-main>` afin de vérifier `/api/health`, le SHA réellement servi et les routes critiques non authentifiées. Une recette ne doit pas être déclarée valide si le SHA attendu n’est pas celui exposé par l’environnement.\n\n## Parcours de recette après réouverture du build Vercel\n
 1. Authentification par magic link et reprise d’un brouillon existant.
 2. Création guidée 3+1, génération des textes puis modification manuelle.
 3. AI Site Architect : génération complète, refus de l’application, nouvelle génération, application explicite.
