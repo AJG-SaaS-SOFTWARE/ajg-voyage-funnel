@@ -289,3 +289,12 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] anciennes URLs `/site/{slug}` sur sous-domaines gérés redirigées vers l’URL publique propre ;
 - [x] CI post-durcissement validée : TypeScript et build Next.js réussissent ;
 - [ ] activer la protection Supabase contre les mots de passe compromis si le plan/projet le permet.
+
+### Recette impayés — moteur d’accès
+- [x] J13 vérifié : lecture, édition, publication, import, export et formulaires restent actifs ; IA désactivée ; site public actif ;
+- [x] J14 vérifié : passage `restricted`, édition/publication/import/formulaires/IA bloqués, export et site public maintenus ;
+- [x] J28 vérifié : passage `public_suspended`, site public suspendu, export maintenu ;
+- [x] J104+ vérifié : passage `retention`, aucune suppression automatique ;
+- [x] régularisation vérifiée : retour `active`, accès public rétabli et rappels en attente annulés ;
+- [x] adaptateur historique compte-entier désactivé ; seuls les événements de paiement ciblés par site restent exécutables ;
+- [x] formulaire public testé : accepté pendant la grâce, refusé dès J14 ; wrapper anonyme conforme au linter Supabase.
