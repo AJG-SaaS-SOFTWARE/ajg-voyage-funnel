@@ -116,6 +116,8 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] ordre des modules proposé par l’IA et conservé à l’application ;
 - [x] interface Premium enrichie : besoin compris, audience, objectif, positionnement, parcours visiteur, rationales architecture/design et audit ;
 - [x] E2E renforcée pour exiger la présence de la stratégie et de l’audit Premium ;
+- [x] instrumentation dédiée sans contenu client : première génération, régénération, raffinement automatique et application ;
+- [x] dashboard admin qualité Premium : adoption utilisateurs, taux de régénération, taux de raffinement et applications/tentatives sur 30 jours ;
 - [ ] valider une génération Premium v2 réelle en production après CI/release ;
 - [ ] mesurer pendant la bêta le taux proposition → application et les demandes de régénération pour piloter les prochaines améliorations.
 
