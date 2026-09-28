@@ -206,6 +206,25 @@ export type AdminBetaMetrics = {
       refinementRate: number;
       applicationRate: number;
       userAdoptionRate: number;
+      provider: {
+        calls: number;
+        inputTokens: number;
+        cachedInputTokens: number;
+        outputTokens: number;
+        reasoningTokens: number;
+        totalTokens: number;
+        avgCallsPerAttempt: number;
+        avgTokensPerAttempt: number;
+        avgDurationMsPerCall: number;
+        byModel: Array<{
+          model: string;
+          calls: number;
+          inputTokens: number;
+          cachedInputTokens: number;
+          outputTokens: number;
+          totalTokens: number;
+        }>;
+      };
     };
   };
   feedback: { count: number; users: number; averageRating: number | null; open: number };
