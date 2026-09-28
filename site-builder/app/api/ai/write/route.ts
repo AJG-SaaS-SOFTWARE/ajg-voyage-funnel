@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
 
 export const runtime = "nodejs";
 
@@ -152,24 +153,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Décrivez le texte que vous souhaitez obtenir." }, { status: 400 });
   }
 
-  let allowance: string;
-  try {
-    allowance = await consumeAiAllowance(auth.supabase, siteId);
-  } catch (error) {
-    console.error("AI allowance check failed", error);
-    return NextResponse.json({ error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." }, { status: 503 });
-  }
-  if (allowance !== "ok") {
-    const message = allowance === "minute_limit"
-      ? "Vous avez effectué plusieurs demandes très rapidement. Attendez une minute avant de réessayer."
-      : allowance === "daily_limit"
-        ? "Votre limite IA du jour est atteinte. Vous pourrez à nouveau utiliser l'assistant demain."
-        : allowance === "monthly_limit"
-          ? "Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain."
-          : "L'assistant IA est temporairement indisponible.";
-    return NextResponse.json({ error: message }, { status: 429 });
-  }
-
   const currentText = clean(body?.currentText, 3500);
   const context = body?.context && typeof body.context === "object" ? body.context : {};
   const language = context.language === "en" ? "English" : "French";
@@ -245,6 +228,66 @@ export async function POST(request: Request) {
     if (entitlementError) return NextResponse.json({ error: "Impossible de vérifier votre offre." }, { status: 503 });
     const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
     if (entitlement?.premium_architect !== true) return NextResponse.json({ error: "AI Site Architect est disponible avec l’offre Pro." }, { status: 403 });
+  }
+
+  let allowance: string;
+  try {
+    allowance = await consumeAiAllowance(auth.supabase, siteId);
+  } catch (error) {
+    console.error("AI allowance check failed", error);
+    return NextResponse.json({ error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." }, { status: 503 });
+  }
+  if (allowance !== "ok") {
+    const message = allowance === "minute_limit"
+      ? "Vous avez effectué plusieurs demandes très rapidement. Attendez une minute avant de réessayer."
+      : allowance === "daily_limit"
+        ? "Votre limite IA du jour est atteinte. Vous pourrez à nouveau utiliser l'assistant demain."
+        : allowance === "monthly_limit"
+          ? "Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain."
+          : "L'assistant IA est temporairement indisponible.";
+    return NextResponse.json({ error: message }, { status: 429 });
+  }
+
+  if (field === "siteArchitect" || field === "siteRevision") {
+    try {
+      const proposal = await generatePremiumSiteArchitect({
+        apiKey,
+        mode: field === "siteRevision" ? "revision" : "create",
+        language: language as "French" | "English",
+        affiliationRules: complianceRules,
+        instruction,
+        firstName,
+        brandName,
+        architectBrief,
+        revisionRequest,
+        existingProposal,
+        editorialContext,
+        currentText,
+        contentLibrary: Array.isArray(context.contentLibrary) ? context.contentLibrary : []
+      });
+      return NextResponse.json({ proposal, premium: true });
+    } catch (error) {
+      console.error("Premium Site Architect failed", error);
+      if (error instanceof PremiumArchitectError) {
+        const unavailable =
+          error.code === "credit_balance_exhausted" ||
+          error.code === "insufficient_quota";
+        return NextResponse.json(
+          {
+            error: unavailable
+              ? "L'Architecte Premium est momentanément indisponible. Votre demande n'a pas été générée."
+              : error.status === 429
+                ? "L'Architecte Premium reçoit trop de demandes. Réessayez dans quelques instants."
+                : "L'Architecte Premium n'a pas pu finaliser la proposition. Réessayez dans quelques instants."
+          },
+          { status: unavailable ? 503 : 502 }
+        );
+      }
+      return NextResponse.json(
+        { error: "L'Architecte Premium n'a pas pu finaliser la proposition. Réessayez." },
+        { status: 502 }
+      );
+    }
   }
 
   const prompt = [
