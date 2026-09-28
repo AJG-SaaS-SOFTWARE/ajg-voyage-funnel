@@ -242,12 +242,22 @@ export async function getPublishedSite(slug: string): Promise<RemoteSite | null>
   return data ? toRemote(data) : null;
 }
 
+async function assertSiteCapability(siteId: string, capability: "can_edit" | "can_import" | "can_publish") {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase.rpc("get_my_site_capabilities", { p_site_id: siteId });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.[capability]) throw new Error("Cette action est temporairement indisponible pour ce site. Régularisez l’abonnement depuis votre espace de facturation.");
+}
+
 export async function uploadProfileImage(file: File, siteId: string) {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
 
   const user = await getCurrentUser();
   if (!user) throw new Error("Vous devez être connecté.");
+  await assertSiteCapability(siteId, "can_import");
 
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const objectPath = `${user.id}/${siteId}/profile/profile.${extension}`;
@@ -278,6 +288,7 @@ export async function uploadSiteImage(file: Blob, siteId: string, category: "bac
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const user = await getCurrentUser();
   if (!user) throw new Error("Vous devez être connecté.");
+  await assertSiteCapability(siteId, "can_import");
   await assertStorageAllowance(file.size);
   const objectPath = `${user.id}/${siteId}/${category}/${crypto.randomUUID()}.webp`;
   const { error } = await supabase.storage.from("site-media").upload(objectPath, file, {
@@ -292,6 +303,7 @@ export async function uploadContentAsset(file: File, siteId: string) {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const user = await getCurrentUser();
   if (!user) throw new Error("Vous devez être connecté.");
+  await assertSiteCapability(siteId, "can_import");
   if (file.size > 15 * 1024 * 1024) throw new Error("Ce fichier dépasse la limite de 15 Mo.");
 
   const allowed = new Set(["image/jpeg","image/png","image/webp","image/avif","audio/mpeg","audio/mp4","audio/ogg","audio/wav","application/pdf","text/plain"]);
