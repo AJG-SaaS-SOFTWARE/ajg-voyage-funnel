@@ -58,6 +58,8 @@ try {
   await expectStatus("/api/admin/beta-metrics", 401);
   await expectStatus("/api/admin/beta-cohort", 401);
   await expectStatus("/api/admin/beta-cohort", 401, { method: "POST" });
+  await expectStatus("/api/admin/managed-domains", 401);
+  await expectStatus("/api/admin/managed-domains", 401, { method: "POST" });
   await expectStatus("/api/admin/storage-bootstrap", 401, { method: "POST" });
   console.log("AJG Builder release smoke passed.");
 } finally {
