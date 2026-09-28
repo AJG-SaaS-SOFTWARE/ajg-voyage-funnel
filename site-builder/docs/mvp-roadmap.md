@@ -328,3 +328,10 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [ ] Storage : exécuter le bootstrap SDK de `site-private-media` une fois le nouveau serveur déployé ;
 - [ ] Secrets serveur : configurer/valider sans exposition `SUPABASE_SECRET_KEY`, `CRON_SECRET`, Resend, `VERCEL_TOKEN` et secrets fournisseur de paiement lorsque ce fournisseur sera choisi ;
 - [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
+
+### Cohérence multi-site complémentaire
+- [x] stockage affiché dans l’écran Offres calculé pour le site courant, et non plus pour tout le compte ;
+- [x] export de récupération inventorie désormais les médias publics et privés sans fabriquer d’URL publique pour les fichiers privés ;
+- [x] job Postgres quotidien d’avancement des états d’impayé confirmé actif à 02:15 ;
+- [x] audit sécurité Supabase relancé : seule l’option externe de mots de passe compromis reste en avertissement ;
+- [x] audit performance relancé : uniquement des index encore peu/non utilisés en bêta, aucune suppression prématurée effectuée.
