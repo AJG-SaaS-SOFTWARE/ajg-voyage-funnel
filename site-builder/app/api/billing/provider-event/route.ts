@@ -14,7 +14,7 @@ function validSignature(raw:string,signature:string|null,secret:string){
 export async function POST(request:Request){
  const secret=process.env.BILLING_PROVIDER_WEBHOOK_SECRET;
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
- const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
+ const serviceKey=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!secret||!url||!serviceKey) return NextResponse.json({error:"Billing provider adapter not configured"},{status:503});
  const raw=await request.text();
  if(!validSignature(raw,request.headers.get("x-ajg-billing-signature"),secret)) return NextResponse.json({error:"Invalid signature"},{status:400});
