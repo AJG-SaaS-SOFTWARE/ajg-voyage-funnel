@@ -1,5 +1,53 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
+export type AdminBetaMetrics = {
+  periodDays: number;
+  generatedAt: string;
+  funnel: {
+    opened: number;
+    engaged: number;
+    reviewed: number;
+    published: number;
+    engagementRate: number;
+    reviewRate: number;
+    publishRate: number;
+    openedWithoutEngagement: number;
+    openedWithoutPublication: number;
+  };
+  ai: { generations: number; users: number; appliedUsers: number };
+  feedback: { count: number; users: number; averageRating: number | null; open: number };
+  sites: {
+    active: number;
+    published: number;
+    activity: Array<{
+      siteId: string;
+      slug: string;
+      status: string;
+      stage: "opened" | "engaged" | "review" | "published" | "feedback";
+      eventCount: number;
+      aiApplyCount: number;
+      feedbackCount: number;
+      lastActivity: string;
+    }>;
+  };
+  definitions: Record<string, string>;
+};
+
+export async function getAdminBetaMetrics(): Promise<AdminBetaMetrics> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/beta-metrics", {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Métriques bêta indisponibles.");
+  return body as AdminBetaMetrics;
+}
+
 export type ReleaseReadinessCheck = {
   key: string;
   label: string;
