@@ -183,8 +183,8 @@ export async function saveMySite(config: SiteConfig, publish = false): Promise<R
 
   const existing = await getMySite();
   const publishConfig = config;
-  if (remote?.id) {
-    const { data: capabilities, error: capabilityError } = await supabase.rpc("get_my_site_capabilities", { p_site_id: remote.id });
+  if (existing?.id) {
+    const { data: capabilities, error: capabilityError } = await supabase.rpc("get_my_site_capabilities", { p_site_id: existing.id });
     if (capabilityError) throw capabilityError;
     const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
     if (!capability?.can_edit) throw new Error("Ce site est actuellement en accès lecture et export. Régularisez l’abonnement pour reprendre les modifications.");
