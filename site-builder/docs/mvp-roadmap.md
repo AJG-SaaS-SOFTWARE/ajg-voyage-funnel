@@ -100,6 +100,25 @@ Checkpoint de l’itération : le modèle de données, le moteur IA, la persista
 - [x] conversation de révision globale avec aperçu structuré avant application ;
 - [x] éditeur visuel d’arborescence et réaffectation manuelle des contenus.
 
+### Itération 4D — AI Site Architect Premium v2
+État : développement en cours
+
+Objectif : transformer la génération complète en véritable prestation de stratégie web automatisée, sans sacrifier le contrôle humain ni la factualité.
+
+- [x] modèle Premium distinct du modèle rapide des assistants champ par champ ;
+- [x] étape 1 : diagnostic stratégique du besoin, du public, de l’objectif, du positionnement et du parcours visiteur ;
+- [x] étape 2 : génération structurée des textes, architecture, ordre de modules et direction visuelle à partir de cette stratégie ;
+- [x] Structured Outputs JSON Schema pour fiabiliser la forme des réponses Premium ;
+- [x] étape 3 : audit critique indépendant de la stratégie, du copywriting, de la conversion, de la crédibilité, du design et de la conformité ;
+- [x] raffinement automatique par le modèle Premium lorsqu’un problème majeur ou une qualité insuffisante est détecté ;
+- [x] aucune information factuelle manquante inventée : les manques sont explicitement remontés à l’utilisateur ;
+- [x] recommandations de modules appliquées uniquement lorsqu’un contenu réellement exploitable existe ;
+- [x] ordre des modules proposé par l’IA et conservé à l’application ;
+- [x] interface Premium enrichie : besoin compris, audience, objectif, positionnement, parcours visiteur, rationales architecture/design et audit ;
+- [x] E2E renforcée pour exiger la présence de la stratégie et de l’audit Premium ;
+- [ ] valider une génération Premium v2 réelle en production après CI/release ;
+- [ ] mesurer pendant la bêta le taux proposition → application et les demandes de régénération pour piloter les prochaines améliorations.
+
 ## Modules de contenu
 
 Disponibles et facultatifs :
