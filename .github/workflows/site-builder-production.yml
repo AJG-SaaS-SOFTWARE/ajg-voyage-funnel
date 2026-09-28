@@ -235,6 +235,27 @@ jobs:
 
           echo "Production deployment is READY at commit $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Promote verified production artifact
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.release.outputs.deployment_id }}
+        run: |
+          HTTP_CODE="$(curl --silent --show-error \
+            --output /tmp/promote.json \
+            --write-out "%{http_code}" \
+            --request POST \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json")"
+
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "202" ] && [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Vercel promotion failed with HTTP $HTTP_CODE."
+            cat /tmp/promote.json
+            exit 1
+          fi
+
+          echo "Promotion accepted for $DEPLOYMENT_ID (HTTP $HTTP_CODE)." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify live production or rollback
         shell: bash
         env:
