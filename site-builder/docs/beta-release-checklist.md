@@ -7,6 +7,8 @@ Dernière mise à jour : 27 septembre 2026.
 - `npm ci`
 - `npx tsc --noEmit`
 - `npm run build`
+- `npm test` : validation du format de l’archive de récupération streamée.
+- `npm run test:smoke` : démarrage réel du build avec `next start`, contrôle des pages principales, 404 et garde d’authentification de l’export.
 - CI GitHub dédiée au dossier `site-builder/`.
 - Aucun secret de production requis pour compiler : la CI utilise uniquement des valeurs publiques factices pour Supabase.
 
