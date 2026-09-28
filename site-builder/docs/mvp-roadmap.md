@@ -270,8 +270,8 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] écran propriétaire avec état et dates J14/J28/J104, export et emplacement de l’action de régularisation ; bouton paiement volontairement inactif avant Stripe ;
 - [x] export structuré JSON v1 du site, configuration, arborescence, contenus, métadonnées, domaines et références médias ;
 - [ ] export d’archive avec copie binaire des médias à ajouter avant lancement commercial ;
-- [ ] notifications J0/J3/J7/J12/J74/J97 avec journal d’envoi idempotent ;
+- [x] file de notifications J0/J3/J7/J12/J74/J97 + réactivation, dédupliquée et avec worker Resend idempotent ; activation réelle après présence des secrets serveur et déploiement ;
 - [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
-- [ ] réactivation après paiement confirmé et contrôle du domaine/formulaires ;
-- [ ] suite de recette automatisée J13/J14/J27/J28/J104, paiement J20/J35, deux sites d’un propriétaire et appels directs API/RPC/Storage ;
+- [x] primitive serveur de réactivation après paiement confirmé : droits, site public et relances rétablis/annulés de façon idempotente ; branchement fournisseur restant à faire ;
+- [~] recette temporelle : J13, J14, J28/J104, réactivation et isolation de deux sites vérifiés transactionnellement ; appels HTTP/Storage et paiement fournisseur à finaliser avec le déploiement ;
 - [ ] validation production après réouverture du pipeline Vercel.
