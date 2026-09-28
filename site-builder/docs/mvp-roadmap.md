@@ -43,7 +43,7 @@ Dernière mise à jour : 28 septembre 2026.
 - [x] statuts brouillon / publié / suspendu côté données ;
 - [x] page introuvable pour un site non publié ;
 - [x] sitemap par site ;
-- [ ] validation complète des sous-domaines en conditions réelles ; canari applicatif OK, sous-domaine désormais vérifiable individuellement chez Vercel mais DNS externe à configurer ;
+- [ ] validation complète des sous-domaines en conditions réelles ; vérification renforcée pour exiger propriété Vercel + configuration DNS réellement exploitable avant activation ; DNS externe du canari encore à configurer ;
 - [x] domaine personnalisé en option côté produit, droits, données et routage ; automatisation DNS/Vercel encore externe.
 
 ## Sprint 4 — onboarding, IA et qualité bêta
@@ -355,7 +355,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] rattachement et vérification Vercel préparés côté serveur, avec instructions DNS et relance de vérification dans l’UI ;
 - [x] un seul domaine primaire conservé après vérification ;
 - [x] suppression préparée côté serveur : détachement Vercel avant suppression Supabase ;
-- [ ] recette réelle Vercel/DNS à exécuter sur un domaine de test ; confirmer d’abord dans le diagnostic admin la présence du token Vercel runtime à périmètre minimal puis valider rattachement, instructions DNS, vérification et retrait.
+- [ ] recette réelle Vercel/DNS à terminer sur le canari : token runtime validé, rattachement Vercel effectué ; le backend vérifie désormais aussi `/v6/domains/{domain}/config` et n’active qu’avec `misconfigured=false` ; DNS externe restant à poser puis retrait à tester.
 
 ### Blocages externes avant release candidate réelle
 - [x] Vercel : production synchronisée avec le `main` via le workflow contrôlé ; token GitHub Actions, build, vérification SHA, promotion et rollback sont opérationnels ;
