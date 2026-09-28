@@ -91,3 +91,9 @@ returns table(today bigint,month bigint) language sql security invoker set searc
 $$;
 revoke all on function public.get_my_ai_usage() from public,anon;
 grant execute on function public.get_my_ai_usage() to authenticated,service_role;
+
+
+-- The public anon wrapper needs schema USAGE to invoke the one explicitly granted internal contact primitive.
+grant usage on schema private to anon;
+revoke execute on all functions in schema private from anon;
+grant execute on function private.submit_contact_message_internal(uuid,text,text,text,text,boolean,text) to anon;
