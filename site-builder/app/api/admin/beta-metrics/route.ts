@@ -117,11 +117,43 @@ export async function GET(request: Request) {
     );
 
   const openedUsers = usersFor("builder_open");
-  const engagedUsers = usersFor("step_story", "architect_applied", "revision_applied");
+  const engagedUsers = usersFor(
+    "step_story",
+    "architect_generated",
+    "architect_regenerated",
+    "architect_applied",
+    "revision_applied"
+  );
   const reviewUsers = usersFor("step_review");
   const publishedUsers = usersFor("publish_success");
   const aiUsers = new Set(aiRows.map((item) => item.user_id));
   const feedbackUsers = new Set(feedbackRows.map((item) => item.user_id));
+
+  const architectFirstRows = eventRows.filter(
+    (item) => item.event_name === "architect_generated"
+  );
+  const architectRegeneratedRows = eventRows.filter(
+    (item) => item.event_name === "architect_regenerated"
+  );
+  const architectRefinedRows = eventRows.filter(
+    (item) => item.event_name === "architect_refined"
+  );
+  const architectAppliedRows = eventRows.filter(
+    (item) => item.event_name === "architect_applied"
+  );
+  const architectAttemptRows = [
+    ...architectFirstRows,
+    ...architectRegeneratedRows
+  ];
+  const architectUsers = new Set(
+    architectAttemptRows.map((item) => item.user_id)
+  );
+  const architectRegeneratedUsers = new Set(
+    architectRegeneratedRows.map((item) => item.user_id)
+  );
+  const architectAppliedUsers = new Set(
+    architectAppliedRows.map((item) => item.user_id)
+  );
 
   const ratings = feedbackRows
     .map((item) => item.rating)
@@ -149,6 +181,8 @@ export async function GET(request: Request) {
           : names.has("step_review")
             ? "review"
             : names.has("step_story") ||
+                names.has("architect_generated") ||
+                names.has("architect_regenerated") ||
                 names.has("architect_applied") ||
                 names.has("revision_applied")
               ? "engaged"
@@ -206,7 +240,33 @@ export async function GET(request: Request) {
       ai: {
         generations: aiRows.length,
         users: aiUsers.size,
-        appliedUsers: usersFor("architect_applied", "revision_applied").size
+        appliedUsers: usersFor("architect_applied", "revision_applied").size,
+        architect: {
+          attempts: architectAttemptRows.length,
+          firstGenerations: architectFirstRows.length,
+          regenerations: architectRegeneratedRows.length,
+          refinements: architectRefinedRows.length,
+          applications: architectAppliedRows.length,
+          users: architectUsers.size,
+          regeneratedUsers: architectRegeneratedUsers.size,
+          appliedUsers: architectAppliedUsers.size,
+          regenerationRate: percent(
+            architectRegeneratedRows.length,
+            architectAttemptRows.length
+          ),
+          refinementRate: percent(
+            architectRefinedRows.length,
+            architectAttemptRows.length
+          ),
+          applicationRate: percent(
+            architectAppliedRows.length,
+            architectAttemptRows.length
+          ),
+          userAdoptionRate: percent(
+            architectAppliedUsers.size,
+            architectUsers.size
+          )
+        }
       },
       feedback: {
         count: feedbackRows.length,
@@ -228,6 +288,11 @@ export async function GET(request: Request) {
         reviewed: "Utilisateur distinct ayant atteint l’étape Publication / revue.",
         published: "Utilisateur distinct ayant déclenché une publication réussie.",
         aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
+        architectAttempts: "Propositions Premium générées ou régénérées ; aucun brief ni contenu client n’est enregistré dans les événements.",
+        architectRegenerationRate: "Part des tentatives Premium qui correspondent à une nouvelle proposition demandée après une première génération.",
+        architectRefinementRate: "Part des propositions où l’audit Premium a déclenché un raffinement automatique avant affichage.",
+        architectApplicationRate: "Applications de propositions Premium rapportées au nombre de tentatives sur la période.",
+        architectUserAdoptionRate: "Part des utilisateurs de l’Architecte Premium ayant appliqué au moins une proposition.",
         cohort: cohortScope === "beta"
           ? "Métriques limitées aux comptes explicitement marqués dans la cohorte bêta."
           : "Aucune cohorte bêta définie : métriques calculées sur l’ensemble des utilisateurs."
