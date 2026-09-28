@@ -33,7 +33,7 @@ export async function GET(request: Request) {
      const path=`${folder}/${item.name}`;
      if(item.id){
        const {data:publicData}=service.storage.from("site-media").getPublicUrl(path);
-       out.push({path,name:item.name,size:item.metadata?.size??null,mimeType:item.metadata?.mimetype??null,url:publicData.publicUrl});
+       out.push({path,name:item.name,size:item.metadata?.size??null,mimeType:(item.metadata as Record<string,unknown>|null)?.mimetype as string ?? null,url:publicData.publicUrl});
      } else out.push(...await walk(path));
    }
    return out;
