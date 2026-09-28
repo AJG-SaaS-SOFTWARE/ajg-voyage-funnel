@@ -7,6 +7,7 @@ create table if not exists public.billing_provider_events(
 alter table public.billing_provider_events enable row level security;
 revoke all on public.billing_provider_events from public,anon,authenticated;
 grant select,insert,update on public.billing_provider_events to service_role;
+create policy "no client access to billing provider events" on public.billing_provider_events for select to authenticated using(false);
 
 create or replace function private.apply_builder_billing_provider_event(p_provider text,p_event_id text,p_event_type text,p_owner_id uuid,p_provider_status text,p_paid_through timestamptz default null,p_failed_at timestamptz default null)
 returns text language plpgsql security definer set search_path='' as $$
@@ -50,6 +51,8 @@ grant select on public.site_subscriptions to authenticated;
 create policy "owners read site subscriptions" on public.site_subscriptions for select to authenticated using(owner_id=(select auth.uid()) or exists(select 1 from public.user_roles r where r.user_id=(select auth.uid()) and r.role='admin'));
 revoke insert,update,delete on public.site_subscriptions from authenticated;
 grant select,insert,update,delete on public.site_subscriptions to service_role;
+create index if not exists site_subscriptions_owner_id_idx on public.site_subscriptions(owner_id);
+create index if not exists site_subscriptions_plan_key_idx on public.site_subscriptions(plan_key);
 insert into public.site_subscriptions(site_id,owner_id,plan_key,status,provider,provider_customer_id,provider_subscription_id,current_period_end)
 select s.id,s.owner_id,coalesce(us.plan_key,'free'),coalesce(us.status,'active'),us.provider,us.provider_customer_id,
 case when us.provider_subscription_id is null then null else us.provider_subscription_id||':'||s.id::text end,us.current_period_end
