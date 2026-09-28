@@ -10,9 +10,11 @@ import {
   adminRunStorageE2E,
   adminSetFeedbackStatus,
   adminSetPlan,
+  adminSyncManagedDomain,
   getAdminBetaCohort,
   getAdminBetaMetrics,
   getAdminFeedback,
+  getAdminManagedDomains,
   getAdminMetrics,
   getAdminSites,
   getReleaseReadiness,
@@ -20,6 +22,7 @@ import {
   type AdminBetaCohort,
   type AdminBetaMetrics,
   type AdminFeedback,
+  type AdminManagedDomain,
   type AdminMetrics,
   type AdminSiteRow,
   type BuilderE2EResult,
@@ -50,6 +53,8 @@ export default function AdminPage() {
   const [betaCohort, setBetaCohort] = useState<AdminBetaCohort | null>(null);
   const [betaEmail, setBetaEmail] = useState("");
   const [betaInviteBusy, setBetaInviteBusy] = useState(false);
+  const [managedDomains, setManagedDomains] = useState<AdminManagedDomain[]>([]);
+  const [managedDomainBusy, setManagedDomainBusy] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
   const [storageBootstrapping, setStorageBootstrapping] = useState(false);
   const [storageTesting, setStorageTesting] = useState(false);
@@ -76,14 +81,16 @@ export default function AdminPage() {
     setMetrics(nextMetrics);
     setFeedback(nextFeedback);
 
-    const [nextReadiness, nextBetaMetrics, nextBetaCohort] = await Promise.all([
+    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextManagedDomains] = await Promise.all([
       getReleaseReadiness().catch(() => null),
       getAdminBetaMetrics().catch(() => null),
-      getAdminBetaCohort().catch(() => null)
+      getAdminBetaCohort().catch(() => null),
+      getAdminManagedDomains().catch(() => [])
     ]);
     setReadiness(nextReadiness);
     setBetaMetrics(nextBetaMetrics);
     setBetaCohort(nextBetaCohort);
+    setManagedDomains(nextManagedDomains);
 
     setState("ready");
   };
@@ -156,6 +163,33 @@ export default function AdminPage() {
       );
     } finally {
       setBuilderE2ERunning(false);
+    }
+  };
+
+  const syncManagedDomain = async (domain: AdminManagedDomain) => {
+    setMessage("");
+    setManagedDomainBusy(domain.id);
+    try {
+      const result = await adminSyncManagedDomain(domain.id);
+      await load();
+      if (result.verified) {
+        setMessage(`${domain.hostname} est vérifié, DNS opérationnel et activé.`);
+      } else {
+        const instructions = result.verification
+          .map((item) => [item.type, item.domain, item.value].filter(Boolean).join(" · "))
+          .filter(Boolean);
+        setMessage(
+          instructions.length
+            ? `DNS AJG à configurer pour ${domain.hostname} : ${instructions.join(" | ")}`
+            : result.ownershipVerified
+              ? `${domain.hostname} est rattaché à Vercel mais le DNS public n’est pas encore opérationnel.`
+              : `${domain.hostname} est encore en attente de vérification.`
+        );
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Préparation du sous-domaine impossible.");
+    } finally {
+      setManagedDomainBusy(null);
     }
   };
 
@@ -248,6 +282,74 @@ export default function AdminPage() {
           <article><b>{metrics.architectApplies30d}</b><span>applications IA · 30 j</span></article>
           <article><b>{metrics.events30d}</b><span>événements produit · 30 j</span></article>
           <article><b>{metrics.feedbackOpen}</b><span>retours à traiter</span></article>
+        </section>
+      ) : null}
+
+      {state === "ready" ? (
+        <section className="panel admin-managed-domains">
+          <div className="admin-readiness-heading">
+            <div>
+              <p className="eyebrow">Publication AJG</p>
+              <h2>Sous-domaines gérés</h2>
+              <p>
+                La préparation DNS des adresses <code>*.voyage.ajgsolutionsgroup.com</code>
+                reste pilotée par l’administration. Les bêta-testeurs n’ont rien à configurer.
+              </p>
+            </div>
+            <div className="beta-side-metrics">
+              <span><b>{managedDomains.length}</b> sous-domaines</span>
+              <span><b>{managedDomains.filter((item) => item.verificationStatus === "verified").length}</b> vérifiés</span>
+              <span><b>{managedDomains.filter((item) => item.verificationStatus !== "verified").length}</b> à préparer</span>
+            </div>
+          </div>
+
+          {managedDomains.length ? (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Site</th>
+                    <th>Adresse AJG</th>
+                    <th>État</th>
+                    <th>Primaire</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {managedDomains.map((domain) => (
+                    <tr key={domain.id}>
+                      <td><b>{domain.slug}</b><small>{domain.siteStatus}</small></td>
+                      <td>{domain.hostname}</td>
+                      <td>
+                        {domain.verificationStatus === "verified"
+                          ? "Vérifié"
+                          : domain.verificationStatus === "failed"
+                            ? "Échec"
+                            : "En attente"}
+                      </td>
+                      <td>{domain.isPrimary ? "Oui" : "Non"}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="text-button"
+                          disabled={managedDomainBusy !== null}
+                          onClick={() => void syncManagedDomain(domain)}
+                        >
+                          {managedDomainBusy === domain.id
+                            ? "Vérification…"
+                            : domain.verificationStatus === "verified"
+                              ? "Recontrôler"
+                              : "Préparer / vérifier"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="plans-note">Aucun sous-domaine AJG à préparer pour le moment.</p>
+          )}
         </section>
       ) : null}
 

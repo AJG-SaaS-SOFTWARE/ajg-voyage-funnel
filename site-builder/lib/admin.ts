@@ -37,6 +37,60 @@ export async function adminRunBuilderE2E(includeAi: boolean): Promise<BuilderE2E
   return body as BuilderE2EResult;
 }
 
+export type AdminManagedDomain = {
+  id: string;
+  siteId: string;
+  slug: string;
+  siteStatus: string;
+  hostname: string;
+  verificationStatus: "pending" | "verified" | "failed";
+  isPrimary: boolean;
+};
+
+export async function getAdminManagedDomains(): Promise<AdminManagedDomain[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/managed-domains", {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Sous-domaines AJG indisponibles.");
+  return (body?.domains || []) as AdminManagedDomain[];
+}
+
+export async function adminSyncManagedDomain(domainId: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+
+  const response = await fetch("/api/admin/managed-domains", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ domainId }),
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = body?.vercel?.message ? ` — ${body.vercel.message}` : "";
+    throw new Error((body?.error || "Préparation du sous-domaine impossible.") + detail);
+  }
+  return body as {
+    ok: true;
+    verified: boolean;
+    ownershipVerified: boolean;
+    misconfigured: boolean | null;
+    verification: Array<{ type?: string; domain?: string; value?: string; reason?: string }>;
+  };
+}
+
 export type AdminBetaCohortMember = {
   id: string;
   email: string;

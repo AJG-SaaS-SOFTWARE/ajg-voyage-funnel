@@ -192,7 +192,7 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 - [x] instrumentation first-party du funnel bêta, sans enregistrer les contenus éditoriaux ;
 - [x] formulaire de feedback volontaire et vue admin des retours ;
 - [x] audit Supabase post-implémentation : aucun nouveau warning sécurité applicatif ;
-- [x] rattachement/vérification Vercel automatisé des domaines ;
+- [x] rattachement/vérification Vercel automatisé des domaines ; sous-domaines AJG gérés depuis le back-office, domaines personnels depuis l’espace propriétaire ;
 - [ ] activation Stripe après validation de l’offre commerciale ;
 - [x] moteur de droits déjà prêt pour `past_due` / `canceled` / `suspended` et blocage de nouvelle publication ;
 - [ ] synchronisation Stripe → statuts et délais de grâce dès validation des paramètres commerciaux.
@@ -260,6 +260,8 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 - [ ] tester un domaine personnalisé utilisateur de bout en bout avant lancement commercial.
 
 ### Itération 6B — bêta mesurée
+- [x] sous-domaines AJG retirés des opérations DNS côté utilisateur : préparation/vérification centralisée dans l’administration, avec file des domaines pending et instructions DNS réservées à AJG ;
+- [x] l’API utilisateur de synchronisation est désormais limitée aux domaines personnels autorisés par l’offre ; les sous-domaines gérés exigent le rôle administrateur ;
 - [x] instrumentation first-party et feedback déjà disponibles ;
 - [x] dashboard bêta admin prêt : funnel utilisateurs distincts, usage IA réel, abandons descriptifs, feedback et activité par site sur 30 jours ;
 - [x] gestion de cohorte bêta préparée dans l’administration : invitation e-mail volontaire, ajout d’un compte existant sans renvoi d’e-mail, retrait sans suppression du compte et limite de sécurité à 25 comptes ;
