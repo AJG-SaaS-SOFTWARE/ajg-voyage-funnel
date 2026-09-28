@@ -17,9 +17,10 @@ export async function GET(request: Request) {
  const userClient=createClient(url,publishable,{global:{headers:{Authorization:`Bearer ${token}`}},auth:{persistSession:false,autoRefreshToken:false}});
  const {data:{user},error:userError}=await userClient.auth.getUser(token);
  if(userError||!user) return NextResponse.json({error:"Unauthorized"},{status:401});
- const {data:sites,error:siteError}=await userClient.from("sites").select("*").eq("owner_id",user.id).order("updated_at",{ascending:false}).limit(1);
- if(siteError||!sites?.[0]) return NextResponse.json({error:"Site unavailable"},{status:404});
- const site=sites[0];
+ const siteId=new URL(request.url).searchParams.get("siteId");
+ if(!siteId) return NextResponse.json({error:"Site identifier required"},{status:400});
+ const {data:site,error:siteError}=await userClient.from("sites").select("*").eq("id",siteId).eq("owner_id",user.id).maybeSingle();
+ if(siteError||!site) return NextResponse.json({error:"Site unavailable"},{status:404});
  const {data:caps,error:capError}=await userClient.rpc("get_my_site_capabilities",{p_site_id:site.id});
  const cap=Array.isArray(caps)?caps[0]:caps;
  if(capError||!cap?.can_export) return NextResponse.json({error:"Export unavailable"},{status:403});
