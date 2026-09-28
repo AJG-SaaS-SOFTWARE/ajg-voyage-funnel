@@ -173,10 +173,36 @@ export default function BuilderPage() {
   type ArchitectProposal = {
     heroTagline: string; heroTitle: string; heroSubtitle: string; aboutHeading: string; aboutText: string; bookingLabel: string;
     recommendedModules: string[];
+    moduleOrder: string[];
     architecture: { mode: "single" | "multi"; pages: { id: string; slug: string; title: string; kind: "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom"; purpose: string; enabled: boolean; assetIds: string[] }[] };
     design: { layout: "classic" | "editorial" | "showcase" | "conversion"; heroLayout: "split" | "centered" | "immersive"; contentWidth: "compact" | "balanced" | "wide"; accent: string; background: "ivory" | "sand" | "mist" | "sage" | "slate"; pattern: "none" | "dots" | "lines" | "grid" | "rays"; patternStrength: "soft" | "bold" };
     faq: { title: string; items: { question: string; answer: string }[] };
     benefits: { title: string; items: { title: string; text: string }[] };
+    intelligence: {
+      readiness: "strong" | "usable" | "thin";
+      understoodNeed: string;
+      audience: string;
+      primaryGoal: string;
+      secondaryGoals: string[];
+      positioning: string;
+      toneKeywords: string[];
+      visitorJourney: string[];
+      contentPriorities: string[];
+      conversionStrategy: string;
+      architectureRationale: string;
+      designRationale: string;
+      missingInformation: string[];
+      assumptions: string[];
+    };
+    premiumAudit: {
+      reviewed: true;
+      refinementApplied: boolean;
+      initialScore: number;
+      issuesDetected: number;
+      majorIssuesDetected: number;
+      strengths: string[];
+      qualityNote: string;
+    };
   };
   const [architectProposal, setArchitectProposal] = useState<ArchitectProposal | null>(null);
   const [architectLoading, setArchitectLoading] = useState(false);
@@ -514,7 +540,15 @@ export default function BuilderPage() {
         customBackgroundColor: "",
         modules: {
           ...modules,
+          order: proposal.moduleOrder?.length
+            ? [...new Set([...proposal.moduleOrder, ...modules.order])] as typeof modules.order
+            : modules.order,
+          gallery: { ...modules.gallery, enabled: recommended.has("gallery") && modules.gallery.images.length > 0 },
           faq: { ...modules.faq, enabled: recommended.has("faq") && proposal.faq?.items?.length > 0, title: proposal.faq?.title || modules.faq.title, items: proposal.faq?.items || modules.faq.items },
+          testimonials: { ...modules.testimonials, enabled: recommended.has("testimonials") && modules.testimonials.items.length > 0 },
+          contact: { ...modules.contact, enabled: recommended.has("contact") && Boolean(modules.contact.email.trim()) },
+          video: { ...modules.video, enabled: recommended.has("video") && Boolean(modules.video.url.trim()) },
+          figures: { ...modules.figures, enabled: recommended.has("figures") && modules.figures.items.some((item) => item.value.trim() && item.label.trim()) },
           benefits: { ...modules.benefits, enabled: recommended.has("benefits") && proposal.benefits?.items?.length > 0, title: proposal.benefits?.title || modules.benefits.title, items: proposal.benefits?.items || modules.benefits.items }
         }
       }
@@ -1074,10 +1108,60 @@ export default function BuilderPage() {
                     <span className="guided-writing-badge">Nouveau</span>
                   </summary>
                   <div className="guided-writing-body">
-                    <p className="guided-writing-intro">Décrivez votre activité, votre cible, l’objectif du site, le ton souhaité et quelques mots-clés. L’IA prépare les textes et recommande uniquement les rubriques pertinentes.</p>
-                    <label className="guided-question"><span>Votre besoin</span><textarea rows={6} maxLength={1800} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je veux présenter mon univers, rassurer les futurs clients et les inviter à me contacter. Ton chaleureux, élégant, naturel. Mots-clés : mariage, famille, émotion, lumière naturelle." /></label>
-                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={createSiteWithAi}>{architectLoading ? "Création du site…" : "Créer une proposition complète"} <span aria-hidden="true">→</span></button>
-                    {architectProposal ? <div className="ai-current-note" role="status"><b>Proposition prête à relire</b><p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p><p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p><p>Architecture : {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : "site monopage"} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p><p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p><p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div><small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small></div> : null}
+                    <p className="guided-writing-intro">Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée.</p>
+                    <div className="architect-brief-guide">
+                      <b>Pour un résultat exceptionnel, indiquez si vous les connaissez :</b>
+                      <span>ce que vous proposez · à qui · l’action attendue · ce qui vous différencie · le ton souhaité · les contraintes à respecter</span>
+                    </div>
+                    <label className="guided-question"><span>Votre besoin</span><textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." /></label>
+                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={createSiteWithAi}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
+                    {architectProposal ? (
+                      <div className="ai-current-note architect-premium-result" role="status">
+                        <div className="architect-result-heading">
+                          <div>
+                            <b>Proposition Premium prête à relire</b>
+                            <p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p>
+                          </div>
+                          <span className={"architect-readiness " + architectProposal.intelligence.readiness}>
+                            {architectProposal.intelligence.readiness === "strong" ? "Brief solide" : architectProposal.intelligence.readiness === "usable" ? "Brief exploitable" : "Brief partiel"}
+                          </span>
+                        </div>
+                        <div className="architect-insight-grid">
+                          <article><span>Besoin compris</span><p>{architectProposal.intelligence.understoodNeed}</p></article>
+                          <article><span>Public principal</span><p>{architectProposal.intelligence.audience}</p></article>
+                          <article><span>Objectif du site</span><p>{architectProposal.intelligence.primaryGoal}</p></article>
+                          <article><span>Positionnement</span><p>{architectProposal.intelligence.positioning}</p></article>
+                        </div>
+                        {architectProposal.intelligence.visitorJourney.length ? (
+                          <div className="architect-journey">
+                            <b>Parcours visiteur conçu par l’IA</b>
+                            <div>{architectProposal.intelligence.visitorJourney.map((item, index) => <span key={item + index}><i>{index + 1}</i>{item}</span>)}</div>
+                          </div>
+                        ) : null}
+                        <div className="architect-rationale-grid">
+                          <article><b>Pourquoi cette architecture ?</b><p>{architectProposal.intelligence.architectureRationale}</p></article>
+                          <article><b>Pourquoi cette direction visuelle ?</b><p>{architectProposal.intelligence.designRationale}</p></article>
+                        </div>
+                        <p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p>
+                        <p>Architecture : {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : "site monopage"} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p>
+                        <p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p>
+                        <p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p>
+                        <div className="architect-audit">
+                          <b>✓ Audit Premium effectué</b>
+                          <p>{architectProposal.premiumAudit.qualityNote}</p>
+                          {architectProposal.premiumAudit.strengths.length ? <small>Points forts : {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
+                        </div>
+                        {architectProposal.intelligence.missingInformation.length ? (
+                          <div className="architect-missing">
+                            <b>Pour aller encore plus loin</b>
+                            <p>L’IA n’a pas inventé les informations absentes. Vous pouvez les ajouter au brief puis demander une nouvelle proposition :</p>
+                            <ul>{architectProposal.intelligence.missingInformation.map((item) => <li key={item}>{item}</li>)}</ul>
+                          </div>
+                        ) : null}
+                        <div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={createSiteWithAi}>Nouvelle proposition</button></div>
+                        <small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small>
+                      </div>
+                    ) : null}
                   </div>
                 </details>
                 <details className="guided-writing-card ai-architect-card">
