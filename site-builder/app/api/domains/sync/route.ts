@@ -70,28 +70,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Domain unavailable" }, { status: 404 });
   }
 
-  if (domain.kind === "custom_domain") {
-    const { data: ent } = await userClient.rpc("get_my_site_entitlements", {
-      p_site_id: body.siteId
-    });
-    const row = Array.isArray(ent) ? ent[0] : ent;
-    if (!row?.custom_domain) {
-      return NextResponse.json(
-        { error: "Custom domain unavailable" },
-        { status: 403 }
-      );
-    }
+  if (domain.kind !== "custom_domain") {
+    return NextResponse.json(
+      { error: "Managed subdomains are administered by AJG" },
+      { status: 403 }
+    );
   }
 
-  if (domain.kind !== "custom_domain" && domain.kind !== "managed_subdomain") {
-    return NextResponse.json({ error: "Unsupported domain kind" }, { status: 400 });
+  const { data: ent } = await userClient.rpc("get_my_site_entitlements", {
+    p_site_id: body.siteId
+  });
+  const row = Array.isArray(ent) ? ent[0] : ent;
+  if (!row?.custom_domain) {
+    return NextResponse.json(
+      { error: "Custom domain unavailable" },
+      { status: 403 }
+    );
   }
 
   let syncResult;
   try {
     syncResult = await syncVercelDomain(
       domain.hostname,
-      domain.kind as VercelDomainKind
+      "custom_domain" as VercelDomainKind
     );
   } catch (error) {
     if (error instanceof VercelDomainSyncError) {
@@ -115,41 +116,14 @@ export async function POST(request: NextRequest) {
   });
 
   if (syncResult.verified) {
-    if (domain.kind === "custom_domain") {
-      await service
-        .from("domains")
-        .update({ is_primary: false })
-        .eq("site_id", body.siteId);
-      await service
-        .from("domains")
-        .update({ verification_status: "verified", is_primary: true })
-        .eq("id", domain.id);
-    } else {
-      const { data: verifiedCustom } = await service
-        .from("domains")
-        .select("id")
-        .eq("site_id", body.siteId)
-        .eq("kind", "custom_domain")
-        .eq("verification_status", "verified")
-        .limit(1)
-        .maybeSingle();
-
-      if (!verifiedCustom) {
-        await service
-          .from("domains")
-          .update({ is_primary: false })
-          .eq("site_id", body.siteId);
-        await service
-          .from("domains")
-          .update({ verification_status: "verified", is_primary: true })
-          .eq("id", domain.id);
-      } else {
-        await service
-          .from("domains")
-          .update({ verification_status: "verified", is_primary: false })
-          .eq("id", domain.id);
-      }
-    }
+    await service
+      .from("domains")
+      .update({ is_primary: false })
+      .eq("site_id", body.siteId);
+    await service
+      .from("domains")
+      .update({ verification_status: "verified", is_primary: true })
+      .eq("id", domain.id);
   } else {
     await service
       .from("domains")
