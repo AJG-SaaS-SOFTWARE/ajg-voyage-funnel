@@ -5,7 +5,9 @@ create table if not exists public.user_roles (
 );
 alter table public.user_roles enable row level security;
 revoke all on public.user_roles from anon;
+revoke insert,update,delete,truncate,references,trigger on public.user_roles from authenticated;
 grant select on public.user_roles to authenticated;
+grant select,insert,update,delete on public.user_roles to service_role;
 create policy "users read own role" on public.user_roles for select to authenticated using ((select auth.uid())=user_id);
 
 drop policy if exists "authenticated read accessible sites" on public.sites;
