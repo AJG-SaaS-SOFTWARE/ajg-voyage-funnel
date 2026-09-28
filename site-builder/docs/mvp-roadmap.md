@@ -252,3 +252,25 @@ Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas ét
 
 ### Gate de lancement
 Le lancement commercial ne sera marqué prêt qu’après validation réelle de 6A, 6B, 6C et 6D. Les décisions tarifaires et les actions externes payantes ne sont jamais inventées par le code.
+
+
+### Itération 6E — Billing Access & impayés
+État : moteur serveur en cours, politique J0/J14/J28/J104 intégrée
+
+- [x] état d’impayé isolé par site : `free/trial/active/grace/restricted/public_suspended/retention/closed` ;
+- [x] journal de transitions et identifiant fournisseur dédupliquable ;
+- [x] capacités indépendantes `read/edit/publish/ai/import/export/collect_leads/view_billing/public_site` ;
+- [x] J0–J14 : édition et publication maintenues, IA bloquée sans fallback vers le quota Free ;
+- [x] J14 : édition, publication, import et collecte de formulaires bloqués ; lecture/export/paiement conservés ;
+- [x] J28 : suspension publique appliquée aux routes slug et domaines personnalisés via un état serveur ;
+- [x] J104 : passage en rétention/contrôle sans suppression automatique irréversible ;
+- [x] Storage RLS bloque upload/update/delete direct après restriction ;
+- [x] scheduler PostgreSQL quotidien idempotent pour faire avancer les échéances ;
+- [x] test transactionnel du passage `grace → public_suspended` et de la suspension publique ;
+- [ ] écran propriétaire avec dates J14/J28/J104 et action de régularisation ;
+- [ ] export complet pages/arborescence/textes/SEO/médias/configuration ;
+- [ ] notifications J0/J3/J7/J12/J74/J97 avec journal d’envoi idempotent ;
+- [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
+- [ ] réactivation après paiement confirmé et contrôle du domaine/formulaires ;
+- [ ] suite de recette automatisée J13/J14/J27/J28/J104, paiement J20/J35, deux sites d’un propriétaire et appels directs API/RPC/Storage ;
+- [ ] validation production après réouverture du pipeline Vercel.
