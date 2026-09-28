@@ -11,8 +11,9 @@ export function middleware(request:NextRequest){
  if(hostname.endsWith(suffix)){
    const slug=hostname.slice(0,-suffix.length);
    if(!slug||slug.includes(".")||reservedSubdomains.has(slug))return NextResponse.next();
-   if(request.nextUrl.pathname!=="/")return NextResponse.next();
-   const url=request.nextUrl.clone();url.pathname="/site/"+slug;return NextResponse.rewrite(url);
+   const url=request.nextUrl.clone();
+   url.pathname="/site/"+encodeURIComponent(slug)+(request.nextUrl.pathname==="/"?"":request.nextUrl.pathname);
+   return NextResponse.rewrite(url);
  }
  const isAppHost=hostname===appHostname||hostname===rootDomain||hostname==="localhost"||hostname.endsWith(".vercel.app");
  if(isAppHost)return NextResponse.next();
