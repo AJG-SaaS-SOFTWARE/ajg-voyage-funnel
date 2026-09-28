@@ -253,6 +253,41 @@ export default function AdminPage() {
     }
   };
 
+  const betaCriticalKeys = new Set([
+    "supabase-public",
+    "supabase-server",
+    "openai",
+    "app-url",
+    "deployment-sha",
+    "vercel-domain",
+    "managed-subdomains",
+    "bucket-site-media",
+    "bucket-site-private-media"
+  ]);
+  const betaCriticalChecks =
+    readiness?.checks.filter(
+      (item) => item.scope === "beta" && betaCriticalKeys.has(item.key)
+    ) || [];
+  const betaCriticalIssues = betaCriticalChecks.filter(
+    (item) => item.status !== "pass"
+  );
+  const betaWarnings =
+    readiness?.checks.filter(
+      (item) => item.scope === "beta" && item.status === "warn" && !betaCriticalKeys.has(item.key)
+    ) || [];
+  const betaTechnicalReady =
+    Boolean(readiness) &&
+    betaCriticalChecks.length === betaCriticalKeys.size &&
+    betaCriticalIssues.length === 0 &&
+    readiness!.summary.blocker === 0;
+  const betaMemberCount = betaCohort?.members.length ?? 0;
+  const betaActivatedCount =
+    betaCohort?.members.filter((item) => item.lastSignInAt).length ?? 0;
+  const betaTargetReached = betaMemberCount >= 5 && betaMemberCount <= 10;
+  const betaInviteAllowed =
+    betaTechnicalReady &&
+    betaMemberCount < Math.min(betaCohort?.limit ?? 25, 10);
+
   return (
     <main className="plans-page">
       <section className="plans-hero">
@@ -282,6 +317,49 @@ export default function AdminPage() {
           <article><b>{metrics.architectApplies30d}</b><span>applications IA · 30 j</span></article>
           <article><b>{metrics.events30d}</b><span>événements produit · 30 j</span></article>
           <article><b>{metrics.feedbackOpen}</b><span>retours à traiter</span></article>
+        </section>
+      ) : null}
+      {state === "ready" && readiness ? (
+        <section className={"panel beta-launch-gate " + (betaTechnicalReady ? "is-ready" : "is-blocked")}>
+          <div className="admin-readiness-heading">
+            <div>
+              <p className="eyebrow">Gate bêta privée</p>
+              <h2>{betaTechnicalReady ? "Socle technique prêt" : "Invitation suspendue"}</h2>
+              <p>
+                {betaTechnicalReady
+                  ? "Les prérequis critiques de la bêta sont validés. Vous pouvez constituer une cohorte de 5 à 10 testeurs sans attendre les fonctions commerciales différées."
+                  : "Au moins un prérequis technique critique n’est pas validé. Les invitations restent désactivées jusqu’à correction."}
+              </p>
+            </div>
+            <div className="beta-side-metrics">
+              <span><b>{betaCriticalChecks.filter((item) => item.status === "pass").length}/{betaCriticalKeys.size}</b> contrôles critiques</span>
+              <span><b>{betaMemberCount}/5–10</b> testeurs</span>
+              <span><b>{betaActivatedCount}</b> activés</span>
+            </div>
+          </div>
+
+          <div className="beta-gate-grid">
+            <article className={betaTechnicalReady ? "pass" : "blocker"}>
+              <b>{betaTechnicalReady ? "✓ Technique" : "× Technique"}</b>
+              <span>{betaTechnicalReady ? "Prêt pour une bêta privée." : betaCriticalIssues.length + " contrôle(s) critique(s) à corriger."}</span>
+            </article>
+            <article className={betaTargetReached ? "pass" : "warn"}>
+              <b>{betaTargetReached ? "✓ Cohorte" : "○ Cohorte"}</b>
+              <span>{betaTargetReached ? "Taille cible atteinte." : "Encore " + Math.max(0, 5 - betaMemberCount) + " testeur(s) pour atteindre le minimum de 5."}</span>
+            </article>
+            <article className={betaWarnings.length ? "warn" : "pass"}>
+              <b>{betaWarnings.length ? betaWarnings.length + " avertissement(s)" : "✓ Aucun avertissement"}</b>
+              <span>{betaWarnings.length ? "Non bloquants pour la bêta privée ; à traiter avant activation des flux concernés." : "Aucun warning bêta restant."}</span>
+            </article>
+          </div>
+
+          {betaCriticalIssues.length ? (
+            <div className="beta-gate-issues">
+              {betaCriticalIssues.map((item) => (
+                <p key={item.key}><b>{item.label}</b> — {item.detail}</p>
+              ))}
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -392,7 +470,8 @@ export default function AdminPage() {
             <button
               type="submit"
               className="button primary"
-              disabled={betaInviteBusy || !betaEmail.trim() || (betaCohort?.members.length ?? 0) >= (betaCohort?.limit ?? 25)}
+              disabled={betaInviteBusy || !betaEmail.trim() || !betaInviteAllowed}
+              title={!betaTechnicalReady ? "Les prérequis techniques critiques doivent être prêts avant d’inviter." : betaMemberCount >= 10 ? "La cohorte cible est limitée à 10 testeurs pour cette phase." : undefined}
             >
               {betaInviteBusy ? "Traitement…" : "Inviter à la bêta"}
             </button>
@@ -400,6 +479,8 @@ export default function AdminPage() {
           <p className="plans-note">
             Un nouveau compte reçoit l’invitation Supabase vers le Builder. Un compte AJG déjà
             existant est seulement ajouté à la cohorte : aucun second e-mail n’est envoyé.
+            Cette phase est volontairement plafonnée à 10 testeurs même si la limite de sécurité
+            technique reste supérieure.
           </p>
 
           {betaCohort?.members.length ? (
