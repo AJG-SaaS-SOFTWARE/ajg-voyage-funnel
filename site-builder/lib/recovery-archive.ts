@@ -51,7 +51,7 @@ function tarHeader(path: string, size: number, modifiedAt: Date) {
 
 function entrySize(data: RecoveryTarEntry["data"]) {
   if (typeof data === "string") return encoder.encode(data).byteLength;
-  return data.byteLength ?? data.size;
+  return data.size;
 }
 
 async function* dataChunks(data: RecoveryTarEntry["data"]): AsyncGenerator<Uint8Array> {
