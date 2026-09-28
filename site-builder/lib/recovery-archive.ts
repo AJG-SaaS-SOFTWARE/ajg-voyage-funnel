@@ -1,5 +1,3 @@
-"use server";
-
 import { Readable } from "node:stream";
 import { createGzip } from "node:zlib";
 
