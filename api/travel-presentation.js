@@ -29,6 +29,21 @@ function text(value, max = 500) {
   return value.trim().slice(0, max);
 }
 
+function cleanAttribution(value, max = 250) {
+  return text(value, max).replace(/[\u0000-\u001F\u007F]/g, " ");
+}
+
+function cleanUrl(value) {
+  const candidate = text(value, 1500);
+  if (!candidate) return null;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function bool(value) {
   return value === true || value === "true" || value === "oui" || value === "yes" || value === "on";
 }
@@ -122,7 +137,10 @@ export default async function handler(req, res) {
 
   const firstName = text(body.prenom, 100);
   const email = text(body.email, 254).toLowerCase();
-  const phone = text(body.telephone, 50);
+  const phone = text(body.telephone, 30);
+  if (phone && !/^[+()\d\s.-]{6,30}$/.test(phone)) {
+    return json(res, 400, { error: "Invalid phone number" });
+  }
   const language = text(body.language, 5) === "en" ? "en" : "fr";
   const mainInterest = text(body.interet_principal, 200);
   const travelFrequency = text(body.frequence_voyage, 200);
@@ -158,13 +176,13 @@ export default async function handler(req, res) {
     marketing_consent: bool(body.consentement_marketing),
     contact_request: true,
     lead_score: leadScore,
-    utm_source: text(body.utm_source, 250) || null,
-    utm_medium: text(body.utm_medium, 250) || null,
-    utm_campaign: text(body.utm_campaign, 250) || null,
-    utm_content: text(body.utm_content, 250) || null,
-    utm_term: text(body.utm_term, 250) || null,
-    landing_url: text(body.landing_url, 1500) || null,
-    referrer_url: text(body.referrer_url, 1500) || null
+    utm_source: cleanAttribution(body.utm_source) || null,
+    utm_medium: cleanAttribution(body.utm_medium) || null,
+    utm_campaign: cleanAttribution(body.utm_campaign) || null,
+    utm_content: cleanAttribution(body.utm_content) || null,
+    utm_term: cleanAttribution(body.utm_term) || null,
+    landing_url: cleanUrl(body.landing_url),
+    referrer_url: cleanUrl(body.referrer_url)
   };
 
   const insert = await fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/ajg_voyage_leads`, {
