@@ -139,6 +139,53 @@ async function recordPremiumArchitectFailure(
   }
 }
 
+type StandardProviderOperation =
+  | "standard_field"
+  | "standard_guided"
+  | "standard_review"
+  | "standard_module";
+
+async function recordStandardProviderUsage(args: {
+  userId: string;
+  siteId: string;
+  operation: StandardProviderOperation;
+  data: any;
+  durationMs: number;
+}) {
+  const serviceKey =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!serviceKey || !supabaseUrl) return;
+
+  const usage = args.data?.usage || {};
+  const service = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  const { error } = await service.from("ai_provider_usage").insert({
+    user_id: args.userId,
+    site_id: args.siteId,
+    operation: args.operation,
+    model: clean(args.data?.model, 100) || process.env.OPENAI_TEXT_MODEL || "gpt-5.6-luna",
+    input_tokens: Math.max(0, Number(usage?.input_tokens) || 0),
+    cached_input_tokens: Math.max(
+      0,
+      Number(usage?.input_tokens_details?.cached_tokens) || 0
+    ),
+    output_tokens: Math.max(0, Number(usage?.output_tokens) || 0),
+    reasoning_tokens: Math.max(
+      0,
+      Number(usage?.output_tokens_details?.reasoning_tokens) || 0
+    ),
+    total_tokens: Math.max(0, Number(usage?.total_tokens) || 0),
+    duration_ms: Math.max(0, Math.round(args.durationMs))
+  });
+
+  if (error) {
+    console.warn("Standard AI provider usage telemetry unavailable", error.message);
+  }
+}
+
 function extractText(data: any) {
   if (typeof data?.output_text === "string" && data.output_text.trim()) {
     return data.output_text.trim();
@@ -416,6 +463,15 @@ export async function POST(request: Request) {
   ].filter(Boolean).join("\n");
 
   const structuredFormat = standardStructuredFormat(field, moduleType);
+  const standardOperation: StandardProviderOperation =
+    field === "guidedDraft"
+      ? "standard_guided"
+      : field === "qualityReview"
+        ? "standard_review"
+        : field === "moduleDraft"
+          ? "standard_module"
+          : "standard_field";
+  const providerStartedAt = Date.now();
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -462,6 +518,14 @@ export async function POST(request: Request) {
       { status: unavailable ? 503 : 502 }
     );
   }
+
+  await recordStandardProviderUsage({
+    userId: auth.user.id,
+    siteId,
+    operation: standardOperation,
+    data,
+    durationMs: Date.now() - providerStartedAt
+  });
 
   const text = extractText(data);
   if (!text) {
