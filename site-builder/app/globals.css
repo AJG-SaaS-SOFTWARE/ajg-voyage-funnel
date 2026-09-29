@@ -2848,3 +2848,31 @@ button.active .step-label small{color:#63817f}
 .premium-ai-human-eval-reasons em b{color:#8b4638;margin-right:4px}
 @media (max-width:900px){.premium-ai-human-eval-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.premium-ai-human-eval-kpis{grid-template-columns:1fr}}
+
+.revision-scope-summary{
+  display:grid;
+  gap:8px;
+  padding:13px 14px;
+  border:1px solid rgba(25,109,101,.12);
+  border-radius:14px;
+  background:rgba(87,212,201,.06);
+}
+.revision-scope-summary>span{
+  color:#29484a;
+  font-size:.72rem;
+  font-weight:780;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.revision-scope-summary>div{display:flex;gap:7px;flex-wrap:wrap}
+.revision-scope-summary em{
+  padding:7px 9px;
+  border-radius:999px;
+  background:#fff;
+  color:#31565a;
+  font-size:.68rem;
+  font-style:normal;
+  font-weight:680;
+}
+.revision-scope-summary p{margin:0;color:#64767a;font-size:.73rem}
+.revision-scope-summary small{color:#6d7d80;line-height:1.45}
