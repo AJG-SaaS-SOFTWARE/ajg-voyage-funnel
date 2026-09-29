@@ -2270,14 +2270,14 @@ export default function BuilderPage() {
 
           <div className="builder-actions premium-builder-actions">
             <button type="button" className="secondary" disabled={stepIndex === 0 || busy} onClick={() => go(-1)}>
-              ← Retour
+              ← {en ? "Back" : "Retour"}
             </button>
             <button type="button" className="secondary save-button" disabled={busy} onClick={save}>
-              {saved && !busy ? "✓ Sauvegardé" : "Sauvegarder"}
+              {saved && !busy ? (en ? "✓ Saved" : "✓ Sauvegardé") : (en ? "Save" : "Sauvegarder")}
             </button>
             {stepIndex < steps.length - 1 ? (
               <button type="button" className="primary premium-button" disabled={busy} onClick={() => go(1)}>
-                Continuer : {nextStepLabel} <span aria-hidden="true">→</span>
+                {en ? "Continue" : "Continuer"} : {nextStepLabel} <span aria-hidden="true">→</span>
               </button>
             ) : null}
           </div>
@@ -2286,15 +2286,15 @@ export default function BuilderPage() {
         <aside className="preview-wrap builder-preview premium-builder-preview">
           <div className="panel-heading preview-panel-heading">
             <div>
-              <p className="step">Aperçu live</p>
+              <p className="step">{en ? "Live preview" : "Aperçu live"}</p>
               <h2>{config.brandName}</h2>
             </div>
             <div className="preview-heading-actions">
-              <div className="preview-device-switch" aria-label="Format de l'aperçu">
-                <button type="button" className={previewDevice === "desktop" ? "active" : ""} aria-pressed={previewDevice === "desktop"} onClick={() => setPreviewDevice("desktop")}>Ordinateur</button>
+              <div className="preview-device-switch" aria-label={en ? "Preview format" : "Format de l'aperçu"}>
+                <button type="button" className={previewDevice === "desktop" ? "active" : ""} aria-pressed={previewDevice === "desktop"} onClick={() => setPreviewDevice("desktop")}>{en ? "Desktop" : "Ordinateur"}</button>
                 <button type="button" className={previewDevice === "mobile" ? "active" : ""} aria-pressed={previewDevice === "mobile"} onClick={() => setPreviewDevice("mobile")}>Mobile</button>
               </div>
-              <Link href="/preview">Plein écran ↗</Link>
+              <Link href="/preview">{en ? "Full screen ↗" : "Plein écran ↗"}</Link>
             </div>
           </div>
           <div className={`preview-device-frame ${previewDevice === "mobile" ? "is-mobile" : "is-desktop"}`}>
@@ -2303,7 +2303,7 @@ export default function BuilderPage() {
           </div>
           <div className="preview-note">
             <span>✦</span>
-            <p>{previewDevice === "mobile" ? "Aperçu mobile simulé : vérifiez notamment le cadrage de la photo, la longueur des titres et les boutons." : "Vous voyez le résultat en direct. Rien n'est public avant l'étape « Publication »."}</p>
+            <p>{previewDevice === "mobile" ? (en ? "Simulated mobile preview: check photo cropping, headline length and buttons." : "Aperçu mobile simulé : vérifiez notamment le cadrage de la photo, la longueur des titres et les boutons.") : (en ? "You are seeing the result live. Nothing is public before the Publish step." : "Vous voyez le résultat en direct. Rien n'est public avant l'étape « Publication ».")}</p>
           </div>
         </aside>
       </div>
