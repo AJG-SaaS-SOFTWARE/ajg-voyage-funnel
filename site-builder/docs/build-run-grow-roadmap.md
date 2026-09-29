@@ -214,17 +214,17 @@ Objectif : que tout le produit raisonne en BUILD / RUN / GROW.
 
 ### À faire
 
-- [ ] remplacer les prix publics 19/39 par 15/29 ;
-- [ ] renommer Pro IA en **Growth** ;
-- [ ] introduire un entitlement séparé **AI Launch / Création IA** ;
-- [ ] ne plus lier l'accès au Concepteur IA uniquement au plan mensuel ;
-- [ ] créer un achat ponctuel de 49 € donnant droit à une création initiale ;
-- [ ] définir précisément ce que consomme une "Création IA" ;
-- [ ] prévoir création offerte pour Growth annuel ;
-- [ ] adapter Supabase : plan + droits + achat ponctuel ;
-- [ ] adapter Stripe sandbox : Essentiel 15/150, Growth 29/290, Création IA 49 ;
-- [ ] adapter Checkout, webhook et Customer Portal ;
-- [ ] conserver Beta Tester avec accès complet hors Stripe.
+- [x] remplacer les prix publics 19/39 par 15/29 ;
+- [x] renommer Pro IA en **Growth** ;
+- [x] introduire un entitlement séparé **AI Launch / Création IA** ;
+- [x] ne plus lier l'accès au Concepteur IA uniquement au plan mensuel ;
+- [x] créer un achat ponctuel de 49 € donnant droit à une création initiale ;
+- [x] définir précisément ce que consomme une "Création IA" : 4 opérations BUILD complètes réussies par défaut, réservées avant exécution et remboursées si échec ;
+- [x] prévoir création offerte pour Growth annuel, accordée uniquement après abonnement Stripe actif ;
+- [x] adapter Supabase : plan + droits + achat ponctuel ;
+- [x] adapter Stripe sandbox : Essentiel 15/150, Growth 29/290, Création IA 49 ;
+- [x] adapter Checkout, webhook et Customer Portal ;
+- [x] conserver Beta Tester avec accès complet hors Stripe.
 
 ### Définition de terminé
 
@@ -237,6 +237,13 @@ Un compte peut être :
 - Beta Tester.
 
 Aucun droit n'est déduit uniquement du front-end.
+
+**Garde-fous Phase 0 déjà actifs :**
+- Création IA : 4 opérations lourdes réussies par droit BUILD par défaut, valeur interne configurable de 1 à 20 ;
+- Growth : 12 opérations lourdes globales par mois au démarrage, séparées des quotas d'IA légère ;
+- Beta Tester : 30 opérations lourdes par mois afin d'observer l'usage sans permettre une consommation non bornée ;
+- réservation idempotente avant génération et remboursement automatique si la génération échoue ;
+- atteinte du plafond lourd : seules les opérations lourdes sont bloquées, le site et l'IA légère restent disponibles.
 
 ---
 
