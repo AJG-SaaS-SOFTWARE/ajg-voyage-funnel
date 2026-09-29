@@ -23,6 +23,7 @@ import {
 } from "../../lib/site-config";
 import { loadDraft, publishDraft, saveDraft } from "../../lib/site-store";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
+import { freeEntitlements, getMySiteEntitlements, type SubscriptionEntitlements } from "../../lib/subscription";
 import { optimizeBackgroundImage, optimizeImage } from "../../lib/optimize-image";
 import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import { legalMissingFields } from "../../lib/site-legal";
@@ -160,6 +161,7 @@ export default function BuilderPage() {
   const [syncError, setSyncError] = useState("");
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
   const [ownedSites,setOwnedSites]=useState<Array<{id:string;slug:string}>>([]);
+  const [siteEntitlements, setSiteEntitlements] = useState<SubscriptionEntitlements>(freeEntitlements);
   const [userEmail, setUserEmail] = useState("");
   const [origin, setOrigin] = useState("");
   const [verifiedPublicUrl, setVerifiedPublicUrl] = useState("");
@@ -250,6 +252,34 @@ export default function BuilderPage() {
       setVerifiedPublicUrl("");
     }
   };
+
+  useEffect(() => {
+    if (!remoteMode || !remoteSiteId) {
+      setSiteEntitlements(freeEntitlements);
+      return;
+    }
+    let cancelled = false;
+    void getMySiteEntitlements(remoteSiteId)
+      .then((entitlements) => {
+        if (!cancelled) setSiteEntitlements(entitlements);
+      })
+      .catch(() => {
+        if (!cancelled) setSiteEntitlements(freeEntitlements);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [remoteMode, remoteSiteId]);
+
+  const premiumArchitectAvailable =
+    siteEntitlements.premiumArchitect &&
+    ["active", "trialing"].includes(siteEntitlements.status);
+  const premiumAccessHref =
+    ["past_due", "canceled", "suspended"].includes(siteEntitlements.status)
+      ? "/billing"
+      : "/plans";
+  const premiumAccessLabel =
+    premiumAccessHref === "/billing" ? "Régulariser mon accès" : "Voir l’offre Pro";
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
@@ -481,6 +511,10 @@ export default function BuilderPage() {
   };
 
   const createSiteWithAi = async (extraBrief = "") => {
+    if (!premiumArchitectAvailable) {
+      router.push(premiumAccessHref);
+      return;
+    }
     if (!architectBrief.trim()) return;
     const briefForRequest = [architectBrief.trim(), extraBrief.trim()]
       .filter(Boolean)
@@ -642,6 +676,10 @@ export default function BuilderPage() {
   };
 
   const requestGlobalRevision = async () => {
+    if (!premiumArchitectAvailable) {
+      router.push(premiumAccessHref);
+      return;
+    }
     if (!revisionRequest.trim()) return;
     setRevisionLoading(true);
     setSyncError("");
@@ -1341,13 +1379,19 @@ export default function BuilderPage() {
                   return uploadContentAsset(file, site.id);
                 }} />
                 <ArchitectureEditor value={config.architecture} library={config.contentLibrary} onChange={(architecture) => update("architecture", architecture)} />
-                <details className="guided-writing-card ai-architect-card">
+                <details className={"guided-writing-card ai-architect-card " + (!premiumArchitectAvailable ? "premium-feature-locked" : "")}>
                   <summary>
                     <span className="guided-writing-icon">✦</span>
                     <span><b>Créer mon site avec l’IA</b><small>Premium · décrivez votre besoin et obtenez une proposition complète à valider.</small></span>
-                    <span className="guided-writing-badge">Nouveau</span>
+                    <span className="guided-writing-badge">{premiumArchitectAvailable ? "Nouveau" : "🔒 Pro"}</span>
                   </summary>
                   <div className="guided-writing-body">
+                    {!premiumArchitectAvailable ? (
+                      <div className="premium-feature-lock-note" role="note">
+                        <div><b>Fonctionnalité Premium</b><p>L’Architecte complet analyse votre besoin, construit l’architecture et rédige le site. L’IA standard et le mode guidé restent disponibles avec l’offre gratuite.</p></div>
+                        <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
+                      </div>
+                    ) : null}
                     <p className="guided-writing-intro">Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée.</p>
                     <div className="architect-brief-guide">
                       <b>Pour un résultat exceptionnel, indiquez si vous les connaissez :</b>
@@ -1355,7 +1399,7 @@ export default function BuilderPage() {
                     </div>
                     <label className="guided-question">
                       <span>Votre besoin</span>
-                      <textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." />
+                      <textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} disabled={!premiumArchitectAvailable} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." />
                       <small className={"architect-brief-readiness " + (architectBriefReady ? "is-ready" : "is-thin")}>
                         {architectBriefReady
                           ? "Brief suffisamment détaillé pour lancer l’analyse Premium."
@@ -1364,7 +1408,7 @@ export default function BuilderPage() {
                             : `Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`}
                       </small>
                     </label>
-                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
+                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
                     {architectProposal ? (
                       <div className="ai-current-note architect-premium-result" role="status">
                         <div className="architect-result-heading">
@@ -1528,12 +1572,18 @@ export default function BuilderPage() {
                     ) : null}
                   </div>
                 </details>
-                <details className="guided-writing-card ai-architect-card">
-                  <summary><span className="guided-writing-icon">↻</span><span><b>Modifier tout le site avec l’IA</b><small>Premium · demandez une évolution globale sans écraser automatiquement votre version actuelle.</small></span><span className="guided-writing-badge">Aperçu avant application</span></summary>
+                <details className={"guided-writing-card ai-architect-card " + (!premiumArchitectAvailable ? "premium-feature-locked" : "")}>
+                  <summary><span className="guided-writing-icon">↻</span><span><b>Modifier tout le site avec l’IA</b><small>Premium · demandez une évolution globale sans écraser automatiquement votre version actuelle.</small></span><span className="guided-writing-badge">{premiumArchitectAvailable ? "Aperçu avant application" : "🔒 Pro"}</span></summary>
                   <div className="guided-writing-body">
+                    {!premiumArchitectAvailable ? (
+                      <div className="premium-feature-lock-note" role="note">
+                        <div><b>Révision globale réservée à Pro</b><p>Vous pouvez toujours modifier chaque champ manuellement ou utiliser l’assistant IA standard prévu dans les champs autorisés.</p></div>
+                        <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
+                      </div>
+                    ) : null}
                     <p className="guided-writing-intro">Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».</p>
-                    <label className="guided-question"><span>Modification souhaitée</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} placeholder="Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible." /></label>
-                    <button type="button" className="button primary premium-button" disabled={revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? "Préparation de la révision…" : "Préparer la révision"} <span aria-hidden="true">→</span></button>
+                    <label className="guided-question"><span>Modification souhaitée</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!premiumArchitectAvailable} placeholder="Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible." /></label>
+                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? "Préparation de la révision…" : "Préparer la révision"} <span aria-hidden="true">→</span></button>
                     {revisionProposal ? (
                       <div className="ai-current-note revision-preview" role="status">
                         <b>Révision prête à comparer</b>
