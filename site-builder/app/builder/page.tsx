@@ -1415,7 +1415,7 @@ export default function BuilderPage() {
             {step === "story" ? (
               <>
                 <ContentLibraryEditor value={config.contentLibrary} onChange={(contentLibrary) => update("contentLibrary", contentLibrary)} onUpload={async (_asset, file) => {
-                  if (!remoteMode) throw new Error("Connectez-vous pour importer un fichier.");
+                  if (!remoteMode) throw new Error(tr("Connectez-vous pour importer un fichier.", "Sign in to import a file."));
                   const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false, remoteSiteId || undefined);
                   setRemoteSiteId(site.id);
                   return uploadContentAsset(file, site.id);
@@ -1424,61 +1424,61 @@ export default function BuilderPage() {
                 <details className={"guided-writing-card ai-architect-card " + (!premiumArchitectAvailable ? "premium-feature-locked" : "")}>
                   <summary>
                     <span className="guided-writing-icon">✦</span>
-                    <span><b>Créer mon site avec l’IA</b><small>Premium · décrivez votre besoin et obtenez une proposition complète à valider.</small></span>
-                    <span className="guided-writing-badge">{premiumArchitectAvailable ? "Nouveau" : "🔒 Pro"}</span>
+                    <span><b>{tr("Créer mon site avec l’IA", "Create my website with AI")}</b><small>{tr("Premium · décrivez votre besoin et obtenez une proposition complète à valider.", "Premium · describe what you need and get a complete proposal to review.")}</small></span>
+                    <span className="guided-writing-badge">{premiumArchitectAvailable ? tr("Nouveau", "New") : "🔒 Pro"}</span>
                   </summary>
                   <div className="guided-writing-body">
                     {!premiumArchitectAvailable ? (
                       <div className="premium-feature-lock-note" role="note">
-                        <div><b>Fonctionnalité Premium</b><p>L’Architecte complet analyse votre besoin, construit l’architecture et rédige le site. L’IA standard et le mode guidé restent disponibles avec l’offre gratuite.</p></div>
+                        <div><b>{tr("Fonctionnalité Premium", "Premium feature")}</b><p>{tr("L’Architecte complet analyse votre besoin, construit l’architecture et rédige le site. L’IA standard et le mode guidé restent disponibles avec l’offre gratuite.", "The full Site Architect analyzes your needs, builds the architecture and writes the website. Standard AI and guided mode remain available on the free plan.")}</p></div>
                         <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
                       </div>
                     ) : null}
-                    <p className="guided-writing-intro">Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée.</p>
+                    <p className="guided-writing-intro">{tr("Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée.", "Describe what you need in your own words. The Premium Site Architect first understands your business, audience, goal and positioning, then builds the visitor journey, architecture, copy and visual direction. Every proposal goes through a critical quality review before you see it.")}</p>
                     <div className="architect-brief-guide">
-                      <b>Pour un résultat exceptionnel, indiquez si vous les connaissez :</b>
-                      <span>ce que vous proposez · à qui · l’action attendue · ce qui vous différencie · le ton souhaité · les contraintes à respecter</span>
+                      <b>{tr("Pour un résultat exceptionnel, indiquez si vous les connaissez :", "For the strongest result, include these details when you know them:")}</b>
+                      <span>{tr("ce que vous proposez · à qui · l’action attendue · ce qui vous différencie · le ton souhaité · les contraintes à respecter", "what you offer · who it is for · the desired action · what makes you different · the tone you want · constraints to respect")}</span>
                     </div>
                     <label className="guided-question">
-                      <span>Votre besoin</span>
-                      <textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} disabled={!premiumArchitectAvailable} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." />
+                      <span>{tr("Votre besoin", "What you need")}</span>
+                      <textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} disabled={!premiumArchitectAvailable} placeholder={tr("Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité.", "e.g. I’m an independent photographer working mainly with couples and families who want natural images. The website should showcase my style, reassure people about my approach and make them want to contact me. I want an elegant, warm, human and highly visual tone without aggressive sales language.")} />
                       <small className={"architect-brief-readiness " + (architectBriefReady ? "is-ready" : "is-thin")}>
                         {architectBriefReady
-                          ? "Brief suffisamment détaillé pour lancer l’analyse Premium."
+                          ? tr("Brief suffisamment détaillé pour lancer l’analyse Premium.", "Your brief is detailed enough to start the Premium analysis.")
                           : architectBriefLength === 0
-                            ? "Commencez par quelques phrases : activité, public, objectif et ton souhaité."
+                            ? tr("Commencez par quelques phrases : activité, public, objectif et ton souhaité.", "Start with a few sentences about your activity, audience, goal and desired tone.")
                             : `Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`}
                       </small>
                     </label>
-                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
+                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? tr("Stratégie, création et audit en cours…", "Strategy, creation and quality review in progress…") : tr("Créer avec l’Architecte Premium", "Create with the Premium Site Architect")} <span aria-hidden="true">→</span></button>
                     {architectProposal ? (
                       <div className="ai-current-note architect-premium-result" role="status">
                         <div className="architect-result-heading">
                           <div>
-                            <b>Proposition Premium prête à relire</b>
+                            <b>{tr("Proposition Premium prête à relire", "Premium proposal ready to review")}</b>
                             <p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p>
                           </div>
                           <span className={"architect-readiness " + architectProposal.intelligence.readiness}>
-                            {architectProposal.intelligence.readiness === "strong" ? "Brief solide" : architectProposal.intelligence.readiness === "usable" ? "Brief exploitable" : "Brief partiel"}
+                            {architectProposal.intelligence.readiness === "strong" ? tr("Brief solide", "Strong brief") : architectProposal.intelligence.readiness === "usable" ? tr("Brief exploitable", "Usable brief") : tr("Brief partiel", "Partial brief")}
                           </span>
                         </div>
                         <div className="architect-insight-grid">
-                          <article><span>Besoin compris</span><p>{architectProposal.intelligence.understoodNeed}</p></article>
-                          <article><span>Public principal</span><p>{architectProposal.intelligence.audience}</p></article>
-                          <article><span>Objectif du site</span><p>{architectProposal.intelligence.primaryGoal}</p></article>
-                          <article><span>Positionnement</span><p>{architectProposal.intelligence.positioning}</p></article>
+                          <article><span>{tr("Besoin compris", "Understood need")}</span><p>{architectProposal.intelligence.understoodNeed}</p></article>
+                          <article><span>{tr("Public principal", "Primary audience")}</span><p>{architectProposal.intelligence.audience}</p></article>
+                          <article><span>{tr("Objectif du site", "Website goal")}</span><p>{architectProposal.intelligence.primaryGoal}</p></article>
+                          <article><span>{tr("Positionnement", "Positioning")}</span><p>{architectProposal.intelligence.positioning}</p></article>
                         </div>
                         {architectProposal.intelligence.visitorJourney.length ? (
                           <div className="architect-journey">
-                            <b>Parcours visiteur conçu par l’IA</b>
+                            <b>{tr("Parcours visiteur conçu par l’IA", "Visitor journey designed by AI")}</b>
                             <div>{architectProposal.intelligence.visitorJourney.map((item, index) => <span key={item + index}><i>{index + 1}</i>{item}</span>)}</div>
                           </div>
                         ) : null}
                         <div className="architect-rationale-grid">
-                          <article><b>Pourquoi cette architecture ?</b><p>{architectProposal.intelligence.architectureRationale}</p></article>
-                          <article><b>Pourquoi cette direction visuelle ?</b><p>{architectProposal.intelligence.designRationale}</p></article>
+                          <article><b>{tr("Pourquoi cette architecture ?", "Why this architecture?")}</b><p>{architectProposal.intelligence.architectureRationale}</p></article>
+                          <article><b>{tr("Pourquoi cette direction visuelle ?", "Why this visual direction?")}</b><p>{architectProposal.intelligence.designRationale}</p></article>
                         </div>
-                        <p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p>
+                        <p>{tr("Rubriques recommandées", "Recommended sections")}: {(architectProposal.recommendedModules || []).join(", ") || tr("aucune rubrique supplémentaire", "no additional section")}.</p>
                         <p>Architecture : {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : "site monopage"} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p>
                         <p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p>
                         <p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p>
@@ -1508,12 +1508,12 @@ export default function BuilderPage() {
                         </div>
                         <div className="architect-human-eval">
                           <div>
-                            <b>Cette proposition correspond-elle vraiment à votre besoin ?</b>
-                            <small>Votre réponse aide à améliorer l’Architecte. Aucun texte de votre site n’est envoyé avec cette évaluation.</small>
+                            <b>{tr("Cette proposition correspond-elle vraiment à votre besoin ?", "Does this proposal genuinely match what you need?")}</b>
+                            <small>{tr("Votre réponse aide à améliorer l’Architecte. Aucun texte de votre site n’est envoyé avec cette évaluation.", "Your feedback helps improve the Site Architect. No website copy is sent with this rating.")}</small>
                           </div>
                           {architectQualitySubmitted ? (
                             <p className="architect-human-eval-thanks">
-                              ✓ Merci. Votre évaluation est enregistrée.
+                              ✓ {tr("Merci. Votre évaluation est enregistrée.", "Thank you. Your feedback has been recorded.")}
                             </p>
                           ) : (
                             <>
@@ -1524,7 +1524,7 @@ export default function BuilderPage() {
                                   disabled={architectQualityBusy}
                                   onClick={() => void submitArchitectRating("positive")}
                                 >
-                                  Oui, c’est pertinent
+                                  {tr("Oui, c’est pertinent", "Yes, this is relevant")}
                                 </button>
                                 <button
                                   type="button"
@@ -1532,12 +1532,12 @@ export default function BuilderPage() {
                                   disabled={architectQualityBusy}
                                   onClick={() => setArchitectQualityChoice("negative")}
                                 >
-                                  À améliorer
+                                  {tr("À améliorer", "Needs improvement")}
                                 </button>
                               </div>
                               {architectQualityChoice === "negative" ? (
                                 <div className="architect-human-eval-reasons">
-                                  <span>Qu’est-ce qui vous gêne surtout ?</span>
+                                  <span>{tr("Qu’est-ce qui vous gêne surtout ?", "What needs the most improvement?")}</span>
                                   {([
                                     ["need_mismatch", "Compréhension du besoin"],
                                     ["copy", "Textes"],
@@ -1561,7 +1561,7 @@ export default function BuilderPage() {
                                     disabled={!architectQualityReason || architectQualityBusy}
                                     onClick={() => void submitArchitectRating("negative", architectQualityReason)}
                                   >
-                                    {architectQualityBusy ? "Enregistrement…" : "Envoyer mon évaluation"}
+                                    {architectQualityBusy ? tr("Enregistrement…", "Saving…") : tr("Envoyer mon évaluation", "Submit feedback")}
                                   </button>
                                 </div>
                               ) : null}
@@ -1570,7 +1570,7 @@ export default function BuilderPage() {
                         </div>
                         {architectProposal.intelligence.missingInformation.length ? (
                           <div className="architect-missing architect-clarification">
-                            <b>L’Architecte a encore quelques questions</b>
+                            <b>{tr("L’Architecte a encore quelques questions", "The Site Architect has a few more questions")}</b>
                             <p>
                               Ces réponses sont facultatives. Répondez uniquement à ce que vous
                               connaissez : l’IA réutilisera vos réponses pour reconstruire et
@@ -1590,7 +1590,7 @@ export default function BuilderPage() {
                                         [question]: event.target.value
                                       }))
                                     }
-                                    placeholder="Votre réponse, si vous la connaissez…"
+                                    placeholder={tr("Votre réponse, si vous la connaissez…", "Your answer, if you know it…")}
                                   />
                                 </label>
                               ))}
@@ -1604,38 +1604,38 @@ export default function BuilderPage() {
                               }
                               onClick={() => void improveArchitectWithClarifications()}
                             >
-                              {architectLoading ? "Nouvelle analyse en cours…" : "Améliorer avec mes réponses"}
+                              {architectLoading ? tr("Nouvelle analyse en cours…", "Running a new analysis…") : tr("Améliorer avec mes réponses", "Improve with my answers")}
                             </button>
                           </div>
                         ) : null}
-                        <div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={() => void createSiteWithAi()}>Nouvelle proposition</button></div>
-                        <small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small>
+                        <div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>{tr("Appliquer cette proposition", "Apply this proposal")}</button><button type="button" className="button secondary" onClick={() => void createSiteWithAi()}>{tr("Nouvelle proposition", "New proposal")}</button></div>
+                        <small>{tr("Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.", "Nothing is published automatically. After applying the proposal, every text and section remains editable.")}</small>
                       </div>
                     ) : null}
                   </div>
                 </details>
                 <details className={"guided-writing-card ai-architect-card " + (!premiumArchitectAvailable ? "premium-feature-locked" : "")}>
-                  <summary><span className="guided-writing-icon">↻</span><span><b>Modifier tout le site avec l’IA</b><small>Premium · demandez une évolution globale sans écraser automatiquement votre version actuelle.</small></span><span className="guided-writing-badge">{premiumArchitectAvailable ? "Aperçu avant application" : "🔒 Pro"}</span></summary>
+                  <summary><span className="guided-writing-icon">↻</span><span><b>{tr("Modifier tout le site avec l’IA", "Revise the whole website with AI")}</b><small>{tr("Premium · demandez une évolution globale sans écraser automatiquement votre version actuelle.", "Premium · request a global revision without automatically overwriting your current version.")}</small></span><span className="guided-writing-badge">{premiumArchitectAvailable ? tr("Aperçu avant application", "Preview before applying") : "🔒 Pro"}</span></summary>
                   <div className="guided-writing-body">
                     {!premiumArchitectAvailable ? (
                       <div className="premium-feature-lock-note" role="note">
-                        <div><b>Révision globale réservée à Pro</b><p>Vous pouvez toujours modifier chaque champ manuellement ou utiliser l’assistant IA standard prévu dans les champs autorisés.</p></div>
+                        <div><b>{tr("Révision globale réservée à Pro", "Full-site revision is a Pro feature")}</b><p>{tr("Vous pouvez toujours modifier chaque champ manuellement ou utiliser l’assistant IA standard prévu dans les champs autorisés.", "You can still edit every field manually or use the standard AI assistant available in supported fields.")}</p></div>
                         <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
                       </div>
                     ) : null}
                     <p className="guided-writing-intro">Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».</p>
-                    <label className="guided-question"><span>Modification souhaitée</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!premiumArchitectAvailable} placeholder="Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible." /></label>
-                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? "Préparation de la révision…" : "Préparer la révision"} <span aria-hidden="true">→</span></button>
+                    <label className="guided-question"><span>{tr("Modification souhaitée", "Requested change")}</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!premiumArchitectAvailable} placeholder={tr("Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible.", "Describe what you want to change. AI will preserve the rest as much as possible.")} /></label>
+                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? tr("Préparation de la révision…", "Preparing revision…") : tr("Préparer la révision", "Prepare revision")} <span aria-hidden="true">→</span></button>
                     {revisionProposal ? (
                       <div className="ai-current-note revision-preview" role="status">
-                        <b>Révision prête à comparer</b>
+                        <b>{tr("Révision prête à comparer", "Revision ready to compare")}</b>
                         <p><strong>{revisionProposal.heroTitle}</strong><br />{revisionProposal.heroSubtitle}</p>
                         <div className="revision-scope-summary">
-                          <span>Zones modifiées</span>
+                          <span>{tr("Zones modifiées", "Changed areas")}</span>
                           {revisionChangeSummary.length ? (
                             <div>{revisionChangeSummary.map((item) => <em key={item}>{item}</em>)}</div>
                           ) : (
-                            <p>Aucune différence détectée avec votre version actuelle.</p>
+                            <p>{tr("Aucune différence détectée avec votre version actuelle.", "No difference detected from your current version.")}</p>
                           )}
                           <small>
                             Tout élément absent de cette liste est conservé. L’IA reçoit aussi cette règle comme contrainte de qualité pendant la révision.
@@ -1644,8 +1644,8 @@ export default function BuilderPage() {
                         <p>Architecture proposée : {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : "site monopage"} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
                         <p>Structure : {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · largeur {revisionProposal.design.contentWidth}.</p>
                         <div className="ai-field-actions">
-                          <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>Appliquer cette révision</button>
-                          <button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>Conserver mon site actuel</button>
+                          <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>{tr("Appliquer cette révision", "Apply this revision")}</button>
+                          <button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>{tr("Conserver mon site actuel", "Keep my current website")}</button>
                         </div>
                         <small>Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition.</small>
                       </div>
@@ -1656,10 +1656,10 @@ export default function BuilderPage() {
                   <summary>
                     <span className="guided-writing-icon">✦</span>
                     <span>
-                      <b>Mode guidé recommandé</b>
-                      <small>Répondez à 3 questions simples, puis à une 4e facultative : nous préparons une première version de vos textes.</small>
+                      <b>{tr("Mode guidé recommandé", "Recommended guided mode")}</b>
+                      <small>{tr("Répondez à 3 questions simples, puis à une 4e facultative : nous préparons une première version de vos textes.", "Answer 3 simple questions, plus an optional fourth one, and we’ll prepare a first draft of your copy.")}</small>
                     </span>
-                    <span className="guided-writing-badge">Le plus simple</span>
+                    <span className="guided-writing-badge">{tr("Le plus simple", "Easiest")}</span>
                   </summary>
 
                   <div className="guided-writing-body">
@@ -1669,7 +1669,7 @@ export default function BuilderPage() {
                     </p>
 
                     <label className="guided-question">
-                      <span><i>1</i> Que proposez-vous ou quelle est votre activité ?</span>
+                      <span><i>1</i> {tr("Que proposez-vous ou quelle est votre activité ?", "What do you offer or what is your activity?")}</span>
                       <textarea
                         rows={3}
                         placeholder="Ex. Je suis photographe de famille et de couple, avec une approche naturelle et peu posée."
