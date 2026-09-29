@@ -195,7 +195,18 @@ jobs:
             name:"ajg-site-builder",
             deploymentId:process.env.PREVIOUS_DEPLOYMENT_ID,
             withLatestCommit:true,
-            target:"production"
+            target:"production",
+            projectSettings:{
+              rootDirectory:"site-builder",
+              framework:"nextjs"
+            },
+            gitMetadata:{
+              rootDirectory:"site-builder",
+              ci:true,
+              ciType:"github-actions",
+              commitSha:process.env.GITHUB_SHA,
+              commitRef:"main"
+            }
           }))')"
 
           HTTP_CODE="$(curl --silent --show-error \
