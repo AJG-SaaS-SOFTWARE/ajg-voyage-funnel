@@ -52,6 +52,8 @@ Dernière mise à jour : 29 septembre 2026.
 - [x] questionnaire guidé 3+1 pour préparer les textes ;
 - [x] questionnaire guidé généralisé à toute activité : offre, approche différenciante, objectif visiteur et audience optionnelle ;
 - [x] Structured Outputs pour l’IA standard : mode guidé, relecture et brouillons FAQ/avantages/chiffres fiabilisés sans JSON libre ;
+- [x] mesure d’efficience IA standard : modèle, catégorie d’usage, tokens et durée enregistrés côté serveur sans prompt ni contenu client ; dashboard séparé du Premium pour éviter tout mélange des coûts ;
+- [x] mesure Premium enrichie : nombre d’analyses stratégiques par demande afin de vérifier le gain réel de la réutilisation de stratégie ;
 - [x] transformation de réponses courtes ou mots-clés en textes structurés ;
 - [x] assistant IA dans les champs éditoriaux ;
 - [x] actions rapides Améliorer / Plus naturel / Plus chaleureux / Plus professionnel / Plus court / Nouvelle proposition ;

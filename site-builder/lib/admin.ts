@@ -224,9 +224,36 @@ export type AdminBetaMetrics = {
         outputTokens: number;
         reasoningTokens: number;
         totalTokens: number;
+        strategyCalls: number;
+        avgStrategyCallsPerRequest: number;
         avgCallsPerAttempt: number;
         avgTokensPerAttempt: number;
         avgDurationMsPerCall: number;
+        byModel: Array<{
+          model: string;
+          calls: number;
+          inputTokens: number;
+          cachedInputTokens: number;
+          outputTokens: number;
+          totalTokens: number;
+        }>;
+      };
+    };
+    standard: {
+      provider: {
+        calls: number;
+        inputTokens: number;
+        cachedInputTokens: number;
+        outputTokens: number;
+        reasoningTokens: number;
+        totalTokens: number;
+        avgTokensPerCall: number;
+        avgDurationMsPerCall: number;
+        byOperation: Array<{
+          operation: string;
+          calls: number;
+          totalTokens: number;
+        }>;
         byModel: Array<{
           model: string;
           calls: number;

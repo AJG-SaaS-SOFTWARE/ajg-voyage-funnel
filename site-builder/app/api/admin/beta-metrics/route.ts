@@ -13,6 +13,88 @@ function percent(value: number, total: number) {
   return total > 0 ? Math.round((value / total) * 100) : 0;
 }
 
+function aggregateProviderUsage(rows: any[]) {
+  const inputTokens = rows.reduce(
+    (sum, item) => sum + (Number(item.input_tokens) || 0),
+    0
+  );
+  const cachedInputTokens = rows.reduce(
+    (sum, item) => sum + (Number(item.cached_input_tokens) || 0),
+    0
+  );
+  const outputTokens = rows.reduce(
+    (sum, item) => sum + (Number(item.output_tokens) || 0),
+    0
+  );
+  const reasoningTokens = rows.reduce(
+    (sum, item) => sum + (Number(item.reasoning_tokens) || 0),
+    0
+  );
+  const totalTokens = rows.reduce(
+    (sum, item) => sum + (Number(item.total_tokens) || 0),
+    0
+  );
+  const durationMs = rows.reduce(
+    (sum, item) => sum + (Number(item.duration_ms) || 0),
+    0
+  );
+
+  const modelMap = new Map<
+    string,
+    {
+      model: string;
+      calls: number;
+      inputTokens: number;
+      cachedInputTokens: number;
+      outputTokens: number;
+      totalTokens: number;
+    }
+  >();
+  const operationMap = new Map<string, { operation: string; calls: number; totalTokens: number }>();
+
+  for (const row of rows) {
+    const model = row.model || "unknown";
+    const currentModel = modelMap.get(model) || {
+      model,
+      calls: 0,
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0
+    };
+    currentModel.calls += 1;
+    currentModel.inputTokens += Number(row.input_tokens) || 0;
+    currentModel.cachedInputTokens += Number(row.cached_input_tokens) || 0;
+    currentModel.outputTokens += Number(row.output_tokens) || 0;
+    currentModel.totalTokens += Number(row.total_tokens) || 0;
+    modelMap.set(model, currentModel);
+
+    const operation = row.operation || "unknown";
+    const currentOperation = operationMap.get(operation) || {
+      operation,
+      calls: 0,
+      totalTokens: 0
+    };
+    currentOperation.calls += 1;
+    currentOperation.totalTokens += Number(row.total_tokens) || 0;
+    operationMap.set(operation, currentOperation);
+  }
+
+  return {
+    calls: rows.length,
+    inputTokens,
+    cachedInputTokens,
+    outputTokens,
+    reasoningTokens,
+    totalTokens,
+    durationMs,
+    avgTokensPerCall: rows.length > 0 ? Math.round(totalTokens / rows.length) : 0,
+    avgDurationMsPerCall: rows.length > 0 ? Math.round(durationMs / rows.length) : 0,
+    byModel: [...modelMap.values()].sort((a, b) => b.calls - a.calls),
+    byOperation: [...operationMap.values()].sort((a, b) => b.calls - a.calls)
+  };
+}
+
 export async function GET(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishable =
@@ -277,59 +359,17 @@ export async function GET(request: Request) {
   const reviewed = reviewUsers.size;
   const published = publishedUsers.size;
 
-  const providerTotalTokens = providerRows.reduce(
-    (sum, item) => sum + (Number(item.total_tokens) || 0),
-    0
+  const premiumProviderRows = providerRows.filter((item) =>
+    String(item.operation || "").startsWith("premium_")
   );
-  const providerInputTokens = providerRows.reduce(
-    (sum, item) => sum + (Number(item.input_tokens) || 0),
-    0
+  const standardProviderRows = providerRows.filter((item) =>
+    String(item.operation || "").startsWith("standard_")
   );
-  const providerCachedTokens = providerRows.reduce(
-    (sum, item) => sum + (Number(item.cached_input_tokens) || 0),
-    0
-  );
-  const providerOutputTokens = providerRows.reduce(
-    (sum, item) => sum + (Number(item.output_tokens) || 0),
-    0
-  );
-  const providerReasoningTokens = providerRows.reduce(
-    (sum, item) => sum + (Number(item.reasoning_tokens) || 0),
-    0
-  );
-  const providerDurationMs = providerRows.reduce(
-    (sum, item) => sum + (Number(item.duration_ms) || 0),
-    0
-  );
-  const modelMap = new Map<
-    string,
-    {
-      model: string;
-      calls: number;
-      inputTokens: number;
-      cachedInputTokens: number;
-      outputTokens: number;
-      totalTokens: number;
-    }
-  >();
-
-  for (const row of providerRows) {
-    const model = row.model || "unknown";
-    const current = modelMap.get(model) || {
-      model,
-      calls: 0,
-      inputTokens: 0,
-      cachedInputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0
-    };
-    current.calls += 1;
-    current.inputTokens += Number(row.input_tokens) || 0;
-    current.cachedInputTokens += Number(row.cached_input_tokens) || 0;
-    current.outputTokens += Number(row.output_tokens) || 0;
-    current.totalTokens += Number(row.total_tokens) || 0;
-    modelMap.set(model, current);
-  }
+  const premiumProvider = aggregateProviderUsage(premiumProviderRows);
+  const standardProvider = aggregateProviderUsage(standardProviderRows);
+  const premiumStrategyCalls = premiumProviderRows.filter(
+    (item) => item.operation === "premium_strategy"
+  ).length;
 
   return NextResponse.json(
     {
@@ -401,25 +441,41 @@ export async function GET(request: Request) {
             reasons: architectFeedbackReasons
           },
           provider: {
-            calls: providerRows.length,
-            inputTokens: providerInputTokens,
-            cachedInputTokens: providerCachedTokens,
-            outputTokens: providerOutputTokens,
-            reasoningTokens: providerReasoningTokens,
-            totalTokens: providerTotalTokens,
+            calls: premiumProvider.calls,
+            inputTokens: premiumProvider.inputTokens,
+            cachedInputTokens: premiumProvider.cachedInputTokens,
+            outputTokens: premiumProvider.outputTokens,
+            reasoningTokens: premiumProvider.reasoningTokens,
+            totalTokens: premiumProvider.totalTokens,
+            strategyCalls: premiumStrategyCalls,
+            avgStrategyCallsPerRequest:
+              architectRequestCount > 0
+                ? Math.round((premiumStrategyCalls / architectRequestCount) * 100) / 100
+                : 0,
             avgCallsPerAttempt:
               architectRequestCount > 0
-                ? Math.round((providerRows.length / architectRequestCount) * 10) / 10
+                ? Math.round((premiumProvider.calls / architectRequestCount) * 10) / 10
                 : 0,
             avgTokensPerAttempt:
               architectRequestCount > 0
-                ? Math.round(providerTotalTokens / architectRequestCount)
+                ? Math.round(premiumProvider.totalTokens / architectRequestCount)
                 : 0,
-            avgDurationMsPerCall:
-              providerRows.length > 0
-                ? Math.round(providerDurationMs / providerRows.length)
-                : 0,
-            byModel: [...modelMap.values()].sort((a, b) => b.calls - a.calls)
+            avgDurationMsPerCall: premiumProvider.avgDurationMsPerCall,
+            byModel: premiumProvider.byModel
+          }
+        },
+        standard: {
+          provider: {
+            calls: standardProvider.calls,
+            inputTokens: standardProvider.inputTokens,
+            cachedInputTokens: standardProvider.cachedInputTokens,
+            outputTokens: standardProvider.outputTokens,
+            reasoningTokens: standardProvider.reasoningTokens,
+            totalTokens: standardProvider.totalTokens,
+            avgTokensPerCall: standardProvider.avgTokensPerCall,
+            avgDurationMsPerCall: standardProvider.avgDurationMsPerCall,
+            byOperation: standardProvider.byOperation,
+            byModel: standardProvider.byModel
           }
         }
       },
@@ -450,6 +506,7 @@ export async function GET(request: Request) {
         architectApplicationRate: "Applications de propositions Premium rapportées au nombre de tentatives sur la période.",
         architectUserAdoptionRate: "Part des utilisateurs de l’Architecte Premium ayant appliqué au moins une proposition.",
         architectProviderUsage: "Télémétrie serveur limitée aux modèles, tokens et durées. Aucun prompt, brief, texte généré ou contenu client n’est enregistré.",
+        standardProviderUsage: "Même télémétrie minimale pour l’assistant standard : type d’usage, modèle, tokens et durée uniquement ; aucun contenu client n’est stocké.",
         architectHumanEvaluation: "Évaluation structurée Oui / À améliorer et motif catégorisé. Aucun commentaire libre ni contenu du site n’est stocké dans cette mesure.",
         cohort: cohortScope === "beta"
           ? "Métriques limitées aux comptes explicitement marqués dans la cohorte bêta."
