@@ -992,6 +992,35 @@ export function deterministicQualityIssues(
     }
   }
 
+  const normalizedEvidence = normalizeComparable(sourceEvidenceText);
+  const credibilityClaims = [
+    { pattern: /\b(?:meilleur(?:e|s)?|best)\b/giu, label: "meilleur / best" },
+    { pattern: /\b(?:leader|leading)\b/giu, label: "leader" },
+    { pattern: /\b(?:certifiee?s?|certified)\b/giu, label: "certifié" },
+    { pattern: /\b(?:primee?s?|award[- ]winning|awarded)\b/giu, label: "primé" },
+    { pattern: /\b(?:garantie?s?|guaranteed)\b/giu, label: "garanti" },
+    { pattern: /\b(?:numero\s*1|number\s*one|n\s*[°ºo]?\s*1)\b/giu, label: "numéro 1" }
+  ];
+
+  for (const [field, value] of visibleCopy) {
+    const normalizedValue = normalizeComparable(value);
+    for (const claim of credibilityClaims) {
+      const matches = normalizedValue.match(claim.pattern) || [];
+      if (!matches.length) continue;
+
+      const supported = (normalizedEvidence.match(claim.pattern) || []).length > 0;
+      if (supported) continue;
+
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_credibility_claim",
+        detail:
+          `Le contenu ${field} utilise une affirmation de crédibilité non fournie par le client (${claim.label}).`
+      });
+      break;
+    }
+  }
+
   return issues.slice(0, 12);
 }
 
