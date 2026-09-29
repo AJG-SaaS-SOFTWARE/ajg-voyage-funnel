@@ -4,6 +4,7 @@ import type { ChangeEvent } from "react";
 import ModuleDraftAssistant from "./ModuleDraftAssistant";
 import type { SiteLanguage } from "../lib/site-config";
 import type { SiteModuleKey, SiteModules } from "../lib/site-design";
+import { useUiLanguage } from "./LanguageProvider";
 
 type Props = {
   modules: SiteModules;
@@ -17,7 +18,7 @@ type Props = {
   siteContext?: Record<string, string | undefined>;
 };
 
-const moduleLabels: Record<SiteModuleKey, string> = {
+const moduleLabelsFr: Record<SiteModuleKey, string> = {
   gallery: "Galerie / Voyages",
   faq: "FAQ",
   testimonials: "Témoignages",
@@ -27,7 +28,17 @@ const moduleLabels: Record<SiteModuleKey, string> = {
   contact: "Contact"
 };
 
-const moduleDescriptions: Record<SiteModuleKey, string> = {
+const moduleLabelsEn: Record<SiteModuleKey, string> = {
+  gallery: "Gallery",
+  faq: "FAQ",
+  testimonials: "Testimonials",
+  video: "Video",
+  figures: "Key figures",
+  benefits: "Benefits",
+  contact: "Contact"
+};
+
+const moduleDescriptionsFr: Record<SiteModuleKey, string> = {
   gallery: "Montrez des photos réelles avec une courte légende.",
   faq: "Répondez aux questions qu’un visiteur peut se poser avant de vous contacter.",
   testimonials: "Ajoutez uniquement des retours réels que vous êtes autorisé à publier.",
@@ -35,6 +46,16 @@ const moduleDescriptions: Record<SiteModuleKey, string> = {
   figures: "Mettez en avant quelques données vérifiables et à jour.",
   benefits: "Expliquez concrètement ce que votre approche apporte au visiteur.",
   contact: "Permettez au visiteur de vous écrire directement par e-mail."
+};
+
+const moduleDescriptionsEn: Record<SiteModuleKey, string> = {
+  gallery: "Show real photos with a short caption.",
+  faq: "Answer questions visitors may have before contacting you.",
+  testimonials: "Add only genuine feedback that you are authorized to publish.",
+  video: "Embed a YouTube video to explain or illustrate your activity.",
+  figures: "Highlight a few current, verifiable figures.",
+  benefits: "Explain concretely what your approach brings to visitors.",
+  contact: "Let visitors contact you directly by email."
 };
 
 export default function ModulesEditor({
@@ -48,6 +69,10 @@ export default function ModulesEditor({
   brandName,
   siteContext
 }: Props) {
+  const { locale: uiLocale } = useUiLanguage();
+  const en = uiLocale === "en";
+  const moduleLabels = en ? moduleLabelsEn : moduleLabelsFr;
+  const moduleDescriptions = en ? moduleDescriptionsEn : moduleDescriptionsFr;
   const change = <K extends keyof SiteModules>(key: K, value: SiteModules[K]) => onChange({ ...modules, [key]: value });
   const isEnabled = (key: SiteModuleKey) => modules[key].enabled;
 
@@ -77,7 +102,7 @@ export default function ModulesEditor({
         <b>{moduleLabels[key]}</b>
         <small>{moduleDescriptions[key]}</small>
       </span>
-      <em>{isEnabled(key) ? "Activée" : "Désactivée"}</em>
+      <em>{isEnabled(key) ? (en ? "Enabled" : "Activée") : (en ? "Disabled" : "Désactivée")}</em>
     </label>
   );
 
@@ -92,14 +117,14 @@ export default function ModulesEditor({
 
   return (
     <div className="modules-editor">
-      <p>Activez uniquement les rubriques utiles. Une rubrique ne devient visible sur le site que lorsqu’elle est activée et contient du contenu exploitable.</p>
+      <p>{en ? "Enable only useful sections. A section becomes visible on the website only when it is enabled and contains usable content." : "Activez uniquement les rubriques utiles. Une rubrique ne devient visible sur le site que lorsqu’elle est activée et contient du contenu exploitable."}</p>
 
       <section className="module-assistant-brief">
         <div className="module-assistant-brief-heading">
           <span className="ai-field-spark">✦</span>
           <div>
-            <b>Aidez AJG à préparer vos rubriques</b>
-            <p>Décrivez en quelques mots votre activité, votre business et surtout l’objectif de ce site. Cette note sert uniquement à préparer vos contenus et n’est jamais affichée sur le site.</p>
+            <b>{en ? "Help AJG prepare your sections" : "Aidez AJG à préparer vos rubriques"}</b>
+            <p>{en ? "Describe your activity, business and especially the goal of this website in a few words. This note is used only to prepare content and is never displayed publicly." : "Décrivez en quelques mots votre activité, votre business et surtout l’objectif de ce site. Cette note sert uniquement à préparer vos contenus et n’est jamais affichée sur le site."}</p>
           </div>
         </div>
         <textarea
@@ -108,25 +133,25 @@ export default function ModulesEditor({
           value={modules.assistantBrief}
           onChange={(event) => change("assistantBrief", event.target.value)}
           placeholder={affiliation === "mwr"
-            ? "Ex. Je suis ambassadeur indépendant MWR Life. Je veux présenter ma façon de voyager, répondre aux questions des personnes curieuses et les inviter à découvrir la plateforme sans pression."
-            : "Ex. Je suis coach sportif indépendant. Je veux expliquer mon accompagnement, rassurer les nouveaux visiteurs et obtenir des prises de contact."}
+            ? (en ? "E.g. I am an independent MWR Life Ambassador. I want to present how I travel, answer curious visitors’ questions and invite them to discover the platform without pressure." : "Ex. Je suis ambassadeur indépendant MWR Life. Je veux présenter ma façon de voyager, répondre aux questions des personnes curieuses et les inviter à découvrir la plateforme sans pression.")
+            : (en ? "E.g. I am an independent fitness coach. I want to explain my support, reassure new visitors and generate enquiries." : "Ex. Je suis coach sportif indépendant. Je veux expliquer mon accompagnement, rassurer les nouveaux visiteurs et obtenir des prises de contact.")}
         />
-        <small>{modules.assistantBrief.trim() ? "Contexte prêt ✓ — les assistants des rubriques peuvent l’utiliser." : "Quelques mots suffisent. Vous pourrez compléter ou modifier les propositions ensuite."}</small>
+        <small>{modules.assistantBrief.trim() ? (en ? "Context ready ✓ — section assistants can use it." : "Contexte prêt ✓ — les assistants des rubriques peuvent l’utiliser.") : (en ? "A few words are enough. You can complete or edit the suggestions afterwards." : "Quelques mots suffisent. Vous pourrez compléter ou modifier les propositions ensuite.")}</small>
       </section>
 
       <section className="module-editor module-order-editor">
         <div>
-          <b>Ordre des rubriques</b>
-          <p>Organisez les sections dans l’ordre où elles apparaîtront dans l’aperçu et sur le site publié.</p>
+          <b>{en ? "Section order" : "Ordre des rubriques"}</b>
+          <p>{en ? "Arrange sections in the order they will appear in the preview and on the published website." : "Organisez les sections dans l’ordre où elles apparaîtront dans l’aperçu et sur le site publié."}</p>
         </div>
         <div className="module-order-list">
           {modules.order.map((key, index) => (
             <div className="module-order-row" key={key}>
               <span className="module-order-index">{index + 1}</span>
-              <span><b>{moduleLabels[key]}</b><small>{isEnabled(key) ? "Activée" : "Désactivée"}</small></span>
+              <span><b>{moduleLabels[key]}</b><small>{isEnabled(key) ? (en ? "Enabled" : "Activée") : (en ? "Disabled" : "Désactivée")}</small></span>
               <div className="module-order-actions">
-                <button type="button" className="secondary" aria-label={`Monter ${moduleLabels[key]}`} disabled={index === 0} onClick={() => moveModule(key, -1)}>↑</button>
-                <button type="button" className="secondary" aria-label={`Descendre ${moduleLabels[key]}`} disabled={index === modules.order.length - 1} onClick={() => moveModule(key, 1)}>↓</button>
+                <button type="button" className="secondary" aria-label={`${en ? "Move up" : "Monter"} ${moduleLabels[key]}`} disabled={index === 0} onClick={() => moveModule(key, -1)}>↑</button>
+                <button type="button" className="secondary" aria-label={`${en ? "Move down" : "Descendre"} ${moduleLabels[key]}`} disabled={index === modules.order.length - 1} onClick={() => moveModule(key, 1)}>↓</button>
               </div>
             </div>
           ))}
