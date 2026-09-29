@@ -122,6 +122,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] garde-fou CTA principal : les libellés vagues de type « cliquez ici », « envoyer », « continuer » sont rejetés et réécrits en prochaine action concrète, uniquement si elle est supportée par le contexte client ;
 - [x] garde-fou navigation : les pages actives ne peuvent plus conserver un titre générique (« Page », « Sans titre », « More »…) ni un libellé trop long pour la navigation ;
 - [x] garde-fou anti-pages redondantes : deux pages actives ayant le même rôle éditorial bloquent la proposition jusqu’à fusion ou différenciation réelle ;
+- [x] rôle éditorial obligatoire : toute page active doit expliciter sa fonction pour le visiteur ; une page sans objectif est retirée ou complétée avant affichage ;
 - [x] le score et les signaux d’évaluation utilisateur portent sur la version finale réellement affichée, pas seulement sur le premier brouillon ;
 - [x] aucune information factuelle manquante inventée : les manques sont explicitement remontés à l’utilisateur ;
 - [x] recommandations de modules appliquées uniquement lorsqu’un contenu réellement exploitable existe ;
