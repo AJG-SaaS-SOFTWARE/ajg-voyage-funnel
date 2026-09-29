@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublishedSite from "../../../../components/PublishedSite";
 import { CookiesPage, LegalNoticePage, PrivacyPage } from "../../../../components/SiteLegalPages";
-import { getPublicSiteByHostname } from "../../../../lib/public-site";\nimport { buildPublicMetadata, legalMetadataLabel } from "../../../../lib/public-metadata";
+import { getPublicSiteByHostname } from "../../../../lib/public-site";
+import { buildPublicMetadata, legalMetadataLabel } from "../../../../lib/public-metadata";
 
 export const dynamic="force-dynamic";
 
