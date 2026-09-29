@@ -3,6 +3,24 @@
 Dernière mise à jour : 29 septembre 2026.
 
 
+## Gate transversal — parité FR / EN avant commercialisation internationale
+
+Le français et l'anglais sont deux langues de premier rang. L'anglais ne doit pas être traité comme une traduction partielle ou un simple mode de génération de contenu.
+
+Critères de sortie obligatoires avant ouverture commerciale anglophone :
+- interface complète du Builder disponible en FR et EN : onboarding, Builder, IA standard, Architecte Premium, bibliothèque, publication, offres, billing, domaines, données/RGPD, feedback et authentification ;
+- tous les messages utilisateur, erreurs, validations, états vides, confirmations et aides contextuelles traduits ;
+- emails transactionnels et notifications de billing disponibles dans la langue du compte/site ;
+- site public généré intégralement en français ou en anglais avec métadonnées, navigation, formulaires et pages légales cohérents ;
+- aucune chaîne française visible dans un parcours EN et aucune chaîne anglaise parasite dans un parcours FR, hors noms propres/termes techniques assumés ;
+- formats locaux cohérents : dates, nombres, devise, pluriels et ponctuation ;
+- tests E2E dédiés aux deux langues sur les parcours critiques ;
+- audit visuel desktop/mobile dans les deux langues pour détecter overflow, CTA tronqués et différences de densité ;
+- Quality Check et IA évalués dans les deux langues ;
+- terminologie produit stable et documentée FR/EN.
+
+Le mode « site bilingue FR + EN » sur un même site reste un sous-projet distinct : il ne doit être activé qu'après parité parfaite des parcours monolingues FR et EN.
+
 ## Mode commercialisation prioritaire — gel fonctionnel
 
 Décision de pilotage du 29 septembre 2026 : le produit passe d'un cycle dominé par la construction fonctionnelle à un cycle dominé par la validation marché, l'activation et la monétisation.
