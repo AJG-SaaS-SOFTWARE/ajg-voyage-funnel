@@ -1628,53 +1628,52 @@ export default function BuilderPage() {
                   <summary>
                     <span className="guided-writing-icon">✦</span>
                     <span>
-                      <b>Mode guidé recommandé</b>
-                      <small>Répondez à 3 questions simples, puis à une 4e facultative : nous préparons une première version de vos textes.</small>
+                      <b>{en ? "Recommended guided mode" : "Mode guidé recommandé"}</b>
+                      <small>{en ? "Answer 3 simple questions, then an optional fourth: we prepare a first version of your copy." : "Répondez à 3 questions simples, puis à une 4e facultative : nous préparons une première version de vos textes."}</small>
                     </span>
-                    <span className="guided-writing-badge">Le plus simple</span>
+                    <span className="guided-writing-badge">{en ? "Easiest" : "Le plus simple"}</span>
                   </summary>
 
                   <div className="guided-writing-body">
                     <p className="guided-writing-intro">
-                      Pas besoin de savoir rédiger un site. Répondez comme vous parleriez à quelqu'un.
-                      Vous pourrez modifier chaque phrase ensuite.
+                      {en ? "You do not need to know how to write a website. Answer as you would speak to someone. You can edit every sentence afterwards." : "Pas besoin de savoir rédiger un site. Répondez comme vous parleriez à quelqu'un. Vous pourrez modifier chaque phrase ensuite."}
                     </p>
 
                     <label className="guided-question">
-                      <span><i>1</i> Que proposez-vous ou quelle est votre activité ?</span>
+                      <span><i>1</i> {en ? "What do you offer or what is your activity?" : "Que proposez-vous ou quelle est votre activité ?"}</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. Je suis photographe de famille et de couple, avec une approche naturelle et peu posée."
+                        placeholder={en ? "E.g. I am a family and couples photographer with a natural, lightly posed approach." : "Ex. Je suis photographe de famille et de couple, avec une approche naturelle et peu posée."}
                         value={guidedAnswers.activity}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, activity: e.target.value }))}
                       />
                     </label>
 
                     <label className="guided-question">
-                      <span><i>2</i> Qu'est-ce qui caractérise votre approche ?</span>
+                      <span><i>2</i> {en ? "What characterizes your approach?" : "Qu'est-ce qui caractérise votre approche ?"}</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. Je prends le temps de mettre les personnes à l'aise et je privilégie des images spontanées, simples et lumineuses."
+                        placeholder={en ? "E.g. I take time to make people feel comfortable and I prefer spontaneous, simple, bright images." : "Ex. Je prends le temps de mettre les personnes à l'aise et je privilégie des images spontanées, simples et lumineuses."}
                         value={guidedAnswers.difference}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, difference: e.target.value }))}
                       />
                     </label>
 
                     <label className="guided-question">
-                      <span><i>3</i> Que voulez-vous que le visiteur comprenne ou fasse ?</span>
+                      <span><i>3</i> {en ? "What do you want the visitor to understand or do?" : "Que voulez-vous que le visiteur comprenne ou fasse ?"}</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. Je veux qu'il comprenne mon style, se sente rassuré sur le déroulement et ait envie de me contacter."
+                        placeholder={en ? "E.g. I want visitors to understand my style, feel reassured about the process and want to contact me." : "Ex. Je veux qu'il comprenne mon style, se sente rassuré sur le déroulement et ait envie de me contacter."}
                         value={guidedAnswers.goal}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, goal: e.target.value }))}
                       />
                     </label>
 
                     <label className="guided-question optional">
-                      <span><i>4</i> À qui souhaitez-vous surtout parler ? <em>facultatif</em></span>
+                      <span><i>4</i> {en ? "Who do you mainly want to speak to?" : "À qui souhaitez-vous surtout parler ?"} <em>{en ? "optional" : "facultatif"}</em></span>
                       <textarea
                         rows={2}
-                        placeholder="Ex. Aux familles et aux couples qui cherchent quelque chose de naturel, chaleureux et sans mise en scène excessive."
+                        placeholder={en ? "E.g. Families and couples looking for something natural, warm and not overly staged." : "Ex. Aux familles et aux couples qui cherchent quelque chose de naturel, chaleureux et sans mise en scène excessive."}
                         value={guidedAnswers.audience}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, audience: e.target.value }))}
                       />
@@ -1686,25 +1685,25 @@ export default function BuilderPage() {
                       disabled={!guidedDraftEnabled}
                       onClick={createGuidedDraft}
                     >
-                      {guidedDraftReady ? "✓ Textes préparés — actualiser" : "Préparer mes textes"}
+                      {guidedDraftReady ? (en ? "✓ Copy prepared — refresh" : "✓ Textes préparés — actualiser") : (en ? "Prepare my copy" : "Préparer mes textes")}
                       <span aria-hidden="true">→</span>
                     </button>
 
                     {!guidedDraftEnabled ? (
-                      <p className="guided-writing-help">Répondez aux 3 premières questions pour préparer vos textes.</p>
+                      <p className="guided-writing-help">{en ? "Answer the first 3 questions to prepare your copy." : "Répondez aux 3 premières questions pour préparer vos textes."}</p>
                     ) : guidedDraftReady ? (
-                      <p className="guided-writing-success">Votre première version est prête juste en dessous. Relisez-la et modifiez ce qui ne vous ressemble pas.</p>
+                      <p className="guided-writing-success">{en ? "Your first version is ready below. Review it and change anything that does not sound like you." : "Votre première version est prête juste en dessous. Relisez-la et modifiez ce qui ne vous ressemble pas."}</p>
                     ) : null}
                   </div>
                 </details>
 
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Votre texte d'accueil</b><p>Le visiteur doit comprendre en quelques secondes ce que vous lui proposez.</p></div>
+                  <div><b>{en ? "Your homepage copy" : "Votre texte d'accueil"}</b><p>{en ? "Visitors should understand what you offer within a few seconds." : "Le visiteur doit comprendre en quelques secondes ce que vous lui proposez."}</p></div>
                 </div>
                 <div className="question-prompt">
-                  <b>Vous gardez toujours le dernier mot.</b>
-                  <p>La version préparée n'est qu'un point de départ. Changez les mots pour qu'ils vous ressemblent vraiment.</p>
+                  <b>{en ? "You always have the final say." : "Vous gardez toujours le dernier mot."}</b>
+                  <p>{en ? "The prepared version is only a starting point. Change the words so they genuinely sound like you." : "La version préparée n'est qu'un point de départ. Changez les mots pour qu'ils vous ressemblent vraiment."}</p>
                 </div>
                 <Field label="Petite phrase au-dessus du titre" hint="Facultatif. Exemple : Voyagez autrement · partagez davantage.">
                   <input spellCheck maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
