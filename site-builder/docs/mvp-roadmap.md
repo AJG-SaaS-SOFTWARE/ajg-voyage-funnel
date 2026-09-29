@@ -510,13 +510,14 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] Storage privé : bucket réel, politiques RLS et recette privée → promotion publique → nettoyage validés ;
 - [x] secrets de release : `SUPABASE_SECRET_KEY` runtime et `VERCEL_TOKEN` GitHub Actions ont permis la release contrôlée et la recette Storage ;
 - [ ] secrets opérationnels restants : configurer Resend et confirmer `NEXT_PUBLIC_APP_URL` ainsi que le périmètre minimal du token Vercel runtime pour les domaines personnalisés ; `CRON_SECRET` Production est désormais configuré ;
-- [ ] paiement réel : volontairement non activé avant validation prix/périodicité/essai et nombre de sites inclus par offre ;
+- [x] catalogue Stripe sandbox : produits Essentiel / Pro IA et prix mensuels/annuels créés ; moteur Checkout plan-aware + essai 14 jours préparé côté serveur ;
+- [ ] paiement réel : volontairement non activé avant configuration des Price IDs live, validation juridique/fiscale et bascule explicite `AJG_BILLING_CHECKOUT_ENABLED=true` ;
 - [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
 
 ### Checkpoints humains actifs
 À ce stade, les prochains jalons ne doivent pas être devinés par le code :
 
-1. **Offre commerciale** : le positionnement et l’hypothèse Founding sont validés pour test (24,90 €/mois ou 239 €/an, 1 site). Reste à décider s’il existe un essai commercial avant activation Stripe live ; les Beta Testers restent gratuits et séparés de Stripe.
+1. **Offre commerciale** : grille validée Essentiel 19 €/mois ou 190 €/an et Pro IA 39 €/mois ou 390 €/an, 1 site. Les 4 Prices existent dans Stripe sandbox. Le Checkout est préparé avec 14 jours de droits Pro IA puis retour automatique au plan souscrit ; les Beta Testers restent gratuits et séparés de Stripe. L’ouverture commerciale reste protégée par `AJG_BILLING_CHECKOUT_ENABLED=false` tant que les secrets/prix live et le juridique ne sont pas finalisés.
 2. **Bêta réelle** : fournir/inviter 5 à 10 testeurs puis observer activation, publication, usage IA, régénération Premium et retours avant de modifier à nouveau le template public.
 3. **Domaine personnalisé réel** : choisir un domaine de test possédé par AJG ou un testeur afin d’exécuter la recette ajout → DNS → vérification → primaire → retrait.
 4. **Secrets opérationnels** : `CRON_SECRET` est finalisé ; restent Resend avant les notifications automatiques d’impayés, ainsi que la confirmation de `NEXT_PUBLIC_APP_URL` et du périmètre minimal du token Vercel runtime.
