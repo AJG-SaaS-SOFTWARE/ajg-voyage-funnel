@@ -646,12 +646,23 @@ export function deterministicQualityIssues(
     ] as const)
   ] as Array<readonly [string, string]>;
 
+  const templateResiduePattern =
+    /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|<(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^>]{0,30})>)/giu;
+
   for (const [field, value] of visibleCopy) {
     if (placeholderPattern.test(value)) {
       issues.push({
         severity: "blocking",
         code: "placeholder_copy",
         detail: `Le contenu ${field} contient encore un placeholder ou une mention à compléter.`
+      });
+    }
+    if (templateResiduePattern.test(value)) {
+      issues.push({
+        severity: "blocking",
+        code: "template_residue",
+        detail:
+          `Le contenu ${field} contient encore une variable de template ou une donnée factice à remplacer.`
       });
     }
   }
