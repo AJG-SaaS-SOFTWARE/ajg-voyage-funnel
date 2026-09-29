@@ -4,6 +4,7 @@ import fs from "node:fs";
 import {
   normalizeStandardStructuredOutput,
   sanitizeStandardText,
+  selectStandardContextEntries,
   standardStructuredFormat
 } from "../lib/standard-ai-writer.ts";
 
@@ -71,3 +72,56 @@ test("guided builder discovery is activity-agnostic instead of travel-specific",
   assert.ok(source.includes("Que voulez-vous que le visiteur comprenne ou fasse ?"));
   assert.ok(!source.includes("Quel type de voyageur êtes-vous ?"));
 });
+
+test("field context ranking prioritizes discovery facts over incidental existing copy", () => {
+  const entries = [
+    ["tagline", "Une ancienne accroche"],
+    ["headline", "Un ancien titre"],
+    ["intro", "Une ancienne introduction"],
+    ["about", "Un ancien texte à propos"],
+    ["booking button", "Contactez-moi"],
+    ["activity or offer", "Photographie de famille et de couple"],
+    ["differentiation or approach", "Approche naturelle et peu posée"],
+    ["visitor goal", "Rassurer puis donner envie de prendre contact"],
+    ["audience", "Familles et couples"]
+  ];
+
+  const selected = selectStandardContextEntries("heroTitle", entries);
+  assert.deepEqual(
+    selected.slice(0, 4).map(([key]) => key),
+    [
+      "activity or offer",
+      "differentiation or approach",
+      "visitor goal",
+      "audience"
+    ]
+  );
+});
+
+test("CTA context starts from the visitor goal and stays compact", () => {
+  const entries = [
+    ["headline", "Un titre"],
+    ["intro", "Une intro"],
+    ["about", "À propos"],
+    ["activity or offer", "Coaching sportif"],
+    ["differentiation or approach", "Suivi progressif"],
+    ["visitor goal", "Réserver un appel découverte"],
+    ["audience", "Coureurs débutants"]
+  ];
+
+  const selected = selectStandardContextEntries("bookingLabel", entries);
+  assert.equal(selected[0][0], "visitor goal");
+  assert.ok(selected.length <= 7);
+});
+
+test("module drafting prioritizes the explicit module brief", () => {
+  const entries = [
+    ["headline", "Titre"],
+    ["activity or offer", "Conseil en organisation"],
+    ["module brief", "Répondre aux objections fréquentes avant la prise de contact"]
+  ];
+
+  const selected = selectStandardContextEntries("moduleDraft", entries);
+  assert.equal(selected[0][0], "module brief");
+});
+
