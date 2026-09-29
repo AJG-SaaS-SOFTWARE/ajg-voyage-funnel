@@ -41,6 +41,13 @@ test("erasure request RPCs are intended for service-role execution only", () => 
   );
 });
 
+test("direct site deletion is removed so Storage cleanup cannot be bypassed", () => {
+  assert.ok(migration.includes('drop policy if exists "owners delete sites" on public.sites'));
+  assert.ok(migration.includes("revoke delete on public.sites from authenticated"));
+  assert.ok(migration.includes("r.scope='account'"));
+  assert.ok(migration.includes("r.status in ('requested','processing')"));
+});
+
 test("site erasure requires exact slug confirmation and account erasure requires email", () => {
   assert.ok(route.includes("confirmation !== site.slug"));
   assert.ok(route.includes("confirmation.toLowerCase() !== email"));
