@@ -227,7 +227,7 @@ Modules à étudier après validation bêta :
 - [x] types Supabase régénérés et migration versionnée ;
 - [x] audit sécurité/performance post-migration et index de relation ajouté ;
 - [ ] prix commercial, périodicité et éventuel essai à valider avant activation du paiement ;
-- [ ] connecter Stripe et ses webhooks ;
+- [x] Stripe sandbox relié au Builder : Checkout hébergé, Customer Portal et webhook signé/idempotent par site, sans prix commercial codé en dur ;
 - [x] droits Premium appliqués au runtime : domaine personnalisé côté repository et AI Site Architect côté API serveur ;
 - [x] mesurer le stockage `site-media` par propriétaire et l’afficher dans « Mon offre » ;
 - [x] refuser les nouveaux imports qui dépasseraient le quota de stockage de l’offre ;
@@ -239,12 +239,12 @@ Modules à étudier après validation bêta :
 - [x] aucun rôle administrateur attribué automatiquement : élévation volontaire uniquement ;
 - [x] droits Premium retombent automatiquement sur le niveau gratuit lorsque l’abonnement n’est plus `active`/`trialing`, tout en conservant le vrai statut (`past_due`, `canceled`, `suspended`) pour l’interface ;
 - [x] nouvelle publication bloquée pour un abonnement non régularisé, sans suppression automatique du site ni des données ;
-- [ ] connecter le statut Stripe aux états d’abonnement et appliquer la politique finale de grâce/suspension une fois les délais commerciaux validés.
+- [x] statuts Stripe reliés aux abonnements par site et au moteur d’accès J0/J14/J28/J104 ; les événements de paiement réussis/échoués, mises à jour et annulations alimentent le moteur serveur sans suppression automatique ;
 
 Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
 
 ### Itération 5B — exploitation SaaS et domaines
-État : exploitation applicative terminée ; intégrations externes Vercel/Stripe à connecter
+État : exploitation applicative et Vercel opérationnels ; Stripe intégré en sandbox, activation commerciale encore différée
 
 - [x] quota de stockage mesuré et bloquant avant upload ;
 - [x] demande de domaine personnalisé réservée au droit Pro ;
@@ -258,7 +258,7 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 - [x] rattachement/vérification Vercel automatisé des domaines ; sous-domaines AJG gérés depuis le back-office, domaines personnels depuis l’espace propriétaire ;
 - [ ] activation Stripe après validation de l’offre commerciale ;
 - [x] moteur de droits déjà prêt pour `past_due` / `canceled` / `suspended` et blocage de nouvelle publication ;
-- [ ] synchronisation Stripe → statuts et délais de grâce dès validation des paramètres commerciaux.
+- [x] synchronisation Stripe → statuts codée et branchée sur la politique de grâce/suspension existante ; la recette sandbox réelle reste à exécuter après création du Price et configuration des secrets.
 
 ## Principe de conformité
 
