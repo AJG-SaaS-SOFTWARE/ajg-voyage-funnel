@@ -263,7 +263,7 @@ export async function POST(request: Request) {
   const variationReference = context.variationReference && typeof context.variationReference === "object" ? context.variationReference : null;
   const moduleBrief = clean(context.moduleBrief, 1000);
   const rawSiteContext = context.siteContext && typeof context.siteContext === "object" ? context.siteContext : {};
-  const contextEntries = [
+  const contextEntries = ([
     ["tagline", clean(rawSiteContext.heroTagline, 120)],
     ["headline", clean(rawSiteContext.heroTitle, 140)],
     ["intro", clean(rawSiteContext.heroSubtitle, 500)],
@@ -276,11 +276,13 @@ export async function POST(request: Request) {
     ["audience", clean(rawSiteContext.guidedAudience, 320)],
     ["module brief", moduleBrief],
     ["site architect brief", architectBrief]
-  ].filter(([, value]) => value && value !== currentText);
+  ] as Array<readonly [string, string]>).filter(
+    ([, value]) => Boolean(value) && value !== currentText
+  );
   const selectedContextEntries =
     field === "siteArchitect" || field === "siteRevision"
       ? contextEntries.slice(0, 12)
-      : selectStandardContextEntries(field, contextEntries as Array<readonly [string, string]>);
+      : selectStandardContextEntries(field, contextEntries);
   const editorialContext = selectedContextEntries
     .map(([key, value]) => `${key}: ${value}`)
     .join("\n");
