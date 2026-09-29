@@ -149,6 +149,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email =
     typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const locale: "fr" | "en" = body?.locale === "en" ? "en" : "fr";
   const durationDaysRaw = Number(body?.durationDays ?? 30);
   const durationDays =
     Number.isInteger(durationDaysRaw) && durationDaysRaw >= 1 && durationDaysRaw <= 90
@@ -218,6 +219,10 @@ export async function POST(request: Request) {
           beta_invited_at: invitedAt,
           beta_source: "admin",
           beta_access_expires_at: expiresAt
+        },
+        user_metadata: {
+          ...existing.user_metadata,
+          ajg_builder_locale: locale
         }
       });
       if (error || !data.user) throw error || new Error("user_update_failed");
@@ -236,8 +241,8 @@ export async function POST(request: Request) {
 
     const { data: invite, error: inviteError } =
       await auth.service.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${appBaseUrl()}/builder`,
-        data: { beta_invitation: true }
+        redirectTo: `${appBaseUrl()}/builder?lang=${locale}`,
+        data: { beta_invitation: true, ajg_builder_locale: locale }
       });
 
     if (inviteError || !invite.user) {
