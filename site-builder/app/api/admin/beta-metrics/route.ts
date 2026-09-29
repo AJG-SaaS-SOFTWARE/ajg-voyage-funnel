@@ -38,6 +38,11 @@ function aggregateProviderUsage(rows: any[]) {
     (sum, item) => sum + (Number(item.duration_ms) || 0),
     0
   );
+  const estimatedCostUsdMicros = rows.reduce(
+    (sum, item) => sum + (Number(item.estimated_cost_usd_micros) || 0),
+    0
+  );
+  const unknownPricingCalls = rows.filter((item) => item.pricing_known !== true).length;
 
   const modelMap = new Map<
     string,
@@ -48,9 +53,17 @@ function aggregateProviderUsage(rows: any[]) {
       cachedInputTokens: number;
       outputTokens: number;
       totalTokens: number;
+      estimatedCostUsdMicros: number;
     }
   >();
-  const operationMap = new Map<string, { operation: string; calls: number; totalTokens: number }>();
+  const operationMap = new Map<
+    string,
+    { operation: string; calls: number; totalTokens: number; estimatedCostUsdMicros: number }
+  >();
+  const planMap = new Map<
+    string,
+    { planKey: string; calls: number; estimatedCostUsdMicros: number }
+  >();
 
   for (const row of rows) {
     const model = row.model || "unknown";
@@ -60,24 +73,38 @@ function aggregateProviderUsage(rows: any[]) {
       inputTokens: 0,
       cachedInputTokens: 0,
       outputTokens: 0,
-      totalTokens: 0
+      totalTokens: 0,
+      estimatedCostUsdMicros: 0
     };
     currentModel.calls += 1;
     currentModel.inputTokens += Number(row.input_tokens) || 0;
     currentModel.cachedInputTokens += Number(row.cached_input_tokens) || 0;
     currentModel.outputTokens += Number(row.output_tokens) || 0;
     currentModel.totalTokens += Number(row.total_tokens) || 0;
+    currentModel.estimatedCostUsdMicros += Number(row.estimated_cost_usd_micros) || 0;
     modelMap.set(model, currentModel);
 
     const operation = row.operation || "unknown";
     const currentOperation = operationMap.get(operation) || {
       operation,
       calls: 0,
-      totalTokens: 0
+      totalTokens: 0,
+      estimatedCostUsdMicros: 0
     };
     currentOperation.calls += 1;
     currentOperation.totalTokens += Number(row.total_tokens) || 0;
+    currentOperation.estimatedCostUsdMicros += Number(row.estimated_cost_usd_micros) || 0;
     operationMap.set(operation, currentOperation);
+
+    const planKey = row.plan_key || "unknown";
+    const currentPlan = planMap.get(planKey) || {
+      planKey,
+      calls: 0,
+      estimatedCostUsdMicros: 0
+    };
+    currentPlan.calls += 1;
+    currentPlan.estimatedCostUsdMicros += Number(row.estimated_cost_usd_micros) || 0;
+    planMap.set(planKey, currentPlan);
   }
 
   return {
@@ -88,10 +115,17 @@ function aggregateProviderUsage(rows: any[]) {
     reasoningTokens,
     totalTokens,
     durationMs,
+    estimatedCostUsdMicros,
+    unknownPricingCalls,
+    avgCostUsdMicrosPerCall:
+      rows.length > 0 ? Math.round(estimatedCostUsdMicros / rows.length) : 0,
     avgTokensPerCall: rows.length > 0 ? Math.round(totalTokens / rows.length) : 0,
     avgDurationMsPerCall: rows.length > 0 ? Math.round(durationMs / rows.length) : 0,
     byModel: [...modelMap.values()].sort((a, b) => b.calls - a.calls),
-    byOperation: [...operationMap.values()].sort((a, b) => b.calls - a.calls)
+    byOperation: [...operationMap.values()].sort((a, b) => b.calls - a.calls),
+    byPlan: [...planMap.values()].sort(
+      (a, b) => b.estimatedCostUsdMicros - a.estimatedCostUsdMicros
+    )
   };
 }
 
@@ -172,7 +206,7 @@ export async function GET(request: Request) {
       .select("id,slug,owner_id,status,created_at,published_at,updated_at"),
     service
       .from("ai_provider_usage")
-      .select("user_id,site_id,operation,model,input_tokens,cached_input_tokens,output_tokens,reasoning_tokens,total_tokens,duration_ms,created_at")
+      .select("user_id,site_id,operation,model,input_tokens,cached_input_tokens,output_tokens,reasoning_tokens,total_tokens,duration_ms,estimated_cost_usd_micros,pricing_known,pricing_version,plan_key,access_source,created_at")
       .gte("created_at", since),
     service
       .from("architect_quality_feedback")
@@ -395,6 +429,15 @@ export async function GET(request: Request) {
         generations: aiRows.length,
         users: aiUsers.size,
         appliedUsers: usersFor("architect_applied", "revision_applied").size,
+        finops: {
+          estimatedCostUsdMicros:
+            premiumProvider.estimatedCostUsdMicros +
+            standardProvider.estimatedCostUsdMicros,
+          unknownPricingCalls:
+            premiumProvider.unknownPricingCalls +
+            standardProvider.unknownPricingCalls,
+          byPlan: aggregateProviderUsage(providerRows).byPlan
+        },
         architect: {
           attempts: architectAttemptRows.length,
           requests: architectRequestCount,
@@ -460,8 +503,16 @@ export async function GET(request: Request) {
               architectRequestCount > 0
                 ? Math.round(premiumProvider.totalTokens / architectRequestCount)
                 : 0,
+            estimatedCostUsdMicros: premiumProvider.estimatedCostUsdMicros,
+            avgCostUsdMicrosPerCall: premiumProvider.avgCostUsdMicrosPerCall,
+            avgCostUsdMicrosPerAttempt:
+              architectRequestCount > 0
+                ? Math.round(premiumProvider.estimatedCostUsdMicros / architectRequestCount)
+                : 0,
+            unknownPricingCalls: premiumProvider.unknownPricingCalls,
             avgDurationMsPerCall: premiumProvider.avgDurationMsPerCall,
-            byModel: premiumProvider.byModel
+            byModel: premiumProvider.byModel,
+            byPlan: premiumProvider.byPlan
           }
         },
         standard: {
@@ -473,9 +524,13 @@ export async function GET(request: Request) {
             reasoningTokens: standardProvider.reasoningTokens,
             totalTokens: standardProvider.totalTokens,
             avgTokensPerCall: standardProvider.avgTokensPerCall,
+            estimatedCostUsdMicros: standardProvider.estimatedCostUsdMicros,
+            avgCostUsdMicrosPerCall: standardProvider.avgCostUsdMicrosPerCall,
+            unknownPricingCalls: standardProvider.unknownPricingCalls,
             avgDurationMsPerCall: standardProvider.avgDurationMsPerCall,
             byOperation: standardProvider.byOperation,
-            byModel: standardProvider.byModel
+            byModel: standardProvider.byModel,
+            byPlan: standardProvider.byPlan
           }
         }
       },
@@ -506,7 +561,8 @@ export async function GET(request: Request) {
         architectApplicationRate: "Applications de propositions Premium rapportées au nombre de tentatives sur la période.",
         architectUserAdoptionRate: "Part des utilisateurs de l’Architecte Premium ayant appliqué au moins une proposition.",
         architectProviderUsage: "Télémétrie serveur limitée aux modèles, tokens et durées. Aucun prompt, brief, texte généré ou contenu client n’est enregistré.",
-        standardProviderUsage: "Même télémétrie minimale pour l’assistant standard : type d’usage, modèle, tokens et durée uniquement ; aucun contenu client n’est stocké.",
+        standardProviderUsage: "Même télémétrie minimale pour l’assistant standard : type d’usage, modèle, tokens, durée et coût estimé uniquement ; aucun contenu client n’est stocké.",
+        aiEstimatedCost: "Estimation calculée à partir des tokens réellement facturables et d’une grille tarifaire versionnée. Elle sert au pilotage de marge et ne remplace pas la facture fournisseur.",
         architectHumanEvaluation: "Évaluation structurée Oui / À améliorer et motif catégorisé. Aucun commentaire libre ni contenu du site n’est stocké dans cette mesure.",
         cohort: cohortScope === "beta"
           ? "Métriques limitées aux comptes explicitement marqués dans la cohorte bêta."
