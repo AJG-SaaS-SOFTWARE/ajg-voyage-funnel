@@ -178,3 +178,19 @@ test("two enabled pages cannot share the same editorial purpose", () => {
   };
   assert.ok(codes(value).includes("duplicate_page_purpose"));
 });
+
+
+test("unsupported credibility claims are blocked unless grounded in client evidence", () => {
+  const value = proposal({
+    heroSubtitle:
+      "Une approche certifiée et reconnue comme leader pour accompagner votre projet."
+  });
+  const unsupported = codes(value);
+  assert.ok(unsupported.includes("unsupported_credibility_claim"));
+
+  const evidence =
+    "Le client indique explicitement être certifié et leader sur son marché local.";
+  assert.ok(
+    !codes(value, evidence).includes("unsupported_credibility_claim")
+  );
+});
