@@ -157,7 +157,7 @@ export function PricingPage({ locale }: PricingPageProps) {
   const proPrice = planPrice(t.pro);
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} lang={locale}>
       <header className={styles.topbar}>
         <Link href="/" className={styles.brand} aria-label="AJG Site Builder">
           <span className={styles.brandMark} aria-hidden="true">A</span>
@@ -166,7 +166,7 @@ export function PricingPage({ locale }: PricingPageProps) {
         <nav className={styles.topnav} aria-label={t.navLabel}>
           <Link href="/plans">{t.account}</Link>
           <Link href="/builder">{t.builder}</Link>
-          <Link href={t.switchHref} className={styles.languageLink}>{t.switchLabel}</Link>
+          <Link href={t.switchHref} hrefLang={locale === "fr" ? "en" : "fr"} className={styles.languageLink}>{t.switchLabel}</Link>
         </nav>
       </header>
 
@@ -177,7 +177,7 @@ export function PricingPage({ locale }: PricingPageProps) {
         <div className={styles.trialBadge}>{t.trial}</div>
       </section>
 
-      <section className={styles.controls} aria-label="Billing frequency">
+      <section className={styles.controls} aria-label={locale === "fr" ? "Fréquence de facturation" : "Billing frequency"}>
         <button
           type="button"
           className={cycle === "monthly" ? styles.activeCycle : ""}

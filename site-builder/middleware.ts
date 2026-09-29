@@ -22,7 +22,12 @@ export function middleware(request:NextRequest){
    return NextResponse.rewrite(url,{request:{headers:requestHeaders}});
  }
  const isAppHost=hostname===appHostname||hostname===rootDomain||hostname==="localhost"||hostname.endsWith(".vercel.app");
- if(isAppHost)return NextResponse.next();
+ if(isAppHost){
+   const response=NextResponse.next();
+   if(request.nextUrl.pathname==="/pricing")response.headers.set("Content-Language","en");
+   if(request.nextUrl.pathname==="/tarifs")response.headers.set("Content-Language","fr");
+   return response;
+ }
  const url=request.nextUrl.clone();
  url.pathname="/domain/"+encodeURIComponent(hostname)+(request.nextUrl.pathname==="/"?"":request.nextUrl.pathname);
  return NextResponse.rewrite(url);
