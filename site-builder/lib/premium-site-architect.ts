@@ -822,6 +822,22 @@ function deterministicQualityIssues(
     faqQuestions.add(normalized);
   }
 
+  const benefitTitles = new Set<string>();
+  for (const item of proposal.benefits.items) {
+    const normalized = normalizeComparable(item.title);
+    if (!normalized) continue;
+    if (benefitTitles.has(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_benefit_title",
+        detail:
+          "Deux avantages utilisent le même titre ; chaque carte doit exprimer une valeur distincte."
+      });
+      break;
+    }
+    benefitTitles.add(normalized);
+  }
+
   const enabledPages = proposal.architecture.pages.filter((page) => page.enabled);
   const pageTitles = new Set<string>();
   const pagePurposes = new Map<string, string>();
@@ -1020,6 +1036,7 @@ export async function generatePremiumSiteArchitect(
         "Every enabled page needs a concise, meaningful navigation title; never use placeholders such as Page, Untitled, More or generic equivalents.",
         "Only assign asset IDs that exist in the supplied rights-cleared content library.",
         "FAQ and benefits may contain only claims supported by the source context.",
+        "Every benefit card must communicate a distinct value; do not create multiple cards that restate the same benefit under different wording.",
         "Do not create testimonial copy, numeric figures, video URLs or contact details.",
         "Use the visual system as an intentional composition decision, not decoration.",
         "Output impeccable French or English according to the requested language.",
@@ -1092,6 +1109,7 @@ export async function generatePremiumSiteArchitect(
           "When a deterministic issue mentions mobile copy density, shorten the affected field without removing essential meaning or adding unsupported claims.",
           "When body copy density is flagged, compress the affected paragraph while preserving the useful facts and the section’s distinct purpose.",
           "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
+          "When benefit cards overlap, consolidate them or rewrite them so each one communicates a distinct supported value.",
           "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
           "When a page title is generic or too long, replace it with a short navigation label that clearly reflects that page’s purpose.",
           "When two pages have the same editorial purpose, merge them or rewrite the architecture so each remaining page has a genuinely distinct visitor job.",
