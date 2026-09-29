@@ -776,6 +776,36 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_access_grants: {
+        Row: {
+          active: boolean
+          expires_at: string
+          granted_at: string
+          granted_by: string | null
+          starts_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          expires_at: string
+          granted_at?: string
+          granted_by?: string | null
+          starts_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          expires_at?: string
+          granted_at?: string
+          granted_by?: string | null
+          starts_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           active: boolean
@@ -1041,6 +1071,14 @@ export type Database = {
         Returns: {
           month: number
           today: number
+        }[]
+      }
+      get_my_beta_access: {
+        Args: never
+        Returns: {
+          active: boolean
+          expires_at: string
+          starts_at: string
         }[]
       }
       get_my_entitlements: {
