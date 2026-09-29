@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "../../../../lib/app-url";
+import { getStorageBackupStatus } from "../../../../lib/storage-backup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -135,6 +136,15 @@ export async function GET(request: Request) {
       `URL publique résolue : ${appBaseUrl()}.`,
       "Impossible de résoudre l’URL publique de l’application.",
       "warn"
+    ),
+    check(
+      "external-media-backup",
+      "Sauvegarde externe des médias",
+      present(process.env.BLOB_STORE_ID),
+      "commercial",
+      "Store Vercel Blob privé connecté au Builder.",
+      "Aucun store Vercel Blob privé n’est connecté : les objets Supabase Storage ne disposent pas encore de copie hors fournisseur.",
+      "deferred"
     ),
     check(
       "billing-provider",
@@ -290,6 +300,35 @@ export async function GET(request: Request) {
       scope: "beta",
       detail: "Impossible de vérifier les buckets sans secret serveur Supabase."
     });
+  }
+
+  if (present(process.env.BLOB_STORE_ID)) {
+    try {
+      const backup = await getStorageBackupStatus();
+      checks.push({
+        key: "external-media-backup-freshness",
+        label: "Sauvegarde externe · fraîcheur",
+        scope: "commercial",
+        status:
+          backup.status === "healthy"
+            ? "pass"
+            : backup.status === "critical"
+              ? "blocker"
+              : "warn",
+        detail:
+          backup.lastCompletedAt && backup.ageHours !== null
+            ? `Dernière sauvegarde terminée : ${backup.lastCompletedAt} (${backup.ageHours.toFixed(1)} h).`
+            : "Le store est connecté mais aucune sauvegarde terminée n’est encore visible."
+      });
+    } catch {
+      checks.push({
+        key: "external-media-backup-freshness",
+        label: "Sauvegarde externe · fraîcheur",
+        scope: "commercial",
+        status: "warn",
+        detail: "Le store de sauvegarde est configuré mais son état n’a pas pu être vérifié."
+      });
+    }
   }
 
   const summary = checks.reduce(
