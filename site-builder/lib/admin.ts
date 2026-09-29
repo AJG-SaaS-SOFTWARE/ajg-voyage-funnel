@@ -1,3 +1,61 @@
+export type AdminStorageBackupStatus = {
+  configured: boolean;
+  status: "healthy" | "warning" | "critical" | "unknown";
+  lastCompletedAt: string | null;
+  ageHours: number | null;
+  sourceObjects: number | null;
+  retentionDays: number;
+};
+
+export type AdminStorageBackupRun = {
+  ok: true;
+  result: {
+    ok: true;
+    configured: true;
+    capturedAt: string;
+    snapshotPath: string;
+    summary: {
+      sourceObjects: number;
+      uploaded: number;
+      unchanged: number;
+      tombstoned: number;
+      expiredVersionsPurged: number;
+      oldSnapshotsPurged: number;
+    };
+  };
+};
+
+async function adminSessionToken() {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  return session.access_token;
+}
+
+export async function getAdminStorageBackupStatus(): Promise<AdminStorageBackupStatus> {
+  const token = await adminSessionToken();
+  const response = await fetch("/api/admin/storage-backup", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "État de sauvegarde indisponible.");
+  return body as AdminStorageBackupStatus;
+}
+
+export async function adminRunStorageBackup(): Promise<AdminStorageBackupRun> {
+  const token = await adminSessionToken();
+  const response = await fetch("/api/admin/storage-backup", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Sauvegarde impossible.");
+  return body as AdminStorageBackupRun;
+}
+
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
 export type BuilderE2EStep = {
