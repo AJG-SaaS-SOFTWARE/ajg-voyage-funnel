@@ -67,3 +67,13 @@ Aucun.
 ## Revue périodique
 
 À chaque ajout d’un formulaire, outil d’analyse, pixel, CRM, outil d’e-mailing, paiement, embed ou nouveau prestataire, mettre à jour ce registre et la notice de confidentialité avant ou au moment de la mise en production. Vérifier au minimum annuellement les durées de conservation, accès, sous-traitants et mécanismes de transfert.
+
+
+## Mesure interne du funnel AJG Voyage
+
+- **Finalité :** mesurer les étapes principales du parcours (début/fin questionnaire, demande envoyée, clic Calendly) afin d'améliorer le funnel.
+- **Données :** identifiant aléatoire de session, événement, langue, chemin de page et UTM source/medium/campaign lorsqu'ils sont présents.
+- **Exclusions :** aucun nom, email ou téléphone n'est enregistré dans la table d'événements ; pas de publicité ciblée ni de suivi intersites.
+- **Stockage navigateur :** identifiant dans `sessionStorage`, limité à la session de navigation.
+- **Destinataire / stockage :** Supabase, table `ajg_voyage_funnel_events`.
+- **Revue :** contrôler périodiquement la durée de conservation et purger les événements devenus inutiles.
