@@ -74,6 +74,6 @@ Aucun.
 - **Finalité :** mesurer les étapes principales du parcours (début/fin questionnaire, demande envoyée, clic Calendly) afin d'améliorer le funnel.
 - **Données :** identifiant aléatoire de session, événement, langue, chemin de page et UTM source/medium/campaign lorsqu'ils sont présents.
 - **Exclusions :** aucun nom, email ou téléphone n'est enregistré dans la table d'événements ; pas de publicité ciblée ni de suivi intersites.
-- **Stockage navigateur :** identifiant dans `sessionStorage`, limité à la session de navigation.
+- **Stockage navigateur :** aucun identifiant analytique n’est stocké sur le terminal pour cette mesure ; les événements sont enregistrés sous forme agrégée.
 - **Destinataire / stockage :** Supabase, table `ajg_voyage_funnel_events`.
 - **Conservation :** objectif maximal de 13 mois pour les événements de mesure du funnel. La fonction Supabase `purge_ajg_voyage_funnel_events()` supprime les événements plus anciens lorsqu’elle est exécutée par un job de confiance ; prévoir son exécution planifiée et contrôler périodiquement son bon fonctionnement.
