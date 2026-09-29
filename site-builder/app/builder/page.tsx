@@ -1234,7 +1234,7 @@ export default function BuilderPage() {
           </span>
         </Link>
 
-        <div className="progress premium-progress" aria-label={"Progression " + completion + "%"}>
+        <div className="progress premium-progress" aria-label={tr("Progression ", "Progress ") + completion + "%"}>
           <span style={{ width: completion + "%" }} />
         </div>
 
@@ -1482,9 +1482,9 @@ export default function BuilderPage() {
                           <article><b>{tr("Pourquoi cette direction visuelle ?", "Why this visual direction?")}</b><p>{architectProposal.intelligence.designRationale}</p></article>
                         </div>
                         <p>{tr("Rubriques recommandées", "Recommended sections")}: {(architectProposal.recommendedModules || []).join(", ") || tr("aucune rubrique supplémentaire", "no additional section")}.</p>
-                        <p>Architecture : {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : "site monopage"} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p>
-                        <p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p>
-                        <p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p>
+                        <p>{tr("Architecture :", "Architecture:")} {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} ${tr("pages", "pages")}` : tr("site monopage", "single-page website")} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p>
+                        <p>{tr("Structure :", "Structure:")} {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · {tr("largeur", "width")} {architectProposal.design?.contentWidth}.</p>
+                        <p>{tr("Direction visuelle :", "Visual direction:")} <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? tr("fond uni", "solid background") : `${tr("motif", "pattern")} ${architectProposal.design?.pattern}`}.</p>
                         <div className="architect-audit">
                           <b>
                             ✓ {architectProposal.premiumAudit.finalReviewPerformed
@@ -1574,11 +1574,7 @@ export default function BuilderPage() {
                         {architectProposal.intelligence.missingInformation.length ? (
                           <div className="architect-missing architect-clarification">
                             <b>{tr("L’Architecte a encore quelques questions", "The Site Architect has a few more questions")}</b>
-                            <p>
-                              Ces réponses sont facultatives. Répondez uniquement à ce que vous
-                              connaissez : l’IA réutilisera vos réponses pour reconstruire et
-                              {tr("réauditer la proposition sans inventer le reste.", "reaudit the proposal without inventing the rest.")}
-                            </p>
+                            <p>{tr("Ces réponses sont facultatives. Répondez uniquement à ce que vous connaissez : l’IA réutilisera vos réponses pour reconstruire et réauditer la proposition sans inventer le reste.", "These answers are optional. Answer only what you know: AI will reuse your answers to rebuild and reaudit the proposal without inventing the rest.")}</p>
                             <div className="architect-clarification-list">
                               {architectProposal.intelligence.missingInformation.map((question, index) => (
                                 <label key={question}>
@@ -1645,7 +1641,7 @@ export default function BuilderPage() {
                           </small>
                         </div>
                         <p>{tr("Architecture proposée :", "Proposed architecture:")} {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} ${tr("pages", "pages")}` : tr("site monopage", "single-page website")} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
-                        <p>Structure : {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · largeur {revisionProposal.design.contentWidth}.</p>
+                        <p>{tr("Structure :", "Structure:")} {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · {tr("largeur", "width")} {revisionProposal.design.contentWidth}.</p>
                         <div className="ai-field-actions">
                           <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>{tr("Appliquer cette révision", "Apply this revision")}</button>
                           <button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>{tr("Conserver mon site actuel", "Keep my current website")}</button>
