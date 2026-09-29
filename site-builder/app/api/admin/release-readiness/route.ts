@@ -148,13 +148,52 @@ export async function GET(request: Request) {
     ),
     check(
       "billing-provider",
-      "Stripe Billing",
+      "Stripe Billing · catalogue runtime",
       present(process.env.STRIPE_RESTRICTED_KEY || process.env.STRIPE_SECRET_KEY) &&
         present(process.env.STRIPE_WEBHOOK_SECRET) &&
-        present(process.env.STRIPE_PRO_PRICE_ID),
+        present(process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID) &&
+        present(process.env.STRIPE_ESSENTIAL_ANNUAL_PRICE_ID) &&
+        present(process.env.STRIPE_PRO_MONTHLY_PRICE_ID) &&
+        present(process.env.STRIPE_PRO_ANNUAL_PRICE_ID),
       "commercial",
-      "Clé API Stripe, secret webhook et Price Pro configurés.",
-      "Stripe sandbox n’est pas encore entièrement configuré côté runtime : clé API, secret webhook ou Price Pro manquant.",
+      "Clé API Stripe, secret webhook et 4 Price IDs Essentiel/Pro IA configurés.",
+      "Runtime Stripe incomplet : clé API, secret webhook ou l’un des 4 Price IDs Essentiel/Pro IA manque.",
+      "deferred"
+    ),
+    check(
+      "billing-portal",
+      "Stripe Billing · Customer Portal",
+      present(process.env.STRIPE_PORTAL_CONFIGURATION_ID),
+      "commercial",
+      "Configuration Customer Portal explicitement liée au Builder.",
+      "STRIPE_PORTAL_CONFIGURATION_ID manque : le portail par défaut peut fonctionner en sandbox mais le lancement commercial doit pointer vers une configuration contrôlée.",
+      "deferred"
+    ),
+    check(
+      "commercial-legal",
+      "Commercial · juridique",
+      process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true",
+      "commercial",
+      "Validation juridique explicitement confirmée.",
+      "CGU/CGV, politique de confidentialité et informations vendeur AJG Builder doivent être finalisées avant encaissement.",
+      "deferred"
+    ),
+    check(
+      "commercial-tax",
+      "Commercial · fiscalité",
+      process.env.AJG_COMMERCIAL_TAX_READY?.trim().toLowerCase() === "true",
+      "commercial",
+      "Configuration fiscale explicitement confirmée.",
+      "TVA/Stripe Tax et obligations d’immatriculation doivent être validées avant activation de la collecte automatique.",
+      "deferred"
+    ),
+    check(
+      "billing-checkout-gate",
+      "Stripe Checkout · ouverture commerciale",
+      process.env.AJG_BILLING_CHECKOUT_ENABLED?.trim().toLowerCase() === "true",
+      "commercial",
+      "Checkout commercial explicitement activé.",
+      "Checkout reste volontairement fermé pendant la bêta.",
       "deferred"
     )
   ];
