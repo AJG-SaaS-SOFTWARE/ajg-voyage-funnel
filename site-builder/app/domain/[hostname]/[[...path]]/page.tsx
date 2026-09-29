@@ -2,17 +2,37 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublishedSite from "../../../../components/PublishedSite";
 import { CookiesPage, LegalNoticePage, PrivacyPage } from "../../../../components/SiteLegalPages";
-import { getPublicSiteByHostname } from "../../../../lib/public-site";
+import { getPublicSiteByHostname } from "../../../../lib/public-site";\nimport { buildPublicMetadata, legalMetadataLabel } from "../../../../lib/public-metadata";
 
 export const dynamic="force-dynamic";
 
 export async function generateMetadata({params}:{params:Promise<{hostname:string;path?:string[]}>}):Promise<Metadata>{
- const {hostname,path=[]}=await params;const decoded=decodeURIComponent(hostname);const site=await getPublicSiteByHostname(decoded);if(!site)return {title:"Site introuvable | AJG",robots:{index:false,follow:false}};
- const legal=Boolean(path[0]&&["mentions-legales","confidentialite","cookies"].includes(path[0]));
- const title=site.config.brandName+" | "+(legal?path[0]:"Voyage");
- const description=site.config.heroSubtitle||("Découvrez le site de "+site.config.firstName+" "+site.config.lastName+".");
- const suffix=path.map(encodeURIComponent).join("/");const canonical=("https://"+decoded+(suffix?"/"+suffix:""));
- return {title,description,alternates:{canonical},robots:{index:!legal,follow:true},openGraph:{title,description,url:canonical,type:"website"}};
+ const {hostname,path=[]}=await params;
+ const decoded=decodeURIComponent(hostname);
+ const site=await getPublicSiteByHostname(decoded);
+ if(!site)return {title:"Site introuvable | AJG Site Builder",robots:{index:false,follow:false}};
+
+ const suffix=path.map(encodeURIComponent).join("/");
+ const canonical="https://"+decoded+(suffix?"/"+suffix:"");
+ const legalPath=path[0]&&["mentions-legales","confidentialite","cookies"].includes(path[0])
+   ? path[0] as "mentions-legales"|"confidentialite"|"cookies"
+   : null;
+
+ if(legalPath){
+   return buildPublicMetadata(site.config,{canonical,pageTitle:legalMetadataLabel(site.config,legalPath),index:false});
+ }
+
+ if(path[0]==="p"&&path[1]){
+   const pageSlug=decodeURIComponent(path[1]);
+   const page=site.config.architecture.mode==="multi"
+     ? site.config.architecture.pages.find((item)=>item.enabled&&item.slug===pageSlug)
+     : undefined;
+   if(!page)return {title:"Page introuvable | AJG Site Builder",robots:{index:false,follow:false}};
+   return buildPublicMetadata(site.config,{canonical,pageTitle:page.title});
+ }
+
+ if(path.length)return {title:"Page introuvable | AJG Site Builder",robots:{index:false,follow:false}};
+ return buildPublicMetadata(site.config,{canonical});
 }
 
 export default async function CustomDomainPage({params}:{params:Promise<{hostname:string;path?:string[]}>}){
