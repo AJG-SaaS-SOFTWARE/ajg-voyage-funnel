@@ -194,3 +194,42 @@ test("unsupported credibility claims are blocked unless grounded in client evide
     !codes(value, evidence).includes("unsupported_credibility_claim")
   );
 });
+
+
+test("near-duplicate FAQ questions are blocked even when reworded", () => {
+  const value = proposal({
+    faq: {
+      title: "Questions fréquentes",
+      items: [
+        {
+          question: "Comment préparer ma séance photo en toute sérénité ?",
+          answer: "Nous échangeons en amont pour clarifier vos attentes."
+        },
+        {
+          question: "Comment bien préparer une séance photo sereinement ?",
+          answer: "Je vous accompagne avec des repères simples avant le rendez-vous."
+        }
+      ]
+    }
+  });
+  assert.ok(codes(value).includes("near_duplicate_faq"));
+});
+
+test("distinct FAQ questions are not treated as duplicates", () => {
+  const value = proposal({
+    faq: {
+      title: "Questions fréquentes",
+      items: [
+        {
+          question: "Comment préparer ma séance photo ?",
+          answer: "Nous échangeons en amont pour clarifier vos attentes."
+        },
+        {
+          question: "Où se déroule la séance ?",
+          answer: "Le lieu est défini ensemble selon votre projet."
+        }
+      ]
+    }
+  });
+  assert.ok(!codes(value).includes("near_duplicate_faq"));
+});

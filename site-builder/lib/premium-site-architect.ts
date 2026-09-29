@@ -843,6 +843,7 @@ export function deterministicQualityIssues(
   }
 
   const faqQuestions = new Set<string>();
+  const faqQuestionTokens: Array<{ question: string; tokens: Set<string> }> = [];
   for (const item of proposal.faq.items) {
     const normalized = normalizeComparable(item.question);
     if (!normalized) continue;
@@ -855,6 +856,34 @@ export function deterministicQualityIssues(
       break;
     }
     faqQuestions.add(normalized);
+
+    const tokens = new Set(
+      normalized.split(" ").filter((token) => token.length >= 4)
+    );
+    if (tokens.size >= 3) {
+      faqQuestionTokens.push({ question: item.question, tokens });
+    }
+  }
+
+  for (let left = 0; left < faqQuestionTokens.length; left += 1) {
+    for (let right = left + 1; right < faqQuestionTokens.length; right += 1) {
+      const a = faqQuestionTokens[left];
+      const b = faqQuestionTokens[right];
+      const intersection = [...a.tokens].filter((token) => b.tokens.has(token)).length;
+      const union = new Set([...a.tokens, ...b.tokens]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+
+      if (intersection >= 4 && similarity >= 0.5) {
+        issues.push({
+          severity: "blocking",
+          code: "near_duplicate_faq",
+          detail:
+            `Les questions FAQ « ${a.question} » et « ${b.question} » sont trop proches ; elles doivent être fusionnées ou traiter des besoins réellement distincts.`
+        });
+        break;
+      }
+    }
+    if (issues.some((item) => item.code === "near_duplicate_faq")) break;
   }
 
   const benefitTitles = new Set<string>();
