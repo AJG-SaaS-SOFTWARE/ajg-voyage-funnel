@@ -7,29 +7,33 @@ const source = fs.readFileSync(
   "utf8"
 );
 
-test("Builder loads site-scoped entitlements for Premium UX", () => {
+test("Builder loads site-scoped BUILD and Growth access", () => {
   assert.ok(source.includes("getMySiteEntitlements(remoteSiteId)"));
-  assert.ok(source.includes("siteEntitlements.premiumArchitect"));
+  assert.ok(source.includes("getMySiteAiAccess(remoteSiteId)"));
+  assert.ok(source.includes("siteAiAccess.canCreateSite"));
+  assert.ok(source.includes("siteAiAccess.canReviseSite"));
   assert.ok(source.includes('["active", "trialing"].includes(siteEntitlements.status)'));
 });
 
-test("Premium architect controls are disabled when entitlement is unavailable", () => {
-  assert.ok(source.includes("disabled={!premiumArchitectAvailable}"));
+test("AI Architect creation and Growth revision controls have distinct gates", () => {
+  assert.ok(source.includes("disabled={!siteArchitectCreateAvailable}"));
   assert.ok(
     source.includes(
-      "disabled={!premiumArchitectAvailable || architectLoading || !architectBriefReady}"
+      "disabled={!siteArchitectCreateAvailable || architectLoading || !architectBriefReady}"
     )
   );
   assert.ok(
     source.includes(
-      "disabled={!premiumArchitectAvailable || revisionLoading || !revisionRequest.trim()}"
+      "disabled={!siteRevisionAvailable || revisionLoading || !revisionRequest.trim()}"
     )
   );
 });
 
-test("Locked Premium cards route to plan or billing recovery", () => {
+test("Locked BUILD and Growth cards route to plan or billing recovery", () => {
   assert.ok(source.includes('premiumAccessHref === "/billing"'));
   assert.ok(source.includes('"Régulariser mon accès"'));
-  assert.ok(source.includes('"Voir l’offre Pro"'));
+  assert.ok(source.includes('"Voir Growth / Création IA"'));
   assert.ok(source.includes("premium-feature-lock-note"));
+  assert.ok(source.includes('"🔒 BUILD"'));
+  assert.ok(source.includes('"🔒 Growth"'));
 });
