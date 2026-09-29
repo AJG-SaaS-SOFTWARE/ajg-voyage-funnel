@@ -75,7 +75,8 @@ async function sendNotification(row) {
       from,
       to: [to],
       subject,
-      text: lines.join("\n")
+      text: lines.join("
+")
     })
   });
 
@@ -97,7 +98,12 @@ export default async function handler(req, res) {
     return json(res, 403, { error: "Origin not allowed" });
   }
 
-  const fetchSite = String(req.headers["sec-fetch-site"] || "").toLowerCase();\n  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site") {\n    return json(res, 403, { error: "Cross-site request not allowed" });\n  }\n\n  const contentType = String(req.headers["content-type"] || "").toLowerCase();
+  const fetchSite = String(req.headers["sec-fetch-site"] || "").toLowerCase();
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site") {
+    return json(res, 403, { error: "Cross-site request not allowed" });
+  }
+
+  const contentType = String(req.headers["content-type"] || "").toLowerCase();
   if (!contentType.startsWith("application/json")) {
     return json(res, 415, { error: "Unsupported media type" });
   }
@@ -121,7 +127,8 @@ export default async function handler(req, res) {
   const mainInterest = text(body.interet_principal, 200);
   const travelFrequency = text(body.frequence_voyage, 200);
   const activityGoal = text(body.objectif_activite, 250);
-  // Never trust the client-provided score: derive it from validated answers.\n  const leadScore = (INTEREST_SCORES.get(mainInterest) || 0) + (FREQUENCY_SCORES.get(travelFrequency) || 0) + (GOAL_SCORES.get(activityGoal) || 0);
+  // Never trust the client-provided score: derive it from validated answers.
+  const leadScore = (INTEREST_SCORES.get(mainInterest) || 0) + (FREQUENCY_SCORES.get(travelFrequency) || 0) + (GOAL_SCORES.get(activityGoal) || 0);
 
   if (!firstName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json(res, 400, { error: "Invalid contact details" });
