@@ -7,6 +7,23 @@ const ALLOWED_INTERESTS = new Set(["Voyager plus avantageusement", "Découvrir l
 const ALLOWED_FREQUENCIES = new Set(["0-1 fois par an", "2-3 fois par an", "4 fois ou plus par an", "Variable", "0-1 times per year", "2-3 times per year", "4 or more times per year", "It varies"]);
 const ALLOWED_GOALS = new Set(["Voyage uniquement pour le moment", "Comprendre le fonctionnement", "Développer une activité indépendante", "Travel only for now", "Understand how it works", "Explore an independent activity"]);
 
+const INTEREST_SCORES = new Map([
+  ["Voyager plus avantageusement", 1], ["Travel more advantageously", 1],
+  ["Découvrir l'activité", 3], ["Discover the referral activity", 3],
+  ["Les deux", 4], ["Both", 4]
+]);
+const FREQUENCY_SCORES = new Map([
+  ["0-1 fois par an", 1], ["0-1 times per year", 1],
+  ["2-3 fois par an", 2], ["2-3 times per year", 2],
+  ["4 fois ou plus par an", 3], ["4 or more times per year", 3],
+  ["Variable", 1], ["It varies", 1]
+]);
+const GOAL_SCORES = new Map([
+  ["Voyage uniquement pour le moment", 0], ["Travel only for now", 0],
+  ["Comprendre le fonctionnement", 1], ["Understand how it works", 1],
+  ["Développer une activité indépendante", 3], ["Explore an independent activity", 3]
+]);
+
 function text(value, max = 500) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
@@ -104,7 +121,7 @@ export default async function handler(req, res) {
   const mainInterest = text(body.interet_principal, 200);
   const travelFrequency = text(body.frequence_voyage, 200);
   const activityGoal = text(body.objectif_activite, 250);
-  const leadScore = Math.max(0, Math.min(100, Number.parseInt(body.lead_score, 10) || 0));
+  // Never trust the client-provided score: derive it from validated answers.\n  const leadScore = (INTEREST_SCORES.get(mainInterest) || 0) + (FREQUENCY_SCORES.get(travelFrequency) || 0) + (GOAL_SCORES.get(activityGoal) || 0);
 
   if (!firstName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json(res, 400, { error: "Invalid contact details" });
