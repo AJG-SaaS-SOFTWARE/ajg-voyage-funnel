@@ -388,6 +388,24 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] entitlements de plan ciblés par site pour IA avancée et domaines ; quotas anti-abus IA restent volontairement agrégés au compte ;
 - [ ] validation production après réouverture du pipeline Vercel.
 
+### Itération 6F — Entitlements UX & droits RGPD
+État : démarré le 29 septembre 2026
+
+Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et fournir un parcours traçable d’export, d’effacement et de suppression sans confondre impayé et demande RGPD.
+
+- [x] protections serveur existantes confirmées : l’Architecte Premium et la révision globale exigent le droit `premium_architect`, indépendamment de l’état du bouton dans l’interface ;
+- [x] Builder aligné sur les entitlements du site actif : cartes Premium visiblement verrouillées en Gratuit, champs/actions coûteux désactivés et redirection vers l’offre ou la régularisation ;
+- [x] l’IA standard et le mode guidé restent accessibles en Gratuit dans leurs quotas, sauf blocage du moteur d’impayés ;
+- [x] principe figé : un impayé ou un non-renouvellement ne déclenche jamais une suppression automatique des sites ou données ;
+- [ ] ajouter un espace « Mes données » avec export par site, suivi des demandes et accès aux actions d’effacement ;
+- [ ] demande d’effacement d’un site : confirmation forte, suspension publique immédiate, arrêt de collecte, journal de demande et export préalable proposé ;
+- [ ] demande de suppression du compte : suspension de tous les sites, arrêt des traitements non nécessaires et orchestration de l’effacement des données de service ;
+- [ ] purge contrôlée : supprimer via les API prévues les médias Storage publics/privés, puis les données applicatives dépendantes, domaines et contenus du site ;
+- [ ] révocation des sessions puis suppression de l’identité Supabase Auth uniquement après traitement des dépendances et vérification du périmètre à conserver ;
+- [ ] séparer les données à effacer des pièces dont la conservation reste légalement nécessaire ; documenter pour chaque exception la finalité et la durée, sans conserver davantage de données que nécessaire ;
+- [ ] journal d’exécution RGPD pseudonymisé : réception, portée, systèmes traités, date d’exécution et éventuelle justification de conservation ;
+- [ ] recette E2E dédiée : export → demande → suspension → purge Storage/DB → suppression Auth, avec vérification qu’aucune donnée de contenu supprimée ne reste accessible.
+
 ### Durcissement préproduction — 28 septembre 2026
 - [x] administration des offres alignée sur la facturation par site, sans mutation involontaire des autres sites du propriétaire ;
 - [x] table des rôles admin durcie : clients authentifiés en lecture seule, auto-promotion SQL refusée ;
