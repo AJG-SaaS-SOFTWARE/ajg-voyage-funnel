@@ -154,11 +154,16 @@ export default function Home() {
                   : "Connexion au backend en cours."}
           </p>
         </div>
-        {remoteStatus === "guest" ? (
-          <Link className="button primary premium-button" href="/login">
-            Se connecter <span aria-hidden="true">→</span>
+        <div className="actions">
+          <Link className="button secondary premium-secondary" href="/tarifs">
+            Voir les tarifs
           </Link>
-        ) : null}
+          {remoteStatus === "guest" ? (
+            <Link className="button primary premium-button" href="/login">
+              Se connecter <span aria-hidden="true">→</span>
+            </Link>
+          ) : null}
+        </div>
       </section>
 
       <section className="dashboard-grid premium-dashboard-grid">
