@@ -47,7 +47,7 @@ function LayersIcon() {
 }
 
 export default function Home() {
-  const { tr } = useProductLocale();
+  const { locale, tr } = useProductLocale();
   const [draft, setDraft] = useState<BuilderDraft | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<"checking" | "guest" | "authenticated" | "local">("checking");
   const [email, setEmail] = useState("");
@@ -140,12 +140,12 @@ export default function Home() {
         <div>
           <b>
             {remoteStatus === "authenticated"
-              ? "Connecté au cloud"
+              ? tr("Connecté au cloud", "Connected to cloud")
               : remoteStatus === "local"
-                ? "Mode prototype local"
+                ? tr("Mode prototype local", "Local prototype mode")
                 : remoteStatus === "guest"
-                  ? "Connexion nécessaire"
-                  : "Vérification…"}
+                  ? tr("Connexion nécessaire", "Sign-in required")
+                  : tr("Vérification…", "Checking…")}
           </b>
           <p>
             {remoteStatus === "authenticated"
@@ -157,11 +157,16 @@ export default function Home() {
                   : tr("Connexion au backend en cours.", "Connecting to backend.")}
           </p>
         </div>
-        {remoteStatus === "guest" ? (
-          <Link className="button primary premium-button" href="/login">
-            Se connecter <span aria-hidden="true">→</span>
+        <div className="actions">
+          <Link className="button secondary premium-secondary" href={locale === "en" ? "/pricing" : "/tarifs"}>
+            {tr("Voir les tarifs", "View pricing")}
           </Link>
-        ) : null}
+          {remoteStatus === "guest" ? (
+            <Link className="button primary premium-button" href="/login">
+              {tr("Se connecter", "Sign in")} <span aria-hidden="true">→</span>
+            </Link>
+          ) : null}
+        </div>
       </section>
 
       <section className="dashboard-grid premium-dashboard-grid">
@@ -222,10 +227,10 @@ export default function Home() {
             <span className="card-icon sage"><LayersIcon /></span>
             <p className="step">Architecture</p>
             <h2>{tr("Un moteur, plusieurs sites", "One engine, multiple websites")}</h2>
-            <p>
-              Chaque membre possède sa configuration et ses médias. Les corrections du template
-              restent centralisées et peuvent bénéficier à tout le réseau.
-            </p>
+            <p>{tr(
+              "Chaque site possède sa configuration et ses médias. Les améliorations du moteur restent centralisées.",
+              "Each website has its own configuration and media. Engine improvements remain centralized."
+            )}</p>
           </div>
           <div className="card-art stack-art" aria-hidden="true">
             <div className="stack-window stack-window-three"><i /></div>

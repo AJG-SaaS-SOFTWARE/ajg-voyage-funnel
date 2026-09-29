@@ -25,6 +25,7 @@ export function AccountShell({
   const { locale, tr } = useProductLocale();
   const links: Array<{ href: string; label: string; section?: AccountSection }> = [
     { href: "/builder", label: "Builder" },
+    { href: locale === "en" ? "/pricing" : "/tarifs", label: tr("Tarifs", "Pricing") },
     { href: "/plans", label: tr("Mon offre", "My plan"), section: "plans" },
     { href: "/billing", label: tr("Facturation", "Billing"), section: "billing" },
     { href: "/domains", label: tr("Domaines", "Domains"), section: "domains" },

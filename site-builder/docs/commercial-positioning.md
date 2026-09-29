@@ -8,7 +8,7 @@ AJG Site Builder n'est pas commercialisé comme « un constructeur de sites moin
 
 La proposition de valeur est :
 
-> **Une IA qui ne se contente pas de générer une page : elle construit la stratégie, l'architecture, le contenu et la direction visuelle du site, puis vous laisse le contrôle.**
+> **Décrivez votre activité. AJG Builder vous aide à structurer, rédiger, personnaliser et publier un site professionnel — sans partir d'une page blanche.**
 
 Formulation courte recommandée :
 
@@ -16,78 +16,87 @@ Formulation courte recommandée :
 
 Le produit distingue deux niveaux d'assistance :
 
-- **IA standard** : rédaction et reformulation champ par champ, questionnaire guidé, relecture et génération de rubriques ;
-- **AI Site Architect Premium** : stratégie, architecture, création globale, audit indépendant, raffinement conditionnel et application contrôlée.
+- **IA rédactionnelle** : rédaction, reformulation, amélioration et suggestions dans les champs où elle apporte une vraie valeur ;
+- **Concepteur IA / AI Site Architect** : brief, stratégie, architecture, proposition de sections, premiers contenus et raffinement, tout en gardant chaque élément modifiable.
 
-## Gamme cible
+## Offres publiques retenues
 
-### Gratuit — 0 €
+### Essentiel — 19 € / mois ou 190 € / an
 
-Objectif : activation et découverte.
-
-- 1 site sur sous-domaine AJG ;
-- IA standard dans les quotas gratuits ;
-- 80 générations IA / mois ;
-- 250 Mo de stockage ;
-- édition et publication essentielles ;
-- pas d'Architecte Premium ;
-- pas de domaine personnalisé.
-
-### Essential — trajectoire après bêta
-
-Objectif : servir les clients qui veulent construire eux-mêmes leur site avec une aide IA continue, sans avoir besoin de l'Architecte Premium.
-
-Hypothèse fonctionnelle :
+Objectif : permettre à un indépendant ou une petite entreprise de construire et gérer son site avec une aide IA continue, sans automatiser toute la conception.
 
 - 1 site professionnel ;
+- hébergement et publication inclus ;
 - domaine personnalisé ;
-- IA standard avec quotas supérieurs au Gratuit ;
-- éditeur, personnalisation et publication complets ;
-- pas d'Architecte Premium.
+- éditeur, personnalisation et design responsive ;
+- IA rédactionnelle dans les champs utiles ;
+- réécriture, amélioration et suggestions de contenu ;
+- SEO essentiel ;
+- sans Concepteur IA complet.
 
-**Le prix Essential n'est pas fixé.** Son existence commerciale et son tarif seront décidés à partir des usages bêta : notamment la part des utilisateurs qui jugent l'IA standard suffisante après avoir testé l'Architecte Premium.
+### Pro IA — 39 € / mois ou 390 € / an
 
-### Founding Pro — hypothèse commerciale n°1
+Objectif : accélérer fortement le passage du brief à une première version structurée.
 
-- **24,90 € TTC / mois** ;
-- **239 € TTC / an** ;
-- 1 site inclus ;
-- cible initiale : 10 premiers clients payants ;
-- quotas Pro actuels : 500 générations IA / mois et 2 Go de stockage ;
-- domaine personnalisé ;
-- AI Site Architect Premium complet ;
-- toutes les fonctions professionnelles présentes dans Essential.
+- tout Essentiel ;
+- Concepteur IA de site ;
+- proposition de structure et de sections à partir du brief ;
+- premiers textes générés puis entièrement éditables ;
+- aide IA renforcée pour les itérations ;
+- quota IA supérieur ;
+- capacité média et stockage supérieure ;
+- accès prioritaire aux nouveaux modules IA.
 
-Le tarif Founding est une **hypothèse à tester**, pas un prix garanti à vie. Les conditions finales seront confirmées avant activation de Stripe live.
+Les limites exactes de générations IA et de stockage seront affichées avant activation de la facturation. Les quotas techniques actuels de bêta ne constituent pas une promesse commerciale définitive.
+
+## Essai commercial
+
+Au lancement commercial :
+
+- **14 jours d'expérience Pro IA** ;
+- aucun droit payant n'est ouvert sans paiement confirmé à la fin de l'essai ;
+- l'utilisateur pourra ensuite choisir Essentiel ou Pro IA ;
+- les contrôles d'accès IA restent appliqués côté serveur.
+
+Pendant la bêta actuelle, Stripe reste désactivé et la page Tarifs indique explicitement que l'encaissement n'est pas encore ouvert.
 
 ## Beta Tester
 
-Les proches invités à la bêta ne sont pas des clients Founding.
+Les proches invités à la bêta ne sont pas des clients payants.
 
 Le statut **Beta Tester** :
 
 - est attribué par un administrateur ;
-- donne temporairement l'équivalent fonctionnel complet de Pro ;
-- inclut Architecte Premium, domaine personnalisé, quotas Pro et capacités payantes ;
+- donne temporairement l'équivalent fonctionnel complet de Pro IA ;
 - ne crée aucun Customer/Subscription Stripe ;
 - expire automatiquement à la date enregistrée ;
 - revient ensuite aux droits réels du compte, sans supprimer le site ;
 - peut être renouvelé ou retiré manuellement ;
-- est distinct de la cohorte analytique bêta afin de conserver les métriques après expiration si nécessaire.
+- reste absent de la grille tarifaire publique.
 
 Durée administrable : 1 à 90 jours ; valeur proposée par défaut dans l'interface : **30 jours**.
 
-## Ce que la bêta doit apprendre
+## Pages produit
 
-La bêta doit mesurer notamment :
+- /tarifs : page publique française ;
+- /pricing : page publique anglaise ;
+- /plans : page « Mon offre » de l'espace compte, synchronisée avec la grille commerciale ;
+- /billing : état de facturation et récupération.
 
-- compréhension de l'Architecte Premium ;
-- qualité perçue de la première proposition ;
-- taux proposition → application ;
-- régénérations et modifications manuelles ;
-- usage réel de l'IA standard après génération Premium ;
-- besoin réel d'un plan Essential ;
-- intention de conserver ou supprimer le site ;
-- perception des hypothèses de prix.
+## Ce que l'on vend réellement
 
-Les testeurs peuvent supprimer leur site après le test. Le fait qu'ils ne souhaitent pas le conserver n'est pas un échec du test : leur rôle est d'évaluer le produit et le parcours.
+À éviter : « un autre website builder » ou « moins cher que X ».
+
+À vendre : **un chemin guidé vers un site publiable**, avec moins de page blanche, moins d'hésitation et une progression claire :
+
+> Brief → proposition → personnalisation → validation → publication.
+
+L'IA accélère la conception ; l'utilisateur garde le contrôle.
+
+## Règles de mise sur le marché
+
+- Le programme Beta n'est pas un plan gratuit permanent.
+- Le prix n'est pas le principal argument de vente : la valeur vient de la réduction de complexité et du temps gagné.
+- Les quotas IA doivent rester pilotables côté serveur.
+- Les fonctions IA payantes suivent la politique AJG d'impayés et sont protégées côté serveur.
+- Les prix, les CGV/CGU, Stripe et les entitlements doivent être synchronisés avant ouverture des paiements live.
