@@ -1679,30 +1679,30 @@ export default function BuilderPage() {
                     </label>
 
                     <label className="guided-question">
-                      <span><i>2</i> Qu'est-ce qui caractérise votre approche ?</span>
+                      <span><i>2</i> {tr("Qu’est-ce qui caractérise votre approche ?", "What defines your approach?")}</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. Je prends le temps de mettre les personnes à l'aise et je privilégie des images spontanées, simples et lumineuses."
+                        placeholder={tr("Ex. Je prends le temps de mettre les personnes à l’aise et je privilégie des images spontanées, simples et lumineuses.", "e.g. I take time to make people feel comfortable and I favor natural, simple and bright images.")}
                         value={guidedAnswers.difference}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, difference: e.target.value }))}
                       />
                     </label>
 
                     <label className="guided-question">
-                      <span><i>3</i> Que voulez-vous que le visiteur comprenne ou fasse ?</span>
+                      <span><i>3</i> {tr("Que voulez-vous que le visiteur comprenne ou fasse ?", "What do you want visitors to understand or do?")}</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. Je veux qu'il comprenne mon style, se sente rassuré sur le déroulement et ait envie de me contacter."
+                        placeholder={tr("Ex. Je veux qu’il comprenne mon style, se sente rassuré sur le déroulement et ait envie de me contacter.", "e.g. I want them to understand my style, feel reassured about the process and want to contact me.")}
                         value={guidedAnswers.goal}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, goal: e.target.value }))}
                       />
                     </label>
 
                     <label className="guided-question optional">
-                      <span><i>4</i> À qui souhaitez-vous surtout parler ? <em>facultatif</em></span>
+                      <span><i>4</i> {tr("À qui souhaitez-vous surtout parler ?", "Who do you mainly want to speak to?")} <em>{tr("facultatif", "optional")}</em></span>
                       <textarea
                         rows={2}
-                        placeholder="Ex. Aux familles et aux couples qui cherchent quelque chose de naturel, chaleureux et sans mise en scène excessive."
+                        placeholder={tr("Ex. Aux familles et aux couples qui cherchent quelque chose de naturel, chaleureux et sans mise en scène excessive.", "e.g. Families and couples looking for something natural, warm and not overly staged.")}
                         value={guidedAnswers.audience}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, audience: e.target.value }))}
                       />
@@ -1714,27 +1714,27 @@ export default function BuilderPage() {
                       disabled={!guidedDraftEnabled}
                       onClick={createGuidedDraft}
                     >
-                      {guidedDraftReady ? "✓ Textes préparés — actualiser" : "Préparer mes textes"}
+                      {guidedDraftReady ? tr("✓ Textes préparés — actualiser", "✓ Copy prepared — refresh") : tr("Préparer mes textes", "Prepare my copy")}
                       <span aria-hidden="true">→</span>
                     </button>
 
                     {!guidedDraftEnabled ? (
-                      <p className="guided-writing-help">Répondez aux 3 premières questions pour préparer vos textes.</p>
+                      <p className="guided-writing-help">{tr("Répondez aux 3 premières questions pour préparer vos textes.", "Answer the first 3 questions to prepare your copy.")}</p>
                     ) : guidedDraftReady ? (
-                      <p className="guided-writing-success">Votre première version est prête juste en dessous. Relisez-la et modifiez ce qui ne vous ressemble pas.</p>
+                      <p className="guided-writing-success">{tr("Votre première version est prête juste en dessous. Relisez-la et modifiez ce qui ne vous ressemble pas.", "Your first version is ready below. Review it and change anything that does not sound like you.")}</p>
                     ) : null}
                   </div>
                 </details>
 
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Votre texte d'accueil</b><p>Le visiteur doit comprendre en quelques secondes ce que vous lui proposez.</p></div>
+                  <div><b>{tr("Votre texte d’accueil", "Your homepage copy")}</b><p>{tr("Le visiteur doit comprendre en quelques secondes ce que vous lui proposez.", "Visitors should understand what you offer within a few seconds.")}</p></div>
                 </div>
                 <div className="question-prompt">
-                  <b>Vous gardez toujours le dernier mot.</b>
-                  <p>La version préparée n'est qu'un point de départ. Changez les mots pour qu'ils vous ressemblent vraiment.</p>
+                  <b>{tr("Vous gardez toujours le dernier mot.", "You always have the final say.")}</b>
+                  <p>{tr("La version préparée n’est qu’un point de départ. Changez les mots pour qu’ils vous ressemblent vraiment.", "The prepared version is only a starting point. Change the wording so it genuinely sounds like you.")}</p>
                 </div>
-                <Field label="Petite phrase au-dessus du titre" hint="Facultatif. Exemple : Voyagez autrement · partagez davantage.">
+                <Field label={tr("Petite phrase au-dessus du titre", "Short line above the headline")} hint={tr("Facultatif. Exemple : Voyagez autrement · partagez davantage.", "Optional. Example: A simpler way to travel and share.")}>
                   <input spellCheck maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
                 </Field>
                 <AiTextAssistant
@@ -1749,7 +1749,7 @@ export default function BuilderPage() {
                   onApply={(text) => update("heroTagline", text)}
                   placeholder="Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique"
                 />
-                <Field label="Titre principal">
+                <Field label={tr("Titre principal", "Main headline")}>
                   <textarea spellCheck rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
@@ -1764,7 +1764,7 @@ export default function BuilderPage() {
                   onApply={(text) => update("heroTitle", text)}
                   placeholder="Ex. Un titre clair et mémorable qui fait comprendre rapidement ce que je propose"
                 />
-                <Field label="Introduction">
+                <Field label={tr("Introduction", "Introduction")}>
                   <textarea spellCheck rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
@@ -1782,9 +1782,9 @@ export default function BuilderPage() {
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Votre présentation</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
+                  <div><b>{tr("Votre présentation", "Your introduction")}</b><p>{tr("Quelques lignes suffisent si elles sonnent juste et restent personnelles.", "A few lines are enough when they feel authentic and personal.")}</p></div>
                 </div>
-                <Field label="Titre de la rubrique" hint="Facultatif. Votre nom est utilisé si ce champ reste vide.">
+                <Field label={tr("Titre de la rubrique", "Section title")} hint={tr("Facultatif. Votre nom est utilisé si ce champ reste vide.", "Optional. Your name is used if this field is left empty.")}>
                   <input spellCheck maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
                 </Field>
                 <AiTextAssistant
@@ -1799,7 +1799,7 @@ export default function BuilderPage() {
                   onApply={(text) => update("aboutHeading", text)}
                   placeholder="Ex. Un titre personnel et simple, moins formel que « À propos »"
                 />
-                <Field label="Votre présentation">
+                <Field label={tr("Votre présentation", "About you")}>
                   <textarea spellCheck rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
                 <AiTextAssistant
@@ -1821,29 +1821,29 @@ export default function BuilderPage() {
               <>
                 <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
                 <div className="photo-background-editor module-editor">
-                  <b>Photo personnelle en arrière-plan</b>
-                  <p>La photo est compressée avant l'envoi et affichée en mode cover. AJG cherche automatiquement le point d'intérêt de l'image pour le centrage initial ; vous pouvez ensuite l'ajuster avec les curseurs.</p>
-                  <label className="background-upload-field">Importer une photo<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage || busy} onChange={(event) => void uploadDesignImage(event, "background")} /></label>
-                  {uploadingImage ? <p className="background-upload-status" role="status">Optimisation et envoi de la photo…</p> : null}
+                  <b>{tr("Photo personnelle en arrière-plan", "Personal background photo")}</b>
+                  <p>{tr("La photo est compressée avant l’envoi et affichée en mode cover. AJG cherche automatiquement le point d’intérêt de l’image pour le centrage initial ; vous pouvez ensuite l’ajuster avec les curseurs.", "The photo is compressed before upload and displayed in cover mode. AJG automatically finds an initial focal point, which you can then adjust with the sliders.")}</p>
+                  <label className="background-upload-field">{tr("Importer une photo", "Upload a photo")}<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage || busy} onChange={(event) => void uploadDesignImage(event, "background")} /></label>
+                  {uploadingImage ? <p className="background-upload-status" role="status">{tr("Optimisation et envoi de la photo…", "Optimizing and uploading photo…")}</p> : null}
                   {config.design.backgroundPhotoUrl ? (
                     <div className="background-photo-adjustments">
-                      <button type="button" className="button secondary background-remove-button" onClick={() => update("design", { ...config.design, backgroundPhotoUrl: "" })}>Retirer la photo de fond</button>
+                      <button type="button" className="button secondary background-remove-button" onClick={() => update("design", { ...config.design, backgroundPhotoUrl: "" })}>{tr("Retirer la photo de fond", "Remove background photo")}</button>
                       <label className="background-position-control">
-                        <span>Position horizontale <strong>{config.design.backgroundPositionX} %</strong></span>
-                        <input aria-label="Position horizontale de la photo de fond" type="range" min="0" max="100" step="1" value={config.design.backgroundPositionX} onChange={(e) => update("design", { ...config.design, backgroundPositionX: Number(e.target.value) })} />
-                        <small><span>Gauche</span><span>Droite</span></small>
+                        <span>{tr("Position horizontale", "Horizontal position")} <strong>{config.design.backgroundPositionX} %</strong></span>
+                        <input aria-label={tr("Position horizontale de la photo de fond", "Background photo horizontal position")} type="range" min="0" max="100" step="1" value={config.design.backgroundPositionX} onChange={(e) => update("design", { ...config.design, backgroundPositionX: Number(e.target.value) })} />
+                        <small><span>{tr("Gauche", "Left")}</span><span>{tr("Droite", "Right")}</span></small>
                       </label>
                       <label className="background-position-control">
-                        <span>Position verticale <strong>{config.design.backgroundPositionY} %</strong></span>
-                        <input aria-label="Position verticale de la photo de fond" type="range" min="0" max="100" step="1" value={config.design.backgroundPositionY} onChange={(e) => update("design", { ...config.design, backgroundPositionY: Number(e.target.value) })} />
-                        <small><span>Haut</span><span>Bas</span></small>
+                        <span>{tr("Position verticale", "Vertical position")} <strong>{config.design.backgroundPositionY} %</strong></span>
+                        <input aria-label={tr("Position verticale de la photo de fond", "Background photo vertical position")} type="range" min="0" max="100" step="1" value={config.design.backgroundPositionY} onChange={(e) => update("design", { ...config.design, backgroundPositionY: Number(e.target.value) })} />
+                        <small><span>{tr("Haut", "Top")}</span><span>{tr("Bas", "Bottom")}</span></small>
                       </label>
                     </div>
                   ) : null}
                 </div>
                 <label className="option-card premium-option-card portrait-option">
                   <input spellCheck type="checkbox" checked={config.design.showPortrait} onChange={(event) => update("design", { ...config.design, showPortrait: event.target.checked })} />
-                  <span><b>Afficher le portrait dans l'accueil</b><p>Si vous n'avez pas ajouté de photo, vos initiales apparaissent. Décochez pour laisser davantage de place à l'image de fond.</p></span>
+                  <span><b>{tr("Afficher le portrait dans l’accueil", "Show portrait on homepage")}</b><p>{tr("Si vous n’avez pas ajouté de photo, vos initiales apparaissent. Décochez pour laisser davantage de place à l’image de fond.", "If you have not added a photo, your initials are shown. Turn this off to give more space to the background image.")}</p></span>
                 </label>
               </>
             ) : null}
@@ -1853,9 +1853,9 @@ export default function BuilderPage() {
                 <div className="visibility-options-stack">
                   <VisibilityOption
                     checked={config.design.showBooking}
-                    title="Rendez-vous sur le site"
-                    activeLabel="Activé"
-                    inactiveLabel="Désactivé"
+                    title={tr("Rendez-vous sur le site", "Bookings on the website")}
+                    activeLabel={tr("Activé", "Enabled")}
+                    inactiveLabel={tr("Désactivé", "Disabled")}
                     description={config.design.showBooking
                       ? "Les accès au rendez-vous peuvent apparaître sur le site dès qu'un lien valide est renseigné."
                       : "Tous les accès au rendez-vous sont masqués. Le texte et le lien restent enregistrés pour plus tard."}
@@ -1864,9 +1864,9 @@ export default function BuilderPage() {
                   {config.design.showBooking ? (
                     <VisibilityOption
                       checked={config.design.showPrimaryButton}
-                      title="Bouton principal dans l’accueil"
-                      activeLabel="Visible"
-                      inactiveLabel="Masqué"
+                      title={tr("Bouton principal dans l’accueil", "Primary homepage button")}
+                      activeLabel={tr("Visible", "Visible")}
+                      inactiveLabel={tr("Masqué", "Hidden")}
                       description={config.design.showPrimaryButton
                         ? "Avec un lien valide, le bouton apparaît dans le hero en plus de l'accès dans la navigation."
                         : "Avec un lien valide, l'accès reste dans la navigation mais le gros bouton du hero est masqué."}
@@ -1877,7 +1877,7 @@ export default function BuilderPage() {
                 <div className={`booking-visibility-summary ${!config.design.showBooking || bookingLinkStatus !== "valid" ? "warning" : "active"}`}>
                   <span aria-hidden="true">{!config.design.showBooking ? "○" : bookingLinkStatus === "valid" ? "✓" : "!"}</span>
                   <div>
-                    <b>Ce que verra le visiteur</b>
+                    <b>{tr("Ce que verra le visiteur", "What visitors will see")}</b>
                     <p>
                       {!config.design.showBooking
                         ? "Aucun accès au rendez-vous : la fonction est désactivée."
@@ -1890,19 +1890,19 @@ export default function BuilderPage() {
                   </div>
                 </div>
                 <div className="booking-guide">
-                  <b>Comment ajouter votre agenda ?</b>
+                  <b>{tr("Comment ajouter votre agenda ?", "How do I add my booking page?")}</b>
                   <ol>
-                    <li>Ouvrez votre page de réservation Calendly, Google Calendar ou un autre agenda.</li>
-                    <li>Copiez son adresse dans la barre du navigateur ou avec le bouton de partage.</li>
-                    <li>Collez cette adresse dans le champ ci-dessous. Un message confirmera si le lien est complet.</li>
+                    <li>{tr("Ouvrez votre page de réservation Calendly, Google Calendar ou un autre agenda.", "Open your Calendly, Google Calendar or other booking page.")}</li>
+                    <li>{tr("Copiez son adresse dans la barre du navigateur ou avec le bouton de partage.", "Copy its address from the browser bar or using the share button.")}</li>
+                    <li>{tr("Collez cette adresse dans le champ ci-dessous. Un message confirmera si le lien est complet.", "Paste the address into the field below. A message will confirm whether the link is complete.")}</li>
                   </ol>
-                  <p>Vous n'avez pas encore d'agenda en ligne ? Laissez le champ vide pour le moment.</p>
+                  <p>{tr("Vous n’avez pas encore d’agenda en ligne ? Laissez le champ vide pour le moment.", "No online booking page yet? Leave the field empty for now.")}</p>
                 </div>
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Votre rendez-vous</b><p>Un seul lien suffit pour transformer l'intérêt en échange.</p></div>
+                  <div><b>{tr("Votre rendez-vous", "Your booking link")}</b><p>{tr("Un seul lien suffit pour transformer l’intérêt en échange.", "One link is enough to turn interest into a conversation.")}</p></div>
                 </div>
-                <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous.">
+                <Field label={tr("Texte du bouton", "Button text")} hint={tr("Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous.", "This text appears on the button once you add a booking link.")}>
                   <input spellCheck placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
                 <AiTextAssistant
@@ -1917,7 +1917,7 @@ export default function BuilderPage() {
                   onApply={(text) => update("bookingLabel", text)}
                   placeholder="Ex. Un appel à l'action rassurant, sans pression commerciale"
                 />
-                <Field label="Lien de rendez-vous" hint="Facultatif. Le lien doit commencer par https:// et contenir l'adresse complète de votre page.">
+                <Field label={tr("Lien de rendez-vous", "Booking link")} hint={tr("Facultatif. Le lien doit commencer par https:// et contenir l’adresse complète de votre page.", "Optional. The link must start with https:// and contain the full address of your booking page.")}>
                   <input
                     type="url"
                     inputMode="url"
@@ -1931,19 +1931,19 @@ export default function BuilderPage() {
                 </Field>
                 <p id="booking-link-feedback" className={"booking-link-feedback " + bookingLinkStatus} role="status">
                   {bookingLinkStatus === "valid"
-                    ? "✓ Lien reconnu. Vérifiez qu'il ouvre bien votre page de réservation."
+                    ? tr("✓ Lien reconnu. Vérifiez qu’il ouvre bien votre page de réservation.", "✓ Link recognized. Check that it opens your booking page correctly.")
                     : bookingLinkStatus === "invalid"
-                      ? "Le lien semble incomplet. Copiez l'adresse entière, par exemple https://calendly.com/votre-nom/30min."
-                      : "Vous pouvez continuer sans lien et l'ajouter plus tard."}
+                      ? tr("Le lien semble incomplet. Copiez l’adresse entière, par exemple https://calendly.com/votre-nom/30min.", "The link looks incomplete. Copy the full address, for example https://calendly.com/your-name/30min.")
+                      : tr("Vous pouvez continuer sans lien et l’ajouter plus tard.", "You can continue without a link and add it later.")}
                 </p>
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Vos réseaux</b><p>Optionnels, mais utiles pour prolonger la relation hors du site.</p></div>
+                  <div><b>{tr("Vos réseaux", "Your social profiles")}</b><p>{tr("Optionnels, mais utiles pour prolonger la relation hors du site.", "Optional, but useful for continuing the relationship beyond the website.")}</p></div>
                 </div>
                 <div className="grid two">
-                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showInstagram} onChange={(e) => update("design", { ...config.design, showInstagram: e.target.checked })} /><span><b>Afficher Instagram</b></span></label>
-                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showFacebook} onChange={(e) => update("design", { ...config.design, showFacebook: e.target.checked })} /><span><b>Afficher Facebook</b></span></label>
+                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showInstagram} onChange={(e) => update("design", { ...config.design, showInstagram: e.target.checked })} /><span><b>{tr("Afficher Instagram", "Show Instagram")}</b></span></label>
+                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showFacebook} onChange={(e) => update("design", { ...config.design, showFacebook: e.target.checked })} /><span><b>{tr("Afficher Facebook", "Show Facebook")}</b></span></label>
                   <Field label="Instagram">
                     <input
                       type="url"
@@ -1968,7 +1968,7 @@ export default function BuilderPage() {
               <>
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Modules du site</b><p>Les contenus affichés sur votre site doivent être prêts à être partagés.</p></div>
+                  <div><b>{tr("Modules du site", "Website sections")}</b><p>{tr("Les contenus affichés sur votre site doivent être prêts à être partagés.", "Content shown on your website must be ready to share publicly.")}</p></div>
                 </div>
                 <ModulesEditor
                   modules={config.design.modules}
@@ -1984,17 +1984,17 @@ export default function BuilderPage() {
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Activité et identité</b><p>Les mentions MWR Life concernent uniquement les sites d'ambassadeurs.</p></div>
+                  <div><b>{tr("Activité et identité", "Activity and identity")}</b><p>{tr("Les mentions MWR Life concernent uniquement les sites d’ambassadeurs.", "MWR Life disclosures only apply to ambassador websites.")}</p></div>
                 </div>
-                <Field label="Votre activité">
+                <Field label={tr("Votre activité", "Your activity")}>
                   <select value={config.affiliation} onChange={(event) => updateAffiliation(event.target.value as SiteConfig["affiliation"])}>
-                    <option value="mwr">Ambassadeur indépendant MWR Life</option>
-                    <option value="independent">Autre activité indépendante</option>
+                    <option value="mwr">{tr("Ambassadeur indépendant MWR Life", "Independent MWR Life Ambassador")}</option>
+                    <option value="independent">{tr("Autre activité indépendante", "Other independent activity")}</option>
                   </select>
                 </Field>
                 {config.affiliation === "mwr" ? <>
                   <div className="locked premium-locked">
-                    <span>Mention d'indépendance maintenue</span>
+                    <span>{tr("Mention d’indépendance maintenue", "Independence disclosure retained")}</span>
                     <p>{requiredDisclaimer}</p>
                   </div>
                   <p className="media-license-note">Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d'indépendance.</p>
@@ -2023,13 +2023,13 @@ export default function BuilderPage() {
                     />
                   </div>
                 </> : <div className="helper-card premium-helper-card">
-                  <b>Site indépendant sans mention MWR Life</b>
+                  <b>{tr("Site indépendant sans mention MWR Life", "Independent website without MWR Life disclosure")}</b>
                   <p>Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Les pages légales ci-dessous seront adaptées aux informations que vous renseignez.</p>
                 </div>}
 
                 <div className="section-kicker">
                   <span>03</span>
-                  <div><b>Conformité du site</b><p>Préparez automatiquement les pages légales et la transparence RGPD du site.</p></div>
+                  <div><b>{tr("Conformité du site", "Website compliance")}</b><p>{tr("Préparez automatiquement les pages légales et la transparence RGPD du site.", "Prepare legal pages and GDPR transparency information automatically.")}</p></div>
                 </div>
                 <ComplianceEditor
                   value={config.legal}
@@ -2045,18 +2045,18 @@ export default function BuilderPage() {
               <>
                 <div className="section-kicker">
                   <span>✓</span>
-                  <div><b>Contrôle final</b><p>Une dernière vérification avant de rendre le site accessible.</p></div>
+                  <div><b>{tr("Contrôle final", "Final review")}</b><p>{tr("Une dernière vérification avant de rendre le site accessible.", "One final check before making the website accessible.")}</p></div>
                 </div>
                 {errors.length ? (
                   <div className="error-card premium-error-card">
-                    <b>À corriger avant publication</b>
+                    <b>{tr("À corriger avant publication", "Fix before publishing")}</b>
                     <ul>{errors.map((error) => (
                       <li key={error.message}>
                         <button type="button" className="review-error-link" onClick={() => {
                           setStep(error.step);
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}>
-                          {error.message} · Corriger dans « {steps.find((item) => item.key === error.step)?.label} »
+                          {error.message} · {tr("Corriger dans", "Fix in")} « {locale === "en" ? steps.find((item) => item.key === error.step)?.labelEn : steps.find((item) => item.key === error.step)?.label} »
                         </button>
                       </li>
                     ))}</ul>
@@ -2089,9 +2089,9 @@ export default function BuilderPage() {
                   <p className="quality-note">Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.</p>
                 </div>
                 <div className="quality-summary-card">
-                  <div className="quality-summary-head"><div><span className="mini">RELECTURE ÉDITORIALE</span><strong>Orthographe, grammaire et clarté</strong></div></div>
+                  <div className="quality-summary-head"><div><span className="mini">{tr("RELECTURE ÉDITORIALE", "EDITORIAL REVIEW")}</span><strong>{tr("Orthographe, grammaire et clarté", "Spelling, grammar and clarity")}</strong></div></div>
                   <p>Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement.</p>
-                  <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? "Relecture en cours…" : "Relire avec l’IA"}</button>
+                  <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? tr("Relecture en cours…", "Reviewing…") : tr("Relire avec l’IA", "Review with AI")}</button>
                   {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{reviewFieldLabels[issue.field] || issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p><small>Texte actuel</small><br />{currentReviewText(issue.field)}</p><p><small>Proposition</small><br />{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
                 </div>
 
@@ -2115,10 +2115,10 @@ export default function BuilderPage() {
                 </div>
 
                 <div className="publish-summary premium-publish-summary">
-                  <div><span>Lien du site après publication</span><strong>{betaPublicUrl}</strong></div>
-                  <div><span>Langue</span><strong>{config.language === "both" ? "Français (bilingue à venir)" : config.language.toUpperCase()}</strong></div>
-                  <div><span>Stockage</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
-                  <div><span>État</span><strong>{published ? "Publié" : "Prêt à publier"}</strong></div>
+                  <div><span>{tr("Lien du site après publication", "Website link after publishing")}</span><strong>{betaPublicUrl}</strong></div>
+                  <div><span>{tr("Langue", "Language")}</span><strong>{config.language === "both" ? "Français (bilingue à venir)" : config.language.toUpperCase()}</strong></div>
+                  <div><span>{tr("Stockage", "Storage")}</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
+                  <div><span>{tr("État", "Status")}</span><strong>{published ? tr("Publié", "Published") : tr("Prêt à publier", "Ready to publish")}</strong></div>
                 </div>
 
                 <button
@@ -2127,20 +2127,20 @@ export default function BuilderPage() {
                   disabled={errors.length > 0 || busy}
                   onClick={publish}
                 >
-                  {busy ? "Publication…" : published ? "Republier les modifications" : "Publier le site"}
+                  {busy ? tr("Publication…", "Publishing…") : published ? tr("Republier les modifications", "Republish changes") : tr("Publier le site", "Publish website")}
                   {!busy ? <span aria-hidden="true">→</span> : null}
                 </button>
                 {published ? (
                   <div className="published-share-card" aria-live="polite">
                     <div>
-                      <span className="mini">Lien bêta partageable</span>
+                      <span className="mini">{tr("Lien bêta partageable", "Shareable beta link")}</span>
                       <strong>{betaPublicUrl}</strong>
                       <p>Ce lien fonctionne dès maintenant. Le sous-domaine personnalisé sera activé dans une étape ultérieure.</p>
                     </div>
                     <div className="published-share-actions">
-                      <Link className="button secondary" href={publicPath} target="_blank">Ouvrir ↗</Link>
+                      <Link className="button secondary" href={publicPath} target="_blank">{tr("Ouvrir", "Open")} ↗</Link>
                       <button type="button" className="button primary" onClick={copyPublicUrl}>
-                        {copyState === "copied" ? "✓ Lien copié" : copyState === "error" ? "Copie impossible" : "Copier le lien"}
+                        {copyState === "copied" ? tr("✓ Lien copié", "✓ Link copied") : copyState === "error" ? tr("Copie impossible", "Unable to copy") : tr("Copier le lien", "Copy link")}
                       </button>
                     </div>
                   </div>
@@ -2151,14 +2151,14 @@ export default function BuilderPage() {
 
           <div className="builder-actions premium-builder-actions">
             <button type="button" className="secondary" disabled={stepIndex === 0 || busy} onClick={() => go(-1)}>
-              ← Retour
+              ← {tr("Retour", "Back")}
             </button>
             <button type="button" className="secondary save-button" disabled={busy} onClick={save}>
-              {saved && !busy ? "✓ Sauvegardé" : "Sauvegarder"}
+              {saved && !busy ? tr("✓ Sauvegardé", "✓ Saved") : tr("Sauvegarder", "Save")}
             </button>
             {stepIndex < steps.length - 1 ? (
               <button type="button" className="primary premium-button" disabled={busy} onClick={() => go(1)}>
-                Continuer : {nextStepLabel} <span aria-hidden="true">→</span>
+                {tr("Continuer", "Continue")}: {nextStepLabel} <span aria-hidden="true">→</span>
               </button>
             ) : null}
           </div>
@@ -2167,15 +2167,15 @@ export default function BuilderPage() {
         <aside className="preview-wrap builder-preview premium-builder-preview">
           <div className="panel-heading preview-panel-heading">
             <div>
-              <p className="step">Aperçu live</p>
+              <p className="step">{tr("Aperçu live", "Live preview")}</p>
               <h2>{config.brandName}</h2>
             </div>
             <div className="preview-heading-actions">
-              <div className="preview-device-switch" aria-label="Format de l'aperçu">
-                <button type="button" className={previewDevice === "desktop" ? "active" : ""} aria-pressed={previewDevice === "desktop"} onClick={() => setPreviewDevice("desktop")}>Ordinateur</button>
+              <div className="preview-device-switch" aria-label={tr("Format de l’aperçu", "Preview format")}>
+                <button type="button" className={previewDevice === "desktop" ? "active" : ""} aria-pressed={previewDevice === "desktop"} onClick={() => setPreviewDevice("desktop")}>{tr("Ordinateur", "Desktop")}</button>
                 <button type="button" className={previewDevice === "mobile" ? "active" : ""} aria-pressed={previewDevice === "mobile"} onClick={() => setPreviewDevice("mobile")}>Mobile</button>
               </div>
-              <Link href="/preview">Plein écran ↗</Link>
+              <Link href="/preview">{tr("Plein écran", "Full screen")} ↗</Link>
             </div>
           </div>
           <div className={`preview-device-frame ${previewDevice === "mobile" ? "is-mobile" : "is-desktop"}`}>
@@ -2184,7 +2184,7 @@ export default function BuilderPage() {
           </div>
           <div className="preview-note">
             <span>✦</span>
-            <p>{previewDevice === "mobile" ? "Aperçu mobile simulé : vérifiez notamment le cadrage de la photo, la longueur des titres et les boutons." : "Vous voyez le résultat en direct. Rien n'est public avant l'étape « Publication »."}</p>
+            <p>{previewDevice === "mobile" ? tr("Aperçu mobile simulé : vérifiez notamment le cadrage de la photo, la longueur des titres et les boutons.", "Simulated mobile preview: check photo cropping, title length and buttons in particular.") : tr("Vous voyez le résultat en direct. Rien n’est public avant l’étape « Publication ».", "You are seeing the result live. Nothing is public before the Publish step.")}</p>
           </div>
         </aside>
       </div>
