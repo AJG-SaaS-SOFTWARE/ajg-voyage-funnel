@@ -887,6 +887,7 @@ export function deterministicQualityIssues(
   }
 
   const benefitTitles = new Set<string>();
+  const benefitTitleTokens: Array<{ title: string; tokens: Set<string> }> = [];
   for (const item of proposal.benefits.items) {
     const normalized = normalizeComparable(item.title);
     if (!normalized) continue;
@@ -900,6 +901,34 @@ export function deterministicQualityIssues(
       break;
     }
     benefitTitles.add(normalized);
+
+    const tokens = new Set(
+      normalized.split(" ").filter((token) => token.length >= 4)
+    );
+    if (tokens.size >= 2) {
+      benefitTitleTokens.push({ title: item.title, tokens });
+    }
+  }
+
+  for (let left = 0; left < benefitTitleTokens.length; left += 1) {
+    for (let right = left + 1; right < benefitTitleTokens.length; right += 1) {
+      const a = benefitTitleTokens[left];
+      const b = benefitTitleTokens[right];
+      const intersection = [...a.tokens].filter((token) => b.tokens.has(token)).length;
+      const union = new Set([...a.tokens, ...b.tokens]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+
+      if (intersection >= 2 && similarity >= 0.66) {
+        issues.push({
+          severity: "blocking",
+          code: "near_duplicate_benefit_title",
+          detail:
+            `Les avantages « ${a.title} » et « ${b.title} » sont trop proches ; chaque carte doit porter une promesse réellement distincte.`
+        });
+        break;
+      }
+    }
+    if (issues.some((item) => item.code === "near_duplicate_benefit_title")) break;
   }
 
   const enabledPages = proposal.architecture.pages.filter((page) => page.enabled);
