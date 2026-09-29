@@ -46,7 +46,10 @@ export async function GET() {
         database: "ok",
         environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
         deployment: {
-          commitSha: process.env.VERCEL_GIT_COMMIT_SHA || null,
+          commitSha:
+            process.env.AJG_RELEASE_SHA ||
+            process.env.VERCEL_GIT_COMMIT_SHA ||
+            null,
           commitRef: process.env.VERCEL_GIT_COMMIT_REF || null,
           deploymentId: process.env.VERCEL_DEPLOYMENT_ID || null
         },
