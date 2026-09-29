@@ -133,6 +133,22 @@ export async function POST(request: NextRequest) {
       );
     if (entitlementError) throw entitlementError;
 
+    if (includeAi) {
+      const { error: launchGrantError } = await service
+        .from("site_ai_launch_entitlements")
+        .insert({
+          site_id: siteId,
+          owner_id: user.id,
+          source: "admin",
+          status: "active",
+          operations_total: 1,
+          operations_used: 0,
+          external_reference: `e2e:${siteId}`,
+          expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        });
+      if (launchGrantError) throw launchGrantError;
+    }
+
     const { data: e2eEntitlements, error: e2eEntitlementError } = await userClient.rpc(
       "get_my_site_entitlements",
       { p_site_id: siteId }
@@ -156,9 +172,9 @@ export async function POST(request: NextRequest) {
     });
     steps.push({
       key: "entitlement",
-      label: "Droit Pro temporaire",
+      label: "Droits Growth / BUILD temporaires",
       status: "pass",
-      detail: "Le site E2E reçoit uniquement pendant la recette un droit Growth interne, supprimé avec le site."
+      detail: includeAi ? "Le site E2E reçoit un droit Growth interne et un crédit BUILD unique, tous deux supprimés avec le site." : "Le site E2E reçoit uniquement pendant la recette un droit Growth interne, supprimé avec le site."
     });
 
     let proposal: any = null;
