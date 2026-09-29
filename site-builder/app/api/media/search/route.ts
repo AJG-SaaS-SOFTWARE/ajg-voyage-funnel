@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeHttpsUrl, type MediaChoice } from "../../../../lib/site-design";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 type OpenverseItem = {
   url?: string;
@@ -13,11 +14,13 @@ type OpenverseItem = {
 };
 
 export async function GET(request: NextRequest) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const type = request.nextUrl.searchParams.get("type");
   const query = request.nextUrl.searchParams.get("q")?.trim() || "";
   const page = Number(request.nextUrl.searchParams.get("page") || "1");
   if ((type !== "image" && type !== "audio") || !query || query.length > 80 || !Number.isInteger(page) || page < 1 || page > 5) {
-    return NextResponse.json({ error: "Choisissez un type et une recherche de 80 caractères maximum." }, { status: 400 });
+    return NextResponse.json({ error: tr("Choisissez un type et une recherche de 80 caractères maximum.", "Choose a media type and a search of no more than 80 characters.") }, { status: 400 });
   }
 
   const endpoint = new URL(`https://api.openverse.org/v1/${type === "image" ? "images" : "audio"}/`);
@@ -37,8 +40,8 @@ export async function GET(request: NextRequest) {
       const choice: MediaChoice = {
         url,
         sourceUrl,
-        title: (item.title || "Œuvre sans titre").slice(0, 160),
-        creator: (item.creator || "Auteur non indiqué").slice(0, 120),
+        title: (item.title || tr("Œuvre sans titre", "Untitled work")).slice(0, 160),
+        creator: (item.creator || tr("Auteur non indiqué", "Creator not listed")).slice(0, 120),
         licenseUrl: safeHttpsUrl(item.license_url)
       };
       return [{ ...choice, thumbnail: safeHttpsUrl(item.thumbnail) || url }];
@@ -50,6 +53,6 @@ export async function GET(request: NextRequest) {
         : (data.results || []).length === 18);
     return NextResponse.json({ results, hasMore }, { headers: { "Cache-Control": "public, s-maxage=3600" } });
   } catch {
-    return NextResponse.json({ error: "La médiathèque est indisponible pour le moment. Réessayez plus tard." }, { status: 503 });
+    return NextResponse.json({ error: tr("La médiathèque est indisponible pour le moment. Réessayez plus tard.", "The media library is unavailable right now. Try again later.") }, { status: 503 });
   }
 }

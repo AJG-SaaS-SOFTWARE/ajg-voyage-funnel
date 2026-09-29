@@ -7,8 +7,11 @@ import { defaultSiteConfig, type SiteConfig } from "../../lib/site-config";
 import { loadDraft } from "../../lib/site-store";
 import { isSupabaseConfigured } from "../../lib/supabase-browser";
 import { getMySite } from "../../lib/supabase-site-repository";
+import { useProductLocale } from "../../lib/product-i18n";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 
 export default function PreviewPage() {
+  const { tr } = useProductLocale();
   const [config, setConfig] = useState<SiteConfig>(defaultSiteConfig);
 
   useEffect(() => {
@@ -38,9 +41,9 @@ export default function PreviewPage() {
   return (
     <main className="preview-page">
       <header className="preview-toolbar">
-        <Link href="/builder">← Modifier</Link>
-        <strong>Aperçu du site</strong>
-        <span>Aperçu · domaine cible : {config.slug ? config.slug + ".voyage.ajgsolutionsgroup.com" : "à choisir"}</span>
+        <Link href="/builder">← {tr("Modifier", "Edit")}</Link>
+        <strong>{tr("Aperçu du site", "Website preview")}</strong>
+        <span>{tr("Aperçu · domaine cible :", "Preview · target domain:")} {config.slug ? config.slug + ".voyage.ajgsolutionsgroup.com" : tr("à choisir", "to choose")}</span><LanguageSwitch compact />
       </header>
       <div className="preview-canvas">
         <SitePreview config={config} />

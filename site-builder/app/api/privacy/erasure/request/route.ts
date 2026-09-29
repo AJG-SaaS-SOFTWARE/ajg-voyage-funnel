@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { localize, requestProductLocale } from "../../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 
@@ -18,20 +19,22 @@ function configured() {
 }
 
 export async function POST(request: Request) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const contentLength = Number(request.headers.get("content-length") || "0");
   if (contentLength > 4096) {
-    return NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 });
+    return NextResponse.json({ error: tr("Requête trop volumineuse.", "Request too large.") }, { status: 413 });
   }
 
   const { url, publicKey, serviceKey } = configured();
   if (!url || !publicKey || !serviceKey) {
-    return NextResponse.json({ error: "Service de confidentialité indisponible." }, { status: 503 });
+    return NextResponse.json({ error: tr("Service de confidentialité indisponible.", "Privacy service unavailable.") }, { status: 503 });
   }
 
   const token =
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   if (!token) {
-    return NextResponse.json({ error: "Reconnectez-vous pour continuer." }, { status: 401 });
+    return NextResponse.json({ error: tr("Reconnectez-vous pour continuer.", "Sign in again to continue.") }, { status: 401 });
   }
 
   const userClient = createClient(url, publicKey, {
@@ -48,7 +51,7 @@ export async function POST(request: Request) {
   const confirmation =
     typeof body?.confirmation === "string" ? body.confirmation.trim() : "";
   if (!scope || !confirmation) {
-    return NextResponse.json({ error: "Confirmation requise." }, { status: 400 });
+    return NextResponse.json({ error: tr("Confirmation requise.", "Confirmation required.") }, { status: 400 });
   }
 
   const service = createClient(url, serviceKey, {
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
   if (scope === "site") {
     const siteId = typeof body?.siteId === "string" ? body.siteId : "";
     if (!siteId) {
-      return NextResponse.json({ error: "Site à effacer non identifié." }, { status: 400 });
+      return NextResponse.json({ error: tr("Site à effacer non identifié.", "Website to erase is not identified.") }, { status: 400 });
     }
 
     const { data: site, error: siteError } = await userClient
@@ -69,11 +72,11 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (siteError || !site) {
-      return NextResponse.json({ error: "Site introuvable." }, { status: 404 });
+      return NextResponse.json({ error: tr("Site introuvable.", "Website not found.") }, { status: 404 });
     }
     if (confirmation !== site.slug) {
       return NextResponse.json(
-        { error: `Recopiez exactement « ${site.slug} » pour confirmer.` },
+        { error: `${tr("Recopiez exactement", "Type exactly")} « ${site.slug} » ${tr("pour confirmer.", "to confirm.")}` },
         { status: 400 }
       );
     }
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
     );
     if (error || !requestId) {
       console.error("Site erasure request failed", { code: error?.code || "unknown" });
-      return NextResponse.json({ error: "Impossible d'enregistrer la demande." }, { status: 503 });
+      return NextResponse.json({ error: tr("Impossible d’enregistrer la demande.", "Unable to record the request.") }, { status: 503 });
     }
 
     return NextResponse.json({ requestId, scope: "site" });
@@ -93,7 +96,7 @@ export async function POST(request: Request) {
   const email = (user.email || "").trim().toLowerCase();
   if (!email || confirmation.toLowerCase() !== email) {
     return NextResponse.json(
-      { error: "Recopiez exactement l’adresse e-mail de votre compte pour confirmer." },
+      { error: tr("Recopiez exactement l’adresse e-mail de votre compte pour confirmer.", "Type your account email address exactly to confirm.") },
       { status: 400 }
     );
   }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
 import { normalizeStandardStructuredOutput, sanitizeStandardText, selectStandardContextEntries, standardQualityIssues, standardStructuredFormat } from "../../../../lib/standard-ai-writer";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -204,10 +205,12 @@ function extractText(data: any) {
 }
 
 export async function POST(request: Request) {
+  const uiLocale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(uiLocale, fr, en);
   const auth = await authenticatedContext(request);
   if (!auth) {
     return NextResponse.json(
-      { error: "Reconnectez-vous avant d'utiliser l'assistant IA." },
+      { error: tr("Reconnectez-vous avant d’utiliser l’assistant IA.", "Sign in again before using the AI assistant.") },
       { status: 401 }
     );
   }
@@ -215,7 +218,7 @@ export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "L'assistant IA n'est pas encore activé sur cet environnement." },
+      { error: tr("L’assistant IA n’est pas encore activé sur cet environnement.", "The AI assistant is not enabled in this environment yet.") },
       { status: 503 }
     );
   }
@@ -224,29 +227,29 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Demande invalide." }, { status: 400 });
+    return NextResponse.json({ error: tr("Demande invalide.", "Invalid request.") }, { status: 400 });
   }
 
   const field = body?.field as WritableField;
   if (!field || !(field in writableFields)) {
-    return NextResponse.json({ error: "Ce champ n'est pas compatible avec l'assistant IA." }, { status: 400 });
+    return NextResponse.json({ error: tr("Ce champ n’est pas compatible avec l’assistant IA.", "This field is not compatible with the AI assistant.") }, { status: 400 });
   }
 
   let siteId = typeof body?.siteId === "string" ? body.siteId : "";
   if (!siteId) {
     const { data: ownedSites, error: siteError } = await auth.supabase.from("sites").select("id").eq("owner_id", auth.user.id).limit(2);
-    if (siteError) return NextResponse.json({ error: "Impossible de vérifier les droits du site." }, { status: 503 });
-    if ((ownedSites || []).length !== 1) return NextResponse.json({ error: "Le site concerné doit être identifié pour utiliser l’IA." }, { status: 400 });
+    if (siteError) return NextResponse.json({ error: tr("Impossible de vérifier les droits du site.", "Unable to verify website permissions.") }, { status: 503 });
+    if ((ownedSites || []).length !== 1) return NextResponse.json({ error: tr("Le site concerné doit être identifié pour utiliser l’IA.", "The website must be identified to use AI.") }, { status: 400 });
     siteId = ownedSites![0].id;
   }
   const { data: capabilities, error: capabilityError } = await auth.supabase.rpc("get_my_site_capabilities", { p_site_id: siteId });
   if (capabilityError) return NextResponse.json({ error: "Impossible de vérifier les droits du site." }, { status: 503 });
   const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
-  if (!capability?.can_generate_ai) return NextResponse.json({ error: "Les fonctions IA sont temporairement indisponibles pour ce site. Vous pouvez régulariser l’accès depuis votre espace de facturation." }, { status: 402 });
+  if (!capability?.can_generate_ai) return NextResponse.json({ error: tr("Les fonctions IA sont temporairement indisponibles pour ce site. Vous pouvez régulariser l’accès depuis votre espace de facturation.", "AI features are temporarily unavailable for this website. You can restore access from Billing.") }, { status: 402 });
 
   const instruction = clean(body?.instruction, 800);
   if (!instruction) {
-    return NextResponse.json({ error: "Décrivez le texte que vous souhaitez obtenir." }, { status: 400 });
+    return NextResponse.json({ error: tr("Décrivez le texte que vous souhaitez obtenir.", "Describe the text you would like to create.") }, { status: 400 });
   }
 
   const currentText = clean(body?.currentText, 3500);
@@ -304,26 +307,26 @@ export async function POST(request: Request) {
     : "";
 
   if (field === "moduleDraft" && !["faq", "benefits", "figures"].includes(moduleType)) {
-    return NextResponse.json({ error: "Cette rubrique n'est pas encore compatible avec l'assistant IA." }, { status: 400 });
+    return NextResponse.json({ error: tr("Cette rubrique n’est pas encore compatible avec l’assistant IA.", "This section is not compatible with the AI assistant yet.") }, { status: 400 });
   }
 
   if (field === "moduleDraft" && !moduleBrief) {
-    return NextResponse.json({ error: "Décrivez d'abord votre activité ou l'objectif du site." }, { status: 400 });
+    return NextResponse.json({ error: tr("Décrivez d’abord votre activité ou l’objectif du site.", "First describe your activity or the goal of the website.") }, { status: 400 });
   }
 
   if (field === "siteRevision" && (!revisionRequest || !existingProposal)) {
-    return NextResponse.json({ error: "Décrivez la modification globale souhaitée sur le site actuel." }, { status: 400 });
+    return NextResponse.json({ error: tr("Décrivez la modification globale souhaitée sur le site actuel.", "Describe the overall change you want to make to the current website.") }, { status: 400 });
   }
 
   if (field === "siteArchitect" && !architectBrief) {
-    return NextResponse.json({ error: "Décrivez d'abord votre activité, votre objectif et quelques mots-clés." }, { status: 400 });
+    return NextResponse.json({ error: tr("Décrivez d’abord votre activité, votre objectif et quelques mots-clés.", "First describe your activity, your goal and a few keywords.") }, { status: 400 });
   }
 
   if (field === "siteArchitect" && architectBrief.length < 80) {
     return NextResponse.json(
       {
         error:
-          "Votre brief est encore trop court pour lancer l’Architecte Premium. Ajoutez quelques précisions sur votre activité, votre public ou l’objectif du site."
+          tr("Votre brief est encore trop court pour lancer l’Architecte Premium. Ajoutez quelques précisions sur votre activité, votre public ou l’objectif du site.", "Your brief is still too short to launch the Premium Site Architect. Add a few details about your activity, audience or website goal.")
       },
       { status: 400 }
     );
@@ -331,9 +334,9 @@ export async function POST(request: Request) {
 
   if (field === "siteArchitect" || field === "siteRevision") {
     const { data: entitlements, error: entitlementError } = await auth.supabase.rpc("get_my_site_entitlements", { p_site_id: siteId });
-    if (entitlementError) return NextResponse.json({ error: "Impossible de vérifier votre offre." }, { status: 503 });
+    if (entitlementError) return NextResponse.json({ error: tr("Impossible de vérifier votre offre.", "Unable to verify your plan.") }, { status: 503 });
     const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
-    if (entitlement?.premium_architect !== true) return NextResponse.json({ error: "AI Site Architect est disponible avec l’offre Pro." }, { status: 403 });
+    if (entitlement?.premium_architect !== true) return NextResponse.json({ error: tr("AI Site Architect est disponible avec l’offre Pro.", "AI Site Architect is available with the Pro plan.") }, { status: 403 });
   }
 
   const premiumRequest =
@@ -347,16 +350,16 @@ export async function POST(request: Request) {
       : await consumeAiAllowance(auth.supabase, siteId);
   } catch (error) {
     console.error("AI allowance check failed", error);
-    return NextResponse.json({ error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." }, { status: 503 });
+    return NextResponse.json({ error: tr("L’assistant IA est temporairement indisponible. Réessayez dans quelques instants.", "The AI assistant is temporarily unavailable. Try again in a few moments.") }, { status: 503 });
   }
   if (allowance !== "ok") {
     const message = allowance === "minute_limit"
-      ? "Vous avez effectué plusieurs demandes très rapidement. Attendez une minute avant de réessayer."
+      ? tr("Vous avez effectué plusieurs demandes très rapidement. Attendez une minute avant de réessayer.", "You made several requests very quickly. Wait a minute before trying again.")
       : allowance === "daily_limit"
-        ? "Votre limite IA du jour est atteinte. Vous pourrez à nouveau utiliser l'assistant demain."
+        ? tr("Votre limite IA du jour est atteinte. Vous pourrez à nouveau utiliser l’assistant demain.", "Your daily AI limit has been reached. You can use the assistant again tomorrow.")
         : allowance === "monthly_limit"
-          ? "Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain."
-          : "L'assistant IA est temporairement indisponible.";
+          ? tr("Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain.", "Your monthly AI quota has been reached. It will reset at the beginning of next month.")
+          : tr("L’assistant IA est temporairement indisponible.", "The AI assistant is temporarily unavailable.");
     return NextResponse.json({ error: message }, { status: 429 });
   }
 
@@ -424,18 +427,18 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error: unavailable
-              ? "L'Architecte Premium est momentanément indisponible. Votre demande n'a pas été générée."
+              ? tr("L’Architecte Premium est momentanément indisponible. Votre demande n’a pas été générée.", "The Premium Site Architect is temporarily unavailable. Your request was not generated.")
               : error.code === "quality_gate_failed"
-                ? "La proposition n’a pas passé le contrôle qualité final. Elle n’a donc pas été affichée. Complétez le brief si nécessaire puis relancez la génération."
+                ? tr("La proposition n’a pas passé le contrôle qualité final. Elle n’a donc pas été affichée. Complétez le brief si nécessaire puis relancez la génération.", "The proposal did not pass the final quality check, so it was not displayed. Add more detail to your brief if needed, then generate again.")
                 : error.status === 429
-                  ? "L'Architecte Premium reçoit trop de demandes. Réessayez dans quelques instants."
-                  : "L'Architecte Premium n'a pas pu finaliser la proposition. Réessayez dans quelques instants."
+                  ? tr("L’Architecte Premium reçoit trop de demandes. Réessayez dans quelques instants.", "The Premium Site Architect is receiving too many requests. Try again in a few moments.")
+                  : tr("L’Architecte Premium n’a pas pu finaliser la proposition. Réessayez dans quelques instants.", "The Premium Site Architect could not finalize the proposal. Try again in a few moments.")
           },
           { status: unavailable ? 503 : 502 }
         );
       }
       return NextResponse.json(
-        { error: "L'Architecte Premium n'a pas pu finaliser la proposition. Réessayez." },
+        { error: tr("L’Architecte Premium n’a pas pu finaliser la proposition. Réessayez.", "The Premium Site Architect could not finalize the proposal. Try again.") },
         { status: 502 }
       );
     }
@@ -508,10 +511,10 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: unavailable
-          ? "L'assistant IA est momentanément indisponible. Votre demande n'a pas été générée."
+          ? tr("L’assistant IA est momentanément indisponible. Votre demande n’a pas été générée.", "The AI assistant is temporarily unavailable. Your request was not generated.")
           : response.status === 429
-            ? "Le service IA reçoit trop de demandes. Réessayez dans quelques instants."
-            : "L'IA n'a pas pu rédiger ce texte. Réessayez dans quelques instants."
+            ? tr("Le service IA reçoit trop de demandes. Réessayez dans quelques instants.", "The AI service is receiving too many requests. Try again in a few moments.")
+            : tr("L’IA n’a pas pu rédiger ce texte. Réessayez dans quelques instants.", "AI could not write this text. Try again in a few moments.")
       },
       { status: unavailable ? 503 : 502 }
     );
@@ -544,11 +547,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Invalid standard AI output", { field, moduleType, error });
     const message = field === "qualityReview"
-      ? "La relecture n'a pas pu être structurée. Réessayez."
+      ? tr("La relecture n’a pas pu être structurée. Réessayez.", "The review could not be structured. Try again.")
       : field === "guidedDraft"
-        ? "L'IA n'a pas pu structurer les textes. Réessayez."
+        ? tr("L’IA n’a pas pu structurer les textes. Réessayez.", "AI could not structure the copy. Try again.")
         : field === "moduleDraft"
-          ? "L'IA n'a pas pu structurer cette rubrique. Réessayez."
+          ? tr("L’IA n’a pas pu structurer cette rubrique. Réessayez.", "AI could not structure this section. Try again.")
           : "L'IA n'a pas renvoyé de texte exploitable. Reformulez votre demande.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
@@ -623,7 +626,7 @@ export async function POST(request: Request) {
         code: repairData?.error?.code || "unknown"
       });
       return NextResponse.json(
-        { error: "La proposition IA n’a pas passé le contrôle qualité. Reformulez légèrement votre demande puis réessayez." },
+        { error: tr("La proposition IA n’a pas passé le contrôle qualité. Reformulez légèrement votre demande puis réessayez.", "The AI proposal did not pass the quality check. Rephrase your request slightly and try again.") },
         { status: 502 }
       );
     }
@@ -647,7 +650,7 @@ export async function POST(request: Request) {
         error
       });
       return NextResponse.json(
-        { error: "La proposition IA corrigée n’est pas exploitable. Reformulez légèrement votre demande puis réessayez." },
+        { error: tr("La proposition IA corrigée n’est pas exploitable. Reformulez légèrement votre demande puis réessayez.", "The corrected AI proposal is not usable. Rephrase your request slightly and try again.") },
         { status: 502 }
       );
     }
@@ -665,7 +668,7 @@ export async function POST(request: Request) {
         issueCodes: qualityIssues.map((item) => item.code)
       });
       return NextResponse.json(
-        { error: "La proposition IA n’a pas passé le contrôle qualité final. Reformulez légèrement votre demande puis réessayez." },
+        { error: tr("La proposition IA n’a pas passé le contrôle qualité final. Reformulez légèrement votre demande puis réessayez.", "The AI proposal did not pass the final quality check. Rephrase your request slightly and try again.") },
         { status: 502 }
       );
     }

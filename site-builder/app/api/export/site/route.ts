@@ -6,6 +6,7 @@ import {
   recoveryMediaArchivePath,
   type RecoveryTarEntry
 } from "../../../../lib/recovery-archive";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,8 @@ function bearer(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishable =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -33,11 +36,11 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !publishable || !serviceKey) {
-    return NextResponse.json({ error: "Export service not configured" }, { status: 503 });
+    return NextResponse.json({ error: tr("Service d’export non configuré.", "Export service not configured.") }, { status: 503 });
   }
 
   const token = bearer(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return NextResponse.json({ error: tr("Reconnectez-vous pour continuer.", "Sign in again to continue.") }, { status: 401 });
 
   const userClient = createClient(url, publishable, {
     global: { headers: { Authorization: "Bearer " + token } },
@@ -52,7 +55,7 @@ export async function GET(request: Request) {
   const siteId = requestUrl.searchParams.get("siteId");
   const requestedFormat = requestUrl.searchParams.get("format") === "archive" ? "archive" : "json";
   if (!siteId) {
-    return NextResponse.json({ error: "Site identifier required" }, { status: 400 });
+    return NextResponse.json({ error: tr("Identifiant du site requis.", "Website identifier required.") }, { status: 400 });
   }
 
   const { data: site, error: siteError } = await userClient
@@ -62,7 +65,7 @@ export async function GET(request: Request) {
     .eq("owner_id", user.id)
     .maybeSingle();
   if (siteError || !site) {
-    return NextResponse.json({ error: "Site unavailable" }, { status: 404 });
+    return NextResponse.json({ error: tr("Site indisponible.", "Website unavailable.") }, { status: 404 });
   }
 
   const { data: caps, error: capError } = await userClient.rpc(
@@ -71,7 +74,7 @@ export async function GET(request: Request) {
   );
   const cap = Array.isArray(caps) ? caps[0] : caps;
   if (capError || !cap?.can_export) {
-    return NextResponse.json({ error: "Export unavailable" }, { status: 403 });
+    return NextResponse.json({ error: tr("Export indisponible.", "Export unavailable.") }, { status: 403 });
   }
 
   const service = createClient(url, serviceKey, {
@@ -184,8 +187,10 @@ export async function GET(request: Request) {
         format: "ajg-builder-export-v2",
         ...commonPayload,
         media,
-        note:
-          "Export de récupération : configuration, domaines et inventaire des médias conservés. Les médias publics incluent leur URL ; les médias privés restent référencés sans URL publique et sont conservés pour récupération serveur."
+        note: tr(
+          "Export de récupération : configuration, domaines et inventaire des médias conservés. Les médias publics incluent leur URL ; les médias privés restent référencés sans URL publique et sont conservés pour récupération serveur.",
+          "Recovery export: website configuration, domains and retained media inventory. Public media includes its URL; private media remains referenced without a public URL and is retained for server-side recovery."
+        )
       },
       { headers: { "Cache-Control": "private, no-store" } }
     );
@@ -199,8 +204,10 @@ export async function GET(request: Request) {
     format: "ajg-builder-export-v3",
     ...commonPayload,
     media: archiveMedia,
-    note:
-      "Archive de récupération complète. Le manifeste décrit chaque média et son chemin dans l'archive. Si export-errors.json est présent, certains fichiers n'ont pas pu être copiés et y sont listés."
+    note: tr(
+      "Archive de récupération complète. Le manifeste décrit chaque média et son chemin dans l'archive. Si export-errors.json est présent, certains fichiers n'ont pas pu être copiés et y sont listés.",
+      "Complete recovery archive. The manifest describes each media item and its archive path. If export-errors.json is present, some files could not be copied and are listed there."
+    )
   };
 
   async function* archiveEntries(): AsyncGenerator<RecoveryTarEntry> {
@@ -211,12 +218,18 @@ export async function GET(request: Request) {
     yield {
       path: "README.txt",
       data: [
-        "AJG Builder - archive de récupération",
+        tr("AJG Builder - archive de récupération", "AJG Builder - recovery archive"),
         "",
-        "ajg-builder-export.json contient la configuration du site, les domaines, les carnets, les messages de contact et l'inventaire des médias.",
-        "media/public contient les fichiers déjà publiables.",
-        "media/private contient les fichiers privés de la bibliothèque utilisateur.",
-        "Si export-errors.json existe, certains fichiers n'ont pas pu être copiés dans cette archive.",
+        tr(
+          "ajg-builder-export.json contient la configuration du site, les domaines, les carnets, les messages de contact et l'inventaire des médias.",
+          "ajg-builder-export.json contains the website configuration, domains, journals, contact messages and media inventory."
+        ),
+        tr("media/public contient les fichiers déjà publiables.", "media/public contains files already available for public use."),
+        tr("media/private contient les fichiers privés de la bibliothèque utilisateur.", "media/private contains private files from the user library."),
+        tr(
+          "Si export-errors.json existe, certains fichiers n'ont pas pu être copiés dans cette archive.",
+          "If export-errors.json exists, some files could not be copied into this archive."
+        ),
         ""
       ].join("\n")
     };

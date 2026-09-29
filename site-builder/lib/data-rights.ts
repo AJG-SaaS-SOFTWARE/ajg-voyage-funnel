@@ -1,6 +1,7 @@
 "use client";
 
 import { getSupabaseBrowserClient } from "./supabase-browser";
+import { getProductLocale } from "./product-i18n";
 
 export type DataErasureRequest = {
   id: string;
@@ -40,24 +41,27 @@ export async function requestDataErasure(input: {
   siteId?: string;
   confirmation: string;
 }) {
+  const locale = getProductLocale();
+  const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(tr("Supabase n’est pas configuré.", "Supabase is not configured."));
 
   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  if (error || !session?.access_token) throw new Error(tr("Votre session a expiré.", "Your session has expired."));
 
   const response = await fetch("/api/privacy/erasure/request", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`
+      Authorization: `Bearer ${session.access_token}`,
+      "X-AJG-Locale": locale
     },
-    body: JSON.stringify(input)
+    body: JSON.stringify({ ...input, locale })
   });
 
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(result?.error || "Impossible d'enregistrer la demande d'effacement.");
+    throw new Error(result?.error || tr("Impossible d’enregistrer la demande d’effacement.", "Unable to record the erasure request."));
   }
   return result as { requestId: string; scope: "site" | "account" };
 }

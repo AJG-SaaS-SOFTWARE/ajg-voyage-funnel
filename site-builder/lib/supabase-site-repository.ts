@@ -3,6 +3,7 @@ import { defaultSiteConfig, normalizeContentLibrary, normalizeSiteArchitecture, 
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import { normalizeSiteDesign } from "./site-design";
 import { normalizeSiteLegalConfig } from "./site-legal";
+import { getProductLocale } from "./product-i18n";
 
 export type RemoteSite = {
   id: string;
@@ -348,23 +349,26 @@ export async function requestCustomDomain(hostname: string, siteId?: string): Pr
 }
 
 export async function syncSiteDomain(siteId:string,domainId:string){
- const supabase=getSupabaseBrowserClient();if(!supabase)throw new Error("Supabase n'est pas configuré.");
- const {data}=await supabase.auth.getSession();if(!data.session?.access_token)throw new Error("Reconnectez-vous pour vérifier le domaine.");
- const response=await fetch("/api/domains/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${data.session.access_token}`},body:JSON.stringify({siteId,domainId})});
- const result=await response.json();if(!response.ok){const detail=result?.vercel?.message||result?.vercel?.code;throw new Error(detail?`${result.error||"Vérification du domaine impossible."} · ${detail}`:(result.error||"Vérification du domaine impossible."));}
+ const locale=getProductLocale();const tr=(fr:string,en:string)=>locale==="en"?en:fr;
+ const supabase=getSupabaseBrowserClient();if(!supabase)throw new Error(tr("Supabase n’est pas configuré.","Supabase is not configured."));
+ const {data}=await supabase.auth.getSession();if(!data.session?.access_token)throw new Error(tr("Reconnectez-vous pour vérifier le domaine.","Sign in again to verify the domain."));
+ const response=await fetch("/api/domains/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${data.session.access_token}`,"X-AJG-Locale":locale},body:JSON.stringify({siteId,domainId,locale})});
+ const result=await response.json();if(!response.ok){const detail=result?.vercel?.message||result?.vercel?.code;const fallback=tr("Vérification du domaine impossible.","Unable to verify the domain.");throw new Error(detail?`${result.error||fallback} · ${detail}`:(result.error||fallback));}
  return result as {ok:boolean;verified:boolean;ownershipVerified?:boolean;misconfigured?:boolean|null;verification:Array<{type?:string;domain?:string;value?:string;reason?:string}>};
 }
 
 export const syncCustomDomain = syncSiteDomain;
 
 export async function removeCustomDomain(id: string) {
+  const locale = getProductLocale();
+  const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(tr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const { data } = await supabase.auth.getSession();
-  if (!data.session?.access_token) throw new Error("Reconnectez-vous pour retirer le domaine.");
-  const response = await fetch("/api/domains/remove", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ domainId: id }) });
+  if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour retirer le domaine.", "Sign in again to remove the domain."));
+  const response = await fetch("/api/domains/remove", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale }, body: JSON.stringify({ domainId: id, locale }) });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Suppression impossible.");
+  if (!response.ok) throw new Error(result.error || tr("Suppression impossible.", "Unable to remove domain."));
 }
 
 export async function signOut() {

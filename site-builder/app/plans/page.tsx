@@ -15,41 +15,29 @@ import {
   type SubscriptionEntitlements
 } from "../../lib/subscription";
 import { getMySites } from "../../lib/supabase-site-repository";
+import { useProductLocale } from "../../lib/product-i18n";
 
 export default function PlansPage() {
+  const { locale, tr } = useProductLocale();
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
-  const [betaAccess, setBetaAccess] = useState<BetaAccess>({
-    active: false,
-    startsAt: null,
-    expiresAt: null
-  });
+  const [betaAccess, setBetaAccess] = useState<BetaAccess>({ active: false, startsAt: null, expiresAt: null });
   const [loaded, setLoaded] = useState(false);
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
-  const [storage, setStorage] = useState<StorageUsage>({
-    usedBytes: 0,
-    limitMb: freeEntitlements.storageMb
-  });
+  const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
   const [sites, setSites] = useState<Array<{ id: string; slug: string }>>([]);
   const [siteId, setSiteId] = useState("");
 
   const load = async (selectedId?: string) => {
     const owned = await getMySites();
     const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
-
     setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
     if (site && !siteId) setSiteId(site.id);
-
     const [entitlements, aiUsage, storageUsage, beta] = await Promise.all([
       site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
       getMyAiUsage(),
       getMyStorageUsage(site?.id),
-      getMyBetaAccess().catch(() => ({
-        active: false,
-        startsAt: null,
-        expiresAt: null
-      }))
+      getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
     ]);
-
     setCurrent(entitlements);
     setUsage(aiUsage);
     setStorage(storageUsage);
@@ -66,32 +54,25 @@ export default function PlansPage() {
 
   const betaExpiryLabel =
     betaAccess.active && betaAccess.expiresAt
-      ? new Date(betaAccess.expiresAt).toLocaleDateString("fr-FR")
+      ? new Date(betaAccess.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR")
       : "";
 
   return (
     <AccountShell
       active="plans"
-      eyebrow="Offre & usages"
-      title="Mon offre"
-      description="AJG Site Builder ne se positionne pas comme un constructeur de sites low-cost : Essentiel vous aide à construire avec l’IA rédactionnelle, tandis que Pro IA ajoute un véritable Concepteur IA qui travaille la stratégie, l’architecture, le contenu et la direction visuelle du site."
+      eyebrow={tr("Offre & usages", "Plan & usage")}
+      title={tr("Mon offre", "My plan")}
+      description={tr(
+        "AJG Site Builder ne se positionne pas comme un constructeur de sites low-cost : Essentiel vous aide à construire avec l’IA rédactionnelle, tandis que Pro IA ajoute un véritable Concepteur IA qui travaille la stratégie, l’architecture, le contenu et la direction visuelle du site.",
+        "AJG Site Builder is not positioned as a low-cost website builder: Essential helps you build with writing AI, while Pro AI adds a true AI Designer working on strategy, architecture, content and visual direction."
+      )}
     >
       {sites.length > 1 ? (
         <section className="panel">
           <label>
-            Site
-            <select
-              value={siteId}
-              onChange={(event) => {
-                setSiteId(event.target.value);
-                void load(event.target.value);
-              }}
-            >
-              {sites.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.slug}
-                </option>
-              ))}
+            {tr("Site", "Website")}
+            <select value={siteId} onChange={(event) => { setSiteId(event.target.value); void load(event.target.value); }}>
+              {sites.map((site) => <option key={site.id} value={site.id}>{site.slug}</option>)}
             </select>
           </label>
         </section>
@@ -101,174 +82,123 @@ export default function PlansPage() {
         <section className="usage-card beta-access-banner" role="status">
           <div>
             <p className="eyebrow">Beta Tester</p>
-            <h2>Accès Pro IA complet offert pendant la bêta</h2>
+            <h2>{tr("Accès Pro IA complet offert pendant la bêta", "Full Pro access included during beta")}</h2>
             <p>
-              Concepteur IA, domaine personnalisé, quotas Pro et toutes les
-              fonctions payantes sont ouverts sans abonnement Stripe
-              {betaExpiryLabel ? " jusqu’au " + betaExpiryLabel : ""}.
-              À l’expiration, le site revient automatiquement à son offre réelle.
+              {tr("Concepteur IA, domaine personnalisé, quotas Pro et toutes les fonctions payantes sont ouverts sans abonnement Stripe", "AI Designer, custom domain, Pro quotas and all paid features are enabled without a Stripe subscription")}
+              {betaExpiryLabel ? " " + tr("jusqu’au", "until") + " " + betaExpiryLabel : ""}.{" "}
+              {tr("À l’expiration, le site revient automatiquement à son offre réelle.", "When beta access expires, the website automatically returns to its actual plan.")}
             </p>
           </div>
         </section>
       ) : null}
 
       {loaded ? (
-        <section className="usage-card" aria-label="Utilisation IA">
+        <section className="usage-card" aria-label={tr("Utilisation IA", "AI usage")}>
           <div>
-            <p className="eyebrow">Votre utilisation</p>
-            <h2>
-              {usage.month} / {current.aiMonthlyLimit} générations IA ce mois-ci
-            </h2>
-            <p>
-              {usage.today} / {current.aiDailyLimit} aujourd’hui · limite instantanée{" "}
-              {current.aiMinuteLimit}/min
-            </p>
+            <p className="eyebrow">{tr("Votre utilisation", "Your usage")}</p>
+            <h2>{usage.month} / {current.aiMonthlyLimit} {tr("générations IA ce mois-ci", "AI generations this month")}</h2>
+            <p>{usage.today} / {current.aiDailyLimit} {tr("aujourd’hui", "today")} · {tr("limite instantanée", "instant limit")} {current.aiMinuteLimit}/min</p>
           </div>
-          <progress
-            max={current.aiMonthlyLimit}
-            value={Math.min(usage.month, current.aiMonthlyLimit)}
-            aria-label="Quota IA mensuel utilisé"
-          />
+          <progress max={current.aiMonthlyLimit} value={Math.min(usage.month, current.aiMonthlyLimit)} aria-label={tr("Quota IA mensuel utilisé", "Monthly AI quota used")} />
         </section>
       ) : null}
 
       {loaded ? (
-        <section className="usage-card" aria-label="Utilisation stockage">
+        <section className="usage-card" aria-label={tr("Utilisation stockage", "Storage usage")}>
           <div>
-            <p className="eyebrow">Stockage</p>
-            <h2>
-              {(storage.usedBytes / 1024 / 1024).toFixed(
-                storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1
-              )}{" "}
-              Mo / {storage.limitMb} Mo
-            </h2>
-            <p>Photos, images, audio et documents importés dans AJG.</p>
+            <p className="eyebrow">{tr("Stockage", "Storage")}</p>
+            <h2>{(storage.usedBytes / 1024 / 1024).toFixed(storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} MB / {storage.limitMb} MB</h2>
+            <p>{tr("Photos, images, audio et documents importés dans AJG.", "Photos, images, audio and documents uploaded to AJG.")}</p>
           </div>
-          <progress
-            max={storage.limitMb * 1024 * 1024}
-            value={Math.min(
-              storage.usedBytes,
-              storage.limitMb * 1024 * 1024
-            )}
-            aria-label="Quota de stockage utilisé"
-          />
+          <progress max={storage.limitMb * 1024 * 1024} value={Math.min(storage.usedBytes, storage.limitMb * 1024 * 1024)} aria-label={tr("Quota de stockage utilisé", "Storage quota used")} />
         </section>
       ) : null}
 
       {loaded && !["active", "trialing"].includes(current.status) && !betaAccess.active ? (
         <section className="usage-card" role="status">
           <div>
-            <p className="eyebrow">Abonnement à régulariser</p>
-            <h2>Votre abonnement nécessite une régularisation</h2>
-            <p>
-              Consultez l’espace Facturation pour connaître précisément les capacités
-              encore disponibles et les dates de restriction, suspension publique et
-              export.
-            </p>
+            <p className="eyebrow">{tr("Abonnement à régulariser", "Subscription requires action")}</p>
+            <h2>{tr("Votre abonnement nécessite une régularisation", "Your subscription requires an update")}</h2>
+            <p>{tr("Consultez l’espace Facturation pour connaître précisément les capacités encore disponibles et les dates de restriction, suspension publique et export.", "Open Billing to see the capabilities still available and the dates for restriction, public suspension and export.")}</p>
           </div>
         </section>
       ) : null}
 
       <section className="pricing-positioning panel">
-        <p className="eyebrow">Positionnement AJG</p>
-        <h2>Deux niveaux d’aide IA, une même base de contrôle</h2>
-        <p>
-          Essentiel intègre l’IA rédactionnelle pour rédiger, reformuler et structurer
-          le contenu champ par champ. Pro IA va plus loin : le Concepteur IA analyse le
-          projet, construit une première architecture cohérente et aide à raffiner le site
-          avant application.
-        </p>
-        <blockquote>
-          Votre site ne commence pas par un template. Il commence par votre activité.
-        </blockquote>
-        <p>
-          <Link className="text-link" href="/tarifs">Voir la page Tarifs publique →</Link>
-        </p>
+        <p className="eyebrow">{tr("Positionnement AJG", "AJG positioning")}</p>
+        <h2>{tr("Deux niveaux d’aide IA, une même base de contrôle", "Two levels of AI support, one foundation of control")}</h2>
+        <p>{tr(
+          "Essentiel intègre l’IA rédactionnelle pour rédiger, reformuler et structurer le contenu champ par champ. Pro IA va plus loin : le Concepteur IA analyse le projet, construit une première architecture cohérente et aide à raffiner le site avant application.",
+          "Essential includes writing AI to draft, rewrite and structure content field by field. Pro AI goes further: the AI Designer analyzes the project, builds a coherent first architecture and helps refine the website before application."
+        )}</p>
+        <blockquote>{tr("Votre site ne commence pas par un template. Il commence par votre activité.", "Your website does not start with a template. It starts with your activity.")}</blockquote>
+        <p><Link className="text-link" href={locale === "en" ? "/pricing" : "/tarifs"}>{tr("Voir la page Tarifs publique", "View the public pricing page")} →</Link></p>
       </section>
 
-      <section className="plans-grid plans-grid-three" aria-label="Offres AJG">
+      <section className="plans-grid plans-grid-three" aria-label={tr("Offres AJG", "AJG plans")}>
         <article className={!betaAccess.active && current.planKey === "free" ? "plan-card current" : "plan-card"}>
-          <p className="eyebrow">Gratuit</p>
-          <h2>Créer et tester</h2>
+          <p className="eyebrow">{tr("Gratuit", "Free")}</p>
+          <h2>{tr("Créer et tester", "Create and test")}</h2>
           <p className="plan-price">0 €</p>
           <ul>
-            <li>1 site sur sous-domaine AJG</li>
-            <li>IA standard : rédaction, reformulation, mode guidé et rubriques</li>
-            <li>80 générations IA / mois pendant la phase bêta</li>
-            <li>250 Mo de stockage pendant la phase bêta</li>
-            <li>Édition et publication essentielles</li>
-            <li>Concepteur IA non inclus hors statut Beta Tester</li>
+            <li>{tr("1 site sur sous-domaine AJG", "1 website on an AJG subdomain")}</li>
+            <li>{tr("IA standard : rédaction, reformulation, mode guidé et rubriques", "Standard AI: writing, rewriting, guided mode and sections")}</li>
+            <li>{tr("80 générations IA / mois pendant la phase bêta", "80 AI generations / month during beta")}</li>
+            <li>{tr("250 Mo de stockage pendant la phase bêta", "250 MB storage during beta")}</li>
+            <li>{tr("Édition et publication essentielles", "Core editing and publishing")}</li>
+            <li>{tr("Concepteur IA non inclus hors statut Beta Tester", "AI Designer not included outside Beta Tester status")}</li>
           </ul>
-          <p className="plan-status">
-            {loaded && !betaAccess.active && current.planKey === "free"
-              ? "Votre offre actuelle"
-              : "Accès de découverte / bêta"}
-          </p>
+          <p className="plan-status">{loaded && !betaAccess.active && current.planKey === "free" ? tr("Votre offre actuelle", "Your current plan") : tr("Accès de découverte / bêta", "Discovery / beta access")}</p>
         </article>
 
         <article className="plan-card">
-          <p className="eyebrow">Essentiel</p>
-          <h2>Construire avec l’aide de l’IA</h2>
-          <p className="plan-price">
-            19 € <small>/ mois</small>
-          </p>
-          <p className="annual-price">ou 190 € / an · 1 site</p>
+          <p className="eyebrow">{tr("Essentiel", "Essential")}</p>
+          <h2>{tr("Construire avec l’aide de l’IA", "Build with AI assistance")}</h2>
+          <p className="plan-price">19 € <small>/ {tr("mois", "month")}</small></p>
+          <p className="annual-price">{tr("ou", "or")} 190 € / {tr("an", "year")} · 1 {tr("site", "website")}</p>
           <ul>
-            <li>1 site professionnel</li>
-            <li>Domaine personnalisé</li>
-            <li>IA rédactionnelle et amélioration dans les champs utiles</li>
-            <li>Éditeur, personnalisation et publication complets</li>
-            <li>Hébergement inclus</li>
-            <li>Sans Concepteur IA complet</li>
+            <li>{tr("1 site professionnel", "1 professional website")}</li>
+            <li>{tr("Domaine personnalisé", "Custom domain")}</li>
+            <li>{tr("IA rédactionnelle et amélioration dans les champs utiles", "Writing AI and improvement in relevant fields")}</li>
+            <li>{tr("Éditeur, personnalisation et publication complets", "Full editor, customization and publishing")}</li>
+            <li>{tr("Hébergement inclus", "Hosting included")}</li>
+            <li>{tr("Sans Concepteur IA complet", "Without the full AI Designer")}</li>
           </ul>
-          <p className="plan-status">
-            Offre commerciale retenue pour l’ouverture après la bêta. Stripe reste désactivé pendant les tests.
-          </p>
-          <button type="button" className="button secondary" disabled>
-            Ouverture après la bêta
-          </button>
+          <p className="plan-status">{tr("Offre commerciale retenue pour l’ouverture après la bêta. Stripe reste désactivé pendant les tests.", "Commercial offer selected for opening after beta. Stripe remains disabled during testing.")}</p>
+          <button type="button" className="button secondary" disabled>{tr("Ouverture après la bêta", "Opens after beta")}</button>
         </article>
 
         <article className={current.planKey === "pro" ? "plan-card current pro-offer-card" : "plan-card pro-offer-card"}>
           <p className="eyebrow">Pro IA</p>
-          <h2>Le Concepteur IA prépare votre première version</h2>
-          <p className="plan-price">
-            39 € <small>/ mois</small>
-          </p>
-          <p className="annual-price">ou 390 € / an · 1 site</p>
+          <h2>{tr("Le Concepteur IA prépare votre première version", "The AI Designer prepares your first version")}</h2>
+          <p className="plan-price">39 € <small>/ {tr("mois", "month")}</small></p>
+          <p className="annual-price">{tr("ou", "or")} 390 € / {tr("an", "year")} · 1 {tr("site", "website")}</p>
           <ul>
-            <li>Tout Essentiel</li>
-            <li>Concepteur IA : brief → structure → contenu → raffinement</li>
-            <li>Premiers textes générés puis entièrement modifiables</li>
-            <li>Quotas IA supérieurs</li>
-            <li>Capacité média et stockage supérieure</li>
-            <li>Accès prioritaire aux nouveaux modules IA</li>
+            <li>{tr("Tout Essentiel", "Everything in Essential")}</li>
+            <li>{tr("Concepteur IA : brief → structure → contenu → raffinement", "AI Designer: brief → structure → content → refinement")}</li>
+            <li>{tr("Premiers textes générés puis entièrement modifiables", "First copy generated, then fully editable")}</li>
+            <li>{tr("Quotas IA supérieurs", "Higher AI quotas")}</li>
+            <li>{tr("Capacité média et stockage supérieure", "Higher media and storage capacity")}</li>
+            <li>{tr("Accès prioritaire aux nouveaux modules IA", "Priority access to new AI modules")}</li>
           </ul>
           <p className="plan-status">
             {betaAccess.active
-              ? "Inclus gratuitement dans votre statut Beta Tester"
+              ? tr("Inclus gratuitement dans votre statut Beta Tester", "Included free with your Beta Tester status")
               : loaded && current.planKey === "pro"
-                ? "Votre offre actuelle"
-                : "14 jours d’expérience Pro IA prévus au lancement commercial"}
+                ? tr("Votre offre actuelle", "Your current plan")
+                : tr("14 jours d’expérience Pro IA prévus au lancement commercial", "14 days of Pro AI experience planned at commercial launch")}
           </p>
-          {!betaAccess.active && current.planKey !== "pro" ? (
-            <button type="button" className="button primary" disabled>
-              Souscription ouverte après la bêta
-            </button>
-          ) : null}
+          {!betaAccess.active && current.planKey !== "pro" ? <button type="button" className="button primary" disabled>{tr("Souscription ouverte après la bêta", "Subscriptions open after beta")}</button> : null}
         </article>
       </section>
 
       <section className="panel founding-note">
-        <p className="eyebrow">Bêta & lancement</p>
-        <h2>Les testeurs ne sont pas des clients payants</h2>
-        <p>
-          Les proches invités à la bêta reçoivent temporairement l’accès Pro IA complet
-          pour évaluer le produit réel. Ils peuvent supprimer leur site ensuite et ne
-          sont engagés dans aucune offre payante. La grille Essentiel 19 € / Pro IA 39 €
-          prépare le lancement commercial ; aucun paiement Stripe n’est activé pendant
-          cette phase de test.
-        </p>
+        <p className="eyebrow">{tr("Bêta & lancement", "Beta & launch")}</p>
+        <h2>{tr("Les testeurs ne sont pas des clients payants", "Beta testers are not paying customers")}</h2>
+        <p>{tr(
+          "Les proches invités à la bêta reçoivent temporairement l’accès Pro IA complet pour évaluer le produit réel. Ils peuvent supprimer leur site ensuite et ne sont engagés dans aucune offre payante. La grille Essentiel 19 € / Pro IA 39 € prépare le lancement commercial ; aucun paiement Stripe n’est activé pendant cette phase de test.",
+          "People invited to beta temporarily receive full Pro AI access to evaluate the real product. They can delete their website afterwards and are not committed to any paid offer. The Essential €19 / Pro AI €39 grid prepares commercial launch; no Stripe payment is enabled during this testing phase."
+        )}</p>
       </section>
     </AccountShell>
   );

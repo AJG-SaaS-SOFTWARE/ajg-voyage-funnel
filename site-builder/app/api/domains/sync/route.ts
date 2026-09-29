@@ -4,12 +4,15 @@ import {
   syncVercelDomain,
   VercelDomainSyncError
 } from "../../../../lib/vercel-domain-sync";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 
 type Body = { siteId?: string; domainId?: string };
 
 export async function POST(request: NextRequest) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publicKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -20,7 +23,7 @@ export async function POST(request: NextRequest) {
 
   if (!url || !publicKey || !serverKey) {
     return NextResponse.json(
-      { error: "Domain automation not configured" },
+      { error: tr("Automatisation des domaines non configurée.", "Domain automation is not configured.") },
       { status: 503 }
     );
   }
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
     .get("authorization")
     ?.replace(/^Bearer\s+/i, "");
   if (!bearer) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: tr("Reconnectez-vous pour continuer.", "Sign in again to continue.") }, { status: 401 });
   }
 
   const userClient = createClient(url, publicKey, {
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json()) as Body;
   if (!body.siteId || !body.domainId) {
-    return NextResponse.json({ error: "Invalid domain request" }, { status: 400 });
+    return NextResponse.json({ error: tr("Demande de domaine invalide.", "Invalid domain request.") }, { status: 400 });
   }
 
   const { data: site } = await userClient
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
     .eq("owner_id", user.id)
     .maybeSingle();
   if (!site) {
-    return NextResponse.json({ error: "Site unavailable" }, { status: 404 });
+    return NextResponse.json({ error: tr("Site indisponible.", "Website unavailable.") }, { status: 404 });
   }
 
   const { data: domain } = await userClient
@@ -66,12 +69,12 @@ export async function POST(request: NextRequest) {
     .eq("site_id", body.siteId)
     .maybeSingle();
   if (!domain) {
-    return NextResponse.json({ error: "Domain unavailable" }, { status: 404 });
+    return NextResponse.json({ error: tr("Domaine indisponible.", "Domain unavailable.") }, { status: 404 });
   }
 
   if (domain.kind !== "custom_domain") {
     return NextResponse.json(
-      { error: "Managed subdomains are administered by AJG" },
+      { error: tr("Les sous-domaines gérés sont administrés par AJG.", "Managed subdomains are administered by AJG.") },
       { status: 403 }
     );
   }
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
   const row = Array.isArray(ent) ? ent[0] : ent;
   if (!row?.custom_domain) {
     return NextResponse.json(
-      { error: "Custom domain unavailable" },
+      { error: tr("Le domaine personnalisé n’est pas disponible avec cette offre.", "Custom domain is unavailable with this plan.") },
       { status: 403 }
     );
   }
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof VercelDomainSyncError) {
       return NextResponse.json(
         {
-          error: "Unable to attach domain",
+          error: tr("Impossible de rattacher le domaine.", "Unable to attach domain."),
           vercel: {
             status: error.status,
             code: error.code,
@@ -104,7 +107,7 @@ export async function POST(request: NextRequest) {
         { status: error.status === 503 ? 503 : 502 }
       );
     }
-    return NextResponse.json({ error: "Domain synchronization failed" }, { status: 502 });
+    return NextResponse.json({ error: tr("La synchronisation du domaine a échoué.", "Domain synchronization failed.") }, { status: 502 });
   }
 
   const service = createClient(url, serverKey, {

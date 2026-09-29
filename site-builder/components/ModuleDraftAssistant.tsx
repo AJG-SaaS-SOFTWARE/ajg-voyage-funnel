@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 import type { SiteLanguage } from "../lib/site-config";
+import { useProductLocale } from "../lib/product-i18n";
 
 export type AssistedModuleType = "faq" | "benefits" | "figures";
 
@@ -23,7 +24,7 @@ type Props = {
   onApply: (draft: ModuleDraft) => void;
 };
 
-const labels: Record<AssistedModuleType, { title: string; help: string; instruction: string }> = {
+const labelsFr: Record<AssistedModuleType, { title: string; help: string; instruction: string }> = {
   faq: {
     title: "Préparer la FAQ avec l’IA",
     help: "AJG propose des questions et réponses à partir de votre activité et de l’objectif du site. Vous gardez la main sur chaque ligne.",
@@ -39,6 +40,25 @@ const labels: Record<AssistedModuleType, { title: string; help: string; instruct
     help: "AJG propose uniquement ce qu’il pourrait être pertinent de mesurer. Les valeurs restent vides tant que vous ne les avez pas renseignées.",
     instruction: "Propose des catégories de chiffres clés pertinentes à renseigner, mais ne fournis aucune valeur numérique ni statistique."
   }
+
+};
+
+const labelsEn: Record<AssistedModuleType, { title: string; help: string; instruction: string }> = {
+  faq: {
+    title: "Prepare the FAQ with AI",
+    help: "AJG suggests useful questions and answers from your activity and website goal. You stay in control of every line.",
+    instruction: "Create a useful, natural and reassuring FAQ for a visitor discovering this activity. Avoid artificial or overly sales-driven questions."
+  },
+  benefits: {
+    title: "Prepare benefits with AI",
+    help: "AJG turns your description into concrete benefits without inventing promises, figures or outcomes.",
+    instruction: "Suggest concrete and credible visitor benefits using only the information provided."
+  },
+  figures: {
+    title: "Find key metric ideas",
+    help: "AJG only suggests what may be worth measuring. Values remain empty until you provide them.",
+    instruction: "Suggest relevant categories of key metrics to fill in, but provide no numerical values or statistics."
+  }
 };
 
 export default function ModuleDraftAssistant({
@@ -52,17 +72,18 @@ export default function ModuleDraftAssistant({
   siteContext,
   onApply
 }: Props) {
+  const { locale: uiLocale, tr } = useProductLocale();
   const [open, setOpen] = useState(false);
   const [precision, setPrecision] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<ModuleDraft | null>(null);
-  const copy = labels[moduleType];
+  const copy = (uiLocale === "en" ? labelsEn : labelsFr)[moduleType];
 
   const generate = async () => {
     if (!brief.trim()) {
       setState("error");
-      setMessage("Décrivez d’abord votre activité, votre business ou l’objectif du site dans le champ situé au-dessus des rubriques.");
+      setMessage(tr("Décrivez d’abord votre activité, votre business ou l’objectif du site dans le champ situé au-dessus des rubriques.", "First describe your activity, business or website goal in the field above the sections."));
       return;
     }
 
@@ -80,6 +101,7 @@ export default function ModuleDraftAssistant({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-AJG-Locale": uiLocale,
           ...(data.session?.access_token
             ? { Authorization: `Bearer ${data.session.access_token}` }
             : {})
@@ -103,19 +125,19 @@ export default function ModuleDraftAssistant({
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result?.error || "Impossible de préparer cette rubrique pour le moment.");
+        throw new Error(result?.error || tr("Impossible de préparer cette rubrique pour le moment.", "This section could not be prepared right now."));
       }
 
       if (!result?.draft || typeof result.draft !== "object") {
-        throw new Error("La proposition reçue n’est pas exploitable. Réessayez.");
+        throw new Error(tr("La proposition reçue n’est pas exploitable. Réessayez.", "The received proposal cannot be used. Try again."));
       }
 
       setDraft(result.draft as ModuleDraft);
       setState("done");
-      setMessage("Proposition prête. Vérifiez-la avant de l’insérer dans la rubrique.");
+      setMessage(tr("Proposition prête. Vérifiez-la avant de l’insérer dans la rubrique.", "Proposal ready. Review it before inserting it into the section."));
     } catch (error) {
       setState("error");
-      setMessage(error instanceof Error ? error.message : "Une erreur est survenue.");
+      setMessage(error instanceof Error ? error.message : tr("Une erreur est survenue.", "An error occurred."));
     }
   };
 
@@ -138,7 +160,7 @@ export default function ModuleDraftAssistant({
         )) : items.map((item: any, index) => (
           <div className="module-ai-preview-item compact" key={index}>
             <strong>{item.label}</strong>
-            <p>Valeur à renseigner par vous</p>
+            <p>{tr("Valeur à renseigner par vous", "Value to be provided by you")}</p>
           </div>
         ))}
       </div>
@@ -165,17 +187,17 @@ export default function ModuleDraftAssistant({
       {open ? (
         <div className="module-ai-panel">
           <label>
-            <span>Une précision pour cette rubrique ? <em>facultatif</em></span>
+            <span>{tr("Une précision pour cette rubrique ?", "Anything specific for this section?")} <em>{tr("facultatif", "optional")}</em></span>
             <textarea
               rows={2}
               maxLength={500}
               value={precision}
               onChange={(event) => setPrecision(event.target.value)}
               placeholder={moduleType === "faq"
-                ? "Ex. Je veux surtout répondre aux questions des personnes qui découvrent mon activité."
+                ? tr("Ex. Je veux surtout répondre aux questions des personnes qui découvrent mon activité.", "e.g. I mainly want to answer questions from people discovering my activity.")
                 : moduleType === "benefits"
-                  ? "Ex. Mettre en avant la simplicité et l’accompagnement."
-                  : "Ex. Je veux montrer mon expérience et mon activité sans chiffres commerciaux."}
+                  ? tr("Ex. Mettre en avant la simplicité et l’accompagnement.", "e.g. Emphasize simplicity and support.")
+                  : tr("Ex. Je veux montrer mon expérience et mon activité sans chiffres commerciaux.", "e.g. I want to show my experience and activity without sales figures.")}
             />
           </label>
 
@@ -183,7 +205,7 @@ export default function ModuleDraftAssistant({
 
           <div className="module-ai-actions">
             <button type="button" className="button secondary" disabled={state === "loading"} onClick={() => void generate()}>
-              {state === "loading" ? "Préparation…" : draft ? "Nouvelle proposition" : "Générer une proposition"}
+              {state === "loading" ? tr("Préparation…", "Preparing…") : draft ? tr("Nouvelle proposition", "New proposal") : tr("Générer une proposition", "Generate proposal")}
             </button>
             {draft ? (
               <button
@@ -191,10 +213,10 @@ export default function ModuleDraftAssistant({
                 className="button primary"
                 onClick={() => {
                   onApply(draft);
-                  setMessage("✓ Proposition insérée. Vous pouvez maintenant modifier librement chaque champ.");
+                  setMessage(tr("✓ Proposition insérée. Vous pouvez maintenant modifier librement chaque champ.", "✓ Proposal inserted. You can now freely edit every field."));
                 }}
               >
-                Utiliser ces propositions
+                {tr("Utiliser ces propositions", "Use these proposals")}
               </button>
             ) : null}
           </div>

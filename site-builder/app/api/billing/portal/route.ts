@@ -6,29 +6,32 @@ import {
   ownedBillingSite
 } from "../../../../lib/server-billing";
 import { createStripePortalSession } from "../../../../lib/stripe-billing";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const auth = await billingUserContext(request);
   if (!auth) {
-    return NextResponse.json({ error: "Reconnectez-vous pour gérer votre abonnement." }, { status: 401 });
+    return NextResponse.json({ error: tr("Reconnectez-vous pour gérer votre abonnement.", "Sign in again to manage your subscription.") }, { status: 401 });
   }
 
   const body = await request.json().catch(() => ({}));
   const siteId = typeof body?.siteId === "string" ? body.siteId : "";
   if (!siteId) {
-    return NextResponse.json({ error: "Le site concerné doit être identifié." }, { status: 400 });
+    return NextResponse.json({ error: tr("Le site concerné doit être identifié.", "The website must be identified.") }, { status: 400 });
   }
 
   const site = await ownedBillingSite(auth.client, auth.user.id, siteId).catch(() => null);
   if (!site) {
-    return NextResponse.json({ error: "Site introuvable." }, { status: 404 });
+    return NextResponse.json({ error: tr("Site introuvable.", "Website not found.") }, { status: 404 });
   }
 
   const service = billingServiceClient();
   if (!service) {
-    return NextResponse.json({ error: "La facturation serveur n’est pas configurée." }, { status: 503 });
+    return NextResponse.json({ error: tr("La facturation serveur n’est pas configurée.", "Server-side billing is not configured.") }, { status: 503 });
   }
 
   const { data: subscription, error } = await service
@@ -38,14 +41,14 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: "Impossible de vérifier votre compte de facturation." }, { status: 503 });
+    return NextResponse.json({ error: tr("Impossible de vérifier votre compte de facturation.", "Unable to verify your billing account.") }, { status: 503 });
   }
 
   if (subscription?.provider !== "stripe" || !subscription.provider_customer_id) {
     return NextResponse.json(
       {
         error:
-          "Aucun compte Stripe n’est encore rattaché à ce site. Lancez d’abord la souscription Pro."
+          tr("Aucun compte Stripe n’est encore rattaché à ce site. Lancez d’abord la souscription Pro.", "No Stripe account is linked to this website yet. Start the Pro subscription first.")
       },
       { status: 409 }
     );
@@ -62,7 +65,7 @@ export async function POST(request: Request) {
       code: error instanceof Error ? error.message : "unknown"
     });
     return NextResponse.json(
-      { error: "Impossible d’ouvrir le portail Stripe pour le moment." },
+      { error: tr("Impossible d’ouvrir le portail Stripe pour le moment.", "Unable to open the Stripe portal right now.") },
       { status: 502 }
     );
   }

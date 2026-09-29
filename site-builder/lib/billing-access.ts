@@ -2,6 +2,7 @@
 
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import { getMySite } from "./supabase-site-repository";
+import { getProductLocale } from "./product-i18n";
 
 export type BillingState = {
   state: string;
@@ -42,19 +43,21 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
 }
 
 export async function downloadMySiteExport(siteId?: string) {
+  const locale = getProductLocale();
+  const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(tr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  if (error || !session?.access_token) throw new Error(tr("Votre session a expiré.", "Your session has expired."));
   const site = await getMySite(siteId);
-  if (!site) throw new Error("Site introuvable.");
+  if (!site) throw new Error(tr("Site introuvable.", "Website not found."));
   const response = await fetch(
     `/api/export/site?siteId=${encodeURIComponent(site.id)}&format=archive`,
-    { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" }
+    { headers: { Authorization: `Bearer ${session.access_token}`, "X-AJG-Locale": locale }, cache: "no-store" }
   );
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error || "Export impossible.");
+    throw new Error(body?.error || tr("Export impossible.", "Export unavailable."));
   }
 
   const blob = await response.blob();
@@ -73,6 +76,8 @@ export async function downloadMySiteExport(siteId?: string) {
 
 
 async function openStripeBillingPath(path: "/api/billing/checkout" | "/api/billing/portal", siteId: string) {
+  const locale = getProductLocale();
+  const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { data: { session }, error } = await supabase.auth.getSession();
@@ -82,13 +87,14 @@ async function openStripeBillingPath(path: "/api/billing/checkout" | "/api/billi
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`
+      Authorization: `Bearer ${session.access_token}`,
+      "X-AJG-Locale": locale
     },
-    body: JSON.stringify({ siteId })
+    body: JSON.stringify({ siteId, locale })
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || typeof result?.url !== "string") {
-    throw new Error(result?.error || "Le service de facturation est indisponible.");
+    throw new Error(result?.error || tr("Le service de facturation est indisponible.", "The billing service is unavailable."));
   }
   window.location.assign(result.url);
 }

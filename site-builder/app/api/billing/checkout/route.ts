@@ -6,37 +6,40 @@ import {
   ownedBillingSite
 } from "../../../../lib/server-billing";
 import { createStripeSubscriptionCheckout } from "../../../../lib/stripe-billing";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const auth = await billingUserContext(request);
   if (!auth) {
-    return NextResponse.json({ error: "Reconnectez-vous pour gérer votre abonnement." }, { status: 401 });
+    return NextResponse.json({ error: tr("Reconnectez-vous pour gérer votre abonnement.", "Sign in again to manage your subscription.") }, { status: 401 });
   }
 
   const body = await request.json().catch(() => ({}));
   const siteId = typeof body?.siteId === "string" ? body.siteId : "";
   if (!siteId) {
-    return NextResponse.json({ error: "Le site concerné doit être identifié." }, { status: 400 });
+    return NextResponse.json({ error: tr("Le site concerné doit être identifié.", "The website must be identified.") }, { status: 400 });
   }
 
   const site = await ownedBillingSite(auth.client, auth.user.id, siteId).catch(() => null);
   if (!site) {
-    return NextResponse.json({ error: "Site introuvable." }, { status: 404 });
+    return NextResponse.json({ error: tr("Site introuvable.", "Website not found.") }, { status: 404 });
   }
 
   const priceId = process.env.STRIPE_PRO_PRICE_ID?.trim() || "";
   if (!priceId) {
     return NextResponse.json(
-      { error: "Le tarif Pro Stripe n’est pas encore activé sur cet environnement." },
+      { error: tr("Le tarif Pro Stripe n’est pas encore activé sur cet environnement.", "The Stripe Pro price is not enabled in this environment yet.") },
       { status: 503 }
     );
   }
 
   const service = billingServiceClient();
   if (!service) {
-    return NextResponse.json({ error: "La facturation serveur n’est pas configurée." }, { status: 503 });
+    return NextResponse.json({ error: tr("La facturation serveur n’est pas configurée.", "Server-side billing is not configured.") }, { status: 503 });
   }
 
   const { data: current, error: currentError } = await service
@@ -46,7 +49,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (currentError) {
-    return NextResponse.json({ error: "Impossible de vérifier l’abonnement actuel." }, { status: 503 });
+    return NextResponse.json({ error: tr("Impossible de vérifier l’abonnement actuel.", "Unable to verify the current subscription.") }, { status: 503 });
   }
 
   if (
@@ -57,7 +60,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Un abonnement Stripe existe déjà pour ce site. Utilisez l’espace de facturation pour le gérer.",
+          tr("Un abonnement Stripe existe déjà pour ce site. Utilisez l’espace de facturation pour le gérer.", "A Stripe subscription already exists for this website. Use Billing to manage it."),
         code: "existing_subscription"
       },
       { status: 409 }
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
     });
 
     if (!session.url) {
-      return NextResponse.json({ error: "Stripe n’a pas renvoyé de page de paiement." }, { status: 502 });
+      return NextResponse.json({ error: tr("Stripe n’a pas renvoyé de page de paiement.", "Stripe did not return a checkout page.") }, { status: 502 });
     }
 
     return NextResponse.json({ url: session.url, checkoutSessionId: session.id });
@@ -87,7 +90,7 @@ export async function POST(request: Request) {
       code: error instanceof Error ? error.message : "unknown"
     });
     return NextResponse.json(
-      { error: "Impossible d’ouvrir le paiement Stripe pour le moment." },
+      { error: tr("Impossible d’ouvrir le paiement Stripe pour le moment.", "Unable to open Stripe Checkout right now.") },
       { status: 502 }
     );
   }
