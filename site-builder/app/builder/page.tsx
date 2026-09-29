@@ -744,11 +744,21 @@ export default function BuilderPage() {
       changes.push("Rubriques");
     }
 
-    if (!same(revisionProposal.faq, config.design.modules.faq)) {
+    if (
+      !same(revisionProposal.faq, {
+        title: config.design.modules.faq.title,
+        items: config.design.modules.faq.items
+      })
+    ) {
       changes.push("FAQ");
     }
 
-    if (!same(revisionProposal.benefits, config.design.modules.benefits)) {
+    if (
+      !same(revisionProposal.benefits, {
+        title: config.design.modules.benefits.title,
+        items: config.design.modules.benefits.items
+      })
+    ) {
       changes.push("Avantages");
     }
 
