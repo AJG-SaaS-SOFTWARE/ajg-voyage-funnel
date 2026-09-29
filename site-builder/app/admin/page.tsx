@@ -45,6 +45,13 @@ const readinessLabel: Record<ReleaseReadinessCheck["status"], string> = {
   deferred: "Différé"
 };
 
+const standardAiOperationLabel: Record<string, string> = {
+  standard_field: "Champ éditorial",
+  standard_guided: "Parcours guidé",
+  standard_review: "Relecture",
+  standard_module: "Rubrique"
+};
+
 export default function AdminPage() {
   const [rows, setRows] = useState<AdminSiteRow[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -685,12 +692,39 @@ export default function AdminPage() {
                     <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.architect.provider.avgTokensPerAttempt)}</b> tokens / tentative</span>
                     <span><b>{(betaMetrics.ai.architect.provider.avgDurationMsPerCall / 1000).toFixed(1)} s</b> / appel en moyenne</span>
                     <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.architect.provider.cachedInputTokens)}</b> tokens d’entrée mis en cache</span>
+                    <span><b>{betaMetrics.ai.architect.provider.avgStrategyCallsPerRequest}</b> analyse stratégique / demande</span>
                   </div>
                   {betaMetrics.ai.architect.provider.byModel.length ? (
                     <div className="premium-ai-models">
                       {betaMetrics.ai.architect.provider.byModel.map((item) => (
                         <span key={item.model}>
                           <b>{item.model}</b>
+                          {item.calls} appel{item.calls > 1 ? "s" : ""} · {new Intl.NumberFormat("fr-FR").format(item.totalTokens)} tokens
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="premium-ai-provider">
+                  <div>
+                    <b>Empreinte technique IA standard</b>
+                    <p>
+                      Même principe de mesure minimale : aucun prompt ni texte client n’est stocké.
+                      L’objectif est de suivre la latence et les tokens du parcours guidé, des champs,
+                      des relectures et des rubriques.
+                    </p>
+                  </div>
+                  <div className="premium-ai-provider-kpis">
+                    <span><b>{betaMetrics.ai.standard.provider.calls}</b> appels modèle</span>
+                    <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.standard.provider.avgTokensPerCall)}</b> tokens / appel</span>
+                    <span><b>{(betaMetrics.ai.standard.provider.avgDurationMsPerCall / 1000).toFixed(1)} s</b> / appel en moyenne</span>
+                    <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.standard.provider.cachedInputTokens)}</b> tokens d’entrée mis en cache</span>
+                  </div>
+                  {betaMetrics.ai.standard.provider.byOperation.length ? (
+                    <div className="premium-ai-models">
+                      {betaMetrics.ai.standard.provider.byOperation.map((item) => (
+                        <span key={item.operation}>
+                          <b>{standardAiOperationLabel[item.operation] || item.operation}</b>
                           {item.calls} appel{item.calls > 1 ? "s" : ""} · {new Intl.NumberFormat("fr-FR").format(item.totalTokens)} tokens
                         </span>
                       ))}
