@@ -1295,27 +1295,27 @@ export default function BuilderPage() {
                 <p>{currentStep.guidance}</p>
               </div>
             </div>
-            {syncError ? <div className="error-card premium-error-card"><b>Synchronisation</b><p>{syncError}</p></div> : null}
+            {syncError ? <div className="error-card premium-error-card"><b>{en ? "Synchronization" : "Synchronisation"}</b><p>{syncError}</p></div> : null}
 
             {step === "identity" ? (
               <>
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Votre identité</b><p>Ces informations donnent le ton à tout le site.</p></div>
+                  <div><b>{en ? "Your identity" : "Votre identité"}</b><p>{en ? "These details set the tone for the entire website." : "Ces informations donnent le ton à tout le site."}</p></div>
                 </div>
 
                 <div className="grid two">
-                  <Field label="Prénom">
+                  <Field label={en ? "First name" : "Prénom"}>
                     <input spellCheck placeholder="Ex. Julie" value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
                   </Field>
-                  <Field label="Nom">
+                  <Field label={en ? "Last name" : "Nom"}>
                     <input spellCheck placeholder="Ex. Martin" value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
                   </Field>
                 </div>
 
-                <Field label="Nom affiché du site" hint="Nous le préremplissons avec votre nom. Vous pouvez le remplacer par votre marque si vous en avez une.">
+                <Field label={en ? "Website display name" : "Nom affiché du site"} hint={en ? "We pre-fill it with your name. You can replace it with your brand if you have one." : "Nous le préremplissons avec votre nom. Vous pouvez le remplacer par votre marque si vous en avez une."}>
                   <input
-                    placeholder="Ex. Julie Martin Voyages"
+                    placeholder={en ? "E.g. Julie Martin Studio" : "Ex. Julie Martin Voyages"}
                     value={config.brandName}
                     onChange={(e) => {
                       setBrandTouched(true);
@@ -1325,7 +1325,7 @@ export default function BuilderPage() {
                 </Field>
 
                 <div className="grid two">
-                  <Field label="Adresse souhaitée" hint="Exemple : julien-martin">
+                  <Field label={en ? "Preferred address" : "Adresse souhaitée"} hint={en ? "Example: julie-martin" : "Exemple : julien-martin"}>
                     <div className="slug-field premium-slug-field">
                       <input
                         value={config.slug}
@@ -1339,32 +1339,32 @@ export default function BuilderPage() {
                     </div>
                   </Field>
 
-                  <Field label="Langue">
+                  <Field label={en ? "Website language" : "Langue"}>
                     <select
                       value={config.language}
                       onChange={(e) => update("language", e.target.value as SiteLanguage)}
                     >
                       <option value="fr">Français</option>
                       <option value="en">English</option>
-                      <option value="both" disabled>Français + English (à venir)</option>
+                      <option value="both" disabled>{en ? "French + English (coming soon)" : "Français + English (à venir)"}</option>
                     </select>
                   </Field>
                 </div>
 
                 <div className="section-kicker photo-kicker">
                   <span>02</span>
-                  <div><b>Votre photo</b><p>Un visage réel renforce immédiatement la confiance.</p></div>
+                  <div><b>{en ? "Your photo" : "Votre photo"}</b><p>{en ? "A real face immediately builds trust." : "Un visage réel renforce immédiatement la confiance."}</p></div>
                 </div>
 
                 {remoteMode ? (
                   <Field
-                    label="Photo de profil"
-                    hint="JPEG, PNG, WebP ou AVIF · 8 Mo maximum. La photo est stockée dans votre espace Supabase."
+                    label={en ? "Profile photo" : "Photo de profil"}
+                    hint={en ? "JPEG, PNG, WebP or AVIF · 8 MB maximum. The photo is stored in your Supabase space." : "JPEG, PNG, WebP ou AVIF · 8 Mo maximum. La photo est stockée dans votre espace Supabase."}
                   >
                     <input spellCheck className="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
                   </Field>
                 ) : (
-                  <Field label="Photo de profil — URL" hint="L'upload direct fonctionne dès que Supabase est configuré.">
+                  <Field label={en ? "Profile photo — URL" : "Photo de profil — URL"} hint={en ? "Direct upload works once Supabase is configured." : "L'upload direct fonctionne dès que Supabase est configuré."}>
                     <input
                       type="url"
                       placeholder="https://..."
@@ -1376,10 +1376,10 @@ export default function BuilderPage() {
 
                 {config.profileImageUrl ? (
                   <div className="uploaded-photo premium-uploaded-photo">
-                    <img src={config.profileImageUrl} alt="Aperçu de la photo de profil" />
+                    <img src={config.profileImageUrl} alt={en ? "Profile photo preview" : "Aperçu de la photo de profil"} />
                     <div>
-                      <b>Photo chargée</b>
-                      <button type="button" onClick={() => update("profileImageUrl", "")}>Retirer la photo</button>
+                      <b>{en ? "Photo uploaded" : "Photo chargée"}</b>
+                      <button type="button" onClick={() => update("profileImageUrl", "")}>{en ? "Remove photo" : "Retirer la photo"}</button>
                     </div>
                   </div>
                 ) : null}
@@ -1389,7 +1389,7 @@ export default function BuilderPage() {
             {step === "story" ? (
               <>
                 <ContentLibraryEditor value={config.contentLibrary} onChange={(contentLibrary) => update("contentLibrary", contentLibrary)} onUpload={async (_asset, file) => {
-                  if (!remoteMode) throw new Error("Connectez-vous pour importer un fichier.");
+                  if (!remoteMode) throw new Error(en ? "Sign in to import a file." : "Connectez-vous pour importer un fichier.");
                   const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false, remoteSiteId || undefined);
                   setRemoteSiteId(site.id);
                   return uploadContentAsset(file, site.id);
