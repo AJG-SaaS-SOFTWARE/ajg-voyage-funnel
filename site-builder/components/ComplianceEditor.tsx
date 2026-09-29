@@ -1,6 +1,7 @@
 "use client";
 
 import type { SiteLegalConfig } from "../lib/site-legal";
+import { useUiLanguage } from "./LanguageProvider";
 
 type Props = {
   value: SiteLegalConfig;
@@ -11,6 +12,8 @@ type Props = {
 };
 
 export default function ComplianceEditor({ value, firstName, lastName, affiliation, onChange }: Props) {
+  const { locale } = useUiLanguage();
+  const en = locale === "en";
   const update = <K extends keyof SiteLegalConfig>(key: K, next: SiteLegalConfig[K]) => onChange({ ...value, [key]: next });
   const individualName = `${firstName} ${lastName}`.trim();
   const effectiveName = value.legalName || (value.publisherType === "individual" ? individualName : "");
@@ -21,61 +24,61 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
     <div className="compliance-editor">
       <div className="compliance-intro">
         <div>
-          <span className="mini">CONFORMITÉ FRANCE · UE</span>
-          <h3>Informations légales du site</h3>
-          <p>AJG génère les pages Mentions légales, Confidentialité et Cookies à partir de ces informations. Elles ne remplacent pas un conseil juridique si votre activité a des obligations particulières.</p>
+          <span className="mini">{en ? "FRANCE · EU COMPLIANCE" : "CONFORMITÉ FRANCE · UE"}</span>
+          <h3>{en ? "Website legal information" : "Informations légales du site"}</h3>
+          <p>{en ? "AJG generates the Legal Notice, Privacy and Cookies pages from this information. They do not replace legal advice if your activity has specific obligations." : "AJG génère les pages Mentions légales, Confidentialité et Cookies à partir de ces informations. Elles ne remplacent pas un conseil juridique si votre activité a des obligations particulières."}</p>
         </div>
-        <span className="compliance-badge">RGPD assisté</span>
+        <span className="compliance-badge">{en ? "GDPR assisted" : "RGPD assisté"}</span>
       </div>
 
       <div className="compliance-grid">
         <label>
-          <span>Type d’éditeur</span>
+          <span>{en ? "Publisher type" : "Type d’éditeur"}</span>
           <select value={value.publisherType} onChange={(e) => update("publisherType", e.target.value as SiteLegalConfig["publisherType"])}>
-            <option value="individual">Entrepreneur individuel / personne physique</option>
-            <option value="company">Société / personne morale</option>
+            <option value="individual">{en ? "Sole trader / individual" : "Entrepreneur individuel / personne physique"}</option>
+            <option value="company">{en ? "Company / legal entity" : "Société / personne morale"}</option>
           </select>
         </label>
 
         <label>
-          <span>Nature principale de l’activité</span>
+          <span>{en ? "Main activity type" : "Nature principale de l’activité"}</span>
           <select value={value.activityKind} onChange={(e) => update("activityKind", e.target.value as SiteLegalConfig["activityKind"])}>
-            <option value="commercial">Commerciale</option>
-            <option value="artisan">Artisanale</option>
-            <option value="liberal">Libérale</option>
-            <option value="other">Autre / à vérifier</option>
+            <option value="commercial">{en ? "Commercial" : "Commerciale"}</option>
+            <option value="artisan">{en ? "Craft / trade" : "Artisanale"}</option>
+            <option value="liberal">{en ? "Liberal profession" : "Libérale"}</option>
+            <option value="other">{en ? "Other / to check" : "Autre / à vérifier"}</option>
           </select>
         </label>
       </div>
 
       <div className="compliance-grid">
         <label>
-          <span>{value.publisherType === "company" ? "Raison sociale" : "Nom légal de l’éditeur"}</span>
-          <input value={value.legalName} onChange={(e) => update("legalName", e.target.value)} placeholder={value.publisherType === "individual" ? individualName || "Prénom Nom" : "Nom de la société"} />
-          {value.publisherType === "individual" && !value.legalName && individualName ? <small>AJG utilisera automatiquement « {individualName} ».</small> : null}
+          <span>{value.publisherType === "company" ? (en ? "Legal company name" : "Raison sociale") : (en ? "Publisher legal name" : "Nom légal de l’éditeur")}</span>
+          <input value={value.legalName} onChange={(e) => update("legalName", e.target.value)} placeholder={value.publisherType === "individual" ? individualName || (en ? "First name Last name" : "Prénom Nom") : (en ? "Company name" : "Nom de la société")} />
+          {value.publisherType === "individual" && !value.legalName && individualName ? <small>{en ? <>AJG will automatically use “{individualName}”.</> : <>AJG utilisera automatiquement « {individualName} ».</>}</small> : null}
         </label>
         <label>
-          <span>Nom commercial <em>facultatif</em></span>
-          <input value={value.tradeName} onChange={(e) => update("tradeName", e.target.value)} placeholder="Ex. AJG Voyage" />
+          <span>{en ? "Trading name" : "Nom commercial"} <em>{en ? "optional" : "facultatif"}</em></span>
+          <input value={value.tradeName} onChange={(e) => update("tradeName", e.target.value)} placeholder={en ? "E.g. AJG Voyage" : "Ex. AJG Voyage"} />
         </label>
       </div>
 
       {value.publisherType === "company" ? (
         <div className="compliance-grid">
-          <label><span>Forme juridique</span><input value={value.legalForm} onChange={(e) => update("legalForm", e.target.value)} placeholder="Ex. SAS, SARL, EURL…" /></label>
-          <label><span>Capital social</span><input value={value.shareCapital} onChange={(e) => update("shareCapital", e.target.value)} placeholder="Ex. 10 000 €" /></label>
+          <label><span>{en ? "Legal form" : "Forme juridique"}</span><input value={value.legalForm} onChange={(e) => update("legalForm", e.target.value)} placeholder={en ? "E.g. SAS, SARL, EURL…" : "Ex. SAS, SARL, EURL…"} /></label>
+          <label><span>{en ? "Share capital" : "Capital social"}</span><input value={value.shareCapital} onChange={(e) => update("shareCapital", e.target.value)} placeholder={en ? "E.g. €10,000" : "Ex. 10 000 €"} /></label>
         </div>
       ) : null}
 
       <label className="compliance-full">
-        <span>Adresse professionnelle / siège social</span>
-        <textarea rows={2} value={value.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse complète à faire apparaître dans les mentions légales" />
-        <small>Cette adresse sera publique sur la page Mentions légales. Utilisez votre adresse professionnelle ou une adresse de domiciliation adaptée à votre situation.</small>
+        <span>{en ? "Business / registered office address" : "Adresse professionnelle / siège social"}</span>
+        <textarea rows={2} value={value.address} onChange={(e) => update("address", e.target.value)} placeholder={en ? "Full address to display in the legal notice" : "Adresse complète à faire apparaître dans les mentions légales"} />
+        <small>{en ? "This address will be public on the Legal Notice page. Use your business address or a suitable registered address." : "Cette adresse sera publique sur la page Mentions légales. Utilisez votre adresse professionnelle ou une adresse de domiciliation adaptée à votre situation."}</small>
       </label>
 
       <div className="compliance-grid">
-        <label><span>E-mail professionnel</span><input type="email" value={value.email} onChange={(e) => update("email", e.target.value)} placeholder="contact@exemple.fr" /></label>
-        <label><span>Téléphone professionnel</span><input type="tel" value={value.phone} onChange={(e) => update("phone", e.target.value)} placeholder="+33 …" /></label>
+        <label><span>{en ? "Business email" : "E-mail professionnel"}</span><input type="email" value={value.email} onChange={(e) => update("email", e.target.value)} placeholder={en ? "contact@example.com" : "contact@exemple.fr"} /></label>
+        <label><span>{en ? "Business phone" : "Téléphone professionnel"}</span><input type="tel" value={value.phone} onChange={(e) => update("phone", e.target.value)} placeholder="+33 …" /></label>
       </div>
 
       <div className="compliance-grid">
