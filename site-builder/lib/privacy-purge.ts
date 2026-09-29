@@ -202,6 +202,29 @@ export async function purgeBuilderAccount(
   service: SupabaseClient,
   ownerId: string
 ): Promise<PurgeResult> {
+  const systems: string[] = [];
+
+  // Defensive compatibility for accounts created before billing became site-scoped.
+  const { data: legacySubscription, error: legacyError } = await service
+    .from("user_subscriptions")
+    .select("provider,provider_subscription_id,status")
+    .eq("user_id", ownerId)
+    .maybeSingle();
+  if (legacyError) throw legacyError;
+  if (
+    legacySubscription?.provider === "stripe" &&
+    legacySubscription.provider_subscription_id &&
+    legacySubscription.status !== "canceled"
+  ) {
+    try {
+      await cancelStripeSubscription(legacySubscription.provider_subscription_id);
+    } catch (error) {
+      if (!(error instanceof Error) || error.message !== "resource_missing") throw error;
+    }
+    systems.push("legacy_stripe_subscription_canceled");
+    systems.push("stripe_financial_records_retained");
+  }
+
   const { data: sites, error } = await service
     .from("sites")
     .select("id")
@@ -209,7 +232,6 @@ export async function purgeBuilderAccount(
     .order("created_at", { ascending: true });
   if (error) throw error;
 
-  const systems: string[] = [];
   let sitesPurged = 0;
 
   for (const site of sites || []) {
