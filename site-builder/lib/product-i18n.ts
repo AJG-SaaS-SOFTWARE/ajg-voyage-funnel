@@ -8,7 +8,7 @@ const STORAGE_KEY = "ajg_builder_language";
 const COOKIE_KEY = "ajg_builder_language";
 const LOCALE_EVENT = "ajg-builder-locale-change";
 
-function browserLocale(): ProductLocale {
+export function getProductLocale(): ProductLocale {
   if (typeof window === "undefined") return "fr";
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (stored === "fr" || stored === "en") return stored;
@@ -24,7 +24,7 @@ export function useProductLocale() {
 
   useEffect(() => {
     const sync = () => {
-      const next = browserLocale();
+      const next = getProductLocale();
       setLocaleState(next);
       applyDocumentLocale(next);
     };
