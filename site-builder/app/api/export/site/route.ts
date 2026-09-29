@@ -6,6 +6,7 @@ import {
   recoveryMediaArchivePath,
   type RecoveryTarEntry
 } from "../../../../lib/recovery-archive";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,8 @@ function bearer(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishable =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -33,11 +36,11 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !publishable || !serviceKey) {
-    return NextResponse.json({ error: "Export service not configured" }, { status: 503 });
+    return NextResponse.json({ error: tr("Service d’export non configuré.", "Export service not configured.") }, { status: 503 });
   }
 
   const token = bearer(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return NextResponse.json({ error: tr("Reconnectez-vous pour continuer.", "Sign in again to continue.") }, { status: 401 });
 
   const userClient = createClient(url, publishable, {
     global: { headers: { Authorization: "Bearer " + token } },
@@ -52,7 +55,7 @@ export async function GET(request: Request) {
   const siteId = requestUrl.searchParams.get("siteId");
   const requestedFormat = requestUrl.searchParams.get("format") === "archive" ? "archive" : "json";
   if (!siteId) {
-    return NextResponse.json({ error: "Site identifier required" }, { status: 400 });
+    return NextResponse.json({ error: tr("Identifiant du site requis.", "Website identifier required.") }, { status: 400 });
   }
 
   const { data: site, error: siteError } = await userClient
@@ -62,7 +65,7 @@ export async function GET(request: Request) {
     .eq("owner_id", user.id)
     .maybeSingle();
   if (siteError || !site) {
-    return NextResponse.json({ error: "Site unavailable" }, { status: 404 });
+    return NextResponse.json({ error: tr("Site indisponible.", "Website unavailable.") }, { status: 404 });
   }
 
   const { data: caps, error: capError } = await userClient.rpc(
@@ -71,7 +74,7 @@ export async function GET(request: Request) {
   );
   const cap = Array.isArray(caps) ? caps[0] : caps;
   if (capError || !cap?.can_export) {
-    return NextResponse.json({ error: "Export unavailable" }, { status: 403 });
+    return NextResponse.json({ error: tr("Export indisponible.", "Export unavailable.") }, { status: 403 });
   }
 
   const service = createClient(url, serviceKey, {
