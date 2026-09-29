@@ -2,3 +2,7 @@
 
 .legalFooter{max-width:980px;margin:22px auto 0;padding-top:18px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(16,33,43,.08);font-size:.72rem}
 .legalFooter a{color:#718087;text-decoration:none}.legalFooter a:hover{text-decoration:underline;color:#24434b}
+
+.launchCard{max-width:980px;margin:0 auto 24px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:28px;border:1px solid rgba(16,33,43,.1);border-radius:20px;background:rgba(255,255,255,.7)}
+.launchCard>div{max-width:720px}.launchCard h2{margin:12px 0 4px;font-family:Georgia,serif;font-size:1.7rem}.launchCard .description{min-height:0;margin-bottom:6px}.launchCard .price{white-space:nowrap}.launchNote{margin:0;color:#0b8179;font-size:.78rem;font-weight:750;line-height:1.45}
+@media(max-width:680px){.launchCard{align-items:flex-start;flex-direction:column}.launchCard .price{font-size:2.1rem}}
