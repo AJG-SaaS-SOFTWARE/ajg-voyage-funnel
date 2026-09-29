@@ -207,13 +207,15 @@ function truncateAtBoundary(value: string, max: number) {
 }
 
 export function sanitizeStandardText(
-  field: EditableField,
+  field: StandardAiField,
   value: unknown
 ) {
+  if (!editableFields.includes(field as EditableField)) return "";
+  const editableField = field as EditableField;
   let text = stripPresentationMarkup(typeof value === "string" ? value : "");
   if (!text) return "";
 
-  if (field !== "aboutText" && field !== "heroSubtitle") {
+  if (editableField !== "aboutText" && editableField !== "heroSubtitle") {
     text = compactSingleLine(text);
   } else {
     text = text
@@ -222,7 +224,7 @@ export function sanitizeStandardText(
       .trim();
   }
 
-  return truncateAtBoundary(text, fieldLimits[field]);
+  return truncateAtBoundary(text, fieldLimits[editableField]);
 }
 
 export function normalizeStandardStructuredOutput(
