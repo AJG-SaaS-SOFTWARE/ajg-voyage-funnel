@@ -49,7 +49,8 @@ const standardAiOperationLabel: Record<string, string> = {
   standard_field: "Champ éditorial",
   standard_guided: "Parcours guidé",
   standard_review: "Relecture",
-  standard_module: "Rubrique"
+  standard_module: "Rubrique",
+  standard_repair: "Réparation qualité"
 };
 
 export default function AdminPage() {
