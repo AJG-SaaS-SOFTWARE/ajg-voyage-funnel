@@ -79,6 +79,7 @@ export default function AiTextAssistant({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-AJG-Locale": uiLocale,
           ...(data.session?.access_token
             ? { Authorization: `Bearer ${data.session.access_token}` }
             : {})
