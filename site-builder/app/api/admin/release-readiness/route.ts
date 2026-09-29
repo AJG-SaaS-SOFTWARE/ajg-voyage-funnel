@@ -159,13 +159,17 @@ export async function GET(request: Request) {
     )
   ];
 
-  if (!present(process.env.VERCEL_GIT_COMMIT_SHA)) {
+  const deploymentSha =
+    process.env.AJG_RELEASE_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA;
+
+  if (!present(deploymentSha)) {
     checks.push({
       key: "deployment-sha",
       label: "Révision déployée",
       status: "warn",
       scope: "beta",
-      detail: "Aucun SHA Vercel détecté dans cet environnement."
+      detail: "Aucun SHA de release détecté dans cet environnement."
     });
   } else {
     checks.push({
@@ -173,7 +177,7 @@ export async function GET(request: Request) {
       label: "Révision déployée",
       status: "pass",
       scope: "beta",
-      detail: `Commit Vercel détecté : ${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12)}…`
+      detail: `Commit de production détecté : ${deploymentSha?.slice(0, 12)}…`
     });
   }
 
@@ -343,7 +347,7 @@ export async function GET(request: Request) {
     {
       generatedAt: new Date().toISOString(),
       environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
-      commitSha: process.env.VERCEL_GIT_COMMIT_SHA || null,
+      commitSha: deploymentSha || null,
       summary,
       checks
     },
