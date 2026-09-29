@@ -89,8 +89,8 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
           {facebookHref ? <a href={facebookHref} target="_blank" rel="noopener noreferrer">Facebook</a> : null}
         </div> : null}
         {config.affiliation === "mwr" && (config.design.showMwrLogo || config.design.showTravelAdvantageLogo) ? <div className="public-brand-marks">
-          {config.design.showMwrLogo ? <img src="/logos/mwr-life-independent.svg" alt="MWR Life — distributeur indépendant" /> : null}
-          {config.design.showTravelAdvantageLogo ? <img src="/logos/travel-advantage-independent.svg" alt="Travel Advantage — distributeur indépendant" /> : null}
+          {config.design.showMwrLogo ? <img src="/logos/mwr-life-independent.svg" alt={english ? "MWR Life — independent distributor" : "MWR Life — distributeur indépendant"} /> : null}
+          {config.design.showTravelAdvantageLogo ? <img src="/logos/travel-advantage-independent.svg" alt={english ? "Travel Advantage — independent distributor" : "Travel Advantage — distributeur indépendant"} /> : null}
         </div> : null}
         {(config.design.heroImage || config.design.audio) ? <div className="public-credits">
           {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">Image : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}
