@@ -684,6 +684,9 @@ export default function BuilderPage() {
     guidedAudience: guidedAnswers.audience
   };
 
+  const architectBriefLength = architectBrief.trim().length;
+  const architectBriefReady = architectBriefLength >= 80;
+
   const revisionChangeSummary = useMemo(() => {
     if (!revisionProposal) return [] as string[];
 
@@ -1294,8 +1297,18 @@ export default function BuilderPage() {
                       <b>Pour un résultat exceptionnel, indiquez si vous les connaissez :</b>
                       <span>ce que vous proposez · à qui · l’action attendue · ce qui vous différencie · le ton souhaité · les contraintes à respecter</span>
                     </div>
-                    <label className="guided-question"><span>Votre besoin</span><textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." /></label>
-                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBrief.trim()} onClick={() => void createSiteWithAi()}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
+                    <label className="guided-question">
+                      <span>Votre besoin</span>
+                      <textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." />
+                      <small className={"architect-brief-readiness " + (architectBriefReady ? "is-ready" : "is-thin")}>
+                        {architectBriefReady
+                          ? "Brief suffisamment détaillé pour lancer l’analyse Premium."
+                          : architectBriefLength === 0
+                            ? "Commencez par quelques phrases : activité, public, objectif et ton souhaité."
+                            : `Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`}
+                      </small>
+                    </label>
+                    <button type="button" className="button primary premium-button" disabled={architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
                     {architectProposal ? (
                       <div className="ai-current-note architect-premium-result" role="status">
                         <div className="architect-result-heading">

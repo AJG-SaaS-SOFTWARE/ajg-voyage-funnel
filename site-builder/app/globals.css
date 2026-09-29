@@ -2876,3 +2876,12 @@ button.active .step-label small{color:#63817f}
 }
 .revision-scope-summary p{margin:0;color:#64767a;font-size:.73rem}
 .revision-scope-summary small{color:#6d7d80;line-height:1.45}
+
+.architect-brief-readiness{
+  display:block;
+  margin-top:6px;
+  font-size:.68rem;
+  line-height:1.45;
+}
+.architect-brief-readiness.is-ready{color:#17634d}
+.architect-brief-readiness.is-thin{color:#8a6420}

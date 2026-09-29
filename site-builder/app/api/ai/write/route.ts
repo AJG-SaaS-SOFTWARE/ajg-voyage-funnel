@@ -224,6 +224,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Décrivez d'abord votre activité, votre objectif et quelques mots-clés." }, { status: 400 });
   }
 
+  if (field === "siteArchitect" && architectBrief.length < 80) {
+    return NextResponse.json(
+      {
+        error:
+          "Votre brief est encore trop court pour lancer l’Architecte Premium. Ajoutez quelques précisions sur votre activité, votre public ou l’objectif du site."
+      },
+      { status: 400 }
+    );
+  }
+
   if (field === "siteArchitect" || field === "siteRevision") {
     const { data: entitlements, error: entitlementError } = await auth.supabase.rpc("get_my_site_entitlements", { p_site_id: siteId });
     if (entitlementError) return NextResponse.json({ error: "Impossible de vérifier votre offre." }, { status: 503 });
