@@ -289,7 +289,7 @@ export default function BuilderPage() {
       ? "/billing"
       : "/plans";
   const premiumAccessLabel =
-    premiumAccessHref === "/billing" ? "Régulariser mon accès" : "Voir l’offre Pro";
+    premiumAccessHref === "/billing" ? (en ? "Restore my access" : "Régulariser mon accès") : (en ? "View Pro plan" : "Voir l’offre Pro");
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
@@ -310,7 +310,7 @@ export default function BuilderPage() {
         const remote = await saveMySite(config, false, remoteSiteId || undefined);
         setRemoteSiteId(remote.id);
         if (version === latestVersion.current) setSaved(true);
-      }).catch((error) => setSyncError(error instanceof Error ? error.message : "Sauvegarde automatique impossible."));
+      }).catch((error) => setSyncError(error instanceof Error ? error.message : en ? "Automatic save failed." : "Sauvegarde automatique impossible."));
     }, 1800);
     return () => window.clearTimeout(timer);
   }, [config, changeVersion, ready, remoteMode, remoteSiteId]);
@@ -415,7 +415,7 @@ export default function BuilderPage() {
   const updateAffiliation = (affiliation: SiteConfig["affiliation"]) => {
     setChangeVersion((version) => version + 1);
     latestVersion.current += 1;
-    const neutralIntro = "Présentez votre activité, votre approche et ce que vos visiteurs peuvent découvrir avec vous.";
+    const neutralIntro = en ? "Present your activity, your approach and what visitors can discover with you." : "Présentez votre activité, votre approche et ce que vos visiteurs peuvent découvrir avec vous.";
     setSaved(false);
     setPublished(false);
     setSyncError("");
@@ -468,17 +468,17 @@ export default function BuilderPage() {
       config.heroSubtitle !== defaultSiteConfig.heroSubtitle ||
       config.aboutText !== defaultSiteConfig.aboutText;
     if (hasPersonalizedText && !window.confirm(
-      "Les textes actuels seront remplacés par la nouvelle proposition. Voulez-vous continuer ?"
+      en ? "The current copy will be replaced by the new proposal. Continue?" : "Les textes actuels seront remplacés par la nouvelle proposition. Voulez-vous continuer ?"
     )) return;
 
     setBusy(true);
     setSyncError("");
     try {
       const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error("L'assistant IA nécessite une connexion au site.");
+      if (!supabase) throw new Error(en ? "The AI assistant requires an active connection." : "L'assistant IA nécessite une connexion au site.");
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      if (!token) throw new Error("Reconnectez-vous pour préparer vos textes avec l'IA.");
+      if (!token) throw new Error(en ? "Sign in again to prepare your copy with AI." : "Reconnectez-vous pour préparer vos textes avec l'IA.");
 
       const response = await fetch("/api/ai/write", {
         method: "POST",
@@ -502,7 +502,7 @@ export default function BuilderPage() {
         })
       });
       const data = await response.json();
-      if (!response.ok || !data?.draft) throw new Error(data?.error || "Impossible de préparer les textes.");
+      if (!response.ok || !data?.draft) throw new Error(data?.error || en ? "The copy could not be prepared." : "Impossible de préparer les textes.");
 
       const nextConfig = {
         ...config,
@@ -518,7 +518,7 @@ export default function BuilderPage() {
       setPublished(false);
       setGuidedDraftReady(true);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Impossible de préparer les textes.");
+      setSyncError(error instanceof Error ? error.message : en ? "The copy could not be prepared." : "Impossible de préparer les textes.");
     } finally {
       setBusy(false);
     }
@@ -562,9 +562,9 @@ export default function BuilderPage() {
     setSyncError("");
     try {
       const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error("La création complète par IA nécessite une connexion.");
+      if (!supabase) throw new Error(en ? "Full AI website creation requires an active connection." : "La création complète par IA nécessite une connexion.");
       const { data } = await supabase.auth.getSession();
-      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la création complète par IA.");
+      if (!data.session?.access_token) throw new Error(en ? "Sign in again to use full AI website creation." : "Reconnectez-vous pour utiliser la création complète par IA.");
       const architectSiteId = remoteSiteId || (await saveMySite(config, false)).id;
       if (!remoteSiteId) setRemoteSiteId(architectSiteId);
       const response = await fetch("/api/ai/write", {
@@ -608,7 +608,7 @@ export default function BuilderPage() {
         })
       });
       const result = await response.json();
-      if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
+      if (!response.ok || !result?.proposal) throw new Error(result?.error || en ? "The complete website could not be prepared." : "Impossible de préparer le site complet.");
       setArchitectProposal(result.proposal);
       setArchitectStrategyContextKey(strategyContextKey);
       setArchitectProposalKey(crypto.randomUUID());
@@ -625,7 +625,7 @@ export default function BuilderPage() {
         void trackProductEvent("architect_refined", architectSiteId);
       }
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Impossible de préparer le site complet.");
+      setSyncError(error instanceof Error ? error.message : en ? "The complete website could not be prepared." : "Impossible de préparer le site complet.");
     } finally {
       setArchitectLoading(false);
     }
@@ -663,7 +663,7 @@ export default function BuilderPage() {
       setSyncError(
         error instanceof Error
           ? error.message
-          : "Votre évaluation n’a pas pu être enregistrée."
+          : en ? "Your feedback could not be saved." : "Votre évaluation n’a pas pu être enregistrée."
       );
     } finally {
       setArchitectQualityBusy(false);
@@ -699,9 +699,9 @@ export default function BuilderPage() {
     setSyncError("");
     try {
       const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error("La révision globale nécessite une connexion.");
+      if (!supabase) throw new Error(en ? "Global revision requires an active connection." : "La révision globale nécessite une connexion.");
       const { data } = await supabase.auth.getSession();
-      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la révision globale.");
+      if (!data.session?.access_token) throw new Error(en ? "Sign in again to use global revision." : "Reconnectez-vous pour utiliser la révision globale.");
       const revisionSiteId = remoteSiteId || (await saveMySite(config, false)).id;
       if (!remoteSiteId) setRemoteSiteId(revisionSiteId);
       const existingProposal = {
@@ -717,9 +717,9 @@ export default function BuilderPage() {
         context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
       }) });
       const result = await response.json();
-      if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer cette révision.");
+      if (!response.ok || !result?.proposal) throw new Error(result?.error || en ? "This revision could not be prepared." : "Impossible de préparer cette révision.");
       setRevisionProposal(result.proposal);
-    } catch (error) { setSyncError(error instanceof Error ? error.message : "Impossible de préparer cette révision."); }
+    } catch (error) { setSyncError(error instanceof Error ? error.message : en ? "This revision could not be prepared." : "Impossible de préparer cette révision."); }
     finally { setRevisionLoading(false); }
   };
 
@@ -1035,7 +1035,7 @@ export default function BuilderPage() {
       setSaved(true);
       setPublished(false);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Erreur de sauvegarde.");
+      setSyncError(error instanceof Error ? error.message : en ? "Save failed." : "Erreur de sauvegarde.");
     } finally {
       setBusy(false);
     }
@@ -1064,7 +1064,7 @@ export default function BuilderPage() {
             body: JSON.stringify({ siteId: site.id, privateRef: asset.url, assetId: asset.id, rights: asset.rights, sourceUrl: asset.sourceUrl })
           });
           const result = await response.json();
-          if (!response.ok) throw new Error(result.error || "Impossible de préparer un média pour la publication.");
+          if (!response.ok) throw new Error(result.error || en ? "A media asset could not be prepared for publishing." : "Impossible de préparer un média pour la publication.");
           return { ...asset, url: result.url };
         }));
         publishConfig = { ...config, contentLibrary: { assets: promotedAssets } };
@@ -1079,7 +1079,7 @@ export default function BuilderPage() {
       setPublished(true);
       void trackProductEvent("publish_success", publishedSiteId);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Erreur de publication.");
+      setSyncError(error instanceof Error ? error.message : en ? "Publishing failed." : "Erreur de publication.");
     } finally {
       setBusy(false);
     }
@@ -1091,7 +1091,7 @@ export default function BuilderPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
-      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour lancer la relecture IA.");
+      if (!data.session?.access_token) throw new Error(en ? "Sign in again to run the AI review." : "Reconnectez-vous pour lancer la relecture IA.");
       const response = await fetch("/api/ai/write", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
         body: JSON.stringify({ field: "qualityReview", instruction: "Relis les textes du site et propose uniquement des corrections utiles.", context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, siteContext: { ...aiSiteContext, bookingLabel: config.bookingLabel } } })
@@ -1115,7 +1115,7 @@ export default function BuilderPage() {
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      setSyncError("Cette image dépasse 8 Mo. Choisissez une photo plus légère avant l’envoi.");
+      setSyncError(en ? "This image is larger than 8 MB. Choose a smaller file before uploading." : "Cette image dépasse 8 Mo. Choisissez une photo plus légère avant l’envoi.");
       event.target.value = "";
       return;
     }
@@ -1210,25 +1210,25 @@ export default function BuilderPage() {
         </div>
 
         <div className="topbar-account premium-topbar-account">
-          {ownedSites.length>1?<select aria-label="Site actif" value={remoteSiteId||""} onChange={async e=>{
+          {ownedSites.length>1?<select aria-label={en ? "Active website" : "Site actif"} value={remoteSiteId||""} onChange={async e=>{
             const next=await getMySite(e.target.value);
             if(!next)return;
             if(next.privacyState==="erasure_requested"){router.push("/data");return;}
             setRemoteSiteId(next.id);setConfig(next.config);setPublished(next.status==="published");setSaved(true);
             await refreshVerifiedPublicUrl(next.id);
           }}>{ownedSites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select>:null}
-          <Link className="preview-shortcut" href="/preview">Aperçu</Link>
+          <Link className="preview-shortcut" href="/preview">{en ? "Preview" : "Aperçu"}</Link>
           <span className={"cloud-pill " + (remoteMode ? "online" : "local")}>
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
-          {userEmail ? <Link href="/plans" className="button secondary">Mon offre</Link> : null}
-          {userEmail ? <Link href="/domains" className="button secondary">Domaines</Link> : null}
-          {userEmail ? <Link href="/data" className="button secondary">Mes données</Link> : null}
-          {userEmail ? <Link href="/feedback" className="button secondary">Donner mon avis</Link> : null}
+          {userEmail ? <Link href="/plans" className="button secondary">{en ? "My plan" : "Mon offre"}</Link> : null}
+          {userEmail ? <Link href="/domains" className="button secondary">{en ? "Domains" : "Domaines"}</Link> : null}
+          {userEmail ? <Link href="/data" className="button secondary">{en ? "My data" : "Mes données"}</Link> : null}
+          {userEmail ? <Link href="/feedback" className="button secondary">{en ? "Share feedback" : "Donner mon avis"}</Link> : null}
           {userEmail ? (
             <button type="button" className="account-button" onClick={logout} title={userEmail}>
               <span>{userEmail.charAt(0).toUpperCase()}</span>
-              <b>Déconnexion</b>
+              <b>{en ? "Sign out" : "Déconnexion"}</b>
             </button>
           ) : null}
         </div>
@@ -1237,12 +1237,12 @@ export default function BuilderPage() {
       <div className="builder-layout premium-builder-layout">
         <aside className="step-nav premium-step-nav">
           <div className="step-nav-heading">
-            <p className="eyebrow">Votre parcours</p>
+            <div className="builder-heading-row"><p className="eyebrow">{en ? "Your journey" : "Votre parcours"}</p><LanguageSwitch compact /></div>
             <h2>Construire le site</h2>
-            <p>Avancez étape par étape. Vous pouvez revenir sur chaque section à tout moment.</p>
+            <p>{en ? "Move forward step by step. You can return to any section at any time." : "Avancez étape par étape. Vous pouvez revenir sur chaque section à tout moment."}</p>
             <div className="beginner-promise">
               <span>✓</span>
-              <p>Pas besoin de compétences techniques : remplissez simplement les questions, nous nous occupons du reste.</p>
+              <p>{en ? "No technical skills needed: answer the questions and the Builder handles the rest." : "Pas besoin de compétences techniques : remplissez simplement les questions, nous nous occupons du reste."}</p>
             </div>
           </div>
 
@@ -1268,22 +1268,22 @@ export default function BuilderPage() {
           </div>
 
           <div className="step-nav-footer">
-            <span>Site</span>
+            <span>{en ? "Website" : "Site"}</span>
             <strong>{config.brandName || "Nouveau site"}</strong>
-            <small>{config.slug ? publicPath : "Adresse à définir"}</small>
+            <small>{config.slug ? publicPath : (en ? "Address not set" : "Adresse à définir")}</small>
           </div>
         </aside>
 
         <section className="panel editor builder-panel premium-builder-panel">
           <div className="panel-heading premium-panel-heading">
             <div className="step-copy">
-              <p className="step">Étape {stepIndex + 1} sur {steps.length} · {currentStep.eyebrow}</p>
+              <p className="step">{en ? "Step" : "Étape"} {stepIndex + 1} {en ? "of" : "sur"} {steps.length} · {currentStep.eyebrow}</p>
               <h1>{currentStep.label}</h1>
               <p className="step-description">{currentStep.description}</p>
             </div>
             <span aria-live="polite" className={"status premium-status " + (published ? "published" : saved ? "saved" : "draft")}>
               <i />
-              {busy ? "Synchronisation…" : published ? "Publié" : saved ? "Sauvegardé" : "Brouillon"}
+              {busy ? (en ? "Syncing…" : "Synchronisation…") : published ? (en ? "Published" : "Publié") : saved ? (en ? "Saved" : "Sauvegardé") : (en ? "Draft" : "Brouillon")}
             </span>
           </div>
 
@@ -1291,7 +1291,7 @@ export default function BuilderPage() {
             <div className="step-guidance-card">
               <div className="step-guidance-icon">?</div>
               <div>
-                <span>Ce que vous avez à faire · environ {currentStep.time}</span>
+                <span>{en ? "What to do · about" : "Ce que vous avez à faire · environ"} {currentStep.time}</span>
                 <p>{currentStep.guidance}</p>
               </div>
             </div>
