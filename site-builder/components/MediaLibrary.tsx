@@ -166,7 +166,7 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
         <p className="field-help">{tr("Automatique utilise la couleur d’accent du site. Vous pouvez aussi choisir une teinte indépendante.", "Automatic uses the website accent color. You can also choose a separate tone.")}</p>
         <div className="custom-color-row">
           <button type="button" className={!design.patternColor ? "secondary active" : "secondary"} aria-pressed={!design.patternColor} onClick={() => onChange({ ...design, patternColor: "" })}>{tr("Automatique", "Automatic")}</button>
-          <label>Couleur personnalisée
+          <label>{tr("Couleur personnalisée", "Custom color")}
             <input type="color" value={design.patternColor || design.accent} onChange={(event) => onChange({ ...design, patternColor: event.target.value })} />
           </label>
           <label>Code HEX
@@ -230,7 +230,7 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
       {(design.heroImage || design.audio) ? (
         <div className="media-selected">
           {design.heroImage ? <div className="media-selected-item"><img src={design.heroImage.url} alt={tr("Aperçu de l’image choisie", "Selected image preview")} /><p><b>{tr("Image choisie :", "Selected image:")}</b> {design.heroImage.title} <button type="button" onClick={() => onChange({ ...design, heroImage: null })}>{tr("Retirer", "Remove")}</button></p></div> : null}
-          {design.audio ? <div className="media-selected-item"><audio controls preload="none" src={design.audio.url} aria-label={`${tr("Écouter", "Listen to")} ${design.audio.title}`} /><p><b>{tr("Son choisi :", "Selected sound:")}</b> {design.audio.title} <button type="button" onClick={() => onChange({ ...design, audio: null })}>Retirer</button></p></div> : null}
+          {design.audio ? <div className="media-selected-item"><audio controls preload="none" src={design.audio.url} aria-label={`${tr("Écouter", "Listen to")} ${design.audio.title}`} /><p><b>{tr("Son choisi :", "Selected sound:")}</b> {design.audio.title} <button type="button" onClick={() => onChange({ ...design, audio: null })}>{tr("Retirer", "Remove")}</button></p></div> : null}
         </div>
       ) : null}
     </div>
