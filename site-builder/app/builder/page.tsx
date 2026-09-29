@@ -1398,87 +1398,87 @@ export default function BuilderPage() {
                 <details className={"guided-writing-card ai-architect-card " + (!premiumArchitectAvailable ? "premium-feature-locked" : "")}>
                   <summary>
                     <span className="guided-writing-icon">✦</span>
-                    <span><b>Créer mon site avec l’IA</b><small>Premium · décrivez votre besoin et obtenez une proposition complète à valider.</small></span>
-                    <span className="guided-writing-badge">{premiumArchitectAvailable ? "Nouveau" : "🔒 Pro"}</span>
+                    <span><b>{en ? "Create my website with AI" : "Créer mon site avec l’IA"}</b><small>{en ? "Premium · describe your needs and get a complete proposal to review." : "Premium · décrivez votre besoin et obtenez une proposition complète à valider."}</small></span>
+                    <span className="guided-writing-badge">{premiumArchitectAvailable ? (en ? "New" : "Nouveau") : "🔒 Pro"}</span>
                   </summary>
                   <div className="guided-writing-body">
                     {!premiumArchitectAvailable ? (
                       <div className="premium-feature-lock-note" role="note">
-                        <div><b>Fonctionnalité Premium</b><p>L’Architecte complet analyse votre besoin, construit l’architecture et rédige le site. L’IA standard et le mode guidé restent disponibles avec l’offre gratuite.</p></div>
+                        <div><b>{en ? "Premium feature" : "Fonctionnalité Premium"}</b><p>{en ? "The full Architect analyzes your needs, builds the structure and writes the website. Standard AI and guided mode remain available on the free plan." : "L’Architecte complet analyse votre besoin, construit l’architecture et rédige le site. L’IA standard et le mode guidé restent disponibles avec l’offre gratuite."}</p></div>
                         <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
                       </div>
                     ) : null}
-                    <p className="guided-writing-intro">Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée.</p>
+                    <p className="guided-writing-intro">{en ? "Describe your needs freely. The Premium Architect first understands your activity, audience, goal and positioning, then builds the visitor journey, architecture, copy and visual direction. Every proposal goes through a critical audit before you see it." : "Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée."}</p>
                     <div className="architect-brief-guide">
-                      <b>Pour un résultat exceptionnel, indiquez si vous les connaissez :</b>
-                      <span>ce que vous proposez · à qui · l’action attendue · ce qui vous différencie · le ton souhaité · les contraintes à respecter</span>
+                      <b>{en ? "For the best result, include these details if you know them:" : "Pour un résultat exceptionnel, indiquez si vous les connaissez :"}</b>
+                      <span>{en ? "what you offer · who it is for · the desired action · what makes you different · preferred tone · constraints to respect" : "ce que vous proposez · à qui · l’action attendue · ce qui vous différencie · le ton souhaité · les contraintes à respecter"}</span>
                     </div>
                     <label className="guided-question">
-                      <span>Votre besoin</span>
-                      <textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} disabled={!premiumArchitectAvailable} placeholder="Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité." />
+                      <span>{en ? "Your needs" : "Votre besoin"}</span>
+                      <textarea rows={8} maxLength={4000} value={architectBrief} onChange={(e) => setArchitectBrief(e.target.value)} disabled={!premiumArchitectAvailable} placeholder={en ? "E.g. I am an independent photographer working mainly with couples and families who want natural images. The website should show my style, reassure visitors about my approach and encourage them to contact me. I want something elegant, warm, human and highly visual, without aggressive sales language." : "Ex. Je suis photographe indépendant à Toulouse. Je travaille surtout avec des couples et des familles qui veulent des images naturelles. Le site doit montrer mon univers, rassurer sur mon approche et donner envie de me contacter. Je veux éviter le ton commercial agressif : quelque chose d’élégant, chaleureux, humain et très visuel. Je veux mettre en avant la lumière naturelle, l’émotion et la simplicité."} />
                       <small className={"architect-brief-readiness " + (architectBriefReady ? "is-ready" : "is-thin")}>
                         {architectBriefReady
-                          ? "Brief suffisamment détaillé pour lancer l’analyse Premium."
+                          ? (en ? "The brief is detailed enough to start the Premium analysis." : "Brief suffisamment détaillé pour lancer l’analyse Premium.")
                           : architectBriefLength === 0
-                            ? "Commencez par quelques phrases : activité, public, objectif et ton souhaité."
-                            : `Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`}
+                            ? (en ? "Start with a few sentences: activity, audience, goal and desired tone." : "Commencez par quelques phrases : activité, public, objectif et ton souhaité.")
+                            : (en ? `About ${80 - architectBriefLength} more character${80 - architectBriefLength > 1 ? "s" : ""} to give the Architect enough context.` : `Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`)}
                       </small>
                     </label>
-                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? "Stratégie, création et audit en cours…" : "Créer avec l’Architecte Premium"} <span aria-hidden="true">→</span></button>
+                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? (en ? "Strategy, creation and audit in progress…" : "Stratégie, création et audit en cours…") : (en ? "Create with Premium Architect" : "Créer avec l’Architecte Premium")} <span aria-hidden="true">→</span></button>
                     {architectProposal ? (
                       <div className="ai-current-note architect-premium-result" role="status">
                         <div className="architect-result-heading">
                           <div>
-                            <b>Proposition Premium prête à relire</b>
+                            <b>{en ? "Premium proposal ready to review" : "Proposition Premium prête à relire"}</b>
                             <p><strong>{architectProposal.heroTitle}</strong><br />{architectProposal.heroSubtitle}</p>
                           </div>
                           <span className={"architect-readiness " + architectProposal.intelligence.readiness}>
-                            {architectProposal.intelligence.readiness === "strong" ? "Brief solide" : architectProposal.intelligence.readiness === "usable" ? "Brief exploitable" : "Brief partiel"}
+                            {architectProposal.intelligence.readiness === "strong" ? (en ? "Strong brief" : "Brief solide") : architectProposal.intelligence.readiness === "usable" ? (en ? "Usable brief" : "Brief exploitable") : (en ? "Partial brief" : "Brief partiel")}
                           </span>
                         </div>
                         <div className="architect-insight-grid">
-                          <article><span>Besoin compris</span><p>{architectProposal.intelligence.understoodNeed}</p></article>
-                          <article><span>Public principal</span><p>{architectProposal.intelligence.audience}</p></article>
-                          <article><span>Objectif du site</span><p>{architectProposal.intelligence.primaryGoal}</p></article>
-                          <article><span>Positionnement</span><p>{architectProposal.intelligence.positioning}</p></article>
+                          <article><span>{en ? "Understood need" : "Besoin compris"}</span><p>{architectProposal.intelligence.understoodNeed}</p></article>
+                          <article><span>{en ? "Primary audience" : "Public principal"}</span><p>{architectProposal.intelligence.audience}</p></article>
+                          <article><span>{en ? "Website goal" : "Objectif du site"}</span><p>{architectProposal.intelligence.primaryGoal}</p></article>
+                          <article><span>{en ? "Positioning" : "Positionnement"}</span><p>{architectProposal.intelligence.positioning}</p></article>
                         </div>
                         {architectProposal.intelligence.visitorJourney.length ? (
                           <div className="architect-journey">
-                            <b>Parcours visiteur conçu par l’IA</b>
+                            <b>{en ? "AI-designed visitor journey" : "Parcours visiteur conçu par l’IA"}</b>
                             <div>{architectProposal.intelligence.visitorJourney.map((item, index) => <span key={item + index}><i>{index + 1}</i>{item}</span>)}</div>
                           </div>
                         ) : null}
                         <div className="architect-rationale-grid">
-                          <article><b>Pourquoi cette architecture ?</b><p>{architectProposal.intelligence.architectureRationale}</p></article>
-                          <article><b>Pourquoi cette direction visuelle ?</b><p>{architectProposal.intelligence.designRationale}</p></article>
+                          <article><b>{en ? "Why this architecture?" : "Pourquoi cette architecture ?"}</b><p>{architectProposal.intelligence.architectureRationale}</p></article>
+                          <article><b>{en ? "Why this visual direction?" : "Pourquoi cette direction visuelle ?"}</b><p>{architectProposal.intelligence.designRationale}</p></article>
                         </div>
-                        <p>Rubriques recommandées : {(architectProposal.recommendedModules || []).join(", ") || "aucune rubrique supplémentaire"}.</p>
-                        <p>Architecture : {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : "site monopage"} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p>
-                        <p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p>
-                        <p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p>
+                        <p>{en ? "Recommended sections" : "Rubriques recommandées"}: {(architectProposal.recommendedModules || []).join(", ") || (en ? "no additional section" : "aucune rubrique supplémentaire")}.</p>
+                        <p>{en ? "Architecture" : "Architecture"}: {architectProposal.architecture?.mode === "multi" ? `${architectProposal.architecture.pages.length} pages` : (en ? "single-page website" : "site monopage")} · {(architectProposal.architecture?.pages || []).map((page) => page.title).join(" → ")}.</p>
+                        <p>{en ? "Structure" : "Structure"}: {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · {en ? "width" : "largeur"} {architectProposal.design?.contentWidth}.</p>
+                        <p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? (en ? "solid background" : "fond uni") : `${en ? "pattern" : "motif"} ${architectProposal.design?.pattern}`}.</p>
                         <div className="architect-audit">
                           <b>
                             ✓ {architectProposal.premiumAudit.finalReviewPerformed
-                              ? "Double contrôle Premium validé"
-                              : "Audit Premium validé"}
+                              ? (en ? "Double Premium review passed" : "Double contrôle Premium validé")
+                              : (en ? "Premium audit passed" : "Audit Premium validé")}
                           </b>
                           <p>{architectProposal.premiumAudit.qualityNote}</p>
                           {architectProposal.premiumAudit.finalReviewPerformed ? (
                             <small>
-                              Le texte affiché a été relu une seconde fois après correction par un critique IA indépendant.
+                              {en ? "The displayed copy was reviewed a second time after correction by an independent AI critic." : "Le texte affiché a été relu une seconde fois après correction par un critique IA indépendant."}
                             </small>
                           ) : null}
                           {architectProposal.premiumAudit.strategyReused ? (
                             <small>
-                              Variante efficiente : la stratégie déjà validée a été conservée, puis la création et les contrôles qualité ont été relancés.
+                              {en ? "Efficient variant: the validated strategy was reused, then creation and quality checks were run again." : "Variante efficiente : la stratégie déjà validée a été conservée, puis la création et les contrôles qualité ont été relancés."}
                             </small>
                           ) : null}
                           {architectProposal.premiumAudit.deterministicChecksPerformed ? (
                             <small>
-                              Contrôle structurel automatique validé · {architectProposal.premiumAudit.deterministicIssuesDetected} alerte{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} résiduelle{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} · aucun blocage.
+                              {en ? `Automated structural checks passed · ${architectProposal.premiumAudit.deterministicIssuesDetected} residual alert${architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} · no blocker.` : <>Contrôle structurel automatique validé · {architectProposal.premiumAudit.deterministicIssuesDetected} alerte{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} résiduelle{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} · aucun blocage.</>}
                             </small>
                           ) : null}
-                          {architectProposal.premiumAudit.strengths.length ? <small>Points forts : {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
+                          {architectProposal.premiumAudit.strengths.length ? <small>{en ? "Strengths" : "Points forts"}: {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
                         </div>
                         <div className="architect-human-eval">
                           <div>
