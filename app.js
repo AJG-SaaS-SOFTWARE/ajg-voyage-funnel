@@ -2,14 +2,7 @@
   const form = document.querySelector('#lead-form');
   const lang = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'fr';
 
-  const funnelSessionKey = 'ajg_funnel_session';
-  let funnelSession = sessionStorage.getItem(funnelSessionKey);
-  if (!funnelSession && crypto?.randomUUID) {
-    funnelSession = crypto.randomUUID();
-    sessionStorage.setItem(funnelSessionKey, funnelSession);
-  }
   const trackFunnel = (eventName) => {
-    if (!funnelSession) return;
     const params = new URLSearchParams(window.location.search);
     fetch('/api/funnel-event', {
       method: 'POST',
@@ -17,7 +10,6 @@
       keepalive: true,
       body: JSON.stringify({
         event_name: eventName,
-        session_id: funnelSession,
         language: lang,
         page_path: window.location.pathname,
         utm_source: params.get('utm_source') || '',
