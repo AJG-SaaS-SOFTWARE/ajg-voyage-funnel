@@ -6,66 +6,80 @@ const checkout = fs.readFileSync(new URL("../app/api/billing/checkout/route.ts",
 const webhook = fs.readFileSync(new URL("../app/api/billing/stripe-webhook/route.ts", import.meta.url), "utf8");
 const stripe = fs.readFileSync(new URL("../lib/stripe-billing.ts", import.meta.url), "utf8");
 const subscription = fs.readFileSync(new URL("../lib/subscription.ts", import.meta.url), "utf8");
+const aiRoute = fs.readFileSync(new URL("../app/api/ai/write/route.ts", import.meta.url), "utf8");
+const readiness = fs.readFileSync(new URL("../app/api/admin/release-readiness/route.ts", import.meta.url), "utf8");
 const env = fs.readFileSync(new URL("../.env.example", import.meta.url), "utf8");
 
-test("billing catalog supports Essential and Pro monthly and annual prices", () => {
+test("billing catalogue supports BUILD RUN GROW", () => {
   for (const key of [
     "STRIPE_ESSENTIAL_MONTHLY_PRICE_ID",
     "STRIPE_ESSENTIAL_ANNUAL_PRICE_ID",
-    "STRIPE_PRO_MONTHLY_PRICE_ID",
-    "STRIPE_PRO_ANNUAL_PRICE_ID"
-  ]) assert.ok(env.includes(key));
-  assert.ok(subscription.includes('"free" | "essential" | "pro"'));
+    "STRIPE_GROWTH_MONTHLY_PRICE_ID",
+    "STRIPE_GROWTH_ANNUAL_PRICE_ID",
+    "STRIPE_AI_LAUNCH_PRICE_ID"
+  ]) assert.ok(env.includes(key), key);
+  assert.ok(subscription.includes('"free" | "essential" | "growth"'));
+  assert.ok(env.includes("AJG_AI_LAUNCH_OPERATIONS=4"));
+  assert.ok(env.includes("AJG_SUBSCRIPTION_TRIAL_DAYS=0"));
 });
 
-test("checkout is gated and grants a 14 day trial", () => {
+test("checkout keeps commercial charging closed by an explicit server gate", () => {
   assert.ok(checkout.includes("AJG_BILLING_CHECKOUT_ENABLED"));
-  assert.ok(checkout.includes("trialDays: 14"));
-  assert.ok(checkout.includes('body?.planKey === "essential"'));
-  assert.ok(checkout.includes('body?.billingCycle === "annual"'));
-  assert.ok(checkout.includes("beta_access_active"));
-  assert.ok(stripe.includes("trial_period_days"));
-  assert.ok(stripe.includes("plan_key: input.planKey"));
+  assert.ok(checkout.includes('body?.planKey === "growth"'));
+  assert.ok(checkout.includes('body?.purchaseType === "ai_launch"'));
+  assert.ok(checkout.includes("STRIPE_AI_LAUNCH_PRICE_ID"));
+  assert.ok(checkout.includes("AJG_SUBSCRIPTION_TRIAL_DAYS"));
+  assert.ok(checkout.includes('planKey === "growth" && billingCycle === "annual"'));
+  assert.ok(checkout.includes("return 0"));
+  assert.ok(stripe.includes('mode: "payment"'));
+  assert.ok(stripe.includes('purchase_type: "ai_launch"'));
 });
 
-test("webhook maps all commercial prices server-side", () => {
-  assert.ok(webhook.includes("STRIPE_ESSENTIAL_MONTHLY_PRICE_ID"));
-  assert.ok(webhook.includes("STRIPE_ESSENTIAL_ANNUAL_PRICE_ID"));
-  assert.ok(webhook.includes("STRIPE_PRO_MONTHLY_PRICE_ID"));
-  assert.ok(webhook.includes("STRIPE_PRO_ANNUAL_PRICE_ID"));
-  assert.ok(webhook.includes('entry is [string, "essential" | "pro"]'));
-});
-
-
-test("commercial readiness requires the complete billing catalog and launch gates", () => {
-  const readiness = fs.readFileSync(
-    new URL("../app/api/admin/release-readiness/route.ts", import.meta.url),
-    "utf8"
-  );
+test("webhook maps new recurring prices and grants BUILD idempotently", () => {
   for (const key of [
     "STRIPE_ESSENTIAL_MONTHLY_PRICE_ID",
     "STRIPE_ESSENTIAL_ANNUAL_PRICE_ID",
-    "STRIPE_PRO_MONTHLY_PRICE_ID",
-    "STRIPE_PRO_ANNUAL_PRICE_ID",
+    "STRIPE_GROWTH_MONTHLY_PRICE_ID",
+    "STRIPE_GROWTH_ANNUAL_PRICE_ID"
+  ]) assert.ok(webhook.includes(key), key);
+  assert.ok(webhook.includes('entry is [string, "essential" | "growth"]'));
+  assert.ok(webhook.includes("site_ai_launch_entitlements"));
+  assert.ok(webhook.includes('source: "stripe_purchase"'));
+  assert.ok(webhook.includes('source: "growth_annual"'));
+  assert.ok(webhook.includes("ignoreDuplicates: true"));
+});
+
+test("AI Architect separates BUILD creation from Growth revisions", () => {
+  assert.ok(aiRoute.includes("get_my_site_ai_access"));
+  assert.ok(aiRoute.includes("reserve_my_site_launch_operation"));
+  assert.ok(aiRoute.includes("commit_my_site_launch_operation"));
+  assert.ok(aiRoute.includes("release_my_site_launch_operation"));
+  assert.ok(aiRoute.includes("ai_launch_required"));
+  assert.ok(aiRoute.includes("growth_or_ai_launch_required"));
+  assert.ok(aiRoute.includes("unmetered_growth"));
+});
+
+test("commercial readiness requires the complete new catalogue and cost guardrails", () => {
+  for (const key of [
+    "STRIPE_ESSENTIAL_MONTHLY_PRICE_ID",
+    "STRIPE_ESSENTIAL_ANNUAL_PRICE_ID",
+    "STRIPE_GROWTH_MONTHLY_PRICE_ID",
+    "STRIPE_GROWTH_ANNUAL_PRICE_ID",
+    "STRIPE_AI_LAUNCH_PRICE_ID",
     "STRIPE_PORTAL_CONFIGURATION_ID",
+    "AJG_AI_LAUNCH_OPERATIONS",
     "AJG_COMMERCIAL_LEGAL_READY",
     "AJG_COMMERCIAL_TAX_READY",
     "AJG_BILLING_CHECKOUT_ENABLED"
-  ]) assert.ok(readiness.includes(key));
+  ]) assert.ok(readiness.includes(key), key);
   assert.ok(stripe.includes("STRIPE_PORTAL_CONFIGURATION_ID"));
 });
-
 
 test("B2B checkout collects billing identity but automatic tax remains explicitly gated", () => {
   assert.ok(stripe.includes('billing_address_collection: "required"'));
   assert.ok(stripe.includes('tax_id_collection: { enabled: true, required: "if_supported" }'));
   assert.ok(stripe.includes("AJG_STRIPE_TAX_ENABLED"));
   assert.ok(stripe.includes('commercial_market: "b2b"'));
-
-  const readiness = fs.readFileSync(
-    new URL("../app/api/admin/release-readiness/route.ts", import.meta.url),
-    "utf8"
-  );
   assert.ok(readiness.includes("AJG_VAT_REGIME"));
   assert.ok(readiness.includes("franchise_base"));
   assert.ok(readiness.includes("vat_registered"));
