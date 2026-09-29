@@ -17,7 +17,7 @@ Ressource tierce chargée directement par certaines pages/styles. URLs actuellem
 ### Calendly
 Les liens de réservation ouvrent `calendly.com` dans un nouvel onglet. Calendly n’est pas embarqué dans AJG Voyage. Aucun script ou iframe Calendly n’est chargé automatiquement sur la page AJG Voyage auditée.
 
-### CNIL / Netlify et autres liens légaux
+### CNIL / Vercel et autres liens légaux
 Les liens externes présents dans les pages légales ne chargent pas leurs services tant que l’utilisateur ne clique pas dessus.
 
 ## Scripts / analytics / pixels
