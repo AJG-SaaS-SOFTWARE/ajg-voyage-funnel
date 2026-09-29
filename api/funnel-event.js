@@ -15,7 +15,7 @@ function clean(value, max = 250) {
 }
 
 function json(res, status, body) {
-  res.status(status);
+  res.statusCode = status;
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.end(JSON.stringify(body));
