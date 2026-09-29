@@ -116,10 +116,10 @@ export default function Home() {
         <div className="intro premium-intro">
           <div className="builder-language-row"><p className="eyebrow">AJG Site Builder · Prototype 0.10.2</p><LanguageSwitch compact /></div>
           <h1>{tr("Votre site en quelques étapes", "Your website in a few steps")}</h1>
-          <p>
-            Un seul moteur pour créer et maintenir les sites des membres : identité, contenu,
-            rendez-vous, médias, aperçu et publication.
-          </p>
+          <p>{tr(
+            "Un seul moteur pour créer et maintenir vos sites : identité, contenu, rendez-vous, médias, aperçu et publication.",
+            "One workspace to create and maintain your websites: identity, content, bookings, media, preview and publishing."
+          )}</p>
         </div>
 
         <div className="hero-art hero-photo-art" aria-hidden="true">
@@ -149,12 +149,12 @@ export default function Home() {
           </b>
           <p>
             {remoteStatus === "authenticated"
-              ? "Vos données peuvent être sauvegardées dans Supabase" + (email ? " · " + email : "") + "."
+              ? tr("Vos données peuvent être sauvegardées dans Supabase", "Your data can be saved to Supabase") + (email ? " · " + email : "") + "."
               : remoteStatus === "guest"
-                ? "Connectez-vous pour sauvegarder un vrai site et envoyer des photos."
+                ? tr("Connectez-vous pour sauvegarder un vrai site et envoyer des photos.", "Sign in to save a real website and upload photos.")
                 : remoteStatus === "local"
-                  ? "Le builder fonctionne, mais les données restent sur cet appareil."
-                  : "Connexion au backend en cours."}
+                  ? tr("Le builder fonctionne, mais les données restent sur cet appareil.", "The Builder works, but data stays on this device.")
+                  : tr("Connexion au backend en cours.", "Connecting to backend.")}
           </p>
         </div>
         {remoteStatus === "guest" ? (
@@ -198,8 +198,8 @@ export default function Home() {
             <h2>{draft?.status === "published" ? tr("Site publié", "Website published") : tr("Brouillon", "Draft")}</h2>
             <p>
               {draft?.status === "published"
-                ? "Votre site est publié et accessible depuis son adresse publique."
-                : "Travaillez à votre rythme puis publiez quand les informations sont prêtes."}
+                ? tr("Votre site est publié et accessible depuis son adresse publique.", "Your website is published and available at its public address.")
+                : tr("Travaillez à votre rythme puis publiez quand les informations sont prêtes.", "Work at your own pace, then publish when everything is ready.")}
             </p>
             {draft?.status === "published" ? (
               <Link className="text-link" href={"/site/" + draft.config.slug}>{tr("Ouvrir le site publié", "Open published website")} →</Link>
