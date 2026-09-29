@@ -7,9 +7,7 @@ import styles from "./PricingPage.module.css";
 type Locale = "fr" | "en";
 type BillingCycle = "monthly" | "annual";
 
-type PricingPageProps = {
-  locale: Locale;
-};
+type PricingPageProps = { locale: Locale };
 
 const copy = {
   fr: {
@@ -17,63 +15,69 @@ const copy = {
     switchLabel: "English",
     switchHref: "/pricing",
     eyebrow: "AJG Site Builder · Tarifs",
-    title: "Choisissez jusqu’où vous voulez être accompagné.",
+    title: "Créez. Gérez. Faites progresser.",
     subtitle:
-      "Construisez vous-même avec l’aide de l’IA, ou laissez le Concepteur IA préparer votre première version. Dans les deux cas, vous gardez la main sur chaque texte, section et choix de design.",
-    trial: "14 jours d’essai avec l’expérience Pro IA au lancement commercial",
+      "BUILD, RUN, GROW : payez la création complète quand vous en avez besoin, puis choisissez le niveau de service récurrent adapté à votre site.",
+    phase: "Bêta privée · paiements commerciaux encore désactivés",
     monthly: "Mensuel",
     annual: "Annuel",
     annualHint: "2 mois équivalents offerts",
     essential: {
       name: "Essentiel",
-      badge: "Créer avec l’IA",
-      monthlyPrice: "19 €",
-      annualPrice: "190 €",
+      badge: "RUN",
+      monthlyPrice: "15 €",
+      annualPrice: "150 €",
       suffixMonthly: "/ mois",
       suffixAnnual: "/ an",
-      description:
-        "Pour construire et gérer votre site avec un éditeur complet et l’IA rédactionnelle là où elle fait gagner du temps.",
+      description: "Pour garder un site professionnel en ligne, le modifier et le maintenir en autonomie.",
       features: [
         "1 site professionnel",
-        "Éditeur complet et personnalisation",
         "Hébergement et publication inclus",
         "Domaine personnalisé",
+        "Éditeur complet et personnalisation",
         "IA rédactionnelle dans les champs utiles",
-        "Réécriture, amélioration et suggestions de contenu",
-        "SEO essentiel et design responsive",
-        "Sans Concepteur IA complet"
+        "SEO et analytics essentiels",
+        "Sauvegardes et outils self-service"
       ],
-      cta: "Créer mon compte"
+      cta: "Choisir Essentiel"
     },
-    pro: {
-      name: "Pro IA",
-      badge: "Recommandé",
-      monthlyPrice: "39 €",
-      annualPrice: "390 €",
+    growth: {
+      name: "Growth",
+      badge: "RUN + GROW",
+      monthlyPrice: "29 €",
+      annualPrice: "290 €",
       suffixMonthly: "/ mois",
       suffixAnnual: "/ an",
-      description:
-        "Pour partir d’un brief et obtenir beaucoup plus vite une première version structurée, cohérente et entièrement modifiable.",
+      description: "Pour analyser le site, détecter les opportunités et l'améliorer continuellement avec l'IA.",
       features: [
         "Tout Essentiel",
-        "Concepteur IA de site",
-        "Structure et sections proposées à partir du brief",
-        "Premiers textes générés puis entièrement éditables",
-        "Aide IA renforcée pour les itérations",
-        "Quota IA supérieur",
-        "Capacité média et stockage supérieure",
-        "Accès prioritaire aux nouveaux modules IA"
+        "AI Website Manager",
+        "Diagnostics et recommandations continues",
+        "SEO / AEO et opportunités de contenu",
+        "Analyse conversion et CTA",
+        "Création et adaptation de pages",
+        "Capacité IA supérieure",
+        "Création IA initiale incluse avec Growth annuel"
       ],
-      cta: "Tester le Concepteur IA"
+      cta: "Choisir Growth"
     },
-    promiseTitle: "Pas un builder low-cost de plus.",
+    launch: {
+      badge: "BUILD",
+      name: "Création IA complète",
+      price: "49 €",
+      suffix: "une fois",
+      description:
+        "Le Concepteur IA transforme votre brief en première version complète : stratégie, architecture, pages, textes, direction visuelle, audit et raffinement.",
+      note: "S'ajoute à Essentiel ou Growth mensuel. Incluse avec Growth annuel."
+    },
+    promiseTitle: "Un abonnement pour le service rendu chaque mois.",
     promise:
-      "AJG Site Builder est conçu pour réduire la page blanche, les hésitations et la complexité entre « j’ai besoin d’un site » et « j’ai un site que je peux réellement publier et faire évoluer ».",
+      "Essentiel paie le RUN. Growth paie le pilotage et l'amélioration continue. La création initiale n'est pas artificiellement transformée en abonnement.",
     betaTitle: "Bêta privée en cours",
     beta:
-      "Les Beta Testers invités disposent temporairement de l’accès Pro complet sans abonnement Stripe. Ce statut n’est pas une offre publique et n’apparaît pas dans la grille commerciale.",
+      "Les Beta Testers disposent temporairement de l'accès complet pour tester BUILD, RUN et GROW sans abonnement Stripe.",
     billingNote:
-      "Les paiements restent désactivés pendant la bêta. Les prix ci-dessus sont la grille commerciale retenue pour préparer l’ouverture de Stripe et seront synchronisés avec les CGV/CGU avant encaissement.",
+      "Le catalogue sandbox est préparé, mais aucun paiement commercial n'est ouvert tant que les gates juridiques, fiscaux et opérationnels ne sont pas validés.",
     account: "Mon offre",
     builder: "Ouvrir le Builder",
     legal: "Mentions légales",
@@ -86,63 +90,69 @@ const copy = {
     switchLabel: "Français",
     switchHref: "/tarifs",
     eyebrow: "AJG Site Builder · Pricing",
-    title: "Choose how much help you want.",
+    title: "Build. Run. Grow.",
     subtitle:
-      "Build your website yourself with AI-assisted writing, or let the AI Site Architect prepare your first structured version. Either way, every section, text and design choice stays editable.",
-    trial: "14-day Pro AI experience at commercial launch",
+      "BUILD, RUN, GROW: pay for full website creation when you need it, then choose the recurring service level that fits your website.",
+    phase: "Private beta · commercial payments still disabled",
     monthly: "Monthly",
     annual: "Annual",
     annualHint: "Equivalent of 2 months free",
     essential: {
       name: "Essential",
-      badge: "Build with AI",
-      monthlyPrice: "€19",
-      annualPrice: "€190",
+      badge: "RUN",
+      monthlyPrice: "€15",
+      annualPrice: "€150",
       suffixMonthly: "/ month",
       suffixAnnual: "/ year",
-      description:
-        "For people who want full control of the editor with AI writing assistance where it saves the most time.",
+      description: "For keeping a professional website online, editable and maintained with self-service tools.",
       features: [
         "1 professional website",
-        "Full editor and customization",
         "Hosting and publishing included",
         "Custom domain",
-        "AI writing assistance in high-value fields",
-        "Rewrite, improve and suggest content",
-        "Essential SEO and responsive design",
-        "AI Site Architect not included"
+        "Full editor and customization",
+        "AI writing assistance in useful fields",
+        "Essential SEO and analytics",
+        "Backups and self-service tools"
       ],
-      cta: "Create my account"
+      cta: "Choose Essential"
     },
-    pro: {
-      name: "Pro AI",
-      badge: "Recommended",
-      monthlyPrice: "€39",
-      annualPrice: "€390",
+    growth: {
+      name: "Growth",
+      badge: "RUN + GROW",
+      monthlyPrice: "€29",
+      annualPrice: "€290",
       suffixMonthly: "/ month",
       suffixAnnual: "/ year",
-      description:
-        "For people who want to start from a brief and get a structured, coherent and fully editable first version much faster.",
+      description: "For analyzing your website, finding opportunities and improving it continuously with AI.",
       features: [
         "Everything in Essential",
-        "AI Site Architect",
-        "Structure and sections proposed from your brief",
-        "First-draft copy generated and fully editable",
-        "Stronger AI support for iterations",
-        "Higher AI allowance",
-        "Higher media and storage capacity",
-        "Priority access to new AI modules"
+        "AI Website Manager",
+        "Continuous diagnostics and recommendations",
+        "SEO / AEO and content opportunities",
+        "Conversion and CTA analysis",
+        "Page creation and adaptation",
+        "Higher AI capacity",
+        "Initial AI Launch included with annual Growth"
       ],
-      cta: "Try the AI Site Architect"
+      cta: "Choose Growth"
     },
-    promiseTitle: "Not another low-cost website builder.",
+    launch: {
+      badge: "BUILD",
+      name: "Full AI Launch",
+      price: "€49",
+      suffix: "one time",
+      description:
+        "The AI Site Architect turns your brief into a complete first version: strategy, architecture, pages, copy, visual direction, audit and refinement.",
+      note: "Add it to Essential or monthly Growth. Included with annual Growth."
+    },
+    promiseTitle: "A subscription for value delivered every month.",
     promise:
-      "AJG Site Builder is designed to reduce blank-page anxiety, hesitation and complexity between “I need a website” and “I have a website I can actually publish and improve.”",
+      "Essential pays for RUN. Growth pays for ongoing management and improvement. Initial creation is not artificially turned into a subscription.",
     betaTitle: "Private beta in progress",
     beta:
-      "Invited Beta Testers temporarily receive full Pro access without a Stripe subscription. This status is not a public plan and is intentionally excluded from the commercial pricing grid.",
+      "Beta Testers temporarily receive full access to BUILD, RUN and GROW without a Stripe subscription.",
     billingNote:
-      "Payments remain disabled during the beta. The prices above are the commercial grid selected to prepare Stripe launch and will be synchronized with the final terms before any charge is collected.",
+      "The sandbox catalogue is prepared, but commercial charging stays closed until legal, tax and operational launch gates are approved.",
     account: "My plan",
     builder: "Open Builder",
     legal: "Legal notice",
@@ -155,14 +165,12 @@ const copy = {
 export function PricingPage({ locale }: PricingPageProps) {
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const t = copy[locale];
-
-  const planPrice = (plan: typeof t.essential | typeof t.pro) =>
+  const price = (plan: typeof t.essential | typeof t.growth) =>
     cycle === "monthly"
       ? { price: plan.monthlyPrice, suffix: plan.suffixMonthly }
       : { price: plan.annualPrice, suffix: plan.suffixAnnual };
-
-  const essentialPrice = planPrice(t.essential);
-  const proPrice = planPrice(t.pro);
+  const essentialPrice = price(t.essential);
+  const growthPrice = price(t.growth);
 
   return (
     <main className={styles.page} lang={locale}>
@@ -182,25 +190,22 @@ export function PricingPage({ locale }: PricingPageProps) {
         <p className={styles.eyebrow}>{t.eyebrow}</p>
         <h1>{t.title}</h1>
         <p className={styles.subtitle}>{t.subtitle}</p>
-        <div className={styles.trialBadge}>{t.trial}</div>
+        <div className={styles.trialBadge}>{t.phase}</div>
       </section>
 
+      <article className={styles.launchCard}>
+        <div>
+          <p className={styles.planBadge}>{t.launch.badge}</p>
+          <h2>{t.launch.name}</h2>
+          <p className={styles.description}>{t.launch.description}</p>
+          <p className={styles.launchNote}>{t.launch.note}</p>
+        </div>
+        <p className={styles.price}>{t.launch.price} <small>{t.launch.suffix}</small></p>
+      </article>
+
       <section className={styles.controls} aria-label={locale === "fr" ? "Fréquence de facturation" : "Billing frequency"}>
-        <button
-          type="button"
-          className={cycle === "monthly" ? styles.activeCycle : ""}
-          onClick={() => setCycle("monthly")}
-        >
-          {t.monthly}
-        </button>
-        <button
-          type="button"
-          className={cycle === "annual" ? styles.activeCycle : ""}
-          onClick={() => setCycle("annual")}
-        >
-          {t.annual}
-          <small>{t.annualHint}</small>
-        </button>
+        <button type="button" className={cycle === "monthly" ? styles.activeCycle : ""} onClick={() => setCycle("monthly")}>{t.monthly}</button>
+        <button type="button" className={cycle === "annual" ? styles.activeCycle : ""} onClick={() => setCycle("annual")}>{t.annual}<small>{t.annualHint}</small></button>
       </section>
 
       <section className={styles.grid} aria-label={t.navLabel}>
@@ -209,33 +214,23 @@ export function PricingPage({ locale }: PricingPageProps) {
           <h2>{t.essential.name}</h2>
           <p className={styles.price}>{essentialPrice.price} <small>{essentialPrice.suffix}</small></p>
           <p className={styles.description}>{t.essential.description}</p>
-          <ul>
-            {t.essential.features.map((feature) => <li key={feature}>{feature}</li>)}
-          </ul>
+          <ul>{t.essential.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
           <Link className={styles.secondaryCta} href="/login">{t.essential.cta}</Link>
         </article>
 
         <article className={styles.card + " " + styles.proCard}>
-          <p className={styles.planBadge + " " + styles.proBadge}>{t.pro.badge}</p>
-          <h2>{t.pro.name}</h2>
-          <p className={styles.price}>{proPrice.price} <small>{proPrice.suffix}</small></p>
-          <p className={styles.description}>{t.pro.description}</p>
-          <ul>
-            {t.pro.features.map((feature) => <li key={feature}>{feature}</li>)}
-          </ul>
-          <Link className={styles.primaryCta} href="/login">{t.pro.cta}</Link>
+          <p className={styles.planBadge + " " + styles.proBadge}>{t.growth.badge}</p>
+          <h2>{t.growth.name}</h2>
+          <p className={styles.price}>{growthPrice.price} <small>{growthPrice.suffix}</small></p>
+          <p className={styles.description}>{t.growth.description}</p>
+          <ul>{t.growth.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+          <Link className={styles.primaryCta} href="/login">{t.growth.cta}</Link>
         </article>
       </section>
 
       <section className={styles.valueSection}>
-        <div>
-          <p className={styles.eyebrow}>{t.promiseTitle}</p>
-          <p>{t.promise}</p>
-        </div>
-        <div>
-          <p className={styles.eyebrow}>{t.betaTitle}</p>
-          <p>{t.beta}</p>
-        </div>
+        <div><p className={styles.eyebrow}>{t.promiseTitle}</p><p>{t.promise}</p></div>
+        <div><p className={styles.eyebrow}>{t.betaTitle}</p><p>{t.beta}</p></div>
       </section>
 
       <p className={styles.billingNote}>{t.billingNote}</p>
