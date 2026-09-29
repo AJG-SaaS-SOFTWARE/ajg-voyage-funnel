@@ -48,7 +48,7 @@ Données prospect : maximum 3 ans à compter de la collecte ou du dernier contac
 Le score interne sert uniquement à organiser/personnaliser le suivi. Aucune décision produisant un effet juridique ou significatif n’est prise automatiquement.
 
 **Mesures de sécurité**
-HTTPS/HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, honeypot de formulaire. Maintenir MFA et contrôle d’accès sur les comptes d’administration utilisés.
+HTTPS/HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, honeypot de formulaire et limitation serveur des soumissions. Pour cette limitation, l’IP est transformée en empreinte cryptographique côté serveur ; l’IP en clair n’est pas enregistrée dans la table dédiée et l’empreinte est purgée automatiquement après 24 heures. Maintenir MFA et contrôle d’accès sur les comptes d’administration utilisés.
 
 ## Traitement 2 — Préférence linguistique
 
