@@ -455,13 +455,14 @@ function standardVisibleOutputTexts(
 
   if (field === "guidedDraft") {
     const draft = value.draft || {};
-    return [
+    const texts: Array<readonly [string, string]> = [
       ["heroTagline", clean(draft.heroTagline, 2000)],
       ["heroTitle", clean(draft.heroTitle, 2000)],
       ["heroSubtitle", clean(draft.heroSubtitle, 4000)],
       ["aboutHeading", clean(draft.aboutHeading, 2000)],
       ["aboutText", clean(draft.aboutText, 6000)]
-    ].filter((entry): entry is readonly [string, string] => Boolean(entry[1]));
+    ];
+    return texts.filter((entry) => Boolean(entry[1]));
   }
 
   if (field === "qualityReview") {
@@ -507,7 +508,7 @@ export function standardQualityIssues(
   );
 
   const templatePattern =
-    /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|\b(?:lorem ipsum|todo|tbd)\b)/giu;
+    /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|\b(?:lorem ipsum|todo|tbd)\b)/iu;
   const presentationMarkupPattern =
     /(?:\*\*[^*\n]+\*\*|__[^_\n]+__|(?:^|\n)\s{0,3}#{1,6}\s+\S|\x60\x60\x60|!?\[[^\]\n]+\]\([^)\n]+\)|<\/?(?:strong|em|b|i|h[1-6]|p|a|ul|ol|li)\b[^>]*>)/iu;
   const quantitativePattern =
