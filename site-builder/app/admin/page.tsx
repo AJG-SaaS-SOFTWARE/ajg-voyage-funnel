@@ -65,6 +65,7 @@ export default function AdminPage() {
   const [betaCohort, setBetaCohort] = useState<AdminBetaCohort | null>(null);
   const [betaEmail, setBetaEmail] = useState("");
   const [betaDurationDays, setBetaDurationDays] = useState(30);
+  const [betaLocale, setBetaLocale] = useState<"fr" | "en">("fr");
   const [betaInviteBusy, setBetaInviteBusy] = useState(false);
   const [managedDomains, setManagedDomains] = useState<AdminManagedDomain[]>([]);
   const [managedDomainBusy, setManagedDomainBusy] = useState<string | null>(null);
@@ -240,7 +241,7 @@ export default function AdminPage() {
     setMessage("");
     setBetaInviteBusy(true);
     try {
-      const result = await adminInviteBetaMember(email, betaDurationDays);
+      const result = await adminInviteBetaMember(email, betaDurationDays, betaLocale);
       setBetaEmail("");
       await load();
       setMessage(
@@ -259,7 +260,7 @@ export default function AdminPage() {
     setMessage("");
     setBetaInviteBusy(true);
     try {
-      const result = await adminInviteBetaMember(email, betaDurationDays);
+      const result = await adminInviteBetaMember(email, betaDurationDays, betaLocale);
       await load();
       setMessage(
         `Accès Beta Tester renouvelé pour ${result.member.email} pendant ${betaDurationDays} jours.`
@@ -532,6 +533,17 @@ export default function AdminPage() {
               />
             </label>
             <label className="field beta-duration-field">
+              <span>Langue du testeur</span>
+              <select
+                value={betaLocale}
+                onChange={(event) => setBetaLocale(event.target.value === "en" ? "en" : "fr")}
+                disabled={betaInviteBusy}
+              >
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <label className="field beta-duration-field">
               <span>Accès complet</span>
               <select
                 value={betaDurationDays}
@@ -556,8 +568,8 @@ export default function AdminPage() {
           </form>
           <p className="plans-note">
             Le statut Beta Tester est un grant temporaire indépendant de Stripe et ne crée
-            aucune facturation. Un nouveau compte reçoit l’invitation Supabase ; un compte AJG
-            existant reçoit immédiatement les droits Pro. La durée est renouvelable depuis
+            aucune facturation. Un nouveau compte reçoit l’invitation Supabase dans la langue sélectionnée et arrive sur le Builder dans cette même langue ; un compte AJG
+            existant reçoit immédiatement les droits Pro et la préférence de langue associée. La durée est renouvelable depuis
             cette page. Cette phase reste volontairement plafonnée à 10 testeurs.
           </p>
 
