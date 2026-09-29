@@ -29,7 +29,9 @@ export default async function handler(req, res) {
 
   const origin = clean(req.headers.origin, 500);
   const isPreview = /^https:\/\/ajg-voyage-[a-z0-9-]+-ajg-saas-software\.vercel\.app$/i.test(origin);
-  if (origin && !ALLOWED_ORIGINS.has(origin) && !isPreview) return json(res, 403, { error: "Origin not allowed" });\n  const fetchSite = String(req.headers["sec-fetch-site"] || "").toLowerCase();\n  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site") return json(res, 403, { error: "Cross-site request not allowed" });
+  if (origin && !ALLOWED_ORIGINS.has(origin) && !isPreview) return json(res, 403, { error: "Origin not allowed" });
+  const fetchSite = String(req.headers["sec-fetch-site"] || "").toLowerCase();
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site") return json(res, 403, { error: "Cross-site request not allowed" });
   if (!String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) return json(res, 415, { error: "Unsupported media type" });
   if (Number(req.headers["content-length"] || 0) > MAX_BODY_BYTES) return json(res, 413, { error: "Payload too large" });
 
