@@ -246,8 +246,8 @@ export default function AdminPage() {
       await load();
       setMessage(
         result.invited
-          ? `Invitation Beta Tester envoyée à ${result.member.email} avec accès Pro complet pendant ${betaDurationDays} jours.`
-          : `${result.member.email} dispose maintenant de l’accès Beta Tester Pro complet pour ${betaDurationDays} jours, sans nouvel e-mail.`
+          ? `Invitation Beta Tester envoyée à ${result.member.email} avec accès BUILD + Growth complet pendant ${betaDurationDays} jours.`
+          : `${result.member.email} dispose maintenant de l’accès Beta Tester BUILD + Growth complet pour ${betaDurationDays} jours, sans nouvel e-mail.`
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Invitation bêta impossible.");
@@ -302,7 +302,7 @@ export default function AdminPage() {
     }
   };
 
-  const changePlan = async (siteId: string, userId: string, plan: "free" | "essential" | "pro") => {
+  const changePlan = async (siteId: string, userId: string, plan: "free" | "essential" | "growth") => {
     setMessage("");
     try {
       await adminSetPlan(siteId, userId, plan);
@@ -498,7 +498,7 @@ export default function AdminPage() {
           <div className="admin-readiness-heading">
             <div>
               <p className="eyebrow">Bêta privée</p>
-              <h2>Beta Testers · accès Pro complet gratuit</h2>
+              <h2>Beta Testers · accès BUILD + Growth complet gratuit</h2>
               <p>
                 Chaque testeur reçoit temporairement tous les droits Pro — Architecte IA
                 Premium, domaine personnalisé, quotas Pro et fonctions payantes — sans créer
@@ -1153,12 +1153,12 @@ export default function AdminPage() {
                     <select
                       value={row.planKey}
                       onChange={(event) =>
-                        void changePlan(row.id, row.ownerId, event.target.value as "free" | "essential" | "pro")
+                        void changePlan(row.id, row.ownerId, event.target.value as "free" | "essential" | "growth")
                       }
                     >
                       <option value="free">Gratuit</option>
                       <option value="essential">Essentiel</option>
-                      <option value="pro">Pro IA</option>
+                      <option value="growth">Growth</option>
                     </select>
                   </td>
                   <td>
