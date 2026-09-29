@@ -85,3 +85,23 @@ test("B2B checkout collects billing identity but automatic tax remains explicitl
   assert.ok(readiness.includes("vat_registered"));
   assert.ok(readiness.includes("txcd_10103001"));
 });
+
+
+test("Growth heavy AI work has a separate bounded monthly allowance", () => {
+  const migration = fs.readFileSync(
+    new URL("../docs/migrations/20260929234000_bound_growth_heavy_ai_usage.sql", import.meta.url),
+    "utf8"
+  );
+  assert.ok(migration.includes("heavy_ai_monthly_limit=12"));
+  assert.ok(migration.includes("v_limit:=30"));
+  assert.ok(migration.includes("reserve_my_site_heavy_ai"));
+  assert.ok(migration.includes("release_my_site_heavy_ai"));
+  assert.ok(aiRoute.includes("reserve_my_site_heavy_ai"));
+  assert.ok(aiRoute.includes("release_my_site_heavy_ai"));
+  assert.ok(aiRoute.includes("heavyAiReserved"));
+  assert.ok(aiRoute.includes("Votre quota mensuel d’opérations Growth lourdes est atteint"));
+});
+
+test("AI Launch cannot be purchased while the subscription is past due", () => {
+  assert.ok(checkout.includes('!["active", "trialing"].includes(current.status)'));
+});
