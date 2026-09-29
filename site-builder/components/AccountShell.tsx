@@ -5,6 +5,7 @@ type AccountSection = "plans" | "billing" | "domains" | "data";
 
 const links: Array<{ href: string; label: string; section?: AccountSection }> = [
   { href: "/builder", label: "Builder" },
+  { href: "/tarifs", label: "Tarifs" },
   { href: "/plans", label: "Mon offre", section: "plans" },
   { href: "/billing", label: "Facturation", section: "billing" },
   { href: "/domains", label: "Domaines", section: "domains" },
