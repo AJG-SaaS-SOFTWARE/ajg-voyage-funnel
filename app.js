@@ -2,7 +2,10 @@
   const form = document.querySelector('#lead-form');
   const lang = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'fr';
 
-  const trackFunnel = (eventName) => {
+  const funnelOnce = new Set();
+  const trackFunnel = (eventName, once = false) => {
+    if (once && funnelOnce.has(eventName)) return;
+    if (once) funnelOnce.add(eventName);
     const params = new URLSearchParams(window.location.search);
     fetch('/api/funnel-event', {
       method: 'POST',
@@ -323,7 +326,7 @@
 
   next.addEventListener('click', () => {
     if (!validateStep(current)) return;
-    if (current === 0) trackFunnel('questionnaire_started');
+    if (current === 0) trackFunnel('questionnaire_started', true);
     updateScore();
     current = Math.min(current + 1, steps.length - 1);
     render();
@@ -342,7 +345,7 @@
     if (!validateStep(3)) return;
 
     updateScore();
-    trackFunnel('questionnaire_completed');
+    trackFunnel('questionnaire_completed', true);
     submit.disabled = true;
     submit.textContent = copy.sending;
 
