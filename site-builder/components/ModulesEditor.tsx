@@ -161,7 +161,7 @@ export default function ModulesEditor({
               currentValue={modules.faq}
               onApply={(draft: any) => change("faq", { ...modules.faq, title: draft.title, items: draft.items })}
             />
-            <label>Titre<input value={modules.faq.title} onChange={(e) => change("faq", { ...modules.faq, title: e.target.value })} /></label>
+            <label>{tr("Titre", "Title")}<input value={modules.faq.title} onChange={(e) => change("faq", { ...modules.faq, title: e.target.value })} /></label>
             {modules.faq.items.map((item, index) => (
               <div className="module-item" key={index}>
                 <input placeholder={tr("Question", "Question")} aria-label={`${tr("Question", "Question")} ${index + 1}`} value={item.question} onChange={(e) => change("faq", { ...modules.faq, items: modules.faq.items.map((q, i) => i === index ? { ...q, question: e.target.value } : q) })} />
@@ -179,7 +179,7 @@ export default function ModulesEditor({
         {modules.testimonials.enabled ? (
           <div className="module-fields">
             <div className="module-safety-note"><b>{tr("Pas de faux témoignage", "No fake testimonials")}</b><p>{tr("AJG ne génère pas d’avis fictifs. Ajoutez uniquement un retour réellement reçu et autorisé à être publié.", "AJG does not generate fake reviews. Add only feedback you actually received and are authorized to publish.")}</p></div>
-            <label>Titre<input value={modules.testimonials.title} onChange={(e) => change("testimonials", { ...modules.testimonials, title: e.target.value })} /></label>
+            <label>{tr("Titre", "Title")}<input value={modules.testimonials.title} onChange={(e) => change("testimonials", { ...modules.testimonials, title: e.target.value })} /></label>
             {modules.testimonials.items.map((item, index) => (
               <div className="module-item" key={index}>
                 <textarea placeholder={tr("Témoignage obtenu avec accord de publication", "Testimonial received with permission to publish")} aria-label={`${tr("Témoignage", "Testimonial")} ${index + 1}`} value={item.quote} onChange={(e) => change("testimonials", { ...modules.testimonials, items: modules.testimonials.items.map((q, i) => i === index ? { ...q, quote: e.target.value } : q) })} />
@@ -196,7 +196,7 @@ export default function ModulesEditor({
         {moduleHeader("contact")}
         {modules.contact.enabled ? (
           <div className="module-fields">
-            <label>Titre<input value={modules.contact.title} onChange={(e) => change("contact", { ...modules.contact, title: e.target.value })} /></label>
+            <label>{tr("Titre", "Title")}<input value={modules.contact.title} onChange={(e) => change("contact", { ...modules.contact, title: e.target.value })} /></label>
             <label>{tr("Adresse e-mail publique", "Public email address")}<input type="email" value={modules.contact.email} onChange={(e) => change("contact", { ...modules.contact, email: e.target.value })} /></label>
             <small>{tr("Le bouton ouvre la messagerie du visiteur ; votre adresse sera visible publiquement.", "The button opens the visitor’s email app; your address will be publicly visible.")}</small>
           </div>
@@ -207,7 +207,7 @@ export default function ModulesEditor({
         {moduleHeader("video")}
         {modules.video.enabled ? (
           <div className="module-fields">
-            <label>Titre<input value={modules.video.title} onChange={(e) => change("video", { ...modules.video, title: e.target.value })} /></label>
+            <label>{tr("Titre", "Title")}<input value={modules.video.title} onChange={(e) => change("video", { ...modules.video, title: e.target.value })} /></label>
             <label>{tr("Lien YouTube", "YouTube link")}<input type="url" placeholder="https://www.youtube.com/watch?v=…" value={modules.video.url} onChange={(e) => change("video", { ...modules.video, url: e.target.value })} /></label>
             <small>{tr("Collez simplement l’adresse YouTube complète ; AJG s’occupe de l’intégration sur le site.", "Paste the full YouTube address; AJG handles the website embed.")}</small>
           </div>
@@ -224,7 +224,7 @@ export default function ModulesEditor({
               currentValue={modules.figures}
               onApply={(draft: any) => change("figures", { ...modules.figures, title: draft.title, items: draft.items })}
             />
-            <label>Titre<input value={modules.figures.title} onChange={(e) => change("figures", { ...modules.figures, title: e.target.value })} /></label>
+            <label>{tr("Titre", "Title")}<input value={modules.figures.title} onChange={(e) => change("figures", { ...modules.figures, title: e.target.value })} /></label>
             {modules.figures.items.map((item, index) => (
               <div className="module-item" key={index}>
                 <input aria-label={`${tr("Valeur", "Value")} ${index + 1}`} placeholder={tr("Votre valeur réelle", "Your real value")} value={item.value} onChange={(e) => change("figures", { ...modules.figures, items: modules.figures.items.map((entry, i) => i === index ? { ...entry, value: e.target.value } : entry) })} />
@@ -248,7 +248,7 @@ export default function ModulesEditor({
               currentValue={modules.benefits}
               onApply={(draft: any) => change("benefits", { ...modules.benefits, title: draft.title, items: draft.items })}
             />
-            <label>Titre<input value={modules.benefits.title} onChange={(e) => change("benefits", { ...modules.benefits, title: e.target.value })} /></label>
+            <label>{tr("Titre", "Title")}<input value={modules.benefits.title} onChange={(e) => change("benefits", { ...modules.benefits, title: e.target.value })} /></label>
             {modules.benefits.items.map((item, index) => (
               <div className="module-item" key={index}>
                 <input aria-label={`${tr("Avantage", "Benefit")} ${index + 1}`} placeholder={tr("Titre", "Title")} value={item.title} onChange={(e) => change("benefits", { ...modules.benefits, items: modules.benefits.items.map((entry, i) => i === index ? { ...entry, title: e.target.value } : entry) })} />
