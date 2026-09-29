@@ -52,7 +52,7 @@ export async function stripeRequest<T = any>(
     method = "POST",
     params
   }: {
-    method?: "GET" | "POST";
+    method?: "GET" | "POST" | "DELETE";
     params?: Record<string, StripeValue>;
   } = {}
 ): Promise<T> {
@@ -74,11 +74,11 @@ export async function stripeRequest<T = any>(
     headers: {
       Authorization: `Bearer ${key}`,
       "Stripe-Version": STRIPE_API_VERSION,
-      ...(method === "POST"
+      ...(method !== "GET"
         ? { "Content-Type": "application/x-www-form-urlencoded" }
         : {})
     },
-    body: method === "POST" ? form.toString() : undefined,
+    body: method !== "GET" ? form.toString() : undefined,
     cache: "no-store"
   });
 
@@ -165,6 +165,19 @@ export async function retrieveStripeSubscription(subscriptionId: string) {
   return stripeRequest<any>(
     `/subscriptions/${encodeURIComponent(subscriptionId)}`,
     { method: "GET" }
+  );
+}
+
+export async function cancelStripeSubscription(subscriptionId: string) {
+  return stripeRequest<any>(
+    `/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    {
+      method: "DELETE",
+      params: {
+        invoice_now: false,
+        prorate: false
+      }
+    }
   );
 }
 
