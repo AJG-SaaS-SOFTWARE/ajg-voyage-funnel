@@ -6,39 +6,40 @@ import { useProductLocale } from "../lib/product-i18n";
 
 type SearchResult = MediaChoice & { thumbnail: string };
 
-const patternLabels: Record<SiteDesign["pattern"], string> = {
-  none: "Uni",
-  dots: "Points",
-  lines: "Lignes",
-  grid: "Quadrillage",
-  rays: "Rayons"
-};
-
-const backgroundLabels: Record<SiteDesign["background"], string> = {
-  ivory: "Ivoire", sand: "Sable", mist: "Brume", sage: "Sauge", slate: "Ardoise"
-};
-
-const suggestions = {
-  image: [
-    { label: "Nature", query: "landscape nature" },
-    { label: "Mer", query: "sea beach" },
-    { label: "Montagne", query: "mountain landscape" },
-    { label: "Ville", query: "city architecture" },
-    { label: "Gastronomie", query: "food cooking" }
-  ],
-  audio: [
-    { label: "Nature", query: "forest birds" },
-    { label: "Mer", query: "sea waves" },
-    { label: "Ambiance", query: "ambient" },
-    { label: "Piano", query: "piano" },
-    { label: "Ville", query: "city ambience" }
-  ]
-};
-
 export default function MediaLibrary({ design, onChange }: { design: SiteDesign; onChange: (design: SiteDesign) => void }) {
-  const { locale, tr } = useProductLocale();
+  const { tr } = useProductLocale();
+  const patternLabels: Record<SiteDesign["pattern"], string> = {
+    none: tr("Uni", "Plain"),
+    dots: tr("Points", "Dots"),
+    lines: tr("Lignes", "Lines"),
+    grid: tr("Quadrillage", "Grid"),
+    rays: tr("Rayons", "Rays")
+  };
+  const backgroundLabels: Record<SiteDesign["background"], string> = {
+    ivory: tr("Ivoire", "Ivory"),
+    sand: tr("Sable", "Sand"),
+    mist: tr("Brume", "Mist"),
+    sage: tr("Sauge", "Sage"),
+    slate: tr("Ardoise", "Slate")
+  };
+  const suggestions = {
+    image: [
+      { label: tr("Nature", "Nature"), query: "landscape nature" },
+      { label: tr("Mer", "Sea"), query: "sea beach" },
+      { label: tr("Montagne", "Mountain"), query: "mountain landscape" },
+      { label: tr("Ville", "City"), query: "city architecture" },
+      { label: tr("Gastronomie", "Food"), query: "food cooking" }
+    ],
+    audio: [
+      { label: tr("Nature", "Nature"), query: "forest birds" },
+      { label: tr("Mer", "Sea"), query: "sea waves" },
+      { label: tr("Ambiance", "Ambient"), query: "ambient" },
+      { label: tr("Piano", "Piano"), query: "piano" },
+      { label: tr("Ville", "City"), query: "city ambience" }
+    ]
+  };
   const [type, setType] = useState<"image" | "audio">("image");
-  const [query, setQuery] = useState("voyage");
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -63,7 +64,7 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
     activeSearch.current = null;
     setError("");
     setSearched(false);
-    setQuery(next === "image" ? "voyage" : "nature");
+    setQuery("");
   };
 
   const searchFor = async (term: string, mediaType: "image" | "audio", page = 1) => {
