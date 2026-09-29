@@ -3,9 +3,9 @@ const ALLOWED_ORIGINS = new Set([
   "https://voyage.ajgsolutionsgroup.com",
   "https://www.voyage.ajgsolutionsgroup.com"
 ]);
-const ALLOWED_INTERESTS = new Set(["Voyager plus avantageusement", "Découvrir l'activité", "Les deux", "Travel more advantageously", "Discover the activity", "Both"]);
-const ALLOWED_FREQUENCIES = new Set(["0-1 fois par an", "2-3 fois par an", "4 fois ou plus par an", "Variable", "0-1 times a year", "2-3 times a year", "4 or more times a year"]);
-const ALLOWED_GOALS = new Set(["Voyage uniquement pour le moment", "Comprendre le fonctionnement", "Développer une activité indépendante", "Travel only for now", "Understand how it works", "Build an independent activity"]);
+const ALLOWED_INTERESTS = new Set(["Voyager plus avantageusement", "Découvrir l'activité", "Les deux", "Travel more advantageously", "Discover the referral activity", "Both"]);
+const ALLOWED_FREQUENCIES = new Set(["0-1 fois par an", "2-3 fois par an", "4 fois ou plus par an", "Variable", "0-1 times per year", "2-3 times per year", "4 or more times per year", "It varies"]);
+const ALLOWED_GOALS = new Set(["Voyage uniquement pour le moment", "Comprendre le fonctionnement", "Développer une activité indépendante", "Travel only for now", "Understand how it works", "Explore an independent activity"]);
 
 function text(value, max = 500) {
   if (typeof value !== "string") return "";
