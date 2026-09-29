@@ -127,3 +127,10 @@ test("public pricing routes declare their explicit language at SSR", () => {
   assert.match(layout, /headerStore\.get\("x-ajg-route-locale"\)/);
   assert.match(layout, /routeLocale === "en" \|\| routeLocale === "fr"/);
 });
+
+
+test("generated public site declares its own content language", () => {
+  const source = read("components/PublishedSite.tsx");
+  assert.match(source, /lang=\{english \? "en" : "fr"\}/);
+  assert.match(source, /english \? "Audio" : "Son"/);
+});
