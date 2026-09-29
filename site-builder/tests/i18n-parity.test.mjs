@@ -66,7 +66,7 @@ test("core builder surfaces expose English product copy", () => {
   assert.match(builder, /Create my website with AI/);
   assert.match(builder, /Final review/);
   assert.match(builder, /Publish website/);
-  assert.match(plans, /Full Pro access included during beta/);
+  assert.match(plans, /Full BUILD \+ Growth access included during beta/);
   assert.match(compliance, /Website legal information/);
   assert.match(modules, /Section order/);
 });
@@ -77,11 +77,12 @@ test("keeps the synchronized commercial pricing grid bilingual", () => {
   const home = read("app/page.tsx");
   const shell = read("components/AccountShell.tsx");
 
-  assert.match(plans, /19 €/);
-  assert.match(plans, /190 €/);
-  assert.match(plans, /39 €/);
-  assert.match(plans, /390 €/);
-  assert.match(plans, /Essential €19 \/ Pro AI €39/);
+  assert.match(plans, /15 €/);
+  assert.match(plans, /150 €/);
+  assert.match(plans, /29 €/);
+  assert.match(plans, /290 €/);
+  assert.match(plans, /Création IA · 49 €/);
+  assert.match(plans, /Essential €15 \/ Growth €29 \/ AI Launch €49/);
   assert.match(home, /\/pricing/);
   assert.match(home, /\/tarifs/);
   assert.match(shell, /Pricing/);
