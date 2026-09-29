@@ -844,9 +844,18 @@ export function deterministicQualityIssues(
 
   const faqQuestions = new Set<string>();
   const faqQuestionTokens: Array<{ question: string; tokens: Set<string> }> = [];
+  const genericFaqQuestionPattern = /^(?:question|question\s+\d+|faq|faq\s+\d+)$/u;
   for (const item of proposal.faq.items) {
     const normalized = normalizeComparable(item.question);
     if (!normalized) continue;
+    if (genericFaqQuestionPattern.test(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "generic_faq_question",
+        detail:
+          `La FAQ contient un libellé générique (« ${item.question} ») au lieu d’une vraie question utilisateur.`
+      });
+    }
     if (faqQuestions.has(normalized)) {
       issues.push({
         severity: "blocking",
@@ -888,9 +897,19 @@ export function deterministicQualityIssues(
 
   const benefitTitles = new Set<string>();
   const benefitTitleTokens: Array<{ title: string; tokens: Set<string> }> = [];
+  const genericBenefitTitlePattern =
+    /^(?:avantage|avantage\s+\d+|benefice|benefice\s+\d+|benefit|benefit\s+\d+|feature|feature\s+\d+|point\s+fort|point\s+fort\s+\d+)$/u;
   for (const item of proposal.benefits.items) {
     const normalized = normalizeComparable(item.title);
     if (!normalized) continue;
+    if (genericBenefitTitlePattern.test(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "generic_benefit_title",
+        detail:
+          `La carte avantage « ${item.title} » utilise un titre générique ; son bénéfice doit être compréhensible sans texte de remplissage.`
+      });
+    }
     if (benefitTitles.has(normalized)) {
       issues.push({
         severity: "blocking",
