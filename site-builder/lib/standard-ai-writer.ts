@@ -187,6 +187,8 @@ function stripPresentationMarkup(value: string) {
       break;
     }
   }
+
+  result = result.replace(/^\s{0,3}#{1,6}\s+/gm, "");
   return result.trim();
 }
 
