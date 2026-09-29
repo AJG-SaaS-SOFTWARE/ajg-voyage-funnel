@@ -1491,12 +1491,12 @@ export default function BuilderPage() {
                           <p>{architectProposal.premiumAudit.qualityNote}</p>
                           {architectProposal.premiumAudit.finalReviewPerformed ? (
                             <small>
-                              Le texte affiché a été relu une seconde fois après correction par un critique IA indépendant.
+                              {tr("Le texte affiché a été relu une seconde fois après correction par un critique IA indépendant.", "The displayed copy was reviewed a second time after correction by an independent AI critic.")}
                             </small>
                           ) : null}
                           {architectProposal.premiumAudit.strategyReused ? (
                             <small>
-                              Variante efficiente : la stratégie déjà validée a été conservée, puis la création et les contrôles qualité ont été relancés.
+                              {tr("Variante efficiente : la stratégie déjà validée a été conservée, puis la création et les contrôles qualité ont été relancés.", "Efficient variant: the already validated strategy was preserved, then creation and quality checks were rerun.")}
                             </small>
                           ) : null}
                           {architectProposal.premiumAudit.deterministicChecksPerformed ? (
@@ -1574,7 +1574,7 @@ export default function BuilderPage() {
                             <p>
                               Ces réponses sont facultatives. Répondez uniquement à ce que vous
                               connaissez : l’IA réutilisera vos réponses pour reconstruire et
-                              réauditer la proposition sans inventer le reste.
+                              {tr("réauditer la proposition sans inventer le reste.", "reaudit the proposal without inventing the rest.")}
                             </p>
                             <div className="architect-clarification-list">
                               {architectProposal.intelligence.missingInformation.map((question, index) => (
@@ -1638,7 +1638,7 @@ export default function BuilderPage() {
                             <p>{tr("Aucune différence détectée avec votre version actuelle.", "No difference detected from your current version.")}</p>
                           )}
                           <small>
-                            Tout élément absent de cette liste est conservé. L’IA reçoit aussi cette règle comme contrainte de qualité pendant la révision.
+                            {tr("Tout élément absent de cette liste est conservé. L’IA reçoit aussi cette règle comme contrainte de qualité pendant la révision.", "Anything not listed here is preserved. AI also receives this rule as a quality constraint during revision.")}
                           </small>
                         </div>
                         <p>Architecture proposée : {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : "site monopage"} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
@@ -1647,7 +1647,7 @@ export default function BuilderPage() {
                           <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>{tr("Appliquer cette révision", "Apply this revision")}</button>
                           <button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>{tr("Conserver mon site actuel", "Keep my current website")}</button>
                         </div>
-                        <small>Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition.</small>
+                        <small>{tr("Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition.", "Your current website remains unchanged until you apply this proposal.")}</small>
                       </div>
                     ) : null}
                   </div>
@@ -1857,8 +1857,8 @@ export default function BuilderPage() {
                     activeLabel={tr("Activé", "Enabled")}
                     inactiveLabel={tr("Désactivé", "Disabled")}
                     description={config.design.showBooking
-                      ? "Les accès au rendez-vous peuvent apparaître sur le site dès qu'un lien valide est renseigné."
-                      : "Tous les accès au rendez-vous sont masqués. Le texte et le lien restent enregistrés pour plus tard."}
+                      ? tr("Les accès au rendez-vous peuvent apparaître sur le site dès qu’un lien valide est renseigné.", "Booking access can appear on the website as soon as a valid link is provided.")
+                      : tr("Tous les accès au rendez-vous sont masqués. Le texte et le lien restent enregistrés pour plus tard.", "All booking access is hidden. The text and link remain saved for later.")}
                     onChange={(checked) => update("design", { ...config.design, showBooking: checked })}
                   />
                   {config.design.showBooking ? (
@@ -1868,8 +1868,8 @@ export default function BuilderPage() {
                       activeLabel={tr("Visible", "Visible")}
                       inactiveLabel={tr("Masqué", "Hidden")}
                       description={config.design.showPrimaryButton
-                        ? "Avec un lien valide, le bouton apparaît dans le hero en plus de l'accès dans la navigation."
-                        : "Avec un lien valide, l'accès reste dans la navigation mais le gros bouton du hero est masqué."}
+                        ? tr("Avec un lien valide, le bouton apparaît dans le hero en plus de l’accès dans la navigation.", "With a valid link, the button appears in the hero in addition to navigation access.")
+                        : tr("Avec un lien valide, l’accès reste dans la navigation mais le gros bouton du hero est masqué.", "With a valid link, booking remains available in navigation but the large hero button is hidden.")}
                       onChange={(checked) => update("design", { ...config.design, showPrimaryButton: checked })}
                     />
                   ) : null}
@@ -1880,12 +1880,12 @@ export default function BuilderPage() {
                     <b>{tr("Ce que verra le visiteur", "What visitors will see")}</b>
                     <p>
                       {!config.design.showBooking
-                        ? "Aucun accès au rendez-vous : la fonction est désactivée."
+                        ? tr("Aucun accès au rendez-vous : la fonction est désactivée.", "No booking access: the feature is disabled.")
                         : bookingLinkStatus !== "valid"
-                          ? "Aucun bouton pour le moment : ajoutez un lien de rendez-vous HTTPS valide ci-dessous."
+                          ? tr("Aucun bouton pour le moment : ajoutez un lien de rendez-vous HTTPS valide ci-dessous.", "No button for now: add a valid HTTPS booking link below.")
                           : config.design.showPrimaryButton
-                            ? "Un accès dans la navigation + le bouton principal dans l’accueil."
-                            : "Un accès dans la navigation uniquement. Le bouton principal de l’accueil est masqué."}
+                            ? tr("Un accès dans la navigation + le bouton principal dans l’accueil.", "Navigation access plus the primary homepage button.")
+                            : tr("Un accès dans la navigation uniquement. Le bouton principal de l’accueil est masqué.", "Navigation access only. The primary homepage button is hidden.")}
                     </p>
                   </div>
                 </div>
@@ -1997,16 +1997,16 @@ export default function BuilderPage() {
                     <span>{tr("Mention d’indépendance maintenue", "Independence disclosure retained")}</span>
                     <p>{requiredDisclaimer}</p>
                   </div>
-                  <p className="media-license-note">Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d'indépendance.</p>
+                  <p className="media-license-note">{tr("Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d’indépendance.", "Logos are optional. Enable only visuals your activity permits you to use; they do not replace the independence disclosure.")}</p>
                   <div className="visibility-options-stack logo-visibility-options">
                     <VisibilityOption
                       checked={config.design.showMwrLogo}
                       title="Logo MWR Life « Independent Distributor »"
-                      activeLabel="Affiché"
-                      inactiveLabel="Masqué"
+                      activeLabel={tr("Affiché", "Shown")}
+                      inactiveLabel={tr("Masqué", "Hidden")}
                       description={config.design.showMwrLogo
-                        ? "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire."
-                        : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée."}
+                        ? tr("Le logo sera visible en bas du site avec la mention d’indépendance obligatoire.", "The logo will appear at the bottom of the website with the required independence disclosure.")
+                        : tr("Le logo n’apparaît pas sur le site. La mention d’indépendance reste affichée.", "The logo does not appear on the website. The independence disclosure remains visible.")}
                       logo="/logos/mwr-life-independent.svg"
                       onChange={(checked) => update("design", { ...config.design, showMwrLogo: checked })}
                     />
@@ -2024,7 +2024,7 @@ export default function BuilderPage() {
                   </div>
                 </> : <div className="helper-card premium-helper-card">
                   <b>{tr("Site indépendant sans mention MWR Life", "Independent website without MWR Life disclosure")}</b>
-                  <p>Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Les pages légales ci-dessous seront adaptées aux informations que vous renseignez.</p>
+                  <p>{tr("Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Les pages légales ci-dessous seront adaptées aux informations que vous renseignez.", "Automatic MWR Life and Travel Advantage disclosures and logos will be absent. The legal pages below will adapt to the information you provide.")}</p>
                 </div>}
 
                 <div className="section-kicker">
@@ -2064,11 +2064,11 @@ export default function BuilderPage() {
                 ) : (
                   <div className="success-card premium-success-card review-success">
                     <div>
-                      <b>{remoteMode ? "Contrôle qualité structurel réussi." : "Le site est prêt pour le prototype local."}</b>
+                      <b>{remoteMode ? tr("Contrôle qualité structurel réussi.", "Structural quality check passed.") : tr("Le site est prêt pour le prototype local.", "The website is ready for the local prototype.")}</b>
                       <p>
                         {remoteMode
-                          ? "Identité, message, liens requis et conformité structurelle sont cohérents. Relisez l'aperçu visuel avant publication."
-                          : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil."}
+                          ? tr("Identité, message, liens requis et conformité structurelle sont cohérents. Relisez l’aperçu visuel avant publication.", "Identity, message, required links and structural compliance are consistent. Review the visual preview before publishing.")
+                          : tr("Configurez Supabase pour rendre cette publication accessible depuis un autre appareil.", "Configure Supabase to make this publication accessible from another device.")}
                       </p>
                     </div>
                   </div>
@@ -2077,7 +2077,7 @@ export default function BuilderPage() {
                 <div className="quality-summary-card">
                   <div className="quality-summary-head">
                     <div><span className="mini">QUALITY CHECK AJG</span><strong>{qualityPassed}/{qualityChecks.length} contrôles réussis</strong></div>
-                    <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} amélioration${qualityWarnings > 1 ? "s" : ""}` : "Prêt ✓"}</span>
+                    <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} ${tr(qualityWarnings > 1 ? "améliorations" : "amélioration", qualityWarnings > 1 ? "improvements" : "improvement")}` : tr("Prêt ✓", "Ready ✓")}</span>
                   </div>
                   <div className="quality-check-list">
                     {qualityChecks.map((check) => <button type="button" key={check.label} className={`quality-check ${check.status}`} onClick={() => { setStep(check.step); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
@@ -2086,31 +2086,31 @@ export default function BuilderPage() {
                       <i>{check.status === "pass" ? "Voir →" : "Corriger →"}</i>
                     </button>)}
                   </div>
-                  <p className="quality-note">Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.</p>
+                  <p className="quality-note">{tr("Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.", "Recommendations do not block publishing. Required errors above remain blocking.")}</p>
                 </div>
                 <div className="quality-summary-card">
                   <div className="quality-summary-head"><div><span className="mini">{tr("RELECTURE ÉDITORIALE", "EDITORIAL REVIEW")}</span><strong>{tr("Orthographe, grammaire et clarté", "Spelling, grammar and clarity")}</strong></div></div>
-                  <p>Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement.</p>
+                  <p>{tr("Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement.", "The automated checks above verify structure. Run an AI editorial review to get copy corrections you can accept individually.")}</p>
                   <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? tr("Relecture en cours…", "Reviewing…") : tr("Relire avec l’IA", "Review with AI")}</button>
-                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{reviewFieldLabels[issue.field] || issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p><small>Texte actuel</small><br />{currentReviewText(issue.field)}</p><p><small>Proposition</small><br />{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
+                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} ${tr("suggestion(s) de rédaction", "writing suggestion(s)")}` : tr("Aucune correction éditoriale suggérée.", "No editorial correction suggested.")}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{reviewFieldLabels[issue.field] || issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p><small>{tr("Texte actuel", "Current text")}</small><br />{currentReviewText(issue.field)}</p><p><small>{tr("Proposition", "Proposal")}</small><br />{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>{tr("Utiliser cette correction", "Use this correction")}</button></> : null}</div>)}</div> : null}
                 </div>
 
                 <div className="review-checklist">
                   <div className={config.firstName && config.lastName && config.brandName && config.slug ? "done" : ""}>
                     <span>{config.firstName && config.lastName && config.brandName && config.slug ? "✓" : "1"}</span>
-                    <p><b>Identité</b><small>Nom du site et adresse</small></p>
+                    <p><b>{tr("Identité", "Identity")}</b><small>{tr("Nom du site et adresse", "Website name and address")}</small></p>
                   </div>
                   <div className={config.heroTitle ? "done" : ""}>
                     <span>{config.heroTitle ? "✓" : "2"}</span>
-                    <p><b>Message</b><small>Titre principal</small></p>
+                    <p><b>{tr("Message", "Message")}</b><small>{tr("Titre principal", "Main headline")}</small></p>
                   </div>
                   <div className={config.bookingUrl ? "done" : "optional"}>
                     <span>{config.bookingUrl ? "✓" : "○"}</span>
-                    <p><b>Rendez-vous</b><small>{config.bookingUrl ? "Lien ajouté" : "Facultatif"}</small></p>
+                    <p><b>{tr("Rendez-vous", "Booking")}</b><small>{config.bookingUrl ? tr("Lien ajouté", "Link added") : tr("Facultatif", "Optional")}</small></p>
                   </div>
                   <div className={config.affiliation === "mwr" ? "done" : "optional"}>
                     <span>{config.affiliation === "mwr" ? "✓" : "○"}</span>
-                    <p><b>Activité</b><small>{config.affiliation === "mwr" ? "Mention d'indépendance affichée" : "Mentions légales à vérifier"}</small></p>
+                    <p><b>{tr("Activité", "Activity")}</b><small>{config.affiliation === "mwr" ? tr("Mention d’indépendance affichée", "Independence disclosure shown") : tr("Mentions légales à vérifier", "Legal notice to verify")}</small></p>
                   </div>
                 </div>
 
@@ -2135,7 +2135,7 @@ export default function BuilderPage() {
                     <div>
                       <span className="mini">{tr("Lien bêta partageable", "Shareable beta link")}</span>
                       <strong>{betaPublicUrl}</strong>
-                      <p>Ce lien fonctionne dès maintenant. Le sous-domaine personnalisé sera activé dans une étape ultérieure.</p>
+                      <p>{tr("Ce lien fonctionne dès maintenant. Le sous-domaine personnalisé sera activé dans une étape ultérieure.", "This link works now. The custom subdomain will be activated at a later step.")}</p>
                     </div>
                     <div className="published-share-actions">
                       <Link className="button secondary" href={publicPath} target="_blank">{tr("Ouvrir", "Open")} ↗</Link>
