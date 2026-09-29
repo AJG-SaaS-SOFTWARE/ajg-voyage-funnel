@@ -4,8 +4,10 @@
 
 Permettre à un utilisateur novice de choisir entre trois méthodes :
 1. écrire lui-même ;
-2. utiliser le questionnaire guidé sans IA ;
+2. utiliser le questionnaire guidé 3+1 puis demander une première version cohérente à l’IA ;
 3. demander à l'IA de rédiger ou reformuler un champ précis à partir d'une consigne libre.
+
+Le questionnaire guidé reste généraliste : activité ou offre, approche différenciante, objectif attendu pour le visiteur, puis audience facultative.
 
 Le résultat de l'IA est toujours inséré dans un champ éditable. La publication ne se fait jamais automatiquement.
 
@@ -26,6 +28,9 @@ Les champs techniques (nom, slug, URL, réseaux sociaux, paramètres de conformi
 - authentification Supabase requise avant chaque génération ;
 - clé OpenAI stockée côté serveur dans `OPENAI_API_KEY` ;
 - champs et longueurs autorisés contrôlés côté serveur ;
+- Structured Outputs JSON Schema pour le questionnaire guidé, la relecture et les brouillons de modules ;
+- les textes simples sont nettoyés côté serveur avant insertion pour retirer le balisage de présentation parasite et respecter les longueurs de champ ;
+- brief, texte courant et contexte sont traités comme des données non fiables : ils ne peuvent pas redéfinir le rôle, les règles de conformité ou la forme de sortie ;
 - aucune consigne utilisateur n'est exécutée comme du code ;
 - aucune affirmation commerciale, économie, revenu, prix, garantie ou affiliation ne doit être inventée ;
 - pour un site indépendant, MWR Life et Travel Advantage ne doivent pas être introduits sans demande explicite.
