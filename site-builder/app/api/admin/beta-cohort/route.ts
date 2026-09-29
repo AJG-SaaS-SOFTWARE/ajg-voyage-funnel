@@ -11,7 +11,19 @@ function bearer(request: Request) {
   return value.startsWith("Bearer ") ? value.slice(7) : "";
 }
 
-function member(user: User) {
+type BetaGrant = {
+  user_id: string;
+  active: boolean;
+  starts_at: string;
+  expires_at: string;
+};
+
+function member(user: User, grant?: BetaGrant | null) {
+  const accessActive =
+    Boolean(grant?.active) &&
+    Boolean(grant?.starts_at && new Date(grant.starts_at).getTime() <= Date.now()) &&
+    Boolean(grant?.expires_at && new Date(grant.expires_at).getTime() > Date.now());
+
   return {
     id: user.id,
     email: user.email || "",
@@ -20,13 +32,16 @@ function member(user: User) {
     invitedAt:
       typeof user.app_metadata?.beta_invited_at === "string"
         ? user.app_metadata.beta_invited_at
-        : null
+        : null,
+    accessActive,
+    accessStartsAt: grant?.starts_at || null,
+    accessExpiresAt: grant?.expires_at || null
   };
 }
 
 type AdminContext =
   | { ok: false; response: NextResponse }
-  | { ok: true; service: SupabaseClient };
+  | { ok: true; service: SupabaseClient; adminUserId: string };
 
 async function requireAdmin(request: Request): Promise<AdminContext> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -74,7 +89,7 @@ async function requireAdmin(request: Request): Promise<AdminContext> {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
-  return { ok: true, service };
+  return { ok: true, service, adminUserId: user.id };
 }
 
 async function listBetaUsers(service: SupabaseClient) {
@@ -89,11 +104,24 @@ export async function GET(request: Request) {
 
   try {
     const users = await listBetaUsers(auth.service);
+    const userIds = users.map((user) => user.id);
+    const { data: grants, error: grantsError } = userIds.length
+      ? await auth.service
+          .from("beta_access_grants")
+          .select("user_id,active,starts_at,expires_at")
+          .in("user_id", userIds)
+      : { data: [], error: null };
+    if (grantsError) throw grantsError;
+    const grantsByUser = new Map(
+      (grants || []).map((grant) => [grant.user_id, grant as BetaGrant])
+    );
+
     return NextResponse.json(
       {
         limit: 25,
+        defaultAccessDays: 30,
         members: users
-          .map(member)
+          .map((user) => member(user, grantsByUser.get(user.id)))
           .sort((a, b) => (b.invitedAt || b.createdAt).localeCompare(a.invitedAt || a.createdAt))
       },
       { headers: { "Cache-Control": "private, no-store" } }
@@ -121,9 +149,20 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email =
     typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const durationDaysRaw = Number(body?.durationDays ?? 30);
+  const durationDays =
+    Number.isInteger(durationDaysRaw) && durationDaysRaw >= 1 && durationDaysRaw <= 90
+      ? durationDaysRaw
+      : 0;
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return NextResponse.json({ error: "Adresse e-mail invalide" }, { status: 400 });
+  }
+  if (!durationDays) {
+    return NextResponse.json(
+      { error: "La durée Beta Tester doit être comprise entre 1 et 90 jours." },
+      { status: 400 }
+    );
   }
 
   try {
@@ -151,14 +190,34 @@ export async function POST(request: Request) {
       existing && typeof existing.app_metadata?.beta_invited_at === "string"
         ? existing.app_metadata.beta_invited_at
         : new Date().toISOString();
+    const startsAt = new Date();
+    const expiresAt = new Date(
+      startsAt.getTime() + durationDays * 24 * 60 * 60 * 1000
+    ).toISOString();
 
     if (existing) {
+      const { error: grantError } = await auth.service
+        .from("beta_access_grants")
+        .upsert(
+          {
+            user_id: existing.id,
+            active: true,
+            starts_at: startsAt.toISOString(),
+            expires_at: expiresAt,
+            granted_by: auth.adminUserId,
+            granted_at: startsAt.toISOString(),
+            updated_at: startsAt.toISOString()
+          },
+          { onConflict: "user_id" }
+        );
+      if (grantError) throw grantError;
       const { data, error } = await auth.service.auth.admin.updateUserById(existing.id, {
         app_metadata: {
           ...existing.app_metadata,
           ajg_beta: true,
           beta_invited_at: invitedAt,
-          beta_source: "admin"
+          beta_source: "admin",
+          beta_access_expires_at: expiresAt
         }
       });
       if (error || !data.user) throw error || new Error("user_update_failed");
@@ -166,7 +225,12 @@ export async function POST(request: Request) {
       return NextResponse.json({
         invited: false,
         existing: true,
-        member: member(data.user)
+        member: member(data.user, {
+          user_id: data.user.id,
+          active: true,
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt
+        })
       });
     }
 
@@ -180,13 +244,30 @@ export async function POST(request: Request) {
       throw inviteError || new Error("invite_failed");
     }
 
+    const { error: grantError } = await auth.service
+      .from("beta_access_grants")
+      .upsert(
+        {
+          user_id: invite.user.id,
+          active: true,
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt,
+          granted_by: auth.adminUserId,
+          granted_at: startsAt.toISOString(),
+          updated_at: startsAt.toISOString()
+        },
+        { onConflict: "user_id" }
+      );
+    if (grantError) throw grantError;
+
     const { data: updated, error: updateError } =
       await auth.service.auth.admin.updateUserById(invite.user.id, {
         app_metadata: {
           ...invite.user.app_metadata,
           ajg_beta: true,
           beta_invited_at: invitedAt,
-          beta_source: "admin"
+          beta_source: "admin",
+          beta_access_expires_at: expiresAt
         }
       });
 
@@ -198,7 +279,12 @@ export async function POST(request: Request) {
       {
         invited: true,
         existing: false,
-        member: member(updated.user)
+        member: member(updated.user, {
+          user_id: updated.user.id,
+          active: true,
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt
+        })
       },
       { status: 201 }
     );
@@ -228,11 +314,19 @@ export async function DELETE(request: Request) {
       await auth.service.auth.admin.getUserById(userId);
     if (readError || !current.user) throw readError || new Error("user_not_found");
 
+    const now = new Date().toISOString();
+    const { error: grantError } = await auth.service
+      .from("beta_access_grants")
+      .update({ active: false, updated_at: now })
+      .eq("user_id", userId);
+    if (grantError) throw grantError;
+
     const { error } = await auth.service.auth.admin.updateUserById(userId, {
       app_metadata: {
         ...current.user.app_metadata,
         ajg_beta: false,
-        beta_removed_at: new Date().toISOString()
+        beta_removed_at: now,
+        beta_access_expires_at: null
       }
     });
     if (error) throw error;
