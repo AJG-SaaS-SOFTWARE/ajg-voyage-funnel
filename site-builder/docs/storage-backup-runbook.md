@@ -69,7 +69,7 @@ Ne jamais restaurer en masse un snapshot historique sans tenir compte des suppre
 
 Les copies de sauvegarde sont isolées, privées et soumises à une rétention courte. Une suppression côté production est détectée au prochain cycle et la copie de récupération vieillit ensuite jusqu’à expiration de la fenêtre de rétention.
 
-Le processus de restauration doit exclure toute donnée marquée supprimée. Si une demande d’effacement exige une purge immédiate des copies de sauvegarde, utiliser la procédure opérateur dédiée avant de déclarer la demande terminée.
+Le processus de restauration doit exclure toute donnée marquée supprimée. Lors d’une demande d’effacement exécutée par le workflow RGPD du Builder, les versions Blob, l’état courant et les snapshots contenant le site sont purgés immédiatement lorsque le store est configuré. La demande n’est pas déclarée terminée si cette étape échoue.
 
 ## Supervision
 
