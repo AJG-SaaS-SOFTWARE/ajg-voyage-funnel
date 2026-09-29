@@ -287,7 +287,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 
 1. **Release contrôlée débloquée** : `VERCEL_TOKEN` GitHub Actions opérationnel, pipeline REST sécurisé avec vérification SHA/HTTP et rollback.
 2. **Production synchronisée avec `main`** : dernière release contrôlée réussie et SHA exposé par `/api/health`.
-3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA, buckets Storage et Vercel runtime sont prêts ; l’URL applicative dispose d’un repli production sûr ; Resend et `CRON_SECRET` restent les warnings opérationnels à compléter.
+3. **Préproduction technique validée sur les bloqueurs bêta** : Supabase public/serveur, IA, SHA, buckets Storage et Vercel runtime sont prêts ; l’URL applicative dispose d’un repli production sûr ; `CRON_SECRET` est désormais provisionné en variable sensible Production ; Resend reste le warning opérationnel à compléter.
 4. **Storage privé validé de bout en bout** : `site-private-media` privé + RLS + test réel privé → `/api/media/promote` → public → nettoyage, tous en succès.
 5. **Recette E2E réelle validée** : session admin → création isolée → droit Pro temporaire → AI Site Architect réel → médias → publication → site public → feedback → export → nettoyage.
 6. **Routage réel AJG validé** : sous-domaine canari rattaché, CNAME configuré, domaine `verified + primary`, canonical automatique et contrôle HTTPS intégré au pipeline. Le domaine personnalisé utilisateur reste à recetter séparément avant lancement commercial.
@@ -459,6 +459,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] back-office admin prêt à afficher état/âge/volume/rétention et à lancer manuellement une sauvegarde via la même primitive serveur que le cron ;
 - [x] fraîcheur de la sauvegarde branchée au Cockpit Infrastructure AJG avec statuts sain / à surveiller / critique / non configuré ;
 - [x] store Vercel Blob privé `ajg-site-builder-backups` créé et connecté au projet Production en région Paris (`cdg1`) avec accès privé ;
+- [x] `CRON_SECRET` Production provisionné comme variable Vercel sensible, sans rotation automatique lorsqu’il existe déjà ;
 - [x] première sauvegarde réelle exécutée le 29 septembre 2026 : état `healthy`, 4 objets source détectés, manifest/état enregistrés et rétention 35 jours confirmée.
 
 ### Domaines personnalisés — automatisation
@@ -473,7 +474,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 ### Blocages externes avant release candidate réelle
 - [x] Vercel : production synchronisée avec le `main` via le workflow contrôlé ; token GitHub Actions, build, vérification SHA, promotion et rollback sont opérationnels ;
 - [x] Storage : `site-private-media` créé, vérifié privé et recette de promotion réelle validée ;
-- [ ] Secrets serveur : `SUPABASE_SECRET_KEY`, token de release GitHub et `VERCEL_TOKEN / PROJECT_ID / TEAM_ID` runtime validés ; l’URL applicative a un repli production sûr ; restent `CRON_SECRET` et Resend à configurer avant activation des notifications ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
+- [x] Secrets serveur structurants : `SUPABASE_SECRET_KEY`, token de release GitHub, `VERCEL_TOKEN / PROJECT_ID / TEAM_ID` runtime et `CRON_SECRET` sensible validés ; l’URL applicative a un repli production sûr ; Resend reste à configurer avant activation des notifications ; secret fournisseur de paiement seulement lorsque ce fournisseur sera choisi ;
 - [ ] Auth : activer la protection Supabase contre les mots de passe compromis si disponible sur le plan.
 
 ### Cohérence multi-site complémentaire
@@ -506,7 +507,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] Vercel : production synchronisée sur `a2ef5913…` après harmonisation admin + back-office client ; déploiement `dpl_HeNRi8uKiABuXCWjjxZS1dhXitW3` READY, live et canari HTTPS validés, aucune erreur runtime récente ;
 - [x] Storage privé : bucket réel, politiques RLS et recette privée → promotion publique → nettoyage validés ;
 - [x] secrets de release : `SUPABASE_SECRET_KEY` runtime et `VERCEL_TOKEN` GitHub Actions ont permis la release contrôlée et la recette Storage ;
-- [ ] secrets opérationnels restants : confirmer/configurer `CRON_SECRET`, Resend, `NEXT_PUBLIC_APP_URL` et le token Vercel runtime à périmètre minimal pour les domaines personnalisés ;
+- [ ] secrets opérationnels restants : configurer Resend et confirmer `NEXT_PUBLIC_APP_URL` ainsi que le périmètre minimal du token Vercel runtime pour les domaines personnalisés ; `CRON_SECRET` Production est désormais configuré ;
 - [ ] paiement réel : volontairement non activé avant validation prix/périodicité/essai et nombre de sites inclus par offre ;
 - [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
 
@@ -516,7 +517,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 1. **Offre commerciale** : valider prix Pro, périodicité, essai éventuel et nombre de sites inclus ; ces décisions débloquent la création du Product/Price Stripe sandbox puis la recette de paiement réelle.
 2. **Bêta réelle** : fournir/inviter 5 à 10 testeurs puis observer activation, publication, usage IA, régénération Premium et retours avant de modifier à nouveau le template public.
 3. **Domaine personnalisé réel** : choisir un domaine de test possédé par AJG ou un testeur afin d’exécuter la recette ajout → DNS → vérification → primaire → retrait.
-4. **Secrets opérationnels** : finaliser `CRON_SECRET` et Resend avant les notifications automatiques d’impayés ; confirmer `NEXT_PUBLIC_APP_URL` et le périmètre minimal du token Vercel runtime.
+4. **Secrets opérationnels** : `CRON_SECRET` est finalisé ; restent Resend avant les notifications automatiques d’impayés, ainsi que la confirmation de `NEXT_PUBLIC_APP_URL` et du périmètre minimal du token Vercel runtime.
 5. **Supabase Auth** : activer la protection contre les mots de passe compromis uniquement si le plan Supabase utilisé la rend disponible.
 
 Tant qu’un de ces éléments n’est pas fourni ou décidé, le développement correspondant reste volontairement bloqué plutôt que de créer une convention commerciale, un domaine ou un secret fictif.
