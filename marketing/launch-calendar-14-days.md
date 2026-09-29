@@ -10,7 +10,7 @@ Objectif : tester plusieurs angles avant d’augmenter le volume.
 | J4 | LinkedIn | version sobre de la publication Transparence | réseau professionnel | `linkedin_intro` |
 | J5 | Reel + TikTok | C’est quoi un club de voyage ? | pédagogie | `club_voyage` |
 | J6 | WhatsApp Status | page de découverte | trafic chaud | `whatsapp_status_1` |
-| J7 | Aucun nouveau post | répondre aux commentaires + analyser Netlify | apprentissage | — |
+| J7 | Aucun nouveau post | répondre aux commentaires + analyser le funnel AJG Voyage | apprentissage | — |
 | J8 | Reel + TikTok | 3 questions avant d’adhérer | confiance | `faq_prix` |
 | J9 | Story Instagram | FAQ / boîte à questions | objections | `story_faq` |
 | J10 | Reel + TikTok | activité d’ambassadeur, sans promesse | qualification activité | `travel_business` |
@@ -26,7 +26,7 @@ Noter :
 - formulaires reçus ;
 - score moyen ;
 - intérêt principal ;
-- nombre de réservations Google Calendar ;
+- nombre de réservations Calendly ;
 - commentaires / objections récurrentes.
 
 Ne pas modifier simultanément la landing et les contenus durant les 7 premiers jours sauf bug.

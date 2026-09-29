@@ -32,12 +32,14 @@ Visiteurs qui remplissent volontairement le formulaire AJG Voyage.
 
 **Destinataires / sous-traitants**
 - Alexandre Gallet ;
-- Netlify, Inc. : hébergement et collecte des formulaires ;
+- Vercel, Inc. : hébergement du site et exécution de l’API de formulaire ;
+- Supabase : stockage des demandes transmises via le formulaire ;
+- Resend : envoi de la notification technique de nouvelle demande ;
 - Calendly, LLC : uniquement lorsque la personne choisit d’ouvrir le service externe de réservation et y saisit des informations ;
 - organisateur du rendez-vous concerné.
 
 **Transferts internationaux**
-Netlify et Calendly sont établis aux États-Unis. Vérifier périodiquement leurs mécanismes de transfert en vigueur (EU-U.S. Data Privacy Framework et, lorsque prévu contractuellement, clauses contractuelles types).
+Vercel et Resend réalisent notamment des traitements aux États-Unis ; Supabase peut recourir à des traitements internationaux selon la région et ses sous-traitants ; Calendly peut également impliquer des transferts internationaux. Vérifier périodiquement les mécanismes applicables de chaque prestataire (EU-U.S. Data Privacy Framework lorsqu’applicable, clauses contractuelles types et autres garanties prévues contractuellement).
 
 **Conservation**
 Données prospect : maximum 3 ans à compter de la collecte ou du dernier contact émanant du prospect. Le retrait du consentement met fin à l’utilisation des données pour la prospection. Une demande d’effacement peut conduire à une suppression anticipée, sauf obligation légale contraire.
@@ -46,7 +48,7 @@ Données prospect : maximum 3 ans à compter de la collecte ou du dernier contac
 Le score interne sert uniquement à organiser/personnaliser le suivi. Aucune décision produisant un effet juridique ou significatif n’est prise automatiquement.
 
 **Mesures de sécurité**
-HTTPS/HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, honeypot de formulaire. Maintenir MFA et contrôle d’accès sur les comptes d’administration utilisés.
+HTTPS/HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, honeypot de formulaire et limitation serveur des soumissions. Pour cette limitation, l’IP est transformée en empreinte cryptographique côté serveur ; l’IP en clair n’est pas enregistrée dans la table dédiée et l’empreinte est purgée automatiquement après 24 heures. Maintenir MFA et contrôle d’accès sur les comptes d’administration utilisés.
 
 ## Traitement 2 — Préférence linguistique
 
@@ -65,3 +67,13 @@ Aucun.
 ## Revue périodique
 
 À chaque ajout d’un formulaire, outil d’analyse, pixel, CRM, outil d’e-mailing, paiement, embed ou nouveau prestataire, mettre à jour ce registre et la notice de confidentialité avant ou au moment de la mise en production. Vérifier au minimum annuellement les durées de conservation, accès, sous-traitants et mécanismes de transfert.
+
+
+## Mesure interne du funnel AJG Voyage
+
+- **Finalité :** mesurer les étapes principales du parcours (début/fin questionnaire, demande envoyée, clic Calendly) afin d'améliorer le funnel.
+- **Données :** identifiant aléatoire de session, événement, langue, chemin de page et UTM source/medium/campaign lorsqu'ils sont présents.
+- **Exclusions :** aucun nom, email ou téléphone n'est enregistré dans la table d'événements ; pas de publicité ciblée ni de suivi intersites.
+- **Stockage navigateur :** aucun identifiant analytique n’est stocké sur le terminal pour cette mesure ; les événements sont enregistrés sous forme agrégée.
+- **Destinataire / stockage :** Supabase, table `ajg_voyage_funnel_events`.
+- **Conservation :** objectif maximal de 13 mois pour les événements de mesure du funnel. La fonction Supabase `purge_ajg_voyage_funnel_events()` supprime les événements plus anciens lorsqu’elle est exécutée par un job de confiance ; prévoir son exécution planifiée et contrôler périodiquement son bon fonctionnement.

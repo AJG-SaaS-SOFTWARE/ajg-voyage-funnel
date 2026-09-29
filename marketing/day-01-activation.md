@@ -109,7 +109,7 @@ https://voyage.ajgsolutionsgroup.com/?utm_source=tiktok&utm_medium=social&utm_ca
 
 ## Données à relever après 24 h
 
-Dans Netlify :
+Dans Supabase / le suivi AJG Voyage :
 - nombre de formulaires ;
 - utm_source ;
 - utm_medium ;
@@ -118,7 +118,7 @@ Dans Netlify :
 - lead_score ;
 - intérêt principal.
 
-Dans Google Calendar :
+Dans Calendly :
 - nombre de rendez-vous réservés ;
 - source du rendez-vous si disponible ;
 - créneaux choisis.

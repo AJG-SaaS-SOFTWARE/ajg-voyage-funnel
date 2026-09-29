@@ -1,8 +1,47 @@
 const MAX_BODY_BYTES = 32_000;
+const ALLOWED_ORIGINS = new Set([
+  "https://voyage.ajgsolutionsgroup.com",
+  "https://www.voyage.ajgsolutionsgroup.com"
+]);
+const ALLOWED_INTERESTS = new Set(["Voyager plus avantageusement", "Découvrir l'activité", "Les deux", "Travel more advantageously", "Discover the referral activity", "Both"]);
+const ALLOWED_FREQUENCIES = new Set(["0-1 fois par an", "2-3 fois par an", "4 fois ou plus par an", "Variable", "0-1 times per year", "2-3 times per year", "4 or more times per year", "It varies"]);
+const ALLOWED_GOALS = new Set(["Voyage uniquement pour le moment", "Comprendre le fonctionnement", "Développer une activité indépendante", "Travel only for now", "Understand how it works", "Explore an independent activity"]);
+
+const INTEREST_SCORES = new Map([
+  ["Voyager plus avantageusement", 1], ["Travel more advantageously", 1],
+  ["Découvrir l'activité", 3], ["Discover the referral activity", 3],
+  ["Les deux", 4], ["Both", 4]
+]);
+const FREQUENCY_SCORES = new Map([
+  ["0-1 fois par an", 1], ["0-1 times per year", 1],
+  ["2-3 fois par an", 2], ["2-3 times per year", 2],
+  ["4 fois ou plus par an", 3], ["4 or more times per year", 3],
+  ["Variable", 1], ["It varies", 1]
+]);
+const GOAL_SCORES = new Map([
+  ["Voyage uniquement pour le moment", 0], ["Travel only for now", 0],
+  ["Comprendre le fonctionnement", 1], ["Understand how it works", 1],
+  ["Développer une activité indépendante", 3], ["Explore an independent activity", 3]
+]);
 
 function text(value, max = 500) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
+}
+
+function cleanAttribution(value, max = 250) {
+  return text(value, max).replace(/[\u0000-\u001F\u007F]/g, " ");
+}
+
+function cleanUrl(value) {
+  const candidate = text(value, 1500);
+  if (!candidate) return null;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function bool(value) {
@@ -14,6 +53,26 @@ function json(res, status, body) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.end(JSON.stringify(body));
+}
+
+async function rateLimitLead(req, supabaseUrl, supabaseKey) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const ip = forwarded || String(req.headers["x-real-ip"] || "").trim();
+  if (!ip) return true;
+  const secret = process.env.RATE_LIMIT_SECRET || supabaseKey;
+  const data = new TextEncoder().encode(secret + ":" + ip);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const keyHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/ajg_voyage_check_lead_rate_limit`, {
+    method: "POST",
+    headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_key_hash: keyHash, p_limit: 6, p_window: "00:15:00" })
+  });
+  if (!response.ok) {
+    console.error("Lead rate limit check failed", response.status);
+    return true;
+  }
+  return (await response.json()) === true;
 }
 
 async function sendNotification(row) {
@@ -51,7 +110,8 @@ async function sendNotification(row) {
       from,
       to: [to],
       subject,
-      text: lines.join("\n")
+      text: lines.join("
+")
     })
   });
 
@@ -65,6 +125,22 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return json(res, 405, { error: "Method not allowed" });
+  }
+
+  const origin = text(req.headers.origin, 500);
+  const isPreview = /^https:\/\/ajg-voyage-[a-z0-9-]+-ajg-saas-software\.vercel\.app$/i.test(origin);
+  if (origin && !ALLOWED_ORIGINS.has(origin) && !isPreview) {
+    return json(res, 403, { error: "Origin not allowed" });
+  }
+
+  const fetchSite = String(req.headers["sec-fetch-site"] || "").toLowerCase();
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site") {
+    return json(res, 403, { error: "Cross-site request not allowed" });
+  }
+
+  const contentType = String(req.headers["content-type"] || "").toLowerCase();
+  if (!contentType.startsWith("application/json")) {
+    return json(res, 415, { error: "Unsupported media type" });
   }
 
   const declaredLength = Number(req.headers["content-length"] || 0);
@@ -81,18 +157,25 @@ export default async function handler(req, res) {
 
   const firstName = text(body.prenom, 100);
   const email = text(body.email, 254).toLowerCase();
-  const phone = text(body.telephone, 50);
+  const phone = text(body.telephone, 30);
+  if (phone && !/^[+()\d\s.-]{6,30}$/.test(phone)) {
+    return json(res, 400, { error: "Invalid phone number" });
+  }
   const language = text(body.language, 5) === "en" ? "en" : "fr";
   const mainInterest = text(body.interet_principal, 200);
   const travelFrequency = text(body.frequence_voyage, 200);
   const activityGoal = text(body.objectif_activite, 250);
-  const leadScore = Math.max(0, Math.min(100, Number.parseInt(body.lead_score, 10) || 0));
+  // Never trust the client-provided score: derive it from validated answers.
+  const leadScore = (INTEREST_SCORES.get(mainInterest) || 0) + (FREQUENCY_SCORES.get(travelFrequency) || 0) + (GOAL_SCORES.get(activityGoal) || 0);
 
   if (!firstName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json(res, 400, { error: "Invalid contact details" });
   }
   if (!mainInterest || !travelFrequency || !activityGoal) {
     return json(res, 400, { error: "Incomplete qualification" });
+  }
+  if (!ALLOWED_INTERESTS.has(mainInterest) || !ALLOWED_FREQUENCIES.has(travelFrequency) || !ALLOWED_GOALS.has(activityGoal)) {
+    return json(res, 400, { error: "Invalid qualification values" });
   }
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -113,13 +196,13 @@ export default async function handler(req, res) {
     marketing_consent: bool(body.consentement_marketing),
     contact_request: true,
     lead_score: leadScore,
-    utm_source: text(body.utm_source, 250) || null,
-    utm_medium: text(body.utm_medium, 250) || null,
-    utm_campaign: text(body.utm_campaign, 250) || null,
-    utm_content: text(body.utm_content, 250) || null,
-    utm_term: text(body.utm_term, 250) || null,
-    landing_url: text(body.landing_url, 1500) || null,
-    referrer_url: text(body.referrer_url, 1500) || null
+    utm_source: cleanAttribution(body.utm_source) || null,
+    utm_medium: cleanAttribution(body.utm_medium) || null,
+    utm_campaign: cleanAttribution(body.utm_campaign) || null,
+    utm_content: cleanAttribution(body.utm_content) || null,
+    utm_term: cleanAttribution(body.utm_term) || null,
+    landing_url: cleanUrl(body.landing_url),
+    referrer_url: cleanUrl(body.referrer_url)
   };
 
   const insert = await fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/ajg_voyage_leads`, {

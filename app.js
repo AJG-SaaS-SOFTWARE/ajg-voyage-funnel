@@ -2,6 +2,30 @@
   const form = document.querySelector('#lead-form');
   const lang = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'fr';
 
+  const funnelOnce = new Set();
+  const trackFunnel = (eventName, once = false) => {
+    if (once && funnelOnce.has(eventName)) return;
+    if (once) funnelOnce.add(eventName);
+    const params = new URLSearchParams(window.location.search);
+    fetch('/api/funnel-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        event_name: eventName,
+        language: lang,
+        page_path: window.location.pathname,
+        utm_source: params.get('utm_source') || '',
+        utm_medium: params.get('utm_medium') || '',
+        utm_campaign: params.get('utm_campaign') || ''
+      })
+    }).catch(() => {});
+  };
+
+  document.querySelectorAll('a[href*="calendly.com"]').forEach((link) => {
+    link.addEventListener('click', () => trackFunnel('calendly_clicked'));
+  });
+
   document.querySelectorAll('[data-lang-switch]').forEach((link) => {
     try {
       const url = new URL(link.getAttribute('href'), window.location.origin);
@@ -302,6 +326,7 @@
 
   next.addEventListener('click', () => {
     if (!validateStep(current)) return;
+    if (current === 0) trackFunnel('questionnaire_started', true);
     updateScore();
     current = Math.min(current + 1, steps.length - 1);
     render();
@@ -320,30 +345,21 @@
     if (!validateStep(3)) return;
 
     updateScore();
+    trackFunnel('questionnaire_completed', true);
     submit.disabled = true;
     submit.textContent = copy.sending;
 
     try {
       const formData = new FormData(form);
       const payload = Object.fromEntries(formData.entries());
-      let response = await fetch('/api/travel-presentation', {
+      const response = await fetch('/api/travel-presentation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      // Transition safety: while the public domain is still served by Netlify,
-      // keep the existing Netlify Forms path alive. Once DNS points to Vercel,
-      // the API route above becomes the normal path.
-      if (response.status === 404) {
-        response = await fetch('/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams(formData).toString()
-        });
-      }
-
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      trackFunnel('lead_submitted');
 
       window.location.assign(form.getAttribute('action') || (lang === 'en' ? '/en/thanks.html' : '/merci.html'));
     } catch (error) {
