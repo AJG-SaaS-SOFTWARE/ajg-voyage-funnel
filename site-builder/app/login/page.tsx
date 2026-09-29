@@ -74,10 +74,10 @@ export default function LoginPage() {
         <div className="auth-visual-copy">
           <p className="eyebrow">{tr("Création guidée · publication simplifiée", "Guided creation · simplified publishing")}</p>
           <h1>{tr("Créez votre présence en ligne sans partir de zéro", "Build your online presence without starting from scratch")}</h1>
-          <p>
-            Votre identité, votre histoire, vos rendez-vous et vos voyages réunis dans un site
-            cohérent, maintenable et prêt à évoluer.
-          </p>
+          <p>{tr(
+            "Votre identité, votre histoire et vos rendez-vous réunis dans un site cohérent, maintenable et prêt à évoluer.",
+            "Bring your identity, story and bookings together in a coherent, maintainable website built to evolve."
+          )}</p>
           <div className="auth-benefits">
             <span><ShieldIcon /> {tr("Conformité centralisée", "Centralized compliance")}</span>
             <span><MailIcon /> {tr("Connexion sans mot de passe", "Passwordless sign-in")}</span>
