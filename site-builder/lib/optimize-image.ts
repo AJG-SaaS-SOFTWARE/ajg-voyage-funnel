@@ -144,7 +144,7 @@ function renderOptimizedImage(bitmap: ImageBitmap): Promise<Blob> {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error("Impossible de compresser cette image."));
+      else reject(new Error(clientTr("Impossible de compresser cette image.", "Unable to compress this image.")));
     }, "image/webp", 0.8);
   });
 }
