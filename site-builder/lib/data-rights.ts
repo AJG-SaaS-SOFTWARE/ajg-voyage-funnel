@@ -1,6 +1,7 @@
 "use client";
 
 import { getSupabaseBrowserClient } from "./supabase-browser";
+import { clientTr } from "./i18n";
 
 export type DataErasureRequest = {
   id: string;
@@ -41,10 +42,10 @@ export async function requestDataErasure(input: {
   confirmation: string;
 }) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n'est pas configuré.", "Supabase is not configured."));
 
   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  if (error || !session?.access_token) throw new Error(clientTr("Votre session a expiré.", "Your session has expired."));
 
   const response = await fetch("/api/privacy/erasure/request", {
     method: "POST",
