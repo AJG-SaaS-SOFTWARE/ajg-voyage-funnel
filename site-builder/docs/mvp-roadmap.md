@@ -270,12 +270,12 @@ Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc systèm
 Le développement autonome prévu par cette roadmap est arrivé au bout de ce qui peut être finalisé sans décisions commerciales, accès/quotas externes ou observation d’utilisateurs réels.
 
 Restent volontairement ouverts :
-- sous-domaine canari `test-julien.voyage.ajgsolutionsgroup.com` validé côté Vercel/DNS ; la release contrôle désormais automatiquement son accessibilité HTTPS lorsqu’un alias AJG est attaché ;
 - tests de plusieurs sites bêta et amélioration du template fondée sur ces observations ;
 - activation du réglage Supabase Auth « leaked password protection » si l’offre le permet ;
-- prix, périodicité, essai éventuel et délais de grâce à décider avant activation Stripe ;
-- connexion Stripe/webhooks puis synchronisation de ses statuts ;
-- automatisation de l’ajout et de la vérification des domaines personnalisés chez Vercel.
+- prix, périodicité, essai éventuel et nombre de sites inclus à décider avant activation Stripe live ;
+- création du Product/Price Stripe sandbox, configuration des secrets puis recette réelle des scénarios de paiement ;
+- recette d’un domaine personnalisé utilisateur réel ajout → DNS → vérification → primaire → retrait ;
+- connexion du store Blob privé de sauvegarde médias puis première sauvegarde réelle.
 
 Ces points ne doivent pas être marqués terminés tant qu’ils n’ont pas été vérifiés dans leur environnement réel.
 
@@ -455,9 +455,11 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] cron quotidien sécurisé ajouté à 02:40 UTC et endpoint de santé non sensible `/api/health/storage-backup` ;
 - [x] release-readiness commercial enrichi avec présence du store et fraîcheur de la dernière sauvegarde (<36 h sain, >72 h blocker) ;
 - [x] runbook de restauration contrôlée documenté ; aucune restauration automatique/destructive ;
+- [x] moteur quotidien de copie hors Supabase déployé : versionnement immuable, SHA-256, manifestes privés, tombstones et rétention glissante ;
+- [x] back-office admin prêt à afficher état/âge/volume/rétention et à lancer manuellement une sauvegarde via la même primitive serveur que le cron ;
+- [x] fraîcheur de la sauvegarde branchée au Cockpit Infrastructure AJG avec statuts sain / à surveiller / critique / non configuré ;
 - [ ] créer et connecter le store Vercel Blob privé `ajg-site-builder-backups` au projet Production ;
-- [ ] exécuter la première sauvegarde réelle et vérifier la présence du manifest, des objets et l’état de santé ;
-- [ ] connecter ensuite la fraîcheur de cette sauvegarde au Cockpit Infrastructure AJG.
+- [ ] exécuter la première sauvegarde réelle et vérifier la présence du manifest, des objets et l’état de santé.
 
 ### Domaines personnalisés — automatisation
 - [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;
