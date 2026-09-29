@@ -323,7 +323,9 @@ jobs:
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             -H "Content-Type: application/json")"
 
-          if [ "$PROMOTE_CODE" -lt 200 ] || [ "$PROMOTE_CODE" -ge 300 ]; then
+          if [ "$PROMOTE_CODE" -eq 409 ]; then
+            echo "Vercel promotion returned HTTP 409; validating whether the artifact is already current production."
+          elif [ "$PROMOTE_CODE" -lt 200 ] || [ "$PROMOTE_CODE" -ge 300 ]; then
             echo "::error::Vercel promotion failed (HTTP $PROMOTE_CODE)."
             cat /tmp/vercel-promote.json
             exit 1
