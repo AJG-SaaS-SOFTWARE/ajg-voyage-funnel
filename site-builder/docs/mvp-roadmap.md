@@ -2,6 +2,8 @@
 
 Dernière mise à jour : 29 septembre 2026.
 
+> Nouvelle roadmap commerciale et opérationnelle : `docs/build-run-grow-roadmap.md`. Elle devient la référence pour le passage au modèle BUILD / RUN / GROW, la réduction du support humain, le diagnostic automatique et les garde-fous de coûts.
+
 ## Sprint 1 — configurateur utilisable
 État : terminé pour le prototype bêta
 
@@ -525,7 +527,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 ### Checkpoints humains actifs
 À ce stade, les prochains jalons ne doivent pas être devinés par le code :
 
-1. **Offre commerciale** : grille validée Essentiel 19 €/mois ou 190 €/an et Pro IA 39 €/mois ou 390 €/an, 1 site. Les 4 Prices existent dans Stripe sandbox. Le Checkout est préparé avec 14 jours de droits Pro IA puis retour automatique au plan souscrit ; les Beta Testers restent gratuits et séparés de Stripe. L’ouverture commerciale reste protégée par `AJG_BILLING_CHECKOUT_ENABLED=false` tant que les secrets/prix live et le juridique ne sont pas finalisés.
+1. **Offre commerciale** : nouvelle cible validée BUILD / RUN / GROW : Essentiel 15 €/mois ou 150 €/an, Growth 29 €/mois ou 290 €/an, Création IA complète 49 € en paiement unique. Growth annuel pourra inclure la Création IA. Le catalogue Stripe sandbox et les entitlements doivent maintenant être migrés vers ce modèle avant ouverture commerciale.
 2. **Bêta réelle** : fournir/inviter 5 à 10 testeurs puis observer activation, publication, usage IA, régénération Premium et retours avant de modifier à nouveau le template public.
 3. **Domaine personnalisé réel** : choisir un domaine de test possédé par AJG ou un testeur afin d’exécuter la recette ajout → DNS → vérification → primaire → retrait.
 4. **Identité juridique AJG** : le nom commercial du produit est défini, mais la structure juridique du vendeur n’est pas encore arrêtée. Renseigner les variables légales réelles avant de lever le gate commercial.
