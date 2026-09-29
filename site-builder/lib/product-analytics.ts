@@ -1,6 +1,6 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
-export type ProductEventName="builder_open"|"step_identity"|"step_story"|"step_booking"|"step_review"|"architect_generated"|"architect_regenerated"|"architect_refined"|"architect_applied"|"revision_applied"|"publish_success";
+export type ProductEventName="builder_open"|"step_identity"|"step_story"|"step_booking"|"step_review"|"architect_generated"|"architect_regenerated"|"architect_refined"|"architect_failed"|"architect_applied"|"revision_applied"|"publish_success";
 export type FeedbackCategory="bug"|"idea"|"usability"|"quality"|"other";
 export type ArchitectQualityReason="need_mismatch"|"copy"|"structure"|"design"|"generic"|"other";
 

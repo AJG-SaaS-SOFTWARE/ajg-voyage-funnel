@@ -167,6 +167,9 @@ export async function GET(request: Request) {
   const architectRefinedRows = eventRows.filter(
     (item) => item.event_name === "architect_refined"
   );
+  const architectFailedRows = eventRows.filter(
+    (item) => item.event_name === "architect_failed"
+  );
   const architectAppliedRows = eventRows.filter(
     (item) => item.event_name === "architect_applied"
   );
@@ -174,6 +177,8 @@ export async function GET(request: Request) {
     ...architectFirstRows,
     ...architectRegeneratedRows
   ];
+  const architectRequestCount =
+    architectAttemptRows.length + architectFailedRows.length;
   const architectUsers = new Set(
     architectAttemptRows.map((item) => item.user_id)
   );
@@ -352,6 +357,12 @@ export async function GET(request: Request) {
         appliedUsers: usersFor("architect_applied", "revision_applied").size,
         architect: {
           attempts: architectAttemptRows.length,
+          requests: architectRequestCount,
+          failures: architectFailedRows.length,
+          failureRate: percent(
+            architectFailedRows.length,
+            architectRequestCount
+          ),
           firstGenerations: architectFirstRows.length,
           regenerations: architectRegeneratedRows.length,
           refinements: architectRefinedRows.length,
@@ -397,12 +408,12 @@ export async function GET(request: Request) {
             reasoningTokens: providerReasoningTokens,
             totalTokens: providerTotalTokens,
             avgCallsPerAttempt:
-              architectAttemptRows.length > 0
-                ? Math.round((providerRows.length / architectAttemptRows.length) * 10) / 10
+              architectRequestCount > 0
+                ? Math.round((providerRows.length / architectRequestCount) * 10) / 10
                 : 0,
             avgTokensPerAttempt:
-              architectAttemptRows.length > 0
-                ? Math.round(providerTotalTokens / architectAttemptRows.length)
+              architectRequestCount > 0
+                ? Math.round(providerTotalTokens / architectRequestCount)
                 : 0,
             avgDurationMsPerCall:
               providerRows.length > 0
@@ -432,7 +443,8 @@ export async function GET(request: Request) {
         reviewed: "Utilisateur distinct ayant atteint l’étape Publication / revue.",
         published: "Utilisateur distinct ayant déclenché une publication réussie.",
         aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
-        architectAttempts: "Propositions Premium générées ou régénérées ; aucun brief ni contenu client n’est enregistré dans les événements.",
+        architectAttempts: "Propositions Premium effectivement rendues au client ; aucun brief ni contenu client n’est enregistré dans les événements.",
+        architectFailureRate: "Part des demandes Premium lancées qui échouent après réservation du quota et ne renvoient aucune proposition exploitable.",
         architectRegenerationRate: "Part des tentatives Premium qui correspondent à une nouvelle proposition demandée après une première génération.",
         architectRefinementRate: "Part des propositions où l’audit Premium a déclenché un raffinement automatique avant affichage.",
         architectApplicationRate: "Applications de propositions Premium rapportées au nombre de tentatives sur la période.",

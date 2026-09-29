@@ -195,6 +195,9 @@ export type AdminBetaMetrics = {
     appliedUsers: number;
     architect: {
       attempts: number;
+      requests: number;
+      failures: number;
+      failureRate: number;
       firstGenerations: number;
       regenerations: number;
       refinements: number;
