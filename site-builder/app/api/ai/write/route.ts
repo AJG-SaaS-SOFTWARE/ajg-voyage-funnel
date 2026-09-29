@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
 import { normalizeStandardStructuredOutput, sanitizeStandardText, selectStandardContextEntries, standardQualityIssues, standardStructuredFormat } from "../../../../lib/standard-ai-writer";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
+import { estimateAiCostUsdMicros } from "../../../../lib/ai-cost";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -204,6 +205,8 @@ async function recordStandardProviderUsage(args: {
   operation: StandardProviderOperation;
   data: any;
   durationMs: number;
+  planKey: string;
+  accessSource: string;
 }) {
   const serviceKey =
     process.env.SUPABASE_SECRET_KEY ||
@@ -212,6 +215,12 @@ async function recordStandardProviderUsage(args: {
   if (!serviceKey || !supabaseUrl) return;
 
   const usage = args.data?.usage || {};
+  const model = clean(args.data?.model, 100) || process.env.OPENAI_TEXT_MODEL || "gpt-5.6-luna";
+  const cost = estimateAiCostUsdMicros(model, {
+    inputTokens: Math.max(0, Number(usage?.input_tokens) || 0),
+    cachedInputTokens: Math.max(0, Number(usage?.input_tokens_details?.cached_tokens) || 0),
+    outputTokens: Math.max(0, Number(usage?.output_tokens) || 0)
+  });
   const service = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
@@ -219,7 +228,7 @@ async function recordStandardProviderUsage(args: {
     user_id: args.userId,
     site_id: args.siteId,
     operation: args.operation,
-    model: clean(args.data?.model, 100) || process.env.OPENAI_TEXT_MODEL || "gpt-5.6-luna",
+    model,
     input_tokens: Math.max(0, Number(usage?.input_tokens) || 0),
     cached_input_tokens: Math.max(
       0,
@@ -231,7 +240,12 @@ async function recordStandardProviderUsage(args: {
       Number(usage?.output_tokens_details?.reasoning_tokens) || 0
     ),
     total_tokens: Math.max(0, Number(usage?.total_tokens) || 0),
-    duration_ms: Math.max(0, Math.round(args.durationMs))
+    duration_ms: Math.max(0, Math.round(args.durationMs)),
+    estimated_cost_usd_micros: cost.micros,
+    pricing_version: cost.pricingVersion,
+    pricing_known: cost.known,
+    plan_key: args.planKey || "unknown",
+    access_source: args.accessSource || "standard"
   });
 
   if (error) {
@@ -297,6 +311,13 @@ export async function POST(request: Request) {
   if (capabilityError) return NextResponse.json({ error: "Impossible de vérifier les droits du site." }, { status: 503 });
   const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
   if (!capability?.can_generate_ai) return NextResponse.json({ error: tr("Les fonctions IA sont temporairement indisponibles pour ce site. Vous pouvez régulariser l’accès depuis votre espace de facturation.", "AI features are temporarily unavailable for this website. You can restore access from Billing.") }, { status: 402 });
+
+  const { data: entitlementRows } = await auth.supabase.rpc("get_my_site_entitlements", {
+    p_site_id: siteId
+  });
+  const requestEntitlement = Array.isArray(entitlementRows) ? entitlementRows[0] : entitlementRows;
+  const requestPlanKey =
+    typeof requestEntitlement?.plan_key === "string" ? requestEntitlement.plan_key : "unknown";
 
   const instruction = clean(body?.instruction, 800);
   if (!instruction) {
@@ -548,6 +569,11 @@ export async function POST(request: Request) {
           const service = createClient(supabaseUrl, serviceKey, {
             auth: { persistSession: false, autoRefreshToken: false }
           });
+          const cost = estimateAiCostUsdMicros(usage.model, {
+            inputTokens: usage.inputTokens,
+            cachedInputTokens: usage.cachedInputTokens,
+            outputTokens: usage.outputTokens
+          });
           const { error } = await service.from("ai_provider_usage").insert({
             user_id: auth.user.id,
             site_id: siteId,
@@ -558,7 +584,12 @@ export async function POST(request: Request) {
             output_tokens: usage.outputTokens,
             reasoning_tokens: usage.reasoningTokens,
             total_tokens: usage.totalTokens,
-            duration_ms: usage.durationMs
+            duration_ms: usage.durationMs,
+            estimated_cost_usd_micros: cost.micros,
+            pricing_version: cost.pricingVersion,
+            pricing_known: cost.known,
+            plan_key: requestPlanKey,
+            access_source: premiumAccessSource
           });
           if (error) {
             console.warn("AI provider usage telemetry insert failed", error.message);
@@ -702,7 +733,9 @@ export async function POST(request: Request) {
     siteId,
     operation: standardOperation,
     data,
-    durationMs: Date.now() - providerStartedAt
+    durationMs: Date.now() - providerStartedAt,
+    planKey: requestPlanKey,
+    accessSource: "standard"
   });
 
   const normalizeStandardResult = (rawText: string) => {
@@ -813,7 +846,9 @@ export async function POST(request: Request) {
       siteId,
       operation: "standard_repair",
       data: repairData,
-      durationMs: Date.now() - repairStartedAt
+      durationMs: Date.now() - repairStartedAt,
+      planKey: requestPlanKey,
+      accessSource: "standard"
     });
 
     try {
