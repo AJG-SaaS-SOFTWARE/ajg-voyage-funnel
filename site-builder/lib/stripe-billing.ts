@@ -239,6 +239,6 @@ export function normalizeStripeSubscriptionStatus(status: unknown) {
   if (value === "trialing") return "trialing";
   if (value === "past_due") return "past_due";
   if (value === "canceled" || value === "incomplete_expired") return "canceled";
-  if (value === "unpaid" || value === "paused") return "suspended";
-  return "past_due";
+  if (value === "unpaid" || value === "paused" || value === "incomplete") return "suspended";
+  return "suspended";
 }
