@@ -1679,7 +1679,7 @@ export default function BuilderPage() {
                     </label>
 
                     <label className="guided-question">
-                      <span><i>2</i> {tr("Qu’est-ce qui caractérise votre approche ?", "What defines your approach?")}</span>
+                      <span><i>2</i> {tr("Qu'est-ce qui caractérise votre approche ?", "What defines your approach?")}</span>
                       <textarea
                         rows={3}
                         placeholder={tr("Ex. Je prends le temps de mettre les personnes à l’aise et je privilégie des images spontanées, simples et lumineuses.", "e.g. I take time to make people feel comfortable and I favor natural, simple and bright images.")}
