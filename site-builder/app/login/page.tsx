@@ -46,7 +46,7 @@ export default function LoginPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase n'est pas encore configuré dans cet environnement.");
+      setError(tr("Supabase n’est pas encore configuré dans cet environnement.", "Supabase is not configured in this environment yet."));
       return;
     }
 
@@ -54,13 +54,13 @@ export default function LoginPage() {
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin + "/builder"
+        emailRedirectTo: window.location.origin + `/builder?lang=${locale}`
       }
     });
 
     if (authError) {
       setState("idle");
-      setError(authError.message);
+      setError(tr("Le lien de connexion n’a pas pu être envoyé. Réessayez dans quelques instants.", "The sign-in link could not be sent. Please try again in a moment."));
       return;
     }
     setState("sent");

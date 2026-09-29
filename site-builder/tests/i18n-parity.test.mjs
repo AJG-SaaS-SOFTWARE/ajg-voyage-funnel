@@ -117,3 +117,66 @@ test("client-side repository and image errors are localized", () => {
   assert.match(image, /The image must not exceed 12 MB/);
   assert.match(image, /Unable to prepare this image/);
 });
+
+
+test("English Builder core has no known French-only residuals in customer paths", () => {
+  const builder = read("app/builder/page.tsx");
+  const privacyApi = read("app/api/privacy/erasure/request/route.ts");
+  const data = read("app/data/page.tsx");
+
+  assert.doesNotMatch(builder, />Architecture : /);
+  assert.doesNotMatch(builder, />Structure : /);
+  assert.doesNotMatch(builder, />Direction visuelle : /);
+  assert.match(
+    builder,
+    /tr\("Ces réponses sont facultatives\. Répondez uniquement[^"]+", "These answers are optional\./
+  );
+  assert.doesNotMatch(builder, /throw new Error\("Connectez le stockage du site/);
+
+  assert.doesNotMatch(privacyApi, /error: "Reconnectez-vous pour continuer\."/);
+  assert.doesNotMatch(privacyApi, /error: "Impossible d'enregistrer la demande\."/);
+  assert.match(privacyApi, /Sign in again to continue/);
+  assert.match(privacyApi, /Unable to record the request/);
+
+  assert.doesNotMatch(data, /: "Impossible d'enregistrer la demande\."/);
+  assert.match(data, /Unable to record the request/);
+});
+
+
+test("authentication and beta invitation preserve the chosen locale across email redirects", () => {
+  const login = read("app/login/page.tsx");
+  const provider = read("components/ProductLocaleProvider.tsx");
+  const betaRoute = read("app/api/admin/beta-cohort/route.ts");
+  const adminClient = read("lib/admin.ts");
+  const adminPage = read("app/admin/page.tsx");
+
+  assert.match(login, /builder\?lang=\$\{locale\}/);
+  assert.match(login, /The sign-in link could not be sent/);
+  assert.match(provider, /URLSearchParams\(window\.location\.search\)/);
+  assert.match(provider, /explicitLocale/);
+  assert.match(betaRoute, /ajg_builder_locale: locale/);
+  assert.match(betaRoute, /builder\?lang=\$\{locale\}/);
+  assert.match(adminClient, /durationDays = 30, locale: "fr" \| "en" = "fr"/);
+  assert.match(adminPage, /Langue du testeur/);
+  assert.match(adminPage, /English/);
+});
+
+
+test("billing notification catalogue covers every customer state in both languages", () => {
+  const source = read("app/api/cron/billing-notifications/route.ts");
+  for (const key of [
+    "payment_failed",
+    "reminder_j3",
+    "reminder_j7",
+    "reminder_j12",
+    "retention_j74",
+    "retention_j97",
+    "reactivated"
+  ]) {
+    const occurrences = source.split(key).length - 1;
+    assert.ok(occurrences >= 2, key + " must exist in FR and EN catalogues");
+  }
+  assert.match(source, /Open Billing/);
+  assert.match(source, /Accéder à votre espace/);
+  assert.match(source, /ajg_builder_locale/);
+});

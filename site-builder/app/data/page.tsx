@@ -108,7 +108,7 @@ export default function DataRightsPage() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Impossible d'enregistrer la demande."
+          : tr("Impossible d’enregistrer la demande.", "Unable to record the request.")
       );
     } finally {
       setBusyKey("");
@@ -140,7 +140,7 @@ export default function DataRightsPage() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Impossible d'enregistrer la demande."
+          : tr("Impossible d’enregistrer la demande.", "Unable to record the request.")
       );
     } finally {
       setBusyKey("");
