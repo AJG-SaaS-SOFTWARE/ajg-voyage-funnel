@@ -158,6 +158,7 @@ export type AdminBetaCohortMember = {
   accessActive: boolean;
   accessStartsAt: string | null;
   accessExpiresAt: string | null;
+  locale: "fr" | "en";
 };
 
 export type AdminBetaCohort = {
