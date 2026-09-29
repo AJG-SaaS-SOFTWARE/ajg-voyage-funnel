@@ -47,12 +47,7 @@ jobs:
           const body = {
             name: process.env.TARGET_PROJECT_NAME,
             framework: null,
-            gitRepository: {
-              type: "github",
-              repo: "AJG-SaaS-SOFTWARE/ajg-voyage-funnel"
-            },
-            serverlessFunctionRegion: "cdg1",
-            commandForIgnoringBuildStep: "git diff --quiet HEAD^ HEAD -- . ':!site-builder/**'"
+            serverlessFunctionRegion: "cdg1"
           };
           process.stdout.write(JSON.stringify(body));
           NODE
@@ -142,9 +137,9 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          URL="$(npx --yes vercel@latest deploy --prod --yes --archive=tgz --token="$VERCEL_TOKEN")"
+          URL="$(npx --yes vercel@59.19.1 deploy --prod --yes --archive=tgz --token="$VERCEL_TOKEN")"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "AJG Voyage deployment: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "AJG Voyage deployment on dedicated project with pinned Vercel CLI 59.19.1: $URL" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify static site and lead API
         env:
