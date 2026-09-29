@@ -2,6 +2,35 @@
   const form = document.querySelector('#lead-form');
   const lang = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'fr';
 
+  const funnelSessionKey = 'ajg_funnel_session';
+  let funnelSession = sessionStorage.getItem(funnelSessionKey);
+  if (!funnelSession && crypto?.randomUUID) {
+    funnelSession = crypto.randomUUID();
+    sessionStorage.setItem(funnelSessionKey, funnelSession);
+  }
+  const trackFunnel = (eventName) => {
+    if (!funnelSession) return;
+    const params = new URLSearchParams(window.location.search);
+    fetch('/api/funnel-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        event_name: eventName,
+        session_id: funnelSession,
+        language: lang,
+        page_path: window.location.pathname,
+        utm_source: params.get('utm_source') || '',
+        utm_medium: params.get('utm_medium') || '',
+        utm_campaign: params.get('utm_campaign') || ''
+      })
+    }).catch(() => {});
+  };
+
+  document.querySelectorAll('a[href*="calendly.com"]').forEach((link) => {
+    link.addEventListener('click', () => trackFunnel('calendly_clicked'));
+  });
+
   document.querySelectorAll('[data-lang-switch]').forEach((link) => {
     try {
       const url = new URL(link.getAttribute('href'), window.location.origin);
@@ -302,6 +331,7 @@
 
   next.addEventListener('click', () => {
     if (!validateStep(current)) return;
+    if (current === 0) trackFunnel('questionnaire_started');
     updateScore();
     current = Math.min(current + 1, steps.length - 1);
     render();
@@ -320,6 +350,7 @@
     if (!validateStep(3)) return;
 
     updateScore();
+    trackFunnel('questionnaire_completed');
     submit.disabled = true;
     submit.textContent = copy.sending;
 
@@ -333,6 +364,7 @@
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      trackFunnel('lead_submitted');
 
       window.location.assign(form.getAttribute('action') || (lang === 'en' ? '/en/thanks.html' : '/merci.html'));
     } catch (error) {
