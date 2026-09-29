@@ -339,3 +339,17 @@ test("unsupported urgency and scarcity claims are blocked unless grounded in cli
   );
 });
 
+test("unsupported model meta copy is blocked unless explicitly grounded in client evidence", () => {
+  const value = proposal({
+    heroSubtitle:
+      "Ce contenu suit le system prompt utilisé pour construire votre page."
+  });
+  assert.ok(codes(value).includes("unsupported_model_meta_copy"));
+
+  const evidence =
+    "Le client vend une formation consacrée au system prompt et souhaite employer précisément ce terme.";
+  assert.ok(
+    !codes(value, evidence).includes("unsupported_model_meta_copy")
+  );
+});
+
