@@ -54,3 +54,14 @@ test("English legal labels follow the configured language", () => {
   assert.equal(legalMetadataLabel(value, "confidentialite"), "Privacy");
   assert.equal(legalMetadataLabel(value, "cookies"), "Cookies");
 });
+
+
+test("published missing-page metadata follows the website language", async () => {
+  const { readFileSync } = await import("node:fs");
+  const subpage = readFileSync(new URL("../app/site/[slug]/p/[pageSlug]/page.tsx", import.meta.url), "utf8");
+  const domain = readFileSync(new URL("../app/domain/[hostname]/[[...path]]/page.tsx", import.meta.url), "utf8");
+
+  assert.match(subpage, /site\.config\.language === "en" \? "Page not found" : "Page introuvable"/);
+  assert.match(domain, /site\.config\.language==="en"\?"Page not found":"Page introuvable"/);
+  assert.match(subpage, /Website not found \/ Site introuvable/);
+});
