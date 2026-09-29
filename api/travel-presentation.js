@@ -184,6 +184,11 @@ export default async function handler(req, res) {
     return json(res, 503, { error: "Lead service unavailable" });
   }
 
+  if (!(await rateLimitLead(req, supabaseUrl, supabaseKey))) {
+    res.setHeader("Retry-After", "900");
+    return json(res, 429, { error: "Too many requests" });
+  }
+
   const row = {
     first_name: firstName,
     email,
