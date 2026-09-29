@@ -406,7 +406,8 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] séparation technique documentée entre contenus Builder à effacer et pièces financières externes à ne pas supprimer aveuglément ;
 - [ ] finaliser dans le registre juridique/comptable les finalités et durées précises de conservation des pièces financières avant passage Stripe live ;
 - [x] journal d’exécution RGPD pseudonymisé : réception, portée, statut, systèmes traités et dates ; après purge les FK `user_id/site_id` passent à `null` et aucun contenu du site n’est copié dans le journal ;
-- [ ] recette E2E dédiée : export → demande → suspension → purge Storage/DB → suppression Auth, avec vérification qu’aucune donnée de contenu supprimée ne reste accessible.
+- [x] runner E2E RGPD admin isolé : compte/site/médias jetables → demande compte réelle → suspension → vraie route de purge → vérification Storage/DB/Auth + journal pseudonymisé ;
+- [ ] exécuter cette recette E2E en production sur le runner jetable et archiver le résultat avant lancement commercial.
 
 ### Durcissement préproduction — 28 septembre 2026
 - [x] administration des offres alignée sur la facturation par site, sans mutation involontaire des autres sites du propriétaire ;
