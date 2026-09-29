@@ -1824,12 +1824,12 @@ export default function BuilderPage() {
                 <div className="visibility-options-stack">
                   <VisibilityOption
                     checked={config.design.showBooking}
-                    title="Rendez-vous sur le site"
-                    activeLabel="Activé"
-                    inactiveLabel="Désactivé"
+                    title={en ? "Booking on the website" : "Rendez-vous sur le site"}
+                    activeLabel={en ? "Enabled" : "Activé"}
+                    inactiveLabel={en ? "Disabled" : "Désactivé"}
                     description={config.design.showBooking
-                      ? "Les accès au rendez-vous peuvent apparaître sur le site dès qu'un lien valide est renseigné."
-                      : "Tous les accès au rendez-vous sont masqués. Le texte et le lien restent enregistrés pour plus tard."}
+                      ? (en ? "Booking access can appear on the website as soon as a valid link is provided." : "Les accès au rendez-vous peuvent apparaître sur le site dès qu'un lien valide est renseigné.")
+                      : (en ? "All booking access is hidden. The label and link remain saved for later." : "Tous les accès au rendez-vous sont masqués. Le texte et le lien restent enregistrés pour plus tard.")}
                     onChange={(checked) => update("design", { ...config.design, showBooking: checked })}
                   />
                   {config.design.showBooking ? (
@@ -1837,10 +1837,10 @@ export default function BuilderPage() {
                       checked={config.design.showPrimaryButton}
                       title="Bouton principal dans l’accueil"
                       activeLabel="Visible"
-                      inactiveLabel="Masqué"
+                      inactiveLabel={en ? "Hidden" : "Masqué"}
                       description={config.design.showPrimaryButton
-                        ? "Avec un lien valide, le bouton apparaît dans le hero en plus de l'accès dans la navigation."
-                        : "Avec un lien valide, l'accès reste dans la navigation mais le gros bouton du hero est masqué."}
+                        ? (en ? "With a valid link, the button appears in the hero in addition to the navigation link." : "Avec un lien valide, le bouton apparaît dans le hero en plus de l'accès dans la navigation.")
+                        : (en ? "With a valid link, booking remains in the navigation but the main hero button is hidden." : "Avec un lien valide, l'accès reste dans la navigation mais le gros bouton du hero est masqué.")}
                       onChange={(checked) => update("design", { ...config.design, showPrimaryButton: checked })}
                     />
                   ) : null}
@@ -1851,19 +1851,19 @@ export default function BuilderPage() {
                     <b>Ce que verra le visiteur</b>
                     <p>
                       {!config.design.showBooking
-                        ? "Aucun accès au rendez-vous : la fonction est désactivée."
+                        ? (en ? "No booking access: the feature is disabled." : "Aucun accès au rendez-vous : la fonction est désactivée.")
                         : bookingLinkStatus !== "valid"
                           ? "Aucun bouton pour le moment : ajoutez un lien de rendez-vous HTTPS valide ci-dessous."
                           : config.design.showPrimaryButton
-                            ? "Un accès dans la navigation + le bouton principal dans l’accueil."
-                            : "Un accès dans la navigation uniquement. Le bouton principal de l’accueil est masqué."}
+                            ? (en ? "One navigation link plus the main homepage button." : "Un accès dans la navigation + le bouton principal dans l’accueil.")
+                            : (en ? "Navigation link only. The main homepage button is hidden." : "Un accès dans la navigation uniquement. Le bouton principal de l’accueil est masqué.")}
                     </p>
                   </div>
                 </div>
                 <div className="booking-guide">
                   <b>Comment ajouter votre agenda ?</b>
                   <ol>
-                    <li>Ouvrez votre page de réservation Calendly, Google Calendar ou un autre agenda.</li>
+                    <li>{en ? "Open your Calendly, Google Calendar or other booking page." : "Ouvrez votre page de réservation Calendly, Google Calendar ou un autre agenda."}</li>
                     <li>Copiez son adresse dans la barre du navigateur ou avec le bouton de partage.</li>
                     <li>Collez cette adresse dans le champ ci-dessous. Un message confirmera si le lien est complet.</li>
                   </ol>
@@ -1871,10 +1871,10 @@ export default function BuilderPage() {
                 </div>
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Votre rendez-vous</b><p>Un seul lien suffit pour transformer l'intérêt en échange.</p></div>
+                  <div><b>{en ? "Your booking link" : "Votre rendez-vous"}</b><p>{en ? "A single link is enough to turn interest into a conversation." : "Un seul lien suffit pour transformer l'intérêt en échange."}</p></div>
                 </div>
-                <Field label="Texte du bouton" hint="Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous.">
-                  <input spellCheck placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
+                <Field label={en ? "Button label" : "Texte du bouton"} hint={en ? "This text appears on the button once you add a booking link." : "Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous."}>
+                  <input spellCheck placeholder={en ? "E.g. Book a call" : "Ex. Découvrir la plateforme"} value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="bookingLabel"
@@ -1886,9 +1886,9 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("bookingLabel", text)}
-                  placeholder="Ex. Un appel à l'action rassurant, sans pression commerciale"
+                  placeholder={en ? "E.g. A reassuring call to action without sales pressure" : "Ex. Un appel à l'action rassurant, sans pression commerciale"}
                 />
-                <Field label="Lien de rendez-vous" hint="Facultatif. Le lien doit commencer par https:// et contenir l'adresse complète de votre page.">
+                <Field label={en ? "Booking link" : "Lien de rendez-vous"} hint={en ? "Optional. The link must start with https:// and include the full address of your booking page." : "Facultatif. Le lien doit commencer par https:// et contenir l'adresse complète de votre page."}>
                   <input
                     type="url"
                     inputMode="url"
@@ -1902,19 +1902,19 @@ export default function BuilderPage() {
                 </Field>
                 <p id="booking-link-feedback" className={"booking-link-feedback " + bookingLinkStatus} role="status">
                   {bookingLinkStatus === "valid"
-                    ? "✓ Lien reconnu. Vérifiez qu'il ouvre bien votre page de réservation."
+                    ? (en ? "✓ Link recognized. Check that it opens your booking page correctly." : "✓ Lien reconnu. Vérifiez qu'il ouvre bien votre page de réservation.")
                     : bookingLinkStatus === "invalid"
-                      ? "Le lien semble incomplet. Copiez l'adresse entière, par exemple https://calendly.com/votre-nom/30min."
+                      ? (en ? "The link looks incomplete. Copy the full address, for example https://calendly.com/your-name/30min." : "Le lien semble incomplet. Copiez l'adresse entière, par exemple https://calendly.com/votre-nom/30min.")
                       : "Vous pouvez continuer sans lien et l'ajouter plus tard."}
                 </p>
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Vos réseaux</b><p>Optionnels, mais utiles pour prolonger la relation hors du site.</p></div>
+                  <div><b>{en ? "Your social profiles" : "Vos réseaux"}</b><p>{en ? "Optional, but useful for continuing the relationship beyond the website." : "Optionnels, mais utiles pour prolonger la relation hors du site."}</p></div>
                 </div>
                 <div className="grid two">
-                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showInstagram} onChange={(e) => update("design", { ...config.design, showInstagram: e.target.checked })} /><span><b>Afficher Instagram</b></span></label>
-                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showFacebook} onChange={(e) => update("design", { ...config.design, showFacebook: e.target.checked })} /><span><b>Afficher Facebook</b></span></label>
+                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showInstagram} onChange={(e) => update("design", { ...config.design, showInstagram: e.target.checked })} /><span><b>{en ? "Show Instagram" : "Afficher Instagram"}</b></span></label>
+                  <label className="option-card premium-option-card"><input type="checkbox" checked={config.design.showFacebook} onChange={(e) => update("design", { ...config.design, showFacebook: e.target.checked })} /><span><b>{en ? "Show Facebook" : "Afficher Facebook"}</b></span></label>
                   <Field label="Instagram">
                     <input
                       type="url"
