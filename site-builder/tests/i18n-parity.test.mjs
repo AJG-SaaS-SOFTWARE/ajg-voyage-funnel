@@ -104,10 +104,11 @@ test("server-seeded locale avoids a French-first render for English users", () =
 });
 
 
-test("client-side repository and image errors are localized", () => {
+test("client-side repository, image and feedback errors are localized", () => {
   const repository = read("lib/supabase-site-repository.ts");
   const billing = read("lib/billing-access.ts");
   const image = read("lib/optimize-image.ts");
+  const analytics = read("lib/product-analytics.ts");
 
   assert.match(repository, /Your storage quota has been reached/);
   assert.match(repository, /You must be signed in/);
@@ -116,8 +117,14 @@ test("client-side repository and image errors are localized", () => {
   assert.match(billing, /Your session has expired/);
   assert.match(image, /The image must not exceed 12 MB/);
   assert.match(image, /Unable to prepare this image/);
+  assert.match(image, /Unable to compress this image/);
+  assert.match(analytics, /Sign in required/);
+  assert.match(analytics, /Add a few words so we can understand your feedback/);
+  assert.match(analytics, /Unable to save your feedback right now/);
+  assert.match(analytics, /Unable to save this rating right now/);
+  assert.doesNotMatch(image, /reject\(new Error\("Impossible de compresser cette image\."/);
+  assert.doesNotMatch(analytics, /throw new Error\("Connexion requise\."/);
 });
-
 
 test("English Builder core has no known French-only residuals in customer paths", () => {
   const builder = read("app/builder/page.tsx");
