@@ -712,6 +712,8 @@ function deterministicQualityIssues(
   ] as Array<readonly [string, string]>;
 
   const seenBodies = new Map<string, string>();
+  const comparableBodies: Array<{ field: string; tokens: Set<string> }> = [];
+
   for (const [field, value] of bodyCandidates) {
     const normalized = normalizeComparable(value);
     if (normalized.length < 60) continue;
@@ -724,6 +726,31 @@ function deterministicQualityIssues(
       });
     } else {
       seenBodies.set(normalized, field);
+    }
+
+    const tokens = new Set(
+      normalized.split(" ").filter((token) => token.length >= 4)
+    );
+    if (tokens.size >= 10) comparableBodies.push({ field, tokens });
+  }
+
+  for (let left = 0; left < comparableBodies.length; left += 1) {
+    for (let right = left + 1; right < comparableBodies.length; right += 1) {
+      const a = comparableBodies[left];
+      const b = comparableBodies[right];
+      const intersection = [...a.tokens].filter((token) => b.tokens.has(token)).length;
+      const union = new Set([...a.tokens, ...b.tokens]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+
+      if (intersection >= 8 && similarity >= 0.82) {
+        issues.push({
+          severity: "blocking",
+          code: "near_duplicate_copy",
+          detail:
+            `Les contenus ${a.field} et ${b.field} reformulent presque la même idée ` +
+            `(${Math.round(similarity * 100)} % de vocabulaire significatif partagé).`
+        });
+      }
     }
   }
 
@@ -980,6 +1007,7 @@ export async function generatePremiumSiteArchitect(
           "Do not add unsupported claims to make the site sound stronger.",
           "Prefer deleting weak or unjustified material over filling gaps with generic copy.",
           "When a deterministic issue mentions mobile copy density, shorten the affected field without removing essential meaning or adding unsupported claims.",
+          "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
           ...revisionScopeRules,
         input.affiliationRules
