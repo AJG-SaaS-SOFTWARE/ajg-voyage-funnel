@@ -75,7 +75,11 @@ const copy = {
     billingNote:
       "Les paiements restent désactivés pendant la bêta. Les prix ci-dessus sont la grille commerciale retenue pour préparer l’ouverture de Stripe et seront synchronisés avec les CGV/CGU avant encaissement.",
     account: "Mon offre",
-    builder: "Ouvrir le Builder"
+    builder: "Ouvrir le Builder",
+    legal: "Mentions légales",
+    privacy: "Confidentialité",
+    terms: "Conditions",
+    cancel: "Résiliation"
   },
   en: {
     navLabel: "AJG Site Builder Pricing",
@@ -140,7 +144,11 @@ const copy = {
     billingNote:
       "Payments remain disabled during the beta. The prices above are the commercial grid selected to prepare Stripe launch and will be synchronized with the final terms before any charge is collected.",
     account: "My plan",
-    builder: "Open Builder"
+    builder: "Open Builder",
+    legal: "Legal notice",
+    privacy: "Privacy",
+    terms: "Terms",
+    cancel: "Cancellation"
   }
 } as const;
 
@@ -231,6 +239,12 @@ export function PricingPage({ locale }: PricingPageProps) {
       </section>
 
       <p className={styles.billingNote}>{t.billingNote}</p>
+      <footer className={styles.legalFooter}>
+        <Link href={locale === "fr" ? "/mentions-legales" : "/legal"}>{t.legal}</Link>
+        <Link href={locale === "fr" ? "/confidentialite" : "/privacy"}>{t.privacy}</Link>
+        <Link href={locale === "fr" ? "/cgv" : "/terms"}>{t.terms}</Link>
+        <Link href={locale === "fr" ? "/resilier" : "/cancel"}>{t.cancel}</Link>
+      </footer>
     </main>
   );
 }
