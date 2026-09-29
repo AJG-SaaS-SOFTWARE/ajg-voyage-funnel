@@ -87,3 +87,18 @@ test("keeps the synchronized commercial pricing grid bilingual", () => {
   assert.match(shell, /Pricing/);
   assert.match(shell, /Tarifs/);
 });
+
+
+test("server-seeded locale avoids a French-first render for English users", () => {
+  const layout = read("app/layout.tsx");
+  const provider = read("components/ProductLocaleProvider.tsx");
+  const locale = read("lib/product-i18n.ts");
+
+  assert.match(layout, /cookies\(\)/);
+  assert.match(layout, /accept-language/);
+  assert.match(layout, /ProductLocaleProvider/);
+  assert.match(layout, /html lang=\{initialLocale\}/);
+  assert.match(provider, /initialLocale/);
+  assert.match(provider, /ProductLocaleContext\.Provider/);
+  assert.match(locale, /persistProductLocale/);
+});
