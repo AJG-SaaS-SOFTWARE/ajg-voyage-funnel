@@ -793,8 +793,34 @@ function deterministicQualityIssues(
   const enabledPages = proposal.architecture.pages.filter((page) => page.enabled);
   const pageTitles = new Set<string>();
   const pagePurposes = new Map<string, string>();
+  const genericPageTitles = new Set([
+    "page",
+    "page 1",
+    "page 2",
+    "untitled",
+    "sans titre",
+    "more",
+    "plus",
+    "misc",
+    "divers"
+  ]);
   for (const page of enabledPages) {
     const title = normalizeComparable(page.title);
+    if (title && genericPageTitles.has(title)) {
+      issues.push({
+        severity: "blocking",
+        code: "generic_page_title",
+        detail: `La page « ${page.title} » utilise un titre de navigation trop générique.`
+      });
+    }
+    if (page.title.trim().length > 48) {
+      issues.push({
+        severity: "blocking",
+        code: "long_page_title",
+        detail:
+          `Le titre de navigation « ${page.title} » est trop long (${page.title.trim().length} caractères, cible ≤ 48).`
+      });
+    }
     if (title && pageTitles.has(title)) {
       issues.push({
         severity: "blocking",
@@ -957,6 +983,7 @@ export async function generatePremiumSiteArchitect(
         "Never invent facts, testimonials, figures, prices, savings, certifications, customer results, contact details or capabilities.",
         "If a useful fact is missing, write safely around it and leave the missing-information signal in the strategy rather than fabricating it.",
         "Architecture must stay between one and six pages and include exactly one home page.",
+        "Every enabled page needs a concise, meaningful navigation title; never use placeholders such as Page, Untitled, More or generic equivalents.",
         "Only assign asset IDs that exist in the supplied rights-cleared content library.",
         "FAQ and benefits may contain only claims supported by the source context.",
         "Do not create testimonial copy, numeric figures, video URLs or contact details.",
@@ -1031,6 +1058,7 @@ export async function generatePremiumSiteArchitect(
           "When a deterministic issue mentions mobile copy density, shorten the affected field without removing essential meaning or adding unsupported claims.",
           "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
           "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
+          "When a page title is generic or too long, replace it with a short navigation label that clearly reflects that page’s purpose.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
           ...revisionScopeRules,
         input.affiliationRules
