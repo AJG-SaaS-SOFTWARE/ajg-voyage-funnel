@@ -117,7 +117,10 @@ async function cancelSiteSubscription(
   try {
     await cancelStripeSubscription(subscription.provider_subscription_id);
   } catch (error) {
-    if (!(error instanceof Error) || error.message !== "resource_missing") {
+    if (
+      !(error instanceof Error) ||
+      !["resource_missing", "stripe_http_404"].includes(error.message)
+    ) {
       throw error;
     }
   }
@@ -219,7 +222,10 @@ export async function purgeBuilderAccount(
     try {
       await cancelStripeSubscription(legacySubscription.provider_subscription_id);
     } catch (error) {
-      if (!(error instanceof Error) || error.message !== "resource_missing") throw error;
+      if (
+        !(error instanceof Error) ||
+        !["resource_missing", "stripe_http_404"].includes(error.message)
+      ) throw error;
     }
     systems.push("legacy_stripe_subscription_canceled");
     systems.push("stripe_financial_records_retained");
