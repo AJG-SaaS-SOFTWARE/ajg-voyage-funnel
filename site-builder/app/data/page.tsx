@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AccountShell } from "../../components/AccountShell";
 import { downloadMySiteExport } from "../../lib/billing-access";
 import {
   getMyErasureRequests,
@@ -147,22 +147,13 @@ export default function DataRightsPage() {
   }
 
   return (
-    <main className="plans-page data-rights-page">
-      <section className="plans-hero">
-        <p className="eyebrow">Confidentialité & données</p>
-        <h1>Mes données</h1>
-        <p>
-          Exportez vos données ou demandez leur effacement. Une demande
-          d’effacement est distincte d’un impayé : un problème de paiement ne
-          supprime jamais automatiquement vos sites.
-        </p>
-        <div className="builder-actions">
-          <Link className="button secondary" href="/builder">← Retour au Builder</Link>
-          <Link className="button secondary" href="/billing">Facturation & récupération</Link>
-        </div>
-      </section>
-
-      {message ? <p className="plans-note" role="status">{message}</p> : null}
+    <AccountShell
+      active="data"
+      eyebrow="Confidentialité & données"
+      title="Mes données"
+      description="Exportez vos données ou demandez leur effacement. Une demande d’effacement reste distincte d’un impayé : un problème de paiement ne supprime jamais automatiquement vos sites."
+    >
+      {message ? <p className="account-note" role="status">{message}</p> : null}
 
       <section className="panel data-rights-panel">
         <div>
@@ -319,6 +310,6 @@ export default function DataRightsPage() {
         comptables sont conservées 10 ans à compter de la clôture de l’exercice.
         Cette exception ne permet pas de conserver le contenu du site ou ses médias.
       </section>
-    </main>
+    </AccountShell>
   );
 }
