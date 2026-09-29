@@ -160,3 +160,23 @@ test("authentication and beta invitation preserve the chosen locale across email
   assert.match(adminPage, /Langue du testeur/);
   assert.match(adminPage, /English/);
 });
+
+
+test("billing notification catalogue covers every customer state in both languages", () => {
+  const source = read("app/api/cron/billing-notifications/route.ts");
+  for (const key of [
+    "payment_failed",
+    "reminder_j3",
+    "reminder_j7",
+    "reminder_j12",
+    "retention_j74",
+    "retention_j97",
+    "reactivated"
+  ]) {
+    const occurrences = source.split(key).length - 1;
+    assert.ok(occurrences >= 2, key + " must exist in FR and EN catalogues");
+  }
+  assert.match(source, /Open Billing/);
+  assert.match(source, /Accéder à votre espace/);
+  assert.match(source, /ajg_builder_locale/);
+});
