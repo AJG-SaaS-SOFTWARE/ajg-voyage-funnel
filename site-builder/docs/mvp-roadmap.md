@@ -121,6 +121,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] garde-fou de densité éditoriale : les textes À propos, réponses FAQ et descriptions d’avantages excessivement longs sont compressés avant affichage sans perdre les faits utiles ;
 - [x] anti-répétition sémantique simple : les blocs longs quasi identiques (fort recouvrement de vocabulaire significatif) déclenchent un raffinement pour redonner un rôle éditorial distinct à chaque section ;
 - [x] garde-fou avantages distincts : deux cartes ne peuvent plus partager le même titre et l’IA est explicitement poussée à consolider les bénéfices qui se chevauchent ;
+- [x] anti-doublon sémantique des avantages : deux titres fortement similaires sont désormais consolidés même si l’un ajoute seulement un qualificatif ;
 - [x] garde-fou FAQ distincte : deux questions fortement similaires lexicalement sont désormais fusionnées ou différenciées avant affichage, même si leur formulation n’est pas strictement identique ;
 - [x] garde-fou CTA principal : les libellés vagues de type « cliquez ici », « envoyer », « continuer » sont rejetés et réécrits en prochaine action concrète, uniquement si elle est supportée par le contexte client ;
 - [x] complétude des libellés visibles : titre À propos et CTA principal obligatoires ; titres FAQ/avantages obligatoires dès que ces sections contiennent du contenu ;

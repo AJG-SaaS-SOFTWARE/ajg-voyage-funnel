@@ -233,3 +233,28 @@ test("distinct FAQ questions are not treated as duplicates", () => {
   });
   assert.ok(!codes(value).includes("near_duplicate_faq"));
 });
+
+
+test("near-duplicate benefit titles are blocked even with extra wording", () => {
+  const value = proposal({
+    benefits: {
+      title: "Ce qui guide mon travail",
+      items: [
+        {
+          title: "Écoute attentive",
+          text: "Un échange clair pour comprendre votre intention."
+        },
+        {
+          title: "Une écoute vraiment attentive",
+          text: "Des repères simples pour adapter l’accompagnement."
+        }
+      ]
+    }
+  });
+  assert.ok(codes(value).includes("near_duplicate_benefit_title"));
+});
+
+test("distinct benefit titles remain allowed", () => {
+  const value = proposal();
+  assert.ok(!codes(value).includes("near_duplicate_benefit_title"));
+});
