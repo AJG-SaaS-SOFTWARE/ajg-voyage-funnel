@@ -130,8 +130,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
                   ? "Le fonctionnement actuel peut faire intervenir Supabase (base, authentification et stockage), Vercel (hébergement et exécution), Stripe (paiement et abonnements), Resend (e-mails transactionnels), OpenAI (fonctions de génération IA) et Vercel Blob pour certaines sauvegardes externes."
                   : "Current operation may involve Supabase (database, authentication and storage), Vercel (hosting and compute), Stripe (payments and subscriptions), Resend (transactional email), OpenAI (AI generation features), and Vercel Blob for some external backups."}</p>
                 <p>{fr
-                  ? "Les données envoyées à l’API OpenAI ne sont pas utilisées pour entraîner les modèles par défaut. Selon la configuration du compte et de l’endpoint, des journaux de prévention des abus peuvent être conservés jusqu’à 30 jours. AJG limite les données envoyées à ce qui est utile à la génération demandée."
-                  : "Data sent to the OpenAI API is not used to train models by default. Depending on account and endpoint configuration, abuse-monitoring logs may be retained for up to 30 days. AJG limits data sent to what is useful for the requested generation."}</p>
+                  ? "Les données envoyées à l’API OpenAI ne sont pas utilisées pour entraîner les modèles par défaut. Selon la configuration du compte et de l’endpoint, les requêtes/réponses ou journaux nécessaires au fonctionnement et à la prévention des abus peuvent être conservés jusqu’à 30 jours. AJG limite les données envoyées à ce qui est utile à la génération demandée."
+                  : "Data sent to the OpenAI API is not used to train models by default. Depending on account and endpoint configuration, requests/responses or logs required for service operation and abuse prevention may be retained for up to 30 days. AJG limits data sent to what is useful for the requested generation."}</p>
               </section>
               <section className={styles.section}>
                 <h2>{fr ? "Conservation" : "Retention"}</h2>
