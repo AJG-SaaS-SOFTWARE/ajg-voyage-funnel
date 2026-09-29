@@ -1179,7 +1179,7 @@ export default function BuilderPage() {
     setUploadingImage(true);
     setSyncError("");
     try {
-      if (!remoteMode) throw new Error("Connectez le stockage du site avant d'importer une photo.");
+      if (!remoteMode) throw new Error(tr("Connectez le stockage du site avant d’importer une photo.", "Connect website storage before importing a photo."));
       const prepared = category === "background"
         ? await optimizeBackgroundImage(file)
         : { blob: await optimizeImage(file), focus: null };
