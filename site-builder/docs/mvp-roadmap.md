@@ -112,7 +112,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] Structured Outputs JSON Schema pour fiabiliser la forme des réponses Premium ;
 - [x] étape 3 : audit critique indépendant de la stratégie, du copywriting, de la conversion, de la crédibilité, du design et de la conformité ;
 - [x] raffinement automatique par le modèle Premium lorsqu’un problème majeur ou une qualité insuffisante est détecté ;
-- [x] quality gate final : toute proposition raffinée est relue une seconde fois par un critique IA indépendant ; elle n’est pas affichée si un problème majeur subsiste ou si le seuil qualité final n’est pas atteint ;
+- [x] quality gate final systématique : toute proposition, raffinée ou non, est relue une seconde fois par un critique IA indépendant ; elle n’est pas affichée si un problème majeur subsiste ou si le seuil qualité final n’est pas atteint ;
 - [x] contrôle déterministe complémentaire : placeholders, duplications de contenus/FAQ, pages redondantes et modules recommandés sans contenu déclenchent un raffinement ou bloquent l’affichage si le défaut subsiste ;
 - [x] grounding quantitatif : pourcentages, prix, durées, années et quantités sensibles générés doivent réutiliser un nombre déjà présent dans le contexte client ; tout chiffre inédit déclenche un raffinement puis bloque l’affichage s’il subsiste ;
 - [x] garde-fou de densité mobile : titre principal, sous-titre hero, CTA, questions FAQ et titres d’avantages trop longs déclenchent un raffinement avant affichage ;

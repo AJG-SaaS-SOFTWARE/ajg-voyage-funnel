@@ -1080,39 +1080,38 @@ export async function generatePremiumSiteArchitect(
     );
   }
 
-  let finalReview = review;
-  if (shouldRefine) {
-    finalReview = await structuredResponse({
-      apiKey: input.apiKey,
-      model: auxiliaryModel,
-      schemaName: "ajg_premium_site_final_review",
-      schema: reviewSchema as unknown as Record<string, unknown>,
-      maxOutputTokens: 1000,
-      effort: "low",
-      operation: "premium_final_review",
-      onUsage: input.onUsage,
-      instructions: [
-        "You are the final independent quality gate for AJG Premium Site Architect.",
-        "Review only the refined proposal that will actually be shown to the customer.",
-        "Verify that the previous review problems are resolved without introducing unsupported facts.",
-        "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
-        "Do not penalize facts that are explicitly marked as missing instead of invented.",
-        "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
-        "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
-        ...revisionScopeRules,
-        input.affiliationRules
-      ].join(" "),
-      input: JSON.stringify({
-        sourceContext,
-        strategy,
-        previousReview: {
-          score,
-          issues
-        },
-        refinedProposal: finalProposal
-      })
-    });
-  }
+  const finalReview = await structuredResponse({
+    apiKey: input.apiKey,
+    model: auxiliaryModel,
+    schemaName: "ajg_premium_site_final_review",
+    schema: reviewSchema as unknown as Record<string, unknown>,
+    maxOutputTokens: 1000,
+    effort: "low",
+    operation: "premium_final_review",
+    onUsage: input.onUsage,
+    instructions: [
+      "You are the final independent quality gate for AJG Premium Site Architect.",
+      "Review only the candidate proposal that will actually be shown to the customer, whether or not an earlier refinement was needed.",
+      "Treat the previous review as context, not as a verdict to copy. Make an independent assessment of the final candidate.",
+      "If refinement occurred, verify that the previous review problems are resolved without introducing unsupported facts.",
+      "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
+      "Do not penalize facts that are explicitly marked as missing instead of invented.",
+      "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
+      "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
+      ...revisionScopeRules,
+      input.affiliationRules
+    ].join(" "),
+    input: JSON.stringify({
+      sourceContext,
+      strategy,
+      refinementApplied: shouldRefine,
+      previousReview: {
+        score,
+        issues
+      },
+      candidateProposal: finalProposal
+    })
+  });
 
   const finalDeterministicIssues = deterministicQualityIssues(
     finalProposal,
@@ -1156,7 +1155,7 @@ export async function generatePremiumSiteArchitect(
     premiumAudit: {
       reviewed: true,
       refinementApplied: shouldRefine,
-      finalReviewPerformed: shouldRefine,
+      finalReviewPerformed: true,
       finalVerified,
       initialScore: score,
       finalScore,
@@ -1169,8 +1168,8 @@ export async function generatePremiumSiteArchitect(
       deterministicBlockingIssuesDetected: finalDeterministicBlocking.length,
       strengths,
       qualityNote: shouldRefine
-        ? `Audit premium effectué : ${issues.length} point(s) IA et ${creationDeterministicIssues.length} contrôle(s) déterministe(s) examinés, proposition raffinée, puis contrôle final indépendant validé avant affichage.`
-        : "Audit premium effectué : la proposition a passé les contrôles IA et déterministes sans raffinement supplémentaire."
+        ? `Audit premium effectué : ${issues.length} point(s) IA et ${creationDeterministicIssues.length} contrôle(s) déterministe(s) examinés, proposition raffinée, puis second contrôle indépendant validé avant affichage.`
+        : "Audit premium effectué : la première proposition a passé les contrôles IA et déterministes, puis un second contrôle indépendant l’a validée avant affichage."
     }
   };
 }
