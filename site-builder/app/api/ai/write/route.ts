@@ -211,6 +211,9 @@ export async function POST(request: Request) {
   const architectBrief = clean(context.architectBrief, 7000);
   const revisionRequest = clean(context.revisionRequest, 1200);
   const existingProposal = context.existingProposal && typeof context.existingProposal === "object" ? context.existingProposal : null;
+  const reuseStrategy = context.reuseStrategy === true;
+  const existingStrategy = context.existingStrategy && typeof context.existingStrategy === "object" ? context.existingStrategy : null;
+  const variationReference = context.variationReference && typeof context.variationReference === "object" ? context.variationReference : null;
   const moduleBrief = clean(context.moduleBrief, 1000);
   const rawSiteContext = context.siteContext && typeof context.siteContext === "object" ? context.siteContext : {};
   const contextEntries = [
@@ -325,6 +328,9 @@ export async function POST(request: Request) {
         architectBrief,
         revisionRequest,
         existingProposal,
+        reuseStrategy: field === "siteArchitect" && reuseStrategy,
+        existingStrategy,
+        variationReference,
         editorialContext,
         currentText,
         contentLibrary: Array.isArray(context.contentLibrary) ? context.contentLibrary : [],

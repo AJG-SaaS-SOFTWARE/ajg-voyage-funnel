@@ -111,6 +111,8 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] modèle Premium distinct du modèle rapide des assistants champ par champ ;
 - [x] étape 1 : diagnostic stratégique du besoin, du public, de l’objectif, du positionnement et du parcours visiteur ;
 - [x] étape 2 : génération structurée des textes, architecture, ordre de modules et direction visuelle à partir de cette stratégie ;
+- [x] régénération Premium efficiente : à contexte strictement identique, la stratégie déjà validée est réutilisée pour économiser l’appel stratégique ; toute modification du brief, de l’identité, de l’affiliation, du contexte ou de la bibliothèque force une nouvelle analyse ;
+- [x] diversité de régénération : une nouvelle proposition doit constituer une alternative éditoriale/visuelle réelle et non un simple échange de synonymes, tout en conservant les audits qualité complets ;
 - [x] Structured Outputs JSON Schema pour fiabiliser la forme des réponses Premium ;
 - [x] étape 3 : audit critique indépendant de la stratégie, du copywriting, de la conversion, de la crédibilité, du design et de la conformité ;
 - [x] raffinement automatique par le modèle Premium lorsqu’un problème majeur ou une qualité insuffisante est détecté ;

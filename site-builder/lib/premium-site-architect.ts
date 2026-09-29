@@ -38,6 +38,9 @@ export type PremiumArchitectInput = {
   architectBrief: string;
   revisionRequest?: string;
   existingProposal?: unknown;
+  reuseStrategy?: boolean;
+  existingStrategy?: unknown;
+  variationReference?: unknown;
   editorialContext?: string;
   currentText?: string;
   contentLibrary?: PremiumArchitectAsset[];
@@ -106,6 +109,7 @@ export type PremiumArchitectProposal = {
     deterministicChecksPerformed: true;
     deterministicIssuesDetected: number;
     deterministicBlockingIssuesDetected: number;
+    strategyReused: boolean;
     strengths: string[];
     qualityNote: string;
   };
@@ -599,6 +603,57 @@ function compactStrategy(raw: any): PremiumArchitectProposal["intelligence"] {
     designRationale: clean(raw?.designRationale, 500),
     missingInformation: (Array.isArray(raw?.missingInformation) ? raw.missingInformation : []).slice(0, 6).map((item: unknown) => clean(item, 220)).filter(Boolean),
     assumptions: (Array.isArray(raw?.assumptions) ? raw.assumptions : []).slice(0, 6).map((item: unknown) => clean(item, 220)).filter(Boolean)
+  };
+}
+
+export function reusablePremiumStrategy(
+  raw: unknown
+): PremiumArchitectProposal["intelligence"] | null {
+  if (!raw || typeof raw !== "object") return null;
+  const strategy = compactStrategy(raw);
+  if (
+    !strategy.understoodNeed ||
+    !strategy.primaryGoal ||
+    !strategy.positioning ||
+    strategy.visitorJourney.length === 0 ||
+    strategy.contentPriorities.length === 0
+  ) {
+    return null;
+  }
+  return strategy;
+}
+
+function compactVariationReference(raw: unknown) {
+  const value = raw && typeof raw === "object" ? (raw as any) : {};
+  const design = value.design && typeof value.design === "object" ? value.design : {};
+  const pages = Array.isArray(value?.architecture?.pages)
+    ? value.architecture.pages
+        .filter((page: any) => page?.enabled !== false)
+        .slice(0, 6)
+        .map((page: any) => clean(page?.title, 80))
+        .filter(Boolean)
+    : [];
+
+  return {
+    heroTagline: clean(value.heroTagline, 90),
+    heroTitle: clean(value.heroTitle, 90),
+    heroSubtitle: clean(value.heroSubtitle, 420),
+    bookingLabel: clean(value.bookingLabel, 45),
+    recommendedModules: (Array.isArray(value.recommendedModules)
+      ? value.recommendedModules
+      : [])
+      .slice(0, 7)
+      .map((item: unknown) => clean(item, 30))
+      .filter(Boolean),
+    pageTitles: pages,
+    design: {
+      layout: clean(design.layout, 30),
+      heroLayout: clean(design.heroLayout, 30),
+      contentWidth: clean(design.contentWidth, 30),
+      accent: clean(design.accent, 20),
+      background: clean(design.background, 30),
+      pattern: clean(design.pattern, 30)
+    }
   };
 }
 
@@ -1227,7 +1282,12 @@ export async function generatePremiumSiteArchitect(
         ]
       : [];
 
-  const strategy = compactStrategy(
+  const reusableStrategy =
+    input.mode === "create" && input.reuseStrategy === true
+      ? reusablePremiumStrategy(input.existingStrategy)
+      : null;
+  const strategyReused = reusableStrategy !== null;
+  const strategy = reusableStrategy || compactStrategy(
     await structuredResponse({
       apiKey: input.apiKey,
       model: auxiliaryModel,
@@ -1254,9 +1314,23 @@ export async function generatePremiumSiteArchitect(
     })
   );
 
+  const variationReference =
+    strategyReused && input.variationReference
+      ? compactVariationReference(input.variationReference)
+      : null;
+  const variationRules = variationReference
+    ? [
+        "Regeneration mode: create a materially different alternative while preserving the approved strategy, facts and compliance constraints.",
+        "Do not merely swap synonyms. Change the editorial angle, emphasis, composition or visual direction when another credible option fits the same strategy.",
+        "Avoid copying the previous headline, subtitle, CTA and exact design combination unless preserving one element is clearly the strongest choice.",
+        "The alternative must remain at least as clear and credible as the reference; novelty never justifies weaker copy or unsupported claims."
+      ]
+    : [];
+
   const creationInput = {
     sourceContext,
-    strategy
+    strategy,
+    variationReference
   };
 
   const creation = normalizeProposal(
@@ -1274,6 +1348,7 @@ export async function generatePremiumSiteArchitect(
         sourceDataBoundaryRule,
         "Build a polished, credible website proposal from the approved strategy.",
         "Treat strategy as the design brief, not text to copy mechanically.",
+        ...variationRules,
         "Optimize the visitor journey in this order: immediate comprehension, credibility, relevance, useful detail, then one clear next action.",
         "Each field must have a distinct role and avoid repeated wording.",
         "Never leave a visible structural label empty: About heading and primary CTA label are required, and FAQ/Benefits section titles are required whenever those sections contain items.",
@@ -1323,6 +1398,9 @@ export async function generatePremiumSiteArchitect(
       "You are the independent QA critic for AJG Premium Site Architect.",
       sourceDataBoundaryRule,
       "Audit the proposal against the source context and strategy.",
+      ...(variationReference
+        ? ["This is a regeneration. Reject a superficial rewrite that mostly repeats the reference copy and design without a meaningful alternative angle."]
+        : []),
       "Be demanding. Check strategic fit, clarity, editorial quality, information architecture, conversion logic, credibility, design coherence and compliance.",
       "A score above 90 requires a genuinely strong, differentiated and coherent proposal with no unsupported factual claim.",
       "Mark refine when there is any major issue, unsupported claim, generic copy, weak visitor journey, unnecessary page, contradictory module choice or obvious design mismatch.",
@@ -1330,7 +1408,7 @@ export async function generatePremiumSiteArchitect(
       ...revisionScopeRules,
         input.affiliationRules
     ].join(" "),
-    input: JSON.stringify({ sourceContext, strategy, proposal: creation })
+    input: JSON.stringify({ sourceContext, strategy, variationReference, proposal: creation })
   });
 
   const issues = Array.isArray(review?.issues) ? review.issues.slice(0, 8) : [];
@@ -1406,6 +1484,9 @@ export async function generatePremiumSiteArchitect(
       sourceDataBoundaryRule,
       "Review only the candidate proposal that will actually be shown to the customer, whether or not an earlier refinement was needed.",
       "Treat the previous review as context, not as a verdict to copy. Make an independent assessment of the final candidate.",
+      ...(variationReference
+        ? ["When this is a regeneration, verify that the candidate is a genuinely useful alternative to the reference rather than a cosmetic synonym rewrite."]
+        : []),
       "If refinement occurred, verify that the previous review problems are resolved without introducing unsupported facts.",
       "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
       "Treat invented urgency, scarcity, deadlines or limited availability as unsupported factual pressure and a major issue.",
@@ -1418,6 +1499,7 @@ export async function generatePremiumSiteArchitect(
     input: JSON.stringify({
       sourceContext,
       strategy,
+      variationReference,
       refinementApplied: shouldRefine,
       previousReview: {
         score,
@@ -1480,10 +1562,11 @@ export async function generatePremiumSiteArchitect(
       deterministicChecksPerformed: true,
       deterministicIssuesDetected: finalDeterministicIssues.length,
       deterministicBlockingIssuesDetected: finalDeterministicBlocking.length,
+      strategyReused,
       strengths,
       qualityNote: shouldRefine
-        ? `Audit premium effectué : ${issues.length} point(s) IA et ${creationDeterministicIssues.length} contrôle(s) déterministe(s) examinés, proposition raffinée, puis second contrôle indépendant validé avant affichage.`
-        : "Audit premium effectué : la première proposition a passé les contrôles IA et déterministes, puis un second contrôle indépendant l’a validée avant affichage."
+        ? `Audit premium effectué : ${issues.length} point(s) IA et ${creationDeterministicIssues.length} contrôle(s) déterministe(s) examinés, proposition raffinée, puis second contrôle indépendant validé avant affichage.${strategyReused ? " La stratégie validée du brief a été réutilisée pour cette variante." : ""}`
+        : `Audit premium effectué : la première proposition a passé les contrôles IA et déterministes, puis un second contrôle indépendant l’a validée avant affichage.${strategyReused ? " La stratégie validée du brief a été réutilisée pour cette variante." : ""}`
     }
   };
 }
