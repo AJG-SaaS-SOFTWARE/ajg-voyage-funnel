@@ -3539,3 +3539,36 @@ button.active .step-label small{color:#63817f}
 @media(max-width:480px){
   .backup-admin-grid{grid-template-columns:1fr}
 }
+
+
+/* Commercial positioning and Beta Tester access */
+.plans-grid-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pricing-positioning{margin:0 0 20px}
+.pricing-positioning h2,.founding-note h2{margin:6px 0 10px}
+.pricing-positioning blockquote{
+  margin:16px 0 0;
+  padding:14px 18px;
+  border-left:3px solid var(--accent,#57d4c9);
+  border-radius:0 14px 14px 0;
+  background:rgba(87,212,201,.08);
+  font-weight:760;
+}
+.plan-price{margin:0 0 4px;font-size:1.65rem;font-weight:820;line-height:1.1}
+.plan-price small{font-size:.8rem;font-weight:650;opacity:.66}
+.annual-price{margin:0 0 14px;font-size:.88rem;opacity:.72}
+.plan-card-roadmap{border-style:dashed;background:rgba(255,255,255,.5)}
+.pro-offer-card{position:relative;background:linear-gradient(180deg,rgba(87,212,201,.09),rgba(255,255,255,.72))}
+.beta-access-banner{border-color:rgba(22,128,96,.28);background:rgba(22,128,96,.06)}
+.founding-note{margin-top:20px}
+.beta-invite-form{grid-template-columns:minmax(260px,1fr) minmax(140px,180px) auto}
+.beta-duration-field select{min-height:46px}
+.admin-cell-note{display:block;margin-top:4px;color:var(--muted);font-size:.72rem;font-weight:500}
+.admin-inline-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.text-button.danger{color:#a23b2b}
+.status-badge.muted{background:rgba(100,116,139,.09);color:#66757b}
+@media(max-width:1020px){
+  .plans-grid-three{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .beta-invite-form{grid-template-columns:1fr}
+}
