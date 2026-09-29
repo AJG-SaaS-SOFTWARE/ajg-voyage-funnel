@@ -160,7 +160,10 @@ export async function createStripePortalSession(input: {
     {
       params: {
         customer: input.customerId,
-        return_url: input.returnUrl
+        return_url: input.returnUrl,
+        ...(process.env.STRIPE_PORTAL_CONFIGURATION_ID?.trim()
+          ? { configuration: process.env.STRIPE_PORTAL_CONFIGURATION_ID.trim() }
+          : {})
       }
     }
   );
