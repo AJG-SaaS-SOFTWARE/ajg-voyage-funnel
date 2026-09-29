@@ -42,6 +42,7 @@ export default function AdminPrivacyPage() {
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState("");
+  const [e2eBusy, setE2eBusy] = useState(false);
 
   const load = async () => {
     if (!await isCurrentUserAdmin()) {
@@ -67,6 +68,42 @@ export default function AdminPrivacyPage() {
       setState("denied");
     });
   }, []);
+
+  async function runPrivacyE2E() {
+    const confirmation = window.prompt(
+      "Cette recette crée puis détruit uniquement un compte de test jetable. Recopiez exactement TESTER pour continuer."
+    );
+    if (confirmation !== "TESTER") return;
+
+    setE2eBusy(true);
+    setMessage("");
+    try {
+      const token = await authToken();
+      const response = await fetch("/api/admin/privacy-e2e", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store"
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.ok !== true) {
+        throw new Error(
+          result?.detail
+            ? `${result.error || "Recette RGPD échouée."} · ${result.stage || "étape inconnue"} · ${result.detail}`
+            : result?.error || "Recette RGPD échouée."
+        );
+      }
+      setMessage(
+        `Recette RGPD E2E validée · ${result.steps?.length || 0} contrôles passés · aucun contenu du compte jetable conservé.`
+      );
+      await load();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Recette RGPD échouée."
+      );
+    } finally {
+      setE2eBusy(false);
+    }
+  }
 
   async function processRequest(request: PrivacyRequest) {
     const confirmation = window.prompt(
@@ -159,6 +196,27 @@ export default function AdminPrivacyPage() {
           paiement ne sont pas effacées aveuglément par ce workflow.
         </p>
       </div>
+
+      <section className="panel privacy-e2e-panel">
+        <div>
+          <p className="eyebrow">Recette interne</p>
+          <h2>Vérifier l’effacement de bout en bout</h2>
+          <p>
+            Crée un compte et un site entièrement jetables, ajoute des médias
+            public/privé, déclenche une demande de suppression de compte puis
+            vérifie la purge Storage, base et Supabase Auth. Aucun compte client
+            existant n’est utilisé par ce test.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="button secondary"
+          disabled={e2eBusy}
+          onClick={() => void runPrivacyE2E()}
+        >
+          {e2eBusy ? "Recette en cours…" : "Lancer la recette RGPD E2E"}
+        </button>
+      </section>
 
       {message ? <p className="plans-note" role="status">{message}</p> : null}
 
