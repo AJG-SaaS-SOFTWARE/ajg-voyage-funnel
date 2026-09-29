@@ -879,7 +879,13 @@ function deterministicQualityIssues(
     if (title) pageTitles.add(title);
 
     const purpose = normalizeComparable(page.purpose);
-    if (purpose.length < 12) {
+    if (!purpose) {
+      issues.push({
+        severity: "blocking",
+        code: "missing_page_purpose",
+        detail: `La page ${page.title} n’a aucun rôle éditorial explicite.`
+      });
+    } else if (purpose.length < 12) {
       issues.push({
         severity: "warning",
         code: "weak_page_purpose",
@@ -1034,6 +1040,7 @@ export async function generatePremiumSiteArchitect(
         "If a useful fact is missing, write safely around it and leave the missing-information signal in the strategy rather than fabricating it.",
         "Architecture must stay between one and six pages and include exactly one home page.",
         "Every enabled page needs a concise, meaningful navigation title; never use placeholders such as Page, Untitled, More or generic equivalents.",
+        "Every enabled page must also state a concrete editorial purpose tied to a visitor need or next step; never leave a page purpose empty.",
         "Only assign asset IDs that exist in the supplied rights-cleared content library.",
         "FAQ and benefits may contain only claims supported by the source context.",
         "Every benefit card must communicate a distinct value; do not create multiple cards that restate the same benefit under different wording.",
@@ -1113,6 +1120,7 @@ export async function generatePremiumSiteArchitect(
           "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
           "When a page title is generic or too long, replace it with a short navigation label that clearly reflects that page’s purpose.",
           "When two pages have the same editorial purpose, merge them or rewrite the architecture so each remaining page has a genuinely distinct visitor job.",
+          "When an enabled page lacks a purpose, either define a concrete visitor job for it or remove the page if it adds no value.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
           ...revisionScopeRules,
         input.affiliationRules
