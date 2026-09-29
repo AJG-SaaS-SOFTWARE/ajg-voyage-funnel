@@ -187,8 +187,10 @@ export async function GET(request: Request) {
         format: "ajg-builder-export-v2",
         ...commonPayload,
         media,
-        note:
-          "Export de récupération : configuration, domaines et inventaire des médias conservés. Les médias publics incluent leur URL ; les médias privés restent référencés sans URL publique et sont conservés pour récupération serveur."
+        note: tr(
+          "Export de récupération : configuration, domaines et inventaire des médias conservés. Les médias publics incluent leur URL ; les médias privés restent référencés sans URL publique et sont conservés pour récupération serveur.",
+          "Recovery export: website configuration, domains and retained media inventory. Public media includes its URL; private media remains referenced without a public URL and is retained for server-side recovery."
+        )
       },
       { headers: { "Cache-Control": "private, no-store" } }
     );
@@ -202,8 +204,10 @@ export async function GET(request: Request) {
     format: "ajg-builder-export-v3",
     ...commonPayload,
     media: archiveMedia,
-    note:
-      "Archive de récupération complète. Le manifeste décrit chaque média et son chemin dans l'archive. Si export-errors.json est présent, certains fichiers n'ont pas pu être copiés et y sont listés."
+    note: tr(
+      "Archive de récupération complète. Le manifeste décrit chaque média et son chemin dans l'archive. Si export-errors.json est présent, certains fichiers n'ont pas pu être copiés et y sont listés.",
+      "Complete recovery archive. The manifest describes each media item and its archive path. If export-errors.json is present, some files could not be copied and are listed there."
+    )
   };
 
   async function* archiveEntries(): AsyncGenerator<RecoveryTarEntry> {
@@ -214,12 +218,18 @@ export async function GET(request: Request) {
     yield {
       path: "README.txt",
       data: [
-        "AJG Builder - archive de récupération",
+        tr("AJG Builder - archive de récupération", "AJG Builder - recovery archive"),
         "",
-        "ajg-builder-export.json contient la configuration du site, les domaines, les carnets, les messages de contact et l'inventaire des médias.",
-        "media/public contient les fichiers déjà publiables.",
-        "media/private contient les fichiers privés de la bibliothèque utilisateur.",
-        "Si export-errors.json existe, certains fichiers n'ont pas pu être copiés dans cette archive.",
+        tr(
+          "ajg-builder-export.json contient la configuration du site, les domaines, les carnets, les messages de contact et l'inventaire des médias.",
+          "ajg-builder-export.json contains the website configuration, domains, journals, contact messages and media inventory."
+        ),
+        tr("media/public contient les fichiers déjà publiables.", "media/public contains files already available for public use."),
+        tr("media/private contient les fichiers privés de la bibliothèque utilisateur.", "media/private contains private files from the user library."),
+        tr(
+          "Si export-errors.json existe, certains fichiers n'ont pas pu être copiés dans cette archive.",
+          "If export-errors.json exists, some files could not be copied into this archive."
+        ),
         ""
       ].join("\n")
     };
