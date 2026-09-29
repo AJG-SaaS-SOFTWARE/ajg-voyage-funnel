@@ -138,11 +138,13 @@ export async function GET(request: Request) {
     ),
     check(
       "billing-provider",
-      "Fournisseur de paiement",
-      present(process.env.BILLING_PROVIDER_WEBHOOK_SECRET),
+      "Stripe Billing",
+      present(process.env.STRIPE_RESTRICTED_KEY || process.env.STRIPE_SECRET_KEY) &&
+        present(process.env.STRIPE_WEBHOOK_SECRET) &&
+        present(process.env.STRIPE_PRO_PRICE_ID),
       "commercial",
-      "Secret d’adaptateur de paiement présent.",
-      "Secret fournisseur non configuré tant que le paiement réel reste volontairement désactivé.",
+      "Clé API Stripe, secret webhook et Price Pro configurés.",
+      "Stripe sandbox n’est pas encore entièrement configuré côté runtime : clé API, secret webhook ou Price Pro manquant.",
       "deferred"
     )
   ];
