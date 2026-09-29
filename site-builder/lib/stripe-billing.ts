@@ -109,6 +109,8 @@ export async function createStripeSubscriptionCheckout(input: {
   ownerEmail?: string | null;
   customerId?: string | null;
   priceId: string;
+  planKey: "essential" | "pro";
+  trialDays?: number;
   successUrl: string;
   cancelUrl: string;
 }) {
@@ -133,13 +135,16 @@ export async function createStripeSubscriptionCheckout(input: {
       metadata: {
         site_id: input.siteId,
         owner_id: input.ownerId,
-        plan_key: "pro"
+        plan_key: input.planKey
       },
       subscription_data: {
+        ...(input.trialDays && input.trialDays > 0
+          ? { trial_period_days: input.trialDays }
+          : {}),
         metadata: {
           site_id: input.siteId,
           owner_id: input.ownerId,
-          plan_key: "pro"
+          plan_key: input.planKey
         }
       }
     }
