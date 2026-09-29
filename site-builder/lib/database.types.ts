@@ -579,6 +579,104 @@ export type Database = {
           },
         ]
       }
+      site_ai_launch_entitlements: {
+        Row: {
+          expires_at: string | null
+          external_reference: string | null
+          granted_at: string
+          id: string
+          operations_total: number
+          operations_used: number
+          owner_id: string
+          site_id: string
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          expires_at?: string | null
+          external_reference?: string | null
+          granted_at?: string
+          id?: string
+          operations_total?: number
+          operations_used?: number
+          owner_id: string
+          site_id: string
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          expires_at?: string | null
+          external_reference?: string | null
+          granted_at?: string
+          id?: string
+          operations_total?: number
+          operations_used?: number
+          owner_id?: string
+          site_id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_ai_launch_entitlements_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_ai_launch_operations: {
+        Row: {
+          created_at: string
+          entitlement_id: string
+          operation: string
+          owner_id: string
+          request_id: string
+          site_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entitlement_id: string
+          operation: string
+          owner_id: string
+          request_id: string
+          site_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entitlement_id?: string
+          operation?: string
+          owner_id?: string
+          request_id?: string
+          site_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_ai_launch_operations_entitlement_id_fkey"
+            columns: ["entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "site_ai_launch_entitlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_ai_launch_operations_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_subscriptions: {
         Row: {
           current_period_end: string | null
@@ -1109,6 +1207,31 @@ export type Database = {
           can_view_billing: boolean
           public_site_available: boolean
         }[]
+      }
+      commit_my_site_launch_operation: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
+      get_my_site_ai_access: {
+        Args: { p_site_id: string }
+        Returns: {
+          access_source: string
+          can_create_site: boolean
+          can_revise_site: boolean
+          launch_operations_remaining: number
+        }[]
+      }
+      release_my_site_launch_operation: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
+      reserve_my_site_launch_operation: {
+        Args: {
+          p_operation: string
+          p_request_id: string
+          p_site_id: string
+        }
+        Returns: string
       }
       get_my_site_entitlements: {
         Args: { p_site_id: string }
