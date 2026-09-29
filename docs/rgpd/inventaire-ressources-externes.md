@@ -1,6 +1,6 @@
 # Inventaire des ressources externes — AJG Voyage
 
-Revue : 26 septembre 2026
+Revue : 29 septembre 2026
 
 ## Chargements automatiques observés dans le code
 
@@ -34,7 +34,7 @@ Lors de la revue du code :
 
 ## Stockage navigateur
 
-`localStorage: ajg_language_preference` — valeur `fr` ou `en`, créée lorsque l’utilisateur choisit explicitement une langue. Finalité : personnalisation de l’interface. Aucun usage publicitaire ou intersites.
+`localStorage: ajg_language_preference` — valeur `fr` ou `en`, créée lorsque l’utilisateur choisit explicitement une langue. Finalité : personnalisation de l’interface. Aucun usage publicitaire ou intersites.\n\nLa mesure first-party du funnel n’utilise pas de cookie ni d’identifiant de session stocké sur le terminal. Les événements agrégés (début/fin questionnaire, lead enregistré, clic Calendly) sont envoyés à l’API AJG Voyage puis stockés dans Supabase sans nom, e-mail ni téléphone, avec suppression automatique au-delà de 13 mois.
 
 ## Contrôle à chaque évolution
 
