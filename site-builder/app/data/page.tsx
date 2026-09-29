@@ -88,7 +88,7 @@ export default function DataRightsPage() {
     if (confirmation !== site.slug) return;
     if (
       !window.confirm(
-        `Le site « ${site.slug} » sera immédiatement retiré du public et verrouillé pendant le traitement de la demande. Continuer ?`
+        `${tr("Le site", "The website")} « ${site.slug} » ${tr("sera immédiatement retiré du public et verrouillé pendant le traitement de la demande. Continuer ?", "will immediately be removed from public access and locked while the request is processed. Continue?")}`
       )
     ) return;
 
@@ -101,7 +101,7 @@ export default function DataRightsPage() {
         confirmation
       });
       setMessage(
-        "Demande enregistrée. Le site est retiré du public et ses nouvelles mutations sont bloquées pendant le traitement."
+        tr("Demande enregistrée. Le site est retiré du public et ses nouvelles mutations sont bloquées pendant le traitement.", "Request recorded. The website has been removed from public access and new changes are blocked while it is processed.")
       );
       await load();
     } catch (error) {
@@ -121,7 +121,7 @@ export default function DataRightsPage() {
     }
     if (
       !window.confirm(
-        "Tous vos sites seront immédiatement retirés du public et verrouillés pendant le traitement de votre demande d’effacement. Continuer ?"
+        tr("Tous vos sites seront immédiatement retirés du public et verrouillés pendant le traitement de votre demande d’effacement. Continuer ?", "All your websites will immediately be removed from public access and locked while your erasure request is processed. Continue?")
       )
     ) return;
 
@@ -133,7 +133,7 @@ export default function DataRightsPage() {
         confirmation: accountConfirmation.trim()
       });
       setMessage(
-        "Demande de suppression du compte enregistrée. Vos sites sont retirés du public pendant le traitement."
+        tr("Demande de suppression du compte enregistrée. Vos sites sont retirés du public pendant le traitement.", "Account deletion request recorded. Your websites have been removed from public access while the request is processed.")
       );
       await load();
     } catch (error) {
@@ -244,12 +244,7 @@ export default function DataRightsPage() {
         <div>
           <p className="eyebrow">AJG Builder</p>
           <h2>{tr("Demander la suppression de mon compte", "Request account deletion")}</h2>
-          <p>
-            Cette demande concerne l’ensemble du compte. Tous les sites sont
-            retirés du public immédiatement. L’identité de connexion n’est
-            supprimée qu’après traitement des dépendances et des données qui
-            doivent éventuellement être conservées pour une obligation légale.
-          </p>
+<p>{tr("Cette demande concerne l’ensemble du compte. Tous les sites sont retirés du public immédiatement. L’identité de connexion n’est supprimée qu’après traitement des dépendances et des données qui doivent éventuellement être conservées pour une obligation légale.", "This request covers the entire account. All websites are immediately removed from public access. The sign-in identity is deleted only after dependencies and any data subject to legal retention have been processed.")}</p>
         </div>
         {openAccountRequest ? (
           <div className="data-rights-request-state">
@@ -289,19 +284,11 @@ export default function DataRightsPage() {
       </section>
 
       <section className="plans-note data-rights-note">
-        <b>{tr("Ce que cette page ne fait pas :", "What this page does not do:")}</b> un impayé, une carte expirée ou un
-        non-renouvellement n’efface jamais automatiquement vos données. Les
-        règles de suspension de facturation et les demandes d’effacement restent
-        deux mécanismes séparés.
+        <b>{tr("Ce que cette page ne fait pas :", "What this page does not do:")}</b> {tr("un impayé, une carte expirée ou un non-renouvellement n’efface jamais automatiquement vos données. Les règles de suspension de facturation et les demandes d’effacement restent deux mécanismes séparés.", "a failed payment, expired card or non-renewal never automatically deletes your data. Billing suspension rules and erasure requests remain separate mechanisms.")}
       </section>
 
       <section className="plans-note data-rights-note">
-        <b>{tr("Conservation légale limitée :", "Limited legal retention:")}</b> une suppression de compte efface les
-        données nécessaires au fonctionnement du Builder, mais certaines pièces
-        comptables peuvent devoir être conservées séparément lorsqu’une obligation
-        légale l’impose. En France, les factures et autres pièces justificatives
-        comptables sont conservées 10 ans à compter de la clôture de l’exercice.
-        Cette exception ne permet pas de conserver le contenu du site ou ses médias.
+        <b>{tr("Conservation légale limitée :", "Limited legal retention:")}</b> {tr("une suppression de compte efface les données nécessaires au fonctionnement du Builder, mais certaines pièces comptables peuvent devoir être conservées séparément lorsqu’une obligation légale l’impose. En France, les factures et autres pièces justificatives comptables sont conservées 10 ans à compter de la clôture de l’exercice. Cette exception ne permet pas de conserver le contenu du site ou ses médias.", "account deletion removes data needed to operate the Builder, but some accounting records may need to be retained separately when required by law. In France, invoices and supporting accounting records are kept for 10 years from the end of the financial year. This exception does not permit retaining website content or media.")}
       </section>
     </AccountShell>
   );
