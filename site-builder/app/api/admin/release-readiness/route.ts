@@ -88,6 +88,20 @@ export async function GET(request: Request) {
   const commercialLegalMissingFields = commercialLegalMissing(commercialLegal);
   const legalApproved =
     process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true";
+  const taxApproved =
+    process.env.AJG_COMMERCIAL_TAX_READY?.trim().toLowerCase() === "true";
+  const vatRegime = process.env.AJG_VAT_REGIME?.trim().toLowerCase() || "unconfirmed";
+  const stripeTaxEnabled =
+    process.env.AJG_STRIPE_TAX_ENABLED?.trim().toLowerCase() === "true";
+  const taxCode = process.env.AJG_STRIPE_TAX_CODE?.trim() || "";
+  const market = process.env.AJG_COMMERCIAL_MARKET?.trim().toUpperCase() || "B2B";
+  const taxConfigurationValid =
+    market === "B2B" &&
+    taxCode === "txcd_10103001" &&
+    (
+      (vatRegime === "franchise_base" && !stripeTaxEnabled) ||
+      (vatRegime === "vat_registered" && stripeTaxEnabled && present(process.env.AJG_VAT_NUMBER))
+    );
 
   const checks: ReadinessCheck[] = [
     check(
@@ -188,10 +202,22 @@ export async function GET(request: Request) {
     check(
       "commercial-tax",
       "Commercial · fiscalité",
-      process.env.AJG_COMMERCIAL_TAX_READY?.trim().toLowerCase() === "true",
+      taxApproved && taxConfigurationValid,
       "commercial",
-      "Configuration fiscale explicitement confirmée.",
-      "TVA/Stripe Tax et obligations d’immatriculation doivent être validées avant activation de la collecte automatique.",
+      vatRegime === "franchise_base"
+        ? "Régime franchise en base confirmé : Stripe Tax reste volontairement désactivé."
+        : "Régime TVA collectée confirmé : Stripe Tax est activé avec TVA intracommunautaire renseignée.",
+      vatRegime === "unconfirmed"
+        ? "Régime TVA non confirmé : choisir franchise_base ou vat_registered avant encaissement."
+        : vatRegime === "franchise_base" && stripeTaxEnabled
+          ? "Incohérence fiscale : Stripe Tax doit rester désactivé sous franchise en base."
+          : vatRegime === "vat_registered" && !present(process.env.AJG_VAT_NUMBER)
+            ? "Numéro de TVA intracommunautaire manquant pour le régime vat_registered."
+            : vatRegime === "vat_registered" && !stripeTaxEnabled
+              ? "Stripe Tax doit être explicitement activé pour le régime vat_registered."
+              : taxCode !== "txcd_10103001" || market !== "B2B"
+                ? "Le profil fiscal de lancement doit rester B2B avec le tax code SaaS Business Use validé."
+                : "Configuration fiscale complète mais AJG_COMMERCIAL_TAX_READY n’est pas encore activé.",
       "deferred"
     ),
     check(

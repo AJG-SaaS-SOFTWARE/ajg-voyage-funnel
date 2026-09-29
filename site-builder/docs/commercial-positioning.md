@@ -146,3 +146,22 @@ La politique de confidentialité distingue les traitements propres à AJG Site B
 - informations Stripe live et secret webhook live ;
 - médiateur + parcours consommateur uniquement si la vente B2C est activée ;
 - activation finale et volontaire de `AJG_BILLING_CHECKOUT_ENABLED`.
+
+
+## Stratégie fiscale de lancement
+
+Le lancement initial est préparé en **B2B**, cohérent avec la cible indépendants / petites entreprises et avec la désactivation actuelle de la vente aux consommateurs.
+
+Les produits Stripe sandbox Essentiel et Pro IA utilisent le Product Tax Code officiel **Software as a Service (SaaS) - Business Use** (`txcd_10103001`).
+
+Checkout collecte :
+- l’adresse de facturation ;
+- le numéro fiscal/TVA lorsqu’il est pris en charge ;
+- le plan et la périodicité choisis.
+
+Le calcul automatique de taxe n’est jamais activé par défaut. Le runtime distingue deux régimes possibles à confirmer avant lancement :
+
+- `AJG_VAT_REGIME=franchise_base` : Stripe Tax doit rester désactivé ;
+- `AJG_VAT_REGIME=vat_registered` : le numéro de TVA du vendeur doit être renseigné et Stripe Tax doit être explicitement activé.
+
+`AJG_VAT_REGIME=unconfirmed` reste la valeur sûre tant que la situation fiscale réelle du vendeur n’est pas établie. Le gate commercial refuse alors l’ouverture des paiements.

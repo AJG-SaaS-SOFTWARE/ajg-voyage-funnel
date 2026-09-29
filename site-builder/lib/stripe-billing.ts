@@ -127,6 +127,11 @@ export async function createStripeSubscriptionCheckout(input: {
       cancel_url: input.cancelUrl,
       client_reference_id: input.siteId,
       integration_identifier: integrationIdentifier(),
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true, required: "if_supported" },
+      ...(process.env.AJG_STRIPE_TAX_ENABLED?.trim().toLowerCase() === "true"
+        ? { automatic_tax: { enabled: true } }
+        : {}),
       ...(input.customerId
         ? { customer: input.customerId }
         : input.ownerEmail
@@ -135,7 +140,8 @@ export async function createStripeSubscriptionCheckout(input: {
       metadata: {
         site_id: input.siteId,
         owner_id: input.ownerId,
-        plan_key: input.planKey
+        plan_key: input.planKey,
+        commercial_market: "b2b"
       },
       subscription_data: {
         ...(input.trialDays && input.trialDays > 0

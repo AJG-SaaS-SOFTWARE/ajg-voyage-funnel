@@ -54,3 +54,20 @@ test("commercial readiness requires the complete billing catalog and launch gate
   ]) assert.ok(readiness.includes(key));
   assert.ok(stripe.includes("STRIPE_PORTAL_CONFIGURATION_ID"));
 });
+
+
+test("B2B checkout collects billing identity but automatic tax remains explicitly gated", () => {
+  assert.ok(stripe.includes('billing_address_collection: "required"'));
+  assert.ok(stripe.includes('tax_id_collection: { enabled: true, required: "if_supported" }'));
+  assert.ok(stripe.includes("AJG_STRIPE_TAX_ENABLED"));
+  assert.ok(stripe.includes('commercial_market: "b2b"'));
+
+  const readiness = fs.readFileSync(
+    new URL("../app/api/admin/release-readiness/route.ts", import.meta.url),
+    "utf8"
+  );
+  assert.ok(readiness.includes("AJG_VAT_REGIME"));
+  assert.ok(readiness.includes("franchise_base"));
+  assert.ok(readiness.includes("vat_registered"));
+  assert.ok(readiness.includes("txcd_10103001"));
+});
