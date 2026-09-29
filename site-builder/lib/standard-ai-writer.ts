@@ -20,6 +20,116 @@ const editableFields = [
 
 type EditableField = (typeof editableFields)[number];
 
+export type StandardContextEntry = readonly [string, string];
+
+export function selectStandardContextEntries(
+  field: StandardAiField,
+  entries: StandardContextEntry[]
+): StandardContextEntry[] {
+  const byKey = new Map(entries);
+  const pick = (keys: string[], max: number) =>
+    keys
+      .map((key) => {
+        const value = byKey.get(key);
+        return value ? ([key, value] as const) : null;
+      })
+      .filter((item): item is StandardContextEntry => Boolean(item))
+      .slice(0, max);
+
+  if (field === "guidedDraft") {
+    return pick(
+      [
+        "activity or offer",
+        "differentiation or approach",
+        "visitor goal",
+        "audience"
+      ],
+      4
+    );
+  }
+
+  if (field === "moduleDraft") {
+    return pick(
+      [
+        "module brief",
+        "activity or offer",
+        "differentiation or approach",
+        "visitor goal",
+        "audience",
+        "headline",
+        "intro",
+        "about",
+        "booking button"
+      ],
+      9
+    );
+  }
+
+  if (field === "qualityReview") {
+    return pick(
+      [
+        "headline",
+        "intro",
+        "tagline",
+        "about heading",
+        "about",
+        "booking button",
+        "activity or offer",
+        "differentiation or approach",
+        "visitor goal",
+        "audience"
+      ],
+      10
+    );
+  }
+
+  const commonDiscovery = [
+    "activity or offer",
+    "differentiation or approach",
+    "visitor goal",
+    "audience"
+  ];
+
+  if (field === "bookingLabel") {
+    return pick(
+      [
+        "visitor goal",
+        "activity or offer",
+        "audience",
+        "differentiation or approach",
+        "headline",
+        "intro",
+        "about"
+      ],
+      7
+    );
+  }
+
+  if (field === "aboutHeading" || field === "aboutText") {
+    return pick(
+      [
+        ...commonDiscovery,
+        "headline",
+        "intro",
+        "about heading",
+        "about"
+      ],
+      7
+    );
+  }
+
+  return pick(
+    [
+      ...commonDiscovery,
+      "headline",
+      "intro",
+      "tagline",
+      "about"
+    ],
+    7
+  );
+}
+
 const fieldLimits: Record<EditableField, number> = {
   heroTagline: 90,
   heroTitle: 90,

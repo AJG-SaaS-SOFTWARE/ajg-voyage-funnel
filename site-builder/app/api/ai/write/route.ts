@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
-import { normalizeStandardStructuredOutput, sanitizeStandardText, standardStructuredFormat } from "../../../../lib/standard-ai-writer";
+import { normalizeStandardStructuredOutput, sanitizeStandardText, selectStandardContextEntries, standardStructuredFormat } from "../../../../lib/standard-ai-writer";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -263,7 +263,7 @@ export async function POST(request: Request) {
   const variationReference = context.variationReference && typeof context.variationReference === "object" ? context.variationReference : null;
   const moduleBrief = clean(context.moduleBrief, 1000);
   const rawSiteContext = context.siteContext && typeof context.siteContext === "object" ? context.siteContext : {};
-  const contextEntries = [
+  const contextEntries = ([
     ["tagline", clean(rawSiteContext.heroTagline, 120)],
     ["headline", clean(rawSiteContext.heroTitle, 140)],
     ["intro", clean(rawSiteContext.heroSubtitle, 500)],
@@ -276,16 +276,13 @@ export async function POST(request: Request) {
     ["audience", clean(rawSiteContext.guidedAudience, 320)],
     ["module brief", moduleBrief],
     ["site architect brief", architectBrief]
-  ].filter(([, value]) => value && value !== currentText);
-  const selectedContextEntries = field === "siteArchitect" || field === "siteRevision"
-    ? contextEntries.slice(0, 12)
-    : field === "guidedDraft"
-    ? contextEntries.filter(([key]) => ["activity or offer", "differentiation or approach", "visitor goal", "audience"].includes(key))
-    : field === "moduleDraft"
-      ? contextEntries.slice(0, 11)
-      : field === "qualityReview"
-        ? contextEntries.slice(0, 10)
-        : contextEntries.slice(0, 6);
+  ] as Array<readonly [string, string]>).filter(
+    ([, value]) => Boolean(value) && value !== currentText
+  );
+  const selectedContextEntries =
+    field === "siteArchitect" || field === "siteRevision"
+      ? contextEntries.slice(0, 12)
+      : selectStandardContextEntries(field, contextEntries);
   const editorialContext = selectedContextEntries
     .map(([key, value]) => `${key}: ${value}`)
     .join("\n");
