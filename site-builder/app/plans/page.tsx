@@ -14,8 +14,10 @@ import {
   type SubscriptionEntitlements
 } from "../../lib/subscription";
 import { getMySites } from "../../lib/supabase-site-repository";
+import { useProductLocale } from "../../lib/product-i18n";
 
 export default function PlansPage() {
+  const { locale, tr } = useProductLocale();
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
   const [betaAccess, setBetaAccess] = useState<BetaAccess>({
     active: false,
@@ -65,15 +67,15 @@ export default function PlansPage() {
 
   const betaExpiryLabel =
     betaAccess.active && betaAccess.expiresAt
-      ? new Date(betaAccess.expiresAt).toLocaleDateString("fr-FR")
+      ? new Date(betaAccess.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR")
       : "";
 
   return (
     <AccountShell
       active="plans"
-      eyebrow="Offre & usages"
-      title="Mon offre"
-      description="AJG ne se positionne pas comme un constructeur de sites low-cost : l’offre Pro ajoute un véritable Architecte IA qui travaille la stratégie, l’architecture, le contenu et la direction visuelle du site, tout en vous laissant le contrôle."
+      eyebrow={tr("Offre & usages", "Plan & usage")}
+      title={tr("Mon offre", "My plan")}
+      description={tr("AJG ne se positionne pas comme un constructeur de sites low-cost : l’offre Pro ajoute un véritable Architecte IA qui travaille la stratégie, l’architecture, le contenu et la direction visuelle du site, tout en vous laissant le contrôle.", "AJG is not positioned as a low-cost website builder: Pro adds a true AI Site Architect that works on strategy, architecture, content and visual direction while keeping you in control.")}
     >
       {sites.length > 1 ? (
         <section className="panel">
@@ -190,14 +192,14 @@ export default function PlansPage() {
           <ul>
             <li>1 site sur sous-domaine AJG</li>
             <li>IA standard : rédaction, reformulation, mode guidé et rubriques</li>
-            <li>80 générations IA / mois</li>
-            <li>250 Mo de stockage</li>
-            <li>Édition et publication essentielles</li>
+            <li>{tr("80 générations IA / mois", "80 AI generations / month")}</li>
+            <li>{tr("250 Mo de stockage", "250 MB storage")}</li>
+            <li>{tr("Édition et publication essentielles", "Core editing and publishing")}</li>
             <li>Architecte IA Premium non inclus</li>
           </ul>
           <p className="plan-status">
             {loaded && !betaAccess.active && current.planKey === "free"
-              ? "Votre offre actuelle"
+              ? tr("Votre offre actuelle", "Your current plan")
               : "Offre d’entrée"}
           </p>
         </article>
@@ -228,11 +230,11 @@ export default function PlansPage() {
           <p className="annual-price">ou 239 € / an · 1 site</p>
           <ul>
             <li>Tout ce qui est prévu dans Essential</li>
-            <li>500 générations IA / mois</li>
-            <li>2 Go de stockage</li>
+            <li>{tr("500 générations IA / mois", "500 AI generations / month")}</li>
+            <li>{tr("2 Go de stockage", "2 GB storage")}</li>
             <li>Architecte Premium : stratégie → architecture → création → audit → raffinement</li>
             <li>Architecture, textes, modules et direction visuelle cohérents</li>
-            <li>Domaine personnalisé</li>
+            <li>{tr("Domaine personnalisé", "Custom domain")}</li>
           </ul>
           <p className="plan-status">
             {betaAccess.active
