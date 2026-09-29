@@ -873,7 +873,7 @@ export function deterministicQualityIssues(
       const union = new Set([...a.tokens, ...b.tokens]).size;
       const similarity = union > 0 ? intersection / union : 0;
 
-      if (intersection >= 3 && similarity >= 0.6) {
+      if (intersection >= 4 && similarity >= 0.5) {
         issues.push({
           severity: "blocking",
           code: "near_duplicate_faq",
