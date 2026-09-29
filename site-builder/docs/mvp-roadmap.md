@@ -54,6 +54,7 @@ Dernière mise à jour : 29 septembre 2026.
 - [x] Structured Outputs pour l’IA standard : mode guidé, relecture et brouillons FAQ/avantages/chiffres fiabilisés sans JSON libre ;
 - [x] mesure d’efficience IA standard : modèle, catégorie d’usage, tokens et durée enregistrés côté serveur sans prompt ni contenu client ; dashboard séparé du Premium pour éviter tout mélange des coûts ;
 - [x] contexte adaptatif de l’IA standard : chaque champ reçoit en priorité les informations de découverte pertinentes (activité, approche, objectif, audience) plutôt qu’un préfixe générique du site, avec une limite courte pour préserver coût et latence ;
+- [x] réparation conditionnelle IA standard : chiffres non sourcés, claims d’autorité/urgence, placeholders et balisage brut déclenchent un second appel uniquement si nécessaire ; la version corrigée repasse le contrôle déterministe avant affichage ;
 - [x] mesure Premium enrichie : nombre d’analyses stratégiques par demande afin de vérifier le gain réel de la réutilisation de stratégie ;
 - [x] transformation de réponses courtes ou mots-clés en textes structurés ;
 - [x] assistant IA dans les champs éditoriaux ;

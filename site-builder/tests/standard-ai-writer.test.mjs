@@ -5,6 +5,7 @@ import {
   normalizeStandardStructuredOutput,
   sanitizeStandardText,
   selectStandardContextEntries,
+  standardQualityIssues,
   standardStructuredFormat
 } from "../lib/standard-ai-writer.ts";
 
@@ -123,5 +124,72 @@ test("module drafting prioritizes the explicit module brief", () => {
 
   const selected = selectStandardContextEntries("moduleDraft", entries);
   assert.equal(selected[0][0], "module brief");
+});
+
+test("standard quality guard blocks unsupported numbers but accepts grounded ones", () => {
+  const output = "Déjà 250 clients accompagnés en seulement 2 ans.";
+  const unsupported = standardQualityIssues(
+    "heroSubtitle",
+    "",
+    output,
+    "Accompagnement personnalisé pour entreprises."
+  );
+  assert.ok(unsupported.some((item) => item.code === "unsupported_quantitative_claim"));
+
+  const grounded = standardQualityIssues(
+    "heroSubtitle",
+    "",
+    output,
+    "Le client indique avoir accompagné 250 clients en 2 ans."
+  );
+  assert.ok(!grounded.some((item) => item.code === "unsupported_quantitative_claim"));
+});
+
+test("standard quality guard blocks invented authority and urgency claims", () => {
+  const output = {
+    draft: {
+      title: "Pourquoi nous choisir",
+      items: [
+        {
+          title: "Leader certifié",
+          text: "Dernière chance : les places sont limitées."
+        }
+      ]
+    }
+  };
+  const issues = standardQualityIssues(
+    "moduleDraft",
+    "benefits",
+    output,
+    "Atelier indépendant avec une approche personnalisée."
+  );
+  assert.ok(issues.some((item) => item.code === "unsupported_grounded_claim"));
+});
+
+test("standard quality guard rejects raw presentation markup in structured modules", () => {
+  const output = {
+    draft: {
+      title: "**Questions fréquentes**",
+      items: [
+        {
+          question: "Comment ça marche ?",
+          answer: "Consultez [notre guide](https://example.com)."
+        }
+      ]
+    }
+  };
+  const issues = standardQualityIssues("moduleDraft", "faq", output, "");
+  assert.ok(issues.some((item) => item.code === "presentation_markup"));
+});
+
+test("standard AI route repairs only after deterministic quality issues are found", () => {
+  const source = fs.readFileSync(
+    new URL("../app/api/ai/write/route.ts", import.meta.url),
+    "utf8"
+  );
+  assert.ok(source.includes("standardQualityIssues("));
+  assert.ok(source.includes('operation: "standard_repair"'));
+  assert.ok(source.includes("if (qualityIssues.length > 0)"));
+  assert.ok(source.includes("quality gate rejected repaired output"));
 });
 
