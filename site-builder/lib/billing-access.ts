@@ -2,6 +2,7 @@
 
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import { getMySite } from "./supabase-site-repository";
+import { clientTr } from "./i18n";
 
 export type BillingState = {
   state: string;
@@ -43,9 +44,9 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
 
 export async function downloadMySiteExport(siteId?: string) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n'est pas configuré.", "Supabase is not configured."));
   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  if (error || !session?.access_token) throw new Error(clientTr("Votre session a expiré.", "Your session has expired."));
   const site = await getMySite(siteId);
   if (!site) throw new Error("Site introuvable.");
   const response = await fetch(
@@ -74,9 +75,9 @@ export async function downloadMySiteExport(siteId?: string) {
 
 async function openStripeBillingPath(path: "/api/billing/checkout" | "/api/billing/portal", siteId: string) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n'est pas configuré.", "Supabase is not configured."));
   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  if (error || !session?.access_token) throw new Error(clientTr("Votre session a expiré.", "Your session has expired."));
 
   const response = await fetch(path, {
     method: "POST",
@@ -88,7 +89,7 @@ async function openStripeBillingPath(path: "/api/billing/checkout" | "/api/billi
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || typeof result?.url !== "string") {
-    throw new Error(result?.error || "Le service de facturation est indisponible.");
+    throw new Error(result?.error || clientTr("Le service de facturation est indisponible.", "The billing service is unavailable."));
   }
   window.location.assign(result.url);
 }
