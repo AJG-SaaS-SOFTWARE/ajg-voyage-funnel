@@ -218,6 +218,7 @@ export default function BuilderPage() {
     };
   };
   const [architectProposal, setArchitectProposal] = useState<ArchitectProposal | null>(null);
+  const [architectStrategyContextKey, setArchitectStrategyContextKey] = useState("");
   const [architectClarifications, setArchitectClarifications] = useState<Record<string, string>>({});
   const [architectProposalKey, setArchitectProposalKey] = useState("");
   const [architectAttemptKind, setArchitectAttemptKind] = useState<"first" | "regeneration">("first");
@@ -486,9 +487,28 @@ export default function BuilderPage() {
       .join("\n\n")
       .slice(0, 7000);
     const isRegeneration = architectProposal !== null;
+    const strategyContextKey = JSON.stringify({
+      brief: briefForRequest,
+      language: config.language,
+      affiliation: config.affiliation,
+      firstName: config.firstName.trim(),
+      brandName: config.brandName.trim(),
+      siteContext: aiSiteContext,
+      contentLibrary: config.contentLibrary.assets.map((asset) => ({
+        id: asset.id,
+        kind: asset.kind,
+        name: asset.name,
+        text: asset.kind === "text" ? asset.text : "",
+        rights: asset.rights,
+        publishable: asset.publishable,
+        sourceUrl: asset.sourceUrl,
+        notes: asset.notes
+      }))
+    });
     const canReuseStrategy =
       isRegeneration &&
       !extraBrief.trim() &&
+      architectStrategyContextKey === strategyContextKey &&
       Boolean(architectProposal?.intelligence);
     setArchitectLoading(true);
     setSyncError("");
@@ -542,6 +562,7 @@ export default function BuilderPage() {
       const result = await response.json();
       if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
       setArchitectProposal(result.proposal);
+      setArchitectStrategyContextKey(strategyContextKey);
       setArchitectProposalKey(crypto.randomUUID());
       setArchitectAttemptKind(isRegeneration ? "regeneration" : "first");
       setArchitectQualityChoice(null);
