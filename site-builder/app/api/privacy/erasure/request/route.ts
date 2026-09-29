@@ -107,7 +107,7 @@ export async function POST(request: Request) {
   );
   if (error || !requestId) {
     console.error("Account erasure request failed", { code: error?.code || "unknown" });
-    return NextResponse.json({ error: "Impossible d'enregistrer la demande." }, { status: 503 });
+    return NextResponse.json({ error: tr("Impossible d’enregistrer la demande.", "Unable to record the request.") }, { status: 503 });
   }
 
   return NextResponse.json({ requestId, scope: "account" });
