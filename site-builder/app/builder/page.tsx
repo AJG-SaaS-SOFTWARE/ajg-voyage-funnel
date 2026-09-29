@@ -209,6 +209,9 @@ export default function BuilderPage() {
       majorIssuesDetected: number;
       finalIssuesDetected: number;
       finalMajorIssuesDetected: number;
+      deterministicChecksPerformed: true;
+      deterministicIssuesDetected: number;
+      deterministicBlockingIssuesDetected: number;
       strengths: string[];
       qualityNote: string;
     };
@@ -1253,6 +1256,11 @@ export default function BuilderPage() {
                           {architectProposal.premiumAudit.finalReviewPerformed ? (
                             <small>
                               Le texte affiché a été relu une seconde fois après correction par un critique IA indépendant.
+                            </small>
+                          ) : null}
+                          {architectProposal.premiumAudit.deterministicChecksPerformed ? (
+                            <small>
+                              Contrôle structurel automatique validé · {architectProposal.premiumAudit.deterministicIssuesDetected} alerte{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} résiduelle{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} · aucun blocage.
                             </small>
                           ) : null}
                           {architectProposal.premiumAudit.strengths.length ? <small>Points forts : {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}

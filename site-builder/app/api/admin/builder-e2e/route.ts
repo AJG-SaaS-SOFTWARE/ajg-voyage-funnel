@@ -199,11 +199,13 @@ export async function POST(request: NextRequest) {
         !aiBody.proposal?.intelligence?.understoodNeed ||
         aiBody.proposal?.premiumAudit?.reviewed !== true ||
         aiBody.proposal?.premiumAudit?.finalVerified !== true ||
+        aiBody.proposal?.premiumAudit?.deterministicChecksPerformed !== true ||
+        aiBody.proposal?.premiumAudit?.deterministicBlockingIssuesDetected !== 0 ||
         (aiBody.proposal?.premiumAudit?.refinementApplied === true &&
           aiBody.proposal?.premiumAudit?.finalReviewPerformed !== true)
       ) {
         throw new Error(
-          "Premium Architect strategy, audit or final quality gate metadata is missing."
+          "Premium Architect strategy, deterministic checks, audit or final quality gate metadata is missing."
         );
       }
       proposal = aiBody.proposal;
@@ -213,8 +215,8 @@ export async function POST(request: NextRequest) {
         status: "pass",
         detail:
           aiBody.proposal.premiumAudit.refinementApplied
-            ? "Stratégie, génération structurée, audit critique, raffinement automatique et contrôle final indépendant validés."
-            : "Stratégie, génération structurée et audit critique validés sans raffinement nécessaire ; quality gate final validé."
+            ? "Stratégie, contrôles déterministes, audit critique, raffinement automatique et contrôle final indépendant validés."
+            : "Stratégie, génération structurée, contrôles déterministes et audit critique validés sans raffinement nécessaire ; quality gate final validé."
       });
     } else {
       steps.push({

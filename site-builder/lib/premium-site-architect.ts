@@ -103,6 +103,9 @@ export type PremiumArchitectProposal = {
     majorIssuesDetected: number;
     finalIssuesDetected: number;
     finalMajorIssuesDetected: number;
+    deterministicChecksPerformed: true;
+    deterministicIssuesDetected: number;
+    deterministicBlockingIssuesDetected: number;
     strengths: string[];
     qualityNote: string;
   };
@@ -602,6 +605,160 @@ function clampScore(value: unknown) {
   return Math.max(0, Math.min(100, Math.round(numeric)));
 }
 
+type DeterministicQualityIssue = {
+  severity: "warning" | "blocking";
+  code: string;
+  detail: string;
+};
+
+function normalizeComparable(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function deterministicQualityIssues(
+  proposal: PremiumArchitectCore
+): DeterministicQualityIssue[] {
+  const issues: DeterministicQualityIssue[] = [];
+  const placeholderPattern =
+    /\b(?:lorem ipsum|todo|tbd|placeholder)\b|\b(?:a|à)\s+completer\b|\[(?:[^\]]{0,40})(?:todo|tbd|a completer|à compléter)(?:[^\]]{0,40})\]/iu;
+
+  const visibleCopy = [
+    ["heroTagline", proposal.heroTagline],
+    ["heroTitle", proposal.heroTitle],
+    ["heroSubtitle", proposal.heroSubtitle],
+    ["aboutHeading", proposal.aboutHeading],
+    ["aboutText", proposal.aboutText],
+    ["bookingLabel", proposal.bookingLabel],
+    ...proposal.faq.items.map((item, index) => [
+      `faq-${index + 1}`,
+      `${item.question} ${item.answer}`
+    ] as const),
+    ...proposal.benefits.items.map((item, index) => [
+      `benefit-${index + 1}`,
+      `${item.title} ${item.text}`
+    ] as const)
+  ] as Array<readonly [string, string]>;
+
+  for (const [field, value] of visibleCopy) {
+    if (placeholderPattern.test(value)) {
+      issues.push({
+        severity: "blocking",
+        code: "placeholder_copy",
+        detail: `Le contenu ${field} contient encore un placeholder ou une mention à compléter.`
+      });
+    }
+  }
+
+  const bodyCandidates = [
+    ["heroSubtitle", proposal.heroSubtitle],
+    ["aboutText", proposal.aboutText],
+    ...proposal.faq.items.map((item, index) => [
+      `faq-answer-${index + 1}`,
+      item.answer
+    ] as const),
+    ...proposal.benefits.items.map((item, index) => [
+      `benefit-text-${index + 1}`,
+      item.text
+    ] as const)
+  ] as Array<readonly [string, string]>;
+
+  const seenBodies = new Map<string, string>();
+  for (const [field, value] of bodyCandidates) {
+    const normalized = normalizeComparable(value);
+    if (normalized.length < 60) continue;
+    const previous = seenBodies.get(normalized);
+    if (previous) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_copy",
+        detail: `Les contenus ${previous} et ${field} répètent exactement le même texte.`
+      });
+    } else {
+      seenBodies.set(normalized, field);
+    }
+  }
+
+  const faqQuestions = new Set<string>();
+  for (const item of proposal.faq.items) {
+    const normalized = normalizeComparable(item.question);
+    if (!normalized) continue;
+    if (faqQuestions.has(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_faq",
+        detail: "La FAQ contient deux questions identiques."
+      });
+      break;
+    }
+    faqQuestions.add(normalized);
+  }
+
+  const enabledPages = proposal.architecture.pages.filter((page) => page.enabled);
+  const pageTitles = new Set<string>();
+  const pagePurposes = new Map<string, string>();
+  for (const page of enabledPages) {
+    const title = normalizeComparable(page.title);
+    if (title && pageTitles.has(title)) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_page_title",
+        detail: `Deux pages actives utilisent le même titre : ${page.title}.`
+      });
+    }
+    if (title) pageTitles.add(title);
+
+    const purpose = normalizeComparable(page.purpose);
+    if (purpose.length < 12) {
+      issues.push({
+        severity: "warning",
+        code: "weak_page_purpose",
+        detail: `Le rôle de la page ${page.title} est trop peu précis.`
+      });
+    } else {
+      const previous = pagePurposes.get(purpose);
+      if (previous) {
+        issues.push({
+          severity: "warning",
+          code: "duplicate_page_purpose",
+          detail: `Les pages ${previous} et ${page.title} ont le même rôle éditorial.`
+        });
+      } else {
+        pagePurposes.set(purpose, page.title);
+      }
+    }
+  }
+
+  if (
+    proposal.recommendedModules.includes("faq") &&
+    proposal.faq.items.length === 0
+  ) {
+    issues.push({
+      severity: "blocking",
+      code: "empty_recommended_faq",
+      detail: "La FAQ est recommandée mais ne contient aucune question exploitable."
+    });
+  }
+
+  if (
+    proposal.recommendedModules.includes("benefits") &&
+    proposal.benefits.items.length === 0
+  ) {
+    issues.push({
+      severity: "blocking",
+      code: "empty_recommended_benefits",
+      detail: "Le module avantages est recommandé mais ne contient aucun avantage exploitable."
+    });
+  }
+
+  return issues.slice(0, 12);
+}
+
 export async function generatePremiumSiteArchitect(
   input: PremiumArchitectInput
 ): Promise<PremiumArchitectProposal> {
@@ -684,6 +841,11 @@ export async function generatePremiumSiteArchitect(
     assets
   );
 
+  const creationDeterministicIssues = deterministicQualityIssues(creation);
+  const creationDeterministicBlocking = creationDeterministicIssues.filter(
+    (item) => item.severity === "blocking"
+  );
+
   const review = await structuredResponse({
     apiKey: input.apiKey,
     model: auxiliaryModel,
@@ -711,7 +873,8 @@ export async function generatePremiumSiteArchitect(
   const shouldRefine =
     review?.verdict === "refine" ||
     majorIssues.length > 0 ||
-    score < 90;
+    score < 90 ||
+    creationDeterministicBlocking.length > 0;
 
   let finalProposal = creation;
   if (shouldRefine) {
@@ -741,7 +904,8 @@ export async function generatePremiumSiteArchitect(
           proposal: creation,
           review: {
             score,
-            issues
+            issues,
+            deterministicIssues: creationDeterministicIssues
           }
         })
       }),
@@ -782,6 +946,11 @@ export async function generatePremiumSiteArchitect(
     });
   }
 
+  const finalDeterministicIssues = deterministicQualityIssues(finalProposal);
+  const finalDeterministicBlocking = finalDeterministicIssues.filter(
+    (item) => item.severity === "blocking"
+  );
+
   const finalIssues = Array.isArray(finalReview?.issues)
     ? finalReview.issues.slice(0, 8)
     : [];
@@ -792,7 +961,8 @@ export async function generatePremiumSiteArchitect(
   const finalVerified =
     finalReview?.verdict === "pass" &&
     finalMajorIssues.length === 0 &&
-    finalScore >= 88;
+    finalScore >= 88 &&
+    finalDeterministicBlocking.length === 0;
 
   if (!finalVerified) {
     throw new PremiumArchitectError(
@@ -823,10 +993,13 @@ export async function generatePremiumSiteArchitect(
       majorIssuesDetected: majorIssues.length,
       finalIssuesDetected: finalIssues.length,
       finalMajorIssuesDetected: finalMajorIssues.length,
+      deterministicChecksPerformed: true,
+      deterministicIssuesDetected: finalDeterministicIssues.length,
+      deterministicBlockingIssuesDetected: finalDeterministicBlocking.length,
       strengths,
       qualityNote: shouldRefine
-        ? `Audit premium effectué : ${issues.length} point(s) détecté(s), proposition raffinée, puis contrôle final indépendant validé avant affichage.`
-        : "Audit premium effectué : la proposition a passé le contrôle qualité sans raffinement supplémentaire."
+        ? `Audit premium effectué : ${issues.length} point(s) IA et ${creationDeterministicIssues.length} contrôle(s) déterministe(s) examinés, proposition raffinée, puis contrôle final indépendant validé avant affichage.`
+        : "Audit premium effectué : la proposition a passé les contrôles IA et déterministes sans raffinement supplémentaire."
     }
   };
 }
