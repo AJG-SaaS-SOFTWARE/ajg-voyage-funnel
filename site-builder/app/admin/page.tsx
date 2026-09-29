@@ -603,7 +603,7 @@ export default function AdminPage() {
                       l’application d’une proposition.
                     </p>
                   </div>
-                  <span>{betaMetrics.ai.architect.attempts} tentative{betaMetrics.ai.architect.attempts > 1 ? "s" : ""}</span>
+                  <span>{betaMetrics.ai.architect.requests} demande{betaMetrics.ai.architect.requests > 1 ? "s" : ""} Premium</span>
                 </div>
                 <div className="premium-ai-kpis">
                   <article>
@@ -625,6 +625,11 @@ export default function AdminPage() {
                     <b>{betaMetrics.ai.architect.applicationRate} %</b>
                     <strong>applications / tentatives</strong>
                     <small>{betaMetrics.ai.architect.applications} application{betaMetrics.ai.architect.applications > 1 ? "s" : ""} pour {betaMetrics.ai.architect.attempts} tentative{betaMetrics.ai.architect.attempts > 1 ? "s" : ""}</small>
+                  </article>
+                  <article>
+                    <b>{betaMetrics.ai.architect.failureRate} %</b>
+                    <strong>échecs du pipeline</strong>
+                    <small>{betaMetrics.ai.architect.failures} demande{betaMetrics.ai.architect.failures > 1 ? "s" : ""} sans proposition exploitable sur {betaMetrics.ai.architect.requests}</small>
                   </article>
                 </div>
                 <div className="premium-ai-human-eval">
