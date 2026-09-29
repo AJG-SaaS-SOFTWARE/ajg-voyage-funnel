@@ -656,6 +656,41 @@ function deterministicQualityIssues(
     }
   }
 
+  const requiredVisibleLabels = [
+    {
+      missing: !proposal.aboutHeading.trim(),
+      code: "missing_about_heading",
+      detail: "Le bloc À propos contient du texte mais aucun titre visible."
+    },
+    {
+      missing: !proposal.bookingLabel.trim(),
+      code: "missing_primary_cta_label",
+      detail: "Le CTA principal n’a aucun libellé."
+    },
+    {
+      missing:
+        proposal.faq.items.length > 0 && !proposal.faq.title.trim(),
+      code: "missing_faq_title",
+      detail: "La FAQ contient des questions mais aucun titre de section."
+    },
+    {
+      missing:
+        proposal.benefits.items.length > 0 &&
+        !proposal.benefits.title.trim(),
+      code: "missing_benefits_title",
+      detail: "La section avantages contient des cartes mais aucun titre."
+    }
+  ];
+
+  for (const item of requiredVisibleLabels) {
+    if (!item.missing) continue;
+    issues.push({
+      severity: "blocking",
+      code: item.code,
+      detail: item.detail
+    });
+  }
+
   const mobileCopyLimits: Array<{
     value: string;
     blockingAt: number;
@@ -1041,6 +1076,7 @@ export async function generatePremiumSiteArchitect(
         "Treat strategy as the design brief, not text to copy mechanically.",
         "Optimize the visitor journey in this order: immediate comprehension, credibility, relevance, useful detail, then one clear next action.",
         "Each field must have a distinct role and avoid repeated wording.",
+        "Never leave a visible structural label empty: About heading and primary CTA label are required, and FAQ/Benefits section titles are required whenever those sections contain items.",
         "Write for mobile-first scanning: keep the hero title compact, the hero subtitle concise, the main CTA short enough for a button, and FAQ/benefit headings easy to scan.",
         "Keep body copy web-readable too: About copy should stay focused, FAQ answers should answer directly before elaborating, and benefit descriptions should remain compact.",
         "The main CTA must be specific enough that the visitor understands what happens next; avoid generic labels such as click here, submit, continue or validate, and never promise an action that the supplied context does not support.",
@@ -1125,6 +1161,7 @@ export async function generatePremiumSiteArchitect(
           "Prefer deleting weak or unjustified material over filling gaps with generic copy.",
           "When a deterministic issue mentions mobile copy density, shorten the affected field without removing essential meaning or adding unsupported claims.",
           "When body copy density is flagged, compress the affected paragraph while preserving the useful facts and the section’s distinct purpose.",
+          "When a visible structural label is missing, write a concise label grounded in the section’s actual content rather than a generic placeholder.",
           "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
           "When benefit cards overlap, consolidate them or rewrite them so each one communicates a distinct supported value.",
           "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
