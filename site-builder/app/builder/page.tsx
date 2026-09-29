@@ -140,8 +140,8 @@ function VisibilityOption({
   checked,
   title,
   description,
-  activeLabel = "Actif",
-  inactiveLabel = "Masqué",
+  activeLabel,
+  inactiveLabel,
   logo,
   onChange
 }: {
@@ -153,6 +153,9 @@ function VisibilityOption({
   logo?: string;
   onChange: (checked: boolean) => void;
 }) {
+  const { tr } = useProductLocale();
+  const resolvedActiveLabel = activeLabel ?? tr("Actif", "Active");
+  const resolvedInactiveLabel = inactiveLabel ?? tr("Masqué", "Hidden");
   return (
     <label className={`visibility-option ${checked ? "is-active" : "is-inactive"}`}>
       <input
@@ -165,7 +168,7 @@ function VisibilityOption({
       <span className="visibility-option-copy">
         <span className="visibility-option-heading">
           <b>{title}</b>
-          <em>{checked ? activeLabel : inactiveLabel}</em>
+          <em>{checked ? resolvedActiveLabel : resolvedInactiveLabel}</em>
         </span>
         <small>{description}</small>
       </span>
@@ -1747,7 +1750,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroTagline", text)}
-                  placeholder="Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique"
+                  placeholder={tr("Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique", "e.g. A very short tagline that captures my identity without a generic sales slogan")}
                 />
                 <Field label={tr("Titre principal", "Main headline")}>
                   <textarea spellCheck rows={2} placeholder={tr("Ex. Une autre façon de préparer et profiter de vos voyages", "e.g. A clearer, simpler way to discover what I offer")} value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
