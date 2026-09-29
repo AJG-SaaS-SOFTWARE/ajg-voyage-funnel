@@ -429,3 +429,153 @@ export function normalizeStandardStructuredOutput(
 
   throw new Error("Field is not structured");
 }
+
+export type StandardQualityIssue = {
+  code: string;
+  detail: string;
+};
+
+function normalizeComparable(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function standardVisibleOutputTexts(
+  field: StandardAiField,
+  moduleType: string,
+  output: unknown
+): Array<readonly [string, string]> {
+  if (typeof output === "string") return [[field, output]];
+  const value = output && typeof output === "object" ? (output as any) : {};
+
+  if (field === "guidedDraft") {
+    const draft = value.draft || {};
+    return [
+      ["heroTagline", clean(draft.heroTagline, 2000)],
+      ["heroTitle", clean(draft.heroTitle, 2000)],
+      ["heroSubtitle", clean(draft.heroSubtitle, 4000)],
+      ["aboutHeading", clean(draft.aboutHeading, 2000)],
+      ["aboutText", clean(draft.aboutText, 6000)]
+    ].filter((entry): entry is readonly [string, string] => Boolean(entry[1]));
+  }
+
+  if (field === "qualityReview") {
+    return Object.entries(value.suggestions || {})
+      .map(([key, text]) => [key, clean(text, 6000)] as const)
+      .filter((entry): entry is readonly [string, string] => Boolean(entry[1]));
+  }
+
+  if (field === "moduleDraft") {
+    const draft = value.draft || {};
+    const texts: Array<readonly [string, string]> = [];
+    if (draft.title) texts.push(["module-title", clean(draft.title, 2000)]);
+    for (const [index, item] of (Array.isArray(draft.items) ? draft.items : []).entries()) {
+      if (moduleType === "faq") {
+        texts.push(["faq-question-" + (index + 1), clean(item?.question, 2000)]);
+        texts.push(["faq-answer-" + (index + 1), clean(item?.answer, 6000)]);
+      } else if (moduleType === "benefits") {
+        texts.push(["benefit-title-" + (index + 1), clean(item?.title, 2000)]);
+        texts.push(["benefit-text-" + (index + 1), clean(item?.text, 4000)]);
+      } else if (moduleType === "figures") {
+        texts.push(["figure-label-" + (index + 1), clean(item?.label, 2000)]);
+      }
+    }
+    return texts.filter((entry) => Boolean(entry[1]));
+  }
+
+  return [];
+}
+
+export function standardQualityIssues(
+  field: StandardAiField,
+  moduleType: string,
+  output: unknown,
+  sourceEvidenceText = ""
+): StandardQualityIssue[] {
+  const issues: StandardQualityIssue[] = [];
+  const visible = standardVisibleOutputTexts(field, moduleType, output);
+  const normalizedEvidence = normalizeComparable(sourceEvidenceText);
+  const supportedNumbers = new Set(
+    (sourceEvidenceText.match(/\d+(?:[.,]\d+)?/g) || []).map((value) =>
+      value.replace(",", ".").replace(/^0+(?=\d)/, "")
+    )
+  );
+
+  const templatePattern =
+    /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|\b(?:lorem ipsum|todo|tbd)\b)/giu;
+  const presentationMarkupPattern =
+    /(?:\*\*[^*\n]+\*\*|__[^_\n]+__|(?:^|\n)\s{0,3}#{1,6}\s+\S|\x60\x60\x60|!?\[[^\]\n]+\]\([^)\n]+\)|<\/?(?:strong|em|b|i|h[1-6]|p|a|ul|ol|li)\b[^>]*>)/iu;
+  const quantitativePattern =
+    /(?:[€£$]\s*\d+(?:[.,]\d+)?)|(?:\b\d+(?:[.,]\d+)?\s*(?:%|€|£|\$))|(?:\b\d+(?:[.,]\d+)?\s*(?:euros?|dollars?|usd|gbp|minutes?|mins?|heures?|hours?|hrs?|jours?|days?|semaines?|weeks?|mois|months?|ans?|années?|years?|clients?|customers?|projets?|projects?|pays|countries|destinations?|voyages?|trips?|réservations?|bookings?)\b)|(?:\b(?:19|20)\d{2}\b)|(?:\b24\s*\/\s*7\b)/giu;
+
+  const groundedClaims = [
+    { pattern: /\b(?:meilleur(?:e|s)?|best)\b/giu, label: "meilleur / best" },
+    { pattern: /\b(?:leader|leading)\b/giu, label: "leader" },
+    { pattern: /\b(?:certifiee?s?|certified)\b/giu, label: "certifié" },
+    { pattern: /\b(?:primee?s?|award[- ]winning|awarded)\b/giu, label: "primé" },
+    { pattern: /\b(?:garantie?s?|guaranteed)\b/giu, label: "garanti" },
+    { pattern: /\b(?:numero\s*1|number\s*one|n\s*[°ºo]?\s*1)\b/giu, label: "numéro 1" },
+    { pattern: /\b(?:derniere chance|last chance)\b/giu, label: "dernière chance" },
+    {
+      pattern:
+        /\b(?:offres?|places?|disponibilites?|slots?|spots?)\s+(?:sont\s+|are\s+)?(?:tres\s+|very\s+)?(?:limitees?|limited)\b/giu,
+      label: "disponibilité limitée"
+    },
+    {
+      pattern: /\b(?:temps limite|limited time|aujourd hui seulement|today only)\b/giu,
+      label: "urgence commerciale"
+    },
+    {
+      pattern:
+        /\b(?:en tant qu ia|en tant que modele(?: de langage)?|as an ai(?: language model)?|system prompt|prompt systeme|instructions? systeme|developer message|json schema|source context|contexte source)\b/giu,
+      label: "métadonnée interne IA"
+    }
+  ];
+
+  for (const [location, text] of visible) {
+    if (templatePattern.test(text)) {
+      issues.push({
+        code: "template_residue",
+        detail: location + " contient un placeholder ou une variable non résolue."
+      });
+    }
+
+    if (presentationMarkupPattern.test(text)) {
+      issues.push({
+        code: "presentation_markup",
+        detail: location + " contient du balisage de présentation brut."
+      });
+    }
+
+    for (const claim of text.match(quantitativePattern) || []) {
+      const number = claim.match(/\d+(?:[.,]\d+)?/)?.[0];
+      const normalized = number
+        ? number.replace(",", ".").replace(/^0+(?=\d)/, "")
+        : "";
+      if (!normalized || supportedNumbers.has(normalized)) continue;
+      issues.push({
+        code: "unsupported_quantitative_claim",
+        detail: location + " introduit un chiffre non fourni : « " + claim + " »."
+      });
+    }
+
+    const normalizedText = normalizeComparable(text);
+    for (const claim of groundedClaims) {
+      if (!(normalizedText.match(claim.pattern) || []).length) continue;
+      if ((normalizedEvidence.match(claim.pattern) || []).length) continue;
+      issues.push({
+        code: "unsupported_grounded_claim",
+        detail: location + " introduit une affirmation non fournie (" + claim.label + ")."
+      });
+      break;
+    }
+  }
+
+  return issues.slice(0, 8);
+}
+
