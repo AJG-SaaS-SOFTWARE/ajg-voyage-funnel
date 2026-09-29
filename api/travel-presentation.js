@@ -55,6 +55,26 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+async function rateLimitLead(req, supabaseUrl, supabaseKey) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const ip = forwarded || String(req.headers["x-real-ip"] || "").trim();
+  if (!ip) return true;
+  const secret = process.env.RATE_LIMIT_SECRET || supabaseKey;
+  const data = new TextEncoder().encode(secret + ":" + ip);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const keyHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/ajg_voyage_check_lead_rate_limit`, {
+    method: "POST",
+    headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_key_hash: keyHash, p_limit: 6, p_window: "00:15:00" })
+  });
+  if (!response.ok) {
+    console.error("Lead rate limit check failed", response.status);
+    return true;
+  }
+  return (await response.json()) === true;
+}
+
 async function sendNotification(row) {
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.LEAD_NOTIFICATION_EMAIL;
