@@ -167,9 +167,9 @@ export default function BuilderPage() {
   const [brandTouched, setBrandTouched] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
   const [guidedAnswers, setGuidedAnswers] = useState({
-    traveler: "",
-    discovery: "",
-    benefit: "",
+    activity: "",
+    difference: "",
+    goal: "",
     audience: ""
   });
   const [guidedDraftReady, setGuidedDraftReady] = useState(false);
@@ -439,7 +439,7 @@ export default function BuilderPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           field: "guidedDraft",
-          instruction: "À partir des réponses guidées, rédige une première version complète, structurée et soignée des textes du site. Reformule les notes courtes en vraies phrases. Ne copie pas mécaniquement les réponses.",
+          instruction: "À partir des réponses guidées, construis une première version cohérente et directement exploitable des textes du site. Transforme les notes en vraies phrases, donne un rôle distinct à chaque bloc et reste concret. Ne copie pas mécaniquement les réponses et n'invente aucun fait.",
           currentText: "",
           context: {
             language: config.language,
@@ -447,9 +447,9 @@ export default function BuilderPage() {
             firstName: config.firstName,
             brandName: config.brandName,
             siteContext: {
-              guidedTraveler: guidedAnswers.traveler,
-              guidedDiscovery: guidedAnswers.discovery,
-              guidedBenefit: guidedAnswers.benefit,
+              guidedActivity: guidedAnswers.activity,
+              guidedDifference: guidedAnswers.difference,
+              guidedGoal: guidedAnswers.goal,
               guidedAudience: guidedAnswers.audience
             }
           }
@@ -668,9 +668,9 @@ export default function BuilderPage() {
   };
 
   const guidedDraftEnabled =
-    guidedAnswers.traveler.trim().length > 0 &&
-    guidedAnswers.discovery.trim().length > 0 &&
-    guidedAnswers.benefit.trim().length > 0;
+    guidedAnswers.activity.trim().length > 0 &&
+    guidedAnswers.difference.trim().length > 0 &&
+    guidedAnswers.goal.trim().length > 0;
 
   const aiSiteContext = {
     heroTagline: config.heroTagline,
@@ -678,9 +678,9 @@ export default function BuilderPage() {
     heroSubtitle: config.heroSubtitle,
     aboutHeading: config.aboutHeading,
     aboutText: config.aboutText,
-    guidedTraveler: guidedAnswers.traveler,
-    guidedDiscovery: guidedAnswers.discovery,
-    guidedBenefit: guidedAnswers.benefit,
+    guidedActivity: guidedAnswers.activity,
+    guidedDifference: guidedAnswers.difference,
+    guidedGoal: guidedAnswers.goal,
     guidedAudience: guidedAnswers.audience
   };
 
@@ -1516,32 +1516,32 @@ export default function BuilderPage() {
                     </p>
 
                     <label className="guided-question">
-                      <span><i>1</i> Quel type de voyageur êtes-vous ?</span>
+                      <span><i>1</i> Que proposez-vous ou quelle est votre activité ?</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. J'aime partir en couple ou avec des amis, découvrir les cultures locales et garder du temps pour profiter sur place."
-                        value={guidedAnswers.traveler}
-                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, traveler: e.target.value }))}
+                        placeholder="Ex. Je suis photographe de famille et de couple, avec une approche naturelle et peu posée."
+                        value={guidedAnswers.activity}
+                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, activity: e.target.value }))}
                       />
                     </label>
 
                     <label className="guided-question">
-                      <span><i>2</i> Comment avez-vous découvert cette façon de voyager ?</span>
+                      <span><i>2</i> Qu'est-ce qui caractérise votre approche ?</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. Je cherchais surtout une solution pour mes propres voyages avant de penser à la recommander."
-                        value={guidedAnswers.discovery}
-                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, discovery: e.target.value }))}
+                        placeholder="Ex. Je prends le temps de mettre les personnes à l'aise et je privilégie des images spontanées, simples et lumineuses."
+                        value={guidedAnswers.difference}
+                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, difference: e.target.value }))}
                       />
                     </label>
 
                     <label className="guided-question">
-                      <span><i>3</i> Qu'est-ce que vous appréciez le plus aujourd'hui ?</span>
+                      <span><i>3</i> Que voulez-vous que le visiteur comprenne ou fasse ?</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. J'apprécie de pouvoir comparer plus facilement et de disposer de plusieurs outils au même endroit."
-                        value={guidedAnswers.benefit}
-                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, benefit: e.target.value }))}
+                        placeholder="Ex. Je veux qu'il comprenne mon style, se sente rassuré sur le déroulement et ait envie de me contacter."
+                        value={guidedAnswers.goal}
+                        onChange={(e) => setGuidedAnswers((current) => ({ ...current, goal: e.target.value }))}
                       />
                     </label>
 
@@ -1549,7 +1549,7 @@ export default function BuilderPage() {
                       <span><i>4</i> À qui souhaitez-vous surtout parler ? <em>facultatif</em></span>
                       <textarea
                         rows={2}
-                        placeholder="Ex. Aux personnes qui aiment voyager et veulent simplement regarder si le concept peut leur correspondre."
+                        placeholder="Ex. Aux familles et aux couples qui cherchent quelque chose de naturel, chaleureux et sans mise en scène excessive."
                         value={guidedAnswers.audience}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, audience: e.target.value }))}
                       />
@@ -1594,7 +1594,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroTagline", text)}
-                  placeholder="Ex. Une phrase chaleureuse et très courte sur le plaisir de voyager autrement"
+                  placeholder="Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique"
                 />
                 <Field label="Titre principal">
                   <textarea spellCheck rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
@@ -1609,7 +1609,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroTitle", text)}
-                  placeholder="Ex. Un titre simple, rassurant et premium pour des personnes qui aiment voyager"
+                  placeholder="Ex. Un titre clair et mémorable qui fait comprendre rapidement ce que je propose"
                 />
                 <Field label="Introduction">
                   <textarea spellCheck rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
@@ -1624,7 +1624,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroSubtitle", text)}
-                  placeholder="Ex. Explique en 2 phrases que je partage une solution que j'utilise moi-même pour mes voyages, avec un ton naturel"
+                  placeholder="Ex. Explique en 2 phrases mon activité, mon approche et ce que le visiteur peut attendre, avec un ton naturel"
                 />
 
                 <div className="section-kicker">
@@ -1659,7 +1659,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("aboutText", text)}
-                  placeholder="Ex. Présente-moi de façon humaine : j'aime voyager en couple, découvrir la gastronomie locale et partager les bons plans que j'utilise vraiment"
+                  placeholder="Ex. Présente-moi de façon humaine à partir de mon parcours, de mon approche et de ce qui compte dans ma façon de travailler"
                 />
               </>
             ) : null}
