@@ -948,13 +948,13 @@ export default function BuilderPage() {
     const allText = [config.heroTagline, config.heroTitle, config.heroSubtitle, config.aboutHeading, config.aboutText].filter((value) => value.trim());
     const normalized = allText.map((value) => value.trim().toLowerCase().replace(/[.!?]+$/, ""));
     checks.push({ label: tr("Répétitions évidentes", "Obvious repetition"), detail: new Set(normalized).size === normalized.length ? tr("Aucun texte identique entre les champs principaux.", "No identical copy appears across the main fields.") : tr("Deux champs contiennent le même texte : diversifiez-les.", "Two fields contain the same text: make them more distinct."), status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
-    const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter/i.test(allText.join(" "));
+    const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter|your text here|sample text|text to complete/i.test(allText.join(" "));
     checks.push({ label: tr("Texte à compléter", "Placeholder copy"), detail: placeholders ? tr("Un texte de démonstration semble encore présent.", "Demo or placeholder copy still appears to be present.") : tr("Aucun texte de démonstration connu détecté.", "No known placeholder copy detected."), status: placeholders ? "warn" : "pass", step: "story" });
     const responsiveTextOk = config.heroTitle.trim().length <= 90
       && config.heroSubtitle.trim().length <= 320
       && config.brandName.trim().length <= 70
       && (!config.design.showBooking || config.bookingLabel.trim().length <= 60);
-    checks.push({ label: "Responsive du contenu", detail: responsiveTextOk ? "Les longueurs principales restent adaptées aux petits écrans." : "Un titre, une introduction, le nom du site ou le CTA est trop long pour un affichage mobile confortable.", status: responsiveTextOk ? "pass" : "warn", step: "story" });
+    checks.push({ label: tr("Responsive du contenu", "Responsive content"), detail: responsiveTextOk ? tr("Les longueurs principales restent adaptées aux petits écrans.", "Main text lengths remain suitable for small screens.") : tr("Un titre, une introduction, le nom du site ou le CTA est trop long pour un affichage mobile confortable.", "A title, introduction, website name or CTA is too long for comfortable mobile display."), status: responsiveTextOk ? "pass" : "warn", step: "story" });
     const focusOk = !config.design.backgroundPhotoUrl
       || (config.design.backgroundPositionX >= 10 && config.design.backgroundPositionX <= 90 && config.design.backgroundPositionY >= 10 && config.design.backgroundPositionY <= 85);
     checks.push({ label: tr("Cadrage mobile", "Mobile cropping"), detail: focusOk ? tr("Le point focal de la photo reste dans une zone sûre pour le recadrage cover.", "The photo focal point remains in a safe area for cover cropping.") : tr("Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", "The focal point is very close to an edge: check the mobile result."), status: focusOk ? "pass" : "warn", step: "design" });
@@ -969,7 +969,7 @@ export default function BuilderPage() {
     const invalidAssignments = enabledPages.flatMap((page) => page.assetIds || []).filter((id) => !clearedAssetIds.has(id));
     const architectureOk = enabledPages.some((page) => page.kind === "home") && new Set(pageSlugs).size === pageSlugs.length && (config.architecture.mode === "single" || enabledPages.length > 1);
     checks.push({ label: tr("Affectation des contenus", "Content assignment"), detail: invalidAssignments.length ? tr("Une page référence un contenu non autorisé ou aux droits non validés.", "A page references content that is not authorized or whose rights are not validated.") : tr("Les contenus affectés aux pages sont autorisés à la publication.", "Content assigned to pages is authorized for publication."), status: invalidAssignments.length ? "warn" : "pass", step: "story" });
-    checks.push({ label: "Architecture du site", detail: architectureOk ? `${enabledPages.length} page(s), hiérarchie et URLs cohérentes.` : "La structure des pages contient une incohérence à corriger.", status: architectureOk ? "pass" : "warn", step: "story" });
+    checks.push({ label: tr("Architecture du site", "Website architecture"), detail: architectureOk ? `${enabledPages.length} ${tr("page(s), hiérarchie et URLs cohérentes.", "page(s), hierarchy and URLs are consistent.")}` : tr("La structure des pages contient une incohérence à corriger.", "The page structure contains an inconsistency that needs correction."), status: architectureOk ? "pass" : "warn", step: "story" });
     const modules = config.design.modules;
     const validYoutubeUrl = (value: string) => {
       try {
@@ -984,13 +984,13 @@ export default function BuilderPage() {
       }
     };
     const moduleProblems: string[] = [];
-    if (modules.gallery.enabled && modules.gallery.images.length === 0) moduleProblems.push("galerie");
+    if (modules.gallery.enabled && modules.gallery.images.length === 0) moduleProblems.push(tr("galerie", "gallery"));
     if (modules.faq.enabled && !modules.faq.items.some((item) => item.question.trim() && item.answer.trim())) moduleProblems.push("FAQ");
-    if (modules.testimonials.enabled && !modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) moduleProblems.push("témoignages");
-    if (modules.contact.enabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email)) moduleProblems.push("contact");
-    if (modules.video.enabled && !validYoutubeUrl(modules.video.url)) moduleProblems.push("vidéo");
-    if (modules.figures.enabled && !modules.figures.items.some((item) => item.value.trim() && item.label.trim())) moduleProblems.push("chiffres clés");
-    if (modules.benefits.enabled && !modules.benefits.items.some((item) => item.title.trim() && item.text.trim())) moduleProblems.push("avantages");
+    if (modules.testimonials.enabled && !modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) moduleProblems.push(tr("témoignages", "testimonials"));
+    if (modules.contact.enabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email)) moduleProblems.push(tr("contact", "contact"));
+    if (modules.video.enabled && !validYoutubeUrl(modules.video.url)) moduleProblems.push(tr("vidéo", "video"));
+    if (modules.figures.enabled && !modules.figures.items.some((item) => item.value.trim() && item.label.trim())) moduleProblems.push(tr("chiffres clés", "key figures"));
+    if (modules.benefits.enabled && !modules.benefits.items.some((item) => item.title.trim() && item.text.trim())) moduleProblems.push(tr("avantages", "benefits"));
     const moduleReady = moduleProblems.length === 0;
     checks.push({ label: tr("Modules activés", "Enabled sections"), detail: moduleReady ? tr("Les rubriques activées ont du contenu publiable.", "Enabled sections contain publishable content.") : `${tr("À compléter :", "To complete:")} ${moduleProblems.join(", ")}.`, status: moduleReady ? "pass" : "warn", step: "options" });
     const galleryAccessible = !modules.gallery.enabled || modules.gallery.images.length === 0 || modules.gallery.images.every((image) => image.caption.trim().length >= 3);
@@ -1005,7 +1005,7 @@ export default function BuilderPage() {
         ? tr("La relecture orthographe, grammaire et cohérence n’a pas encore été lancée.", "Spelling, grammar and consistency review has not been run yet.")
         : reviewResult.issues.length
           ? `${reviewResult.issues.length} ${tr("suggestion(s) restent à examiner avant publication.", "suggestion(s) remain to review before publishing.")}`
-          : "Orthographe, grammaire, cohérence et clarté ont été relues sans correction restante.",
+          : tr("Orthographe, grammaire, cohérence et clarté ont été relues sans correction restante.", "Spelling, grammar, consistency and clarity were reviewed with no remaining corrections."),
       status: editorialReviewOk ? "pass" : "warn",
       step: "review"
     });
@@ -1015,12 +1015,12 @@ export default function BuilderPage() {
   const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
   const qualityWarnings = qualityChecks.length - qualityPassed;
   const reviewFieldLabels: Partial<Record<keyof SiteConfig, string>> = {
-    heroTagline: "Accroche",
-    heroTitle: "Titre principal",
-    heroSubtitle: "Introduction",
-    aboutHeading: "Titre de présentation",
-    aboutText: "Présentation",
-    bookingLabel: "Bouton de rendez-vous"
+    heroTagline: tr("Accroche", "Tagline"),
+    heroTitle: tr("Titre principal", "Main headline"),
+    heroSubtitle: tr("Introduction", "Introduction"),
+    aboutHeading: tr("Titre de présentation", "About heading"),
+    aboutText: tr("Présentation", "About text"),
+    bookingLabel: tr("Bouton de rendez-vous", "Booking button")
   };
   const currentReviewText = (field: keyof SiteConfig) => {
     const value = config[field];
@@ -1043,7 +1043,7 @@ export default function BuilderPage() {
     }
     const missingLegal = legalMissingFields(config.legal, config.firstName, config.lastName);
     if (missingLegal.length) {
-      next.push({ message: `Informations légales à compléter : ${missingLegal.slice(0, 3).join(", ")}${missingLegal.length > 3 ? "…" : ""}`, step: "options" });
+      next.push({ message: `${tr("Informations légales à compléter :", "Legal information to complete:")} ${missingLegal.slice(0, 3).join(", ")}${missingLegal.length > 3 ? "…" : ""}`, step: "options" });
     }
     return next;
   }, [config, bookingLinkStatus, tr]);
@@ -1135,13 +1135,13 @@ export default function BuilderPage() {
     if (!file || !remoteMode) return;
 
     if (!["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
-      setSyncError("Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.");
+      setSyncError(tr("Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.", "Unsupported format. Use a JPEG, PNG, WebP or AVIF image."));
       event.target.value = "";
       return;
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      setSyncError("Cette image dépasse 8 Mo. Choisissez une photo plus légère avant l’envoi.");
+      setSyncError(tr("Cette image dépasse 8 Mo. Choisissez une photo plus légère avant l’envoi.", "This image is larger than 8 MB. Choose a smaller image before uploading."));
       event.target.value = "";
       return;
     }
@@ -1447,7 +1447,7 @@ export default function BuilderPage() {
                           ? tr("Brief suffisamment détaillé pour lancer l’analyse Premium.", "Your brief is detailed enough to start the Premium analysis.")
                           : architectBriefLength === 0
                             ? tr("Commencez par quelques phrases : activité, public, objectif et ton souhaité.", "Start with a few sentences about your activity, audience, goal and desired tone.")
-                            : `Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`}
+                            : tr(`Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`, `About ${80 - architectBriefLength} more character${80 - architectBriefLength > 1 ? "s" : ""} needed to give the Site Architect enough context.`)}
                       </small>
                     </label>
                     <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? tr("Stratégie, création et audit en cours…", "Strategy, creation and quality review in progress…") : tr("Créer avec l’Architecte Premium", "Create with the Premium Site Architect")} <span aria-hidden="true">→</span></button>
@@ -1485,8 +1485,8 @@ export default function BuilderPage() {
                         <div className="architect-audit">
                           <b>
                             ✓ {architectProposal.premiumAudit.finalReviewPerformed
-                              ? "Double contrôle Premium validé"
-                              : "Audit Premium validé"}
+                              ? tr("Double contrôle Premium validé", "Premium double-check passed")
+                              : tr("Audit Premium validé", "Premium audit passed")}
                           </b>
                           <p>{architectProposal.premiumAudit.qualityNote}</p>
                           {architectProposal.premiumAudit.finalReviewPerformed ? (
@@ -1501,10 +1501,10 @@ export default function BuilderPage() {
                           ) : null}
                           {architectProposal.premiumAudit.deterministicChecksPerformed ? (
                             <small>
-                              Contrôle structurel automatique validé · {architectProposal.premiumAudit.deterministicIssuesDetected} alerte{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} résiduelle{architectProposal.premiumAudit.deterministicIssuesDetected > 1 ? "s" : ""} · aucun blocage.
+                              {tr("Contrôle structurel automatique validé", "Automated structural check passed")} · {architectProposal.premiumAudit.deterministicIssuesDetected} {tr("alerte(s) résiduelle(s)", "remaining alert(s)")} · {tr("aucun blocage", "no blocking issue")}.
                             </small>
                           ) : null}
-                          {architectProposal.premiumAudit.strengths.length ? <small>Points forts : {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
+                          {architectProposal.premiumAudit.strengths.length ? <small>{tr("Points forts :", "Strengths:")} {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
                         </div>
                         <div className="architect-human-eval">
                           <div>
@@ -1539,12 +1539,12 @@ export default function BuilderPage() {
                                 <div className="architect-human-eval-reasons">
                                   <span>{tr("Qu’est-ce qui vous gêne surtout ?", "What needs the most improvement?")}</span>
                                   {([
-                                    ["need_mismatch", "Compréhension du besoin"],
-                                    ["copy", "Textes"],
-                                    ["structure", "Structure / rubriques"],
-                                    ["design", "Direction visuelle"],
-                                    ["generic", "Trop générique"],
-                                    ["other", "Autre"]
+                                    ["need_mismatch", tr("Compréhension du besoin", "Understanding the need")],
+                                    ["copy", tr("Textes", "Copy")],
+                                    ["structure", tr("Structure / rubriques", "Structure / sections")],
+                                    ["design", tr("Direction visuelle", "Visual direction")],
+                                    ["generic", tr("Trop générique", "Too generic")],
+                                    ["other", tr("Autre", "Other")]
                                   ] as Array<[ArchitectQualityReason, string]>).map(([reason, label]) => (
                                     <button
                                       key={reason}
@@ -1623,7 +1623,7 @@ export default function BuilderPage() {
                         <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
                       </div>
                     ) : null}
-                    <p className="guided-writing-intro">Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».</p>
+                    <p className="guided-writing-intro">{tr("Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».", "Examples: “make the website feel more premium”, “switch to three pages”, “focus more on families”, “use my photos in the gallery and simplify the homepage”.")}</p>
                     <label className="guided-question"><span>{tr("Modification souhaitée", "Requested change")}</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!premiumArchitectAvailable} placeholder={tr("Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible.", "Describe what you want to change. AI will preserve the rest as much as possible.")} /></label>
                     <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? tr("Préparation de la révision…", "Preparing revision…") : tr("Préparer la révision", "Prepare revision")} <span aria-hidden="true">→</span></button>
                     {revisionProposal ? (
@@ -1641,7 +1641,7 @@ export default function BuilderPage() {
                             {tr("Tout élément absent de cette liste est conservé. L’IA reçoit aussi cette règle comme contrainte de qualité pendant la révision.", "Anything not listed here is preserved. AI also receives this rule as a quality constraint during revision.")}
                           </small>
                         </div>
-                        <p>Architecture proposée : {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : "site monopage"} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
+                        <p>{tr("Architecture proposée :", "Proposed architecture:")} {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} ${tr("pages", "pages")}` : tr("site monopage", "single-page website")} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
                         <p>Structure : {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · largeur {revisionProposal.design.contentWidth}.</p>
                         <div className="ai-field-actions">
                           <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>{tr("Appliquer cette révision", "Apply this revision")}</button>
@@ -1664,7 +1664,7 @@ export default function BuilderPage() {
 
                   <div className="guided-writing-body">
                     <p className="guided-writing-intro">
-                      Pas besoin de savoir rédiger un site. Répondez comme vous parleriez à quelqu'un.
+                      {tr("Pas besoin de savoir rédiger un site. Répondez comme vous parleriez à quelqu’un.", "You do not need to know how to write a website. Answer as you would speak to someone.")}
                       Vous pourrez modifier chaque phrase ensuite.
                     </p>
 
@@ -1672,7 +1672,7 @@ export default function BuilderPage() {
                       <span><i>1</i> {tr("Que proposez-vous ou quelle est votre activité ?", "What do you offer or what is your activity?")}</span>
                       <textarea
                         rows={3}
-                        placeholder="Ex. Je suis photographe de famille et de couple, avec une approche naturelle et peu posée."
+                        placeholder={tr("Ex. Je suis photographe de famille et de couple, avec une approche naturelle et peu posée.", "e.g. I’m a family and couples photographer with a natural, relaxed approach.")}
                         value={guidedAnswers.activity}
                         onChange={(e) => setGuidedAnswers((current) => ({ ...current, activity: e.target.value }))}
                       />
@@ -1735,7 +1735,7 @@ export default function BuilderPage() {
                   <p>{tr("La version préparée n’est qu’un point de départ. Changez les mots pour qu’ils vous ressemblent vraiment.", "The prepared version is only a starting point. Change the wording so it genuinely sounds like you.")}</p>
                 </div>
                 <Field label={tr("Petite phrase au-dessus du titre", "Short line above the headline")} hint={tr("Facultatif. Exemple : Voyagez autrement · partagez davantage.", "Optional. Example: A simpler way to travel and share.")}>
-                  <input spellCheck maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
+                  <input spellCheck maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder={tr("Voyage d’abord · découverte ensuite", "Your activity · your difference")} />
                 </Field>
                 <AiTextAssistant
                   field="heroTagline"
@@ -1750,7 +1750,7 @@ export default function BuilderPage() {
                   placeholder="Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique"
                 />
                 <Field label={tr("Titre principal", "Main headline")}>
-                  <textarea spellCheck rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
+                  <textarea spellCheck rows={2} placeholder={tr("Ex. Une autre façon de préparer et profiter de vos voyages", "e.g. A clearer, simpler way to discover what I offer")} value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="heroTitle"
@@ -1762,10 +1762,10 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroTitle", text)}
-                  placeholder="Ex. Un titre clair et mémorable qui fait comprendre rapidement ce que je propose"
+                  placeholder={tr("Ex. Un titre clair et mémorable qui fait comprendre rapidement ce que je propose", "e.g. A clear, memorable headline that quickly explains what I offer")}
                 />
                 <Field label={tr("Introduction", "Introduction")}>
-                  <textarea spellCheck rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
+                  <textarea spellCheck rows={5} placeholder={tr("En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager.", "In 2 or 3 sentences: what you offer, what it brings to people and why it matters.")} value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="heroSubtitle"
@@ -1797,10 +1797,10 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("aboutHeading", text)}
-                  placeholder="Ex. Un titre personnel et simple, moins formel que « À propos »"
+                  placeholder={tr("Ex. Un titre personnel et simple, moins formel que « À propos »", "e.g. A personal, simple heading that feels less formal than “About”")}
                 />
                 <Field label={tr("Votre présentation", "About you")}>
-                  <textarea spellCheck rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
+                  <textarea spellCheck rows={7} placeholder={tr("Parlez de vous comme vous le feriez à quelqu’un que vous venez de rencontrer : votre parcours, votre expérience et ce que vous aimez partager.", "Introduce yourself as you would to someone you have just met: your background, experience and what you enjoy sharing.")} value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="aboutText"
@@ -1812,7 +1812,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("aboutText", text)}
-                  placeholder="Ex. Présente-moi de façon humaine à partir de mon parcours, de mon approche et de ce qui compte dans ma façon de travailler"
+                  placeholder={tr("Ex. Présente-moi de façon humaine à partir de mon parcours, de mon approche et de ce qui compte dans ma façon de travailler", "e.g. Introduce me in a human way based on my background, approach and what matters in how I work")}
                 />
               </>
             ) : null}
@@ -1903,7 +1903,7 @@ export default function BuilderPage() {
                   <div><b>{tr("Votre rendez-vous", "Your booking link")}</b><p>{tr("Un seul lien suffit pour transformer l’intérêt en échange.", "One link is enough to turn interest into a conversation.")}</p></div>
                 </div>
                 <Field label={tr("Texte du bouton", "Button text")} hint={tr("Ce texte apparaîtra sur le bouton lorsque vous aurez ajouté un lien de rendez-vous.", "This text appears on the button once you add a booking link.")}>
-                  <input spellCheck placeholder="Ex. Découvrir la plateforme" value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
+                  <input spellCheck placeholder={tr("Ex. Découvrir la plateforme", "e.g. Discover more")} value={config.bookingLabel} onChange={(e) => update("bookingLabel", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="bookingLabel"
@@ -1915,7 +1915,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("bookingLabel", text)}
-                  placeholder="Ex. Un appel à l'action rassurant, sans pression commerciale"
+                  placeholder={tr("Ex. Un appel à l’action rassurant, sans pression commerciale", "e.g. A reassuring call to action without sales pressure")}
                 />
                 <Field label={tr("Lien de rendez-vous", "Booking link")} hint={tr("Facultatif. Le lien doit commencer par https:// et contenir l’adresse complète de votre page.", "Optional. The link must start with https:// and contain the full address of your booking page.")}>
                   <input
@@ -2013,11 +2013,11 @@ export default function BuilderPage() {
                     <VisibilityOption
                       checked={config.design.showTravelAdvantageLogo}
                       title="Logo Travel Advantage « Independent Distributor »"
-                      activeLabel="Affiché"
-                      inactiveLabel="Masqué"
+                      activeLabel={tr("Affiché", "Visible")}
+                      inactiveLabel={tr("Masqué", "Hidden")}
                       description={config.design.showTravelAdvantageLogo
-                        ? "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire."
-                        : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée."}
+                        ? tr("Le logo sera visible en bas du site avec la mention d’indépendance obligatoire.", "The logo will appear in the footer with the required independence disclosure.")
+                        : tr("Le logo n’apparaît pas sur le site. La mention d’indépendance reste affichée.", "The logo will not appear on the website. The independence disclosure remains visible.")}
                       logo="/logos/travel-advantage-independent.svg"
                       onChange={(checked) => update("design", { ...config.design, showTravelAdvantageLogo: checked })}
                     />
@@ -2076,7 +2076,7 @@ export default function BuilderPage() {
 
                 <div className="quality-summary-card">
                   <div className="quality-summary-head">
-                    <div><span className="mini">QUALITY CHECK AJG</span><strong>{qualityPassed}/{qualityChecks.length} contrôles réussis</strong></div>
+                    <div><span className="mini">AJG QUALITY CHECK</span><strong>{qualityPassed}/{qualityChecks.length} {tr("contrôles réussis", "checks passed")}</strong></div>
                     <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} ${tr(qualityWarnings > 1 ? "améliorations" : "amélioration", qualityWarnings > 1 ? "improvements" : "improvement")}` : tr("Prêt ✓", "Ready ✓")}</span>
                   </div>
                   <div className="quality-check-list">
