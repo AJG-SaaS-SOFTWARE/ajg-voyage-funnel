@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AccountShell } from "../../components/AccountShell";
 import { freeEntitlements, getMyAiUsage, getMySiteEntitlements, getMyStorageUsage, type AiUsage, type StorageUsage, type SubscriptionEntitlements } from "../../lib/subscription";
 import { getMySites } from "../../lib/supabase-site-repository";
 import { startProCheckout } from "../../lib/billing-access";
@@ -20,13 +20,12 @@ export default function PlansPage() {
 
   const checkout=async()=>{if(!siteId)return;setCheckoutBusy(true);setCheckoutMessage("");try{await startProCheckout(siteId);}catch(error){setCheckoutMessage(error instanceof Error?error.message:"Paiement Stripe indisponible.");setCheckoutBusy(false);}};
 
-  return <main className="plans-page">
-    <section className="plans-hero">
-      <p className="eyebrow">AJG Site Builder</p>
-      <h1>Une offre simple aujourd’hui, prête pour la monétisation.</h1>
-      <p>Les droits techniques sont déjà séparés du paiement. Les tarifs commerciaux seront branchés au prestataire de paiement sans disperser les règles dans le builder.</p>
-      <div className="builder-actions"><Link className="button secondary" href="/builder">← Retour au builder</Link><Link className="button secondary" href="/billing">Facturation & récupération</Link></div>
-    </section>
+  return <AccountShell
+    active="plans"
+    eyebrow="Offre & usages"
+    title="Mon offre"
+    description="Consultez les droits, quotas et capacités de votre site. Les règles techniques restent séparées du prix commercial et de la facturation."
+  >
     {sites.length>1?<section className="panel"><label>Site<select value={siteId} onChange={e=>{setSiteId(e.target.value);void load(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
     {loaded ? <section className="usage-card" aria-label="Utilisation IA"><div><p className="eyebrow">Votre utilisation</p><h2>{usage.month} / {current.aiMonthlyLimit} générations IA ce mois-ci</h2><p>{usage.today} / {current.aiDailyLimit} aujourd’hui · limite instantanée {current.aiMinuteLimit}/min</p></div><progress max={current.aiMonthlyLimit} value={Math.min(usage.month,current.aiMonthlyLimit)} aria-label="Quota IA mensuel utilisé" /></section> : null}
     {loaded ? <section className="usage-card" aria-label="Utilisation stockage"><div><p className="eyebrow">Stockage</p><h2>{(storage.usedBytes / 1024 / 1024).toFixed(storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} Mo / {storage.limitMb} Mo</h2><p>Photos, images, audio et documents importés dans AJG.</p></div><progress max={storage.limitMb * 1024 * 1024} value={Math.min(storage.usedBytes,storage.limitMb * 1024 * 1024)} aria-label="Quota de stockage utilisé" /></section> : null}
@@ -42,9 +41,9 @@ export default function PlansPage() {
         <ul><li>500 générations IA / mois</li><li>2 Go de stockage</li><li>Architecte Premium : stratégie → création → audit → raffinement</li><li>Architecture, textes, modules et direction visuelle cohérents</li><li>Domaine personnalisé</li></ul>
         <p className="plan-status">{loaded && current.planKey === "pro" ? "Votre offre actuelle" : "Souscription sécurisée via Stripe"}</p>
         {loaded && current.planKey !== "pro" ? <button type="button" className="button primary" disabled={!siteId || checkoutBusy} onClick={() => void checkout()}>{checkoutBusy ? "Ouverture de Stripe…" : "Passer à Pro"}</button> : null}
-        {checkoutMessage ? <p className="plans-note" role="status">{checkoutMessage}</p> : null}
+        {checkoutMessage ? <p className="account-note" role="status">{checkoutMessage}</p> : null}
       </article>
     </section>
-    <p className="plans-note">Les quotas constituent le catalogue technique. Le prix, la périodicité et un éventuel essai restent configurés dans Stripe : aucune valeur commerciale n’est codée dans le Builder.</p>
-  </main>;
+    <p className="account-note">Les quotas constituent le catalogue technique. Le prix, la périodicité et un éventuel essai restent configurés dans Stripe : aucune valeur commerciale n’est codée dans le Builder.</p>
+  </AccountShell>;
 }
