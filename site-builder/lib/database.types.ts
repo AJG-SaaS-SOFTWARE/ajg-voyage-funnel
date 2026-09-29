@@ -71,19 +71,33 @@ export type Database = {
         Row: {
           created_at: string
           id: number
+          request_id: string | null
+          site_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: number
+          request_id?: string | null
+          site_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           id?: number
+          request_id?: string | null
+          site_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_events_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ajg_voyage_leads: {
         Row: {
@@ -1030,6 +1044,10 @@ export type Database = {
           used_bytes: number
         }[]
       }
+      release_my_site_ai_generation: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
       request_my_custom_domain: {
         Args: { p_hostname: string; p_site_id: string }
         Returns: {
@@ -1047,6 +1065,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reserve_my_site_ai_generation: {
+        Args: { p_request_id: string; p_site_id: string }
+        Returns: string
       }
       submit_contact_message: {
         Args: {
