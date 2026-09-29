@@ -127,7 +127,10 @@ test("English Builder core has no known French-only residuals in customer paths"
   assert.doesNotMatch(builder, />Architecture : /);
   assert.doesNotMatch(builder, />Structure : /);
   assert.doesNotMatch(builder, />Direction visuelle : /);
-  assert.doesNotMatch(builder, /Ces réponses sont facultatives\. Répondez uniquement/);
+  assert.match(
+    builder,
+    /tr\("Ces réponses sont facultatives\. Répondez uniquement[^"]+", "These answers are optional\./
+  );
   assert.doesNotMatch(builder, /throw new Error\("Connectez le stockage du site/);
 
   assert.doesNotMatch(privacyApi, /error: "Reconnectez-vous pour continuer\."/);
