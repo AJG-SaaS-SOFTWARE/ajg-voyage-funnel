@@ -12,6 +12,49 @@ export type PublicSiteRecord = {
   updatedAt: string;
 };
 
+const PUBLIC_READ_RETRY_DELAYS_MS = [0, 160, 480] as const;
+
+function transientPublicReadError(error: unknown) {
+  const value = error && typeof error === "object"
+    ? [
+        "message" in error ? String((error as { message?: unknown }).message ?? "") : "",
+        "details" in error ? String((error as { details?: unknown }).details ?? "") : "",
+        "hint" in error ? String((error as { hint?: unknown }).hint ?? "") : "",
+        "code" in error ? String((error as { code?: unknown }).code ?? "") : ""
+      ].join(" ")
+    : String(error ?? "");
+
+  return /(fetch failed|network|enotfound|econnreset|etimedout|timeout|web server is down|bad gateway|service unavailable|gateway timeout|\b52[0-4]\b|\b50[234]\b)/i.test(value);
+}
+
+async function publicReadWithRetry(
+  read: () => PromiseLike<{ data: any; error: any }>
+) {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < PUBLIC_READ_RETRY_DELAYS_MS.length; attempt += 1) {
+    const delay = PUBLIC_READ_RETRY_DELAYS_MS[attempt];
+    if (delay) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    try {
+      const result = await read();
+      if (!result.error) return result.data;
+      lastError = result.error;
+    } catch (error) {
+      lastError = error;
+    }
+
+    const finalAttempt = attempt === PUBLIC_READ_RETRY_DELAYS_MS.length - 1;
+    if (finalAttempt || !transientPublicReadError(lastError)) {
+      throw lastError;
+    }
+  }
+
+  throw lastError || new Error("public_site_read_failed");
+}
+
 function configFromRow(row: any): SiteConfig {
   const enabled = Array.isArray(row.enabled_languages) ? row.enabled_languages : [row.primary_language];
   const language: SiteLanguage =
@@ -55,15 +98,16 @@ export async function getPublicSite(slug: string): Promise<PublicSiteRecord | nu
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
-  const { data, error } = await supabase
-    .from("sites")
-    .select("*")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .eq("public_access_state", "live")
-    .maybeSingle();
+  const data = await publicReadWithRetry(() =>
+    supabase
+      .from("sites")
+      .select("*")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .eq("public_access_state", "live")
+      .maybeSingle()
+  );
 
-  if (error) throw error;
   if (!data) return null;
 
   return {
@@ -81,11 +125,28 @@ export async function getPublicSiteByHostname(hostname: string): Promise<PublicS
   if (!url || !key) return null;
   const supabase = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const normalized = hostname.trim().toLowerCase().replace(/:\d+$/, "");
-  const { data: domain, error: domainError } = await supabase.from("domains").select("site_id").eq("hostname", normalized).eq("verification_status", "verified").eq("is_primary", true).maybeSingle();
-  if (domainError) throw domainError;
+
+  const domain = await publicReadWithRetry(() =>
+    supabase
+      .from("domains")
+      .select("site_id")
+      .eq("hostname", normalized)
+      .eq("verification_status", "verified")
+      .eq("is_primary", true)
+      .maybeSingle()
+  );
   if (!domain) return null;
-  const { data, error } = await supabase.from("sites").select("*").eq("id", domain.site_id).eq("status", "published").eq("public_access_state", "live").maybeSingle();
-  if (error) throw error;
+
+  const data = await publicReadWithRetry(() =>
+    supabase
+      .from("sites")
+      .select("*")
+      .eq("id", domain.site_id)
+      .eq("status", "published")
+      .eq("public_access_state", "live")
+      .maybeSingle()
+  );
+
   return data ? { id: data.id, slug: data.slug, config: configFromRow(data), publishedAt: data.published_at, updatedAt: data.updated_at } : null;
 }
 
@@ -98,16 +159,22 @@ export async function publicSiteUrl(siteId: string, slug: string) {
       auth: { persistSession: false, autoRefreshToken: false }
     });
 
-    const { data: domain } = await supabase
-      .from("domains")
-      .select("hostname")
-      .eq("site_id", siteId)
-      .eq("verification_status", "verified")
-      .eq("is_primary", true)
-      .maybeSingle();
+    try {
+      const data = await publicReadWithRetry(() =>
+        supabase
+          .from("domains")
+          .select("hostname")
+          .eq("site_id", siteId)
+          .eq("verification_status", "verified")
+          .eq("is_primary", true)
+          .maybeSingle()
+      );
 
-    if (domain?.hostname) {
-      return `https://${domain.hostname}`;
+      if (data?.hostname) {
+        return `https://${data.hostname}`;
+      }
+    } catch {
+      // Canonical resolution must never take a public site down.
     }
   }
 
