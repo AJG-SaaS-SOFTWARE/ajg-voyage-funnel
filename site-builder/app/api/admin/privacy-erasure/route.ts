@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { purgeBuilderAccount, purgeBuilderSite } from "../../../../../lib/privacy-purge";
+import { purgeBuilderAccount, purgeBuilderSite } from "../../../../lib/privacy-purge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
