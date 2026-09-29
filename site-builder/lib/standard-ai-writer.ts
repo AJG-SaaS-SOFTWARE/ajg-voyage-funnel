@@ -36,10 +36,6 @@ export function selectStandardContextEntries(
       .filter((item): item is StandardContextEntry => Boolean(item))
       .slice(0, max);
 
-  if (field === "siteArchitect" || field === "siteRevision") {
-    return entries.slice(0, 12);
-  }
-
   if (field === "guidedDraft") {
     return pick(
       [
