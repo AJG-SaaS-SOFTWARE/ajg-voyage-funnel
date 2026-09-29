@@ -1587,39 +1587,39 @@ export default function BuilderPage() {
                   </div>
                 </details>
                 <details className={"guided-writing-card ai-architect-card " + (!premiumArchitectAvailable ? "premium-feature-locked" : "")}>
-                  <summary><span className="guided-writing-icon">↻</span><span><b>Modifier tout le site avec l’IA</b><small>Premium · demandez une évolution globale sans écraser automatiquement votre version actuelle.</small></span><span className="guided-writing-badge">{premiumArchitectAvailable ? "Aperçu avant application" : "🔒 Pro"}</span></summary>
+                  <summary><span className="guided-writing-icon">↻</span><span><b>{en ? "Revise the whole website with AI" : "Modifier tout le site avec l’IA"}</b><small>{en ? "Premium · request a global change without automatically overwriting your current version." : "Premium · demandez une évolution globale sans écraser automatiquement votre version actuelle."}</small></span><span className="guided-writing-badge">{premiumArchitectAvailable ? (en ? "Preview before applying" : "Aperçu avant application") : "🔒 Pro"}</span></summary>
                   <div className="guided-writing-body">
                     {!premiumArchitectAvailable ? (
                       <div className="premium-feature-lock-note" role="note">
-                        <div><b>Révision globale réservée à Pro</b><p>Vous pouvez toujours modifier chaque champ manuellement ou utiliser l’assistant IA standard prévu dans les champs autorisés.</p></div>
+                        <div><b>{en ? "Global revision is a Pro feature" : "Révision globale réservée à Pro"}</b><p>{en ? "You can still edit every field manually or use the standard AI assistant in supported fields." : "Vous pouvez toujours modifier chaque champ manuellement ou utiliser l’assistant IA standard prévu dans les champs autorisés."}</p></div>
                         <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
                       </div>
                     ) : null}
-                    <p className="guided-writing-intro">Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».</p>
-                    <label className="guided-question"><span>Modification souhaitée</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!premiumArchitectAvailable} placeholder="Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible." /></label>
-                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? "Préparation de la révision…" : "Préparer la révision"} <span aria-hidden="true">→</span></button>
+                    <p className="guided-writing-intro">{en ? "Examples: “make the website feel more premium”, “switch to three pages”, “focus more on families”, “use my photos in the gallery and simplify the homepage”." : "Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil »."}</p>
+                    <label className="guided-question"><span>{en ? "Requested change" : "Modification souhaitée"}</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!premiumArchitectAvailable} placeholder={en ? "Describe what you want to change. AI will preserve the rest as much as possible." : "Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible."} /></label>
+                    <button type="button" className="button primary premium-button" disabled={!premiumArchitectAvailable || revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? (en ? "Preparing revision…" : "Préparation de la révision…") : (en ? "Prepare revision" : "Préparer la révision")} <span aria-hidden="true">→</span></button>
                     {revisionProposal ? (
                       <div className="ai-current-note revision-preview" role="status">
-                        <b>Révision prête à comparer</b>
+                        <b>{en ? "Revision ready to compare" : "Révision prête à comparer"}</b>
                         <p><strong>{revisionProposal.heroTitle}</strong><br />{revisionProposal.heroSubtitle}</p>
                         <div className="revision-scope-summary">
-                          <span>Zones modifiées</span>
+                          <span>{en ? "Changed areas" : "Zones modifiées"}</span>
                           {revisionChangeSummary.length ? (
                             <div>{revisionChangeSummary.map((item) => <em key={item}>{item}</em>)}</div>
                           ) : (
-                            <p>Aucune différence détectée avec votre version actuelle.</p>
+                            <p>{en ? "No difference detected from your current version." : "Aucune différence détectée avec votre version actuelle."}</p>
                           )}
                           <small>
-                            Tout élément absent de cette liste est conservé. L’IA reçoit aussi cette règle comme contrainte de qualité pendant la révision.
+                            {en ? "Anything not listed here is preserved. AI also receives this rule as a quality constraint during revision." : "Tout élément absent de cette liste est conservé. L’IA reçoit aussi cette règle comme contrainte de qualité pendant la révision."}
                           </small>
                         </div>
-                        <p>Architecture proposée : {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : "site monopage"} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
-                        <p>Structure : {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · largeur {revisionProposal.design.contentWidth}.</p>
+                        <p>{en ? "Proposed architecture" : "Architecture proposée"}: {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : (en ? "single-page website" : "site monopage")} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
+                        <p>{en ? "Structure" : "Structure"}: {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · {en ? "width" : "largeur"} {revisionProposal.design.contentWidth}.</p>
                         <div className="ai-field-actions">
-                          <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>Appliquer cette révision</button>
-                          <button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>Conserver mon site actuel</button>
+                          <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>{en ? "Apply this revision" : "Appliquer cette révision"}</button>
+                          <button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>{en ? "Keep my current website" : "Conserver mon site actuel"}</button>
                         </div>
-                        <small>Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition.</small>
+                        <small>{en ? "Your current website stays unchanged until you apply this proposal." : "Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition."}</small>
                       </div>
                     ) : null}
                   </div>
