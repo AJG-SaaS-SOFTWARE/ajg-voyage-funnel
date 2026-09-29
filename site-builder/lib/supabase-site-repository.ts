@@ -5,6 +5,10 @@ import { normalizeSiteDesign } from "./site-design";
 import { normalizeSiteLegalConfig } from "./site-legal";
 import { getProductLocale } from "./product-i18n";
 
+function clientTr(fr: string, en: string) {
+  return getProductLocale() === "en" ? en : fr;
+}
+
 export type RemoteSite = {
   id: string;
   ownerId: string;
@@ -108,7 +112,7 @@ function toRemote(row: any, draft?: any): RemoteSite {
 
 async function ensureManagedDomain(siteId: string, slug: string) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
 
   const root =
     process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
@@ -181,10 +185,10 @@ export async function getMySite(siteId?: string): Promise<RemoteSite | null> {
 
 export async function saveMySite(config: SiteConfig, publish = false, siteId?: string): Promise<RemoteSite> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
 
   const user = await getCurrentUser();
-  if (!user) throw new Error("Vous devez être connecté.");
+  if (!user) throw new Error(clientTr("Vous devez être connecté.", "You must be signed in."));
 
   const existing = await getMySite(siteId);
   const publishConfig = config;
@@ -192,8 +196,8 @@ export async function saveMySite(config: SiteConfig, publish = false, siteId?: s
     const { data: capabilities, error: capabilityError } = await supabase.rpc("get_my_site_capabilities", { p_site_id: existing.id });
     if (capabilityError) throw capabilityError;
     const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
-    if (!capability?.can_edit) throw new Error("Ce site est actuellement en accès lecture et export. Régularisez l’abonnement pour reprendre les modifications.");
-    if (publish && !capability?.can_publish) throw new Error("La publication est temporairement indisponible pour ce site. Régularisez l’abonnement pour publier à nouveau.");
+    if (!capability?.can_edit) throw new Error(clientTr("Ce site est actuellement en accès lecture et export. Régularisez l’abonnement pour reprendre les modifications.", "This website is currently limited to read and export access. Restore your subscription to resume editing."));
+    if (publish && !capability?.can_publish) throw new Error(clientTr("La publication est temporairement indisponible pour ce site. Régularisez l’abonnement pour publier à nouveau.", "Publishing is temporarily unavailable for this website. Restore your subscription to publish again."));
   }
   const nextPayload = payload(user, publishConfig, publish ? "published" : "draft");
 
@@ -249,19 +253,19 @@ export async function getPublishedSite(slug: string): Promise<RemoteSite | null>
 
 async function assertSiteCapability(siteId: string, capability: "can_edit" | "can_import" | "can_publish") {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const { data, error } = await supabase.rpc("get_my_site_capabilities", { p_site_id: siteId });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
-  if (!row?.[capability]) throw new Error("Cette action est temporairement indisponible pour ce site. Régularisez l’abonnement depuis votre espace de facturation.");
+  if (!row?.[capability]) throw new Error(clientTr("Cette action est temporairement indisponible pour ce site. Régularisez l’abonnement depuis votre espace de facturation.", "This action is temporarily unavailable for this website. Restore your subscription from the billing area."));
 }
 
 export async function uploadProfileImage(file: File, siteId: string) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
 
   const user = await getCurrentUser();
-  if (!user) throw new Error("Vous devez être connecté.");
+  if (!user) throw new Error(clientTr("Vous devez être connecté.", "You must be signed in."));
   await assertSiteCapability(siteId, "can_import");
   await assertStorageAllowance(siteId, file.size);
 
@@ -283,17 +287,17 @@ export async function uploadProfileImage(file: File, siteId: string) {
 
 async function assertStorageAllowance(siteId: string, bytes: number) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const { data, error } = await supabase.rpc("can_upload_site_media", { p_site_id: siteId, p_bytes: bytes });
   if (error) throw error;
-  if (data !== true) throw new Error("Votre quota de stockage est atteint. Supprimez un média ou passez à une offre avec davantage de stockage.");
+  if (data !== true) throw new Error(clientTr("Votre quota de stockage est atteint. Supprimez un média ou passez à une offre avec davantage de stockage.", "Your storage quota has been reached. Remove a media file or upgrade to a plan with more storage."));
 }
 
 export async function uploadSiteImage(file: Blob, siteId: string, category: "background" | "gallery") {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const user = await getCurrentUser();
-  if (!user) throw new Error("Vous devez être connecté.");
+  if (!user) throw new Error(clientTr("Vous devez être connecté.", "You must be signed in."));
   await assertSiteCapability(siteId, "can_import");
   await assertStorageAllowance(siteId, file.size);
   const objectPath = `${user.id}/${siteId}/${category}/${crypto.randomUUID()}.webp`;
@@ -306,14 +310,14 @@ export async function uploadSiteImage(file: Blob, siteId: string, category: "bac
 
 export async function uploadContentAsset(file: File, siteId: string) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const user = await getCurrentUser();
-  if (!user) throw new Error("Vous devez être connecté.");
+  if (!user) throw new Error(clientTr("Vous devez être connecté.", "You must be signed in."));
   await assertSiteCapability(siteId, "can_import");
-  if (file.size > 15 * 1024 * 1024) throw new Error("Ce fichier dépasse la limite de 15 Mo.");
+  if (file.size > 15 * 1024 * 1024) throw new Error(clientTr("Ce fichier dépasse la limite de 15 Mo.", "This file exceeds the 15 MB limit."));
 
   const allowed = new Set(["image/jpeg","image/png","image/webp","image/avif","audio/mpeg","audio/mp4","audio/ogg","audio/wav","application/pdf","text/plain"]);
-  if (!allowed.has(file.type)) throw new Error("Format non pris en charge. Utilisez JPG, PNG, WebP, AVIF, MP3, M4A, OGG, WAV, PDF ou TXT.");
+  if (!allowed.has(file.type)) throw new Error(clientTr("Format non pris en charge. Utilisez JPG, PNG, WebP, AVIF, MP3, M4A, OGG, WAV, PDF ou TXT.", "Unsupported format. Use JPG, PNG, WebP, AVIF, MP3, M4A, OGG, WAV, PDF or TXT."));
   await assertStorageAllowance(siteId, file.size);
   const extension = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
   const objectPath = `${user.id}/${siteId}/library/${crypto.randomUUID()}.${extension}`;
@@ -337,14 +341,14 @@ export async function getMyDomains(siteId?: string): Promise<SiteDomain[]> {
 
 export async function requestCustomDomain(hostname: string, siteId?: string): Promise<SiteDomain> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const site = await getMySite(siteId);
-  if (!site) throw new Error("Créez d’abord votre site.");
+  if (!site) throw new Error(clientTr("Créez d’abord votre site.", "Create your website first."));
   const normalized = hostname.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
   const { data, error } = await supabase.rpc("request_my_custom_domain", { p_site_id: site.id, p_hostname: normalized });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
-  if (!row) throw new Error("Impossible d’enregistrer ce domaine.");
+  if (!row) throw new Error(clientTr("Impossible d’enregistrer ce domaine.", "Unable to save this domain."));
   return { id: row.id, hostname: row.hostname, kind: "custom_domain", verificationStatus: row.verification_status as SiteDomain["verificationStatus"], isPrimary: row.is_primary };
 }
 
