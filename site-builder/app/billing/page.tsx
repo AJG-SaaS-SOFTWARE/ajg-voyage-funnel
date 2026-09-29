@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AccountShell } from "../../components/AccountShell";
 import { downloadMySiteExport, getMyBillingState, openStripeBillingPortal, type BillingState } from "../../lib/billing-access";
 import { getMySites } from "../../lib/supabase-site-repository";
 
@@ -39,13 +39,14 @@ export default function BillingPage() {
   }
 
   const limited = billing && !["free","trial","active"].includes(billing.state);
-  return <main className="plans-page">
-    <section className="plans-hero"><p className="eyebrow">Facturation & récupération</p><h1>Votre accès AJG Builder</h1>
-      <p>Les restrictions sont appliquées au site concerné. Vos données ne sont jamais supprimées au premier échec de paiement et aucune suppression automatique n’est déclenchée par les rappels de facturation.</p>
-      <div className="builder-actions"><Link className="secondary-link" href="/builder">Retour au Builder</Link><Link className="secondary-link" href="/plans">Voir mon offre</Link></div>
-    </section>
+  return <AccountShell
+    active="billing"
+    eyebrow="Facturation & récupération"
+    title="Votre accès AJG Builder"
+    description="Suivez l’état de paiement du site sélectionné, les éventuelles échéances de restriction et vos options de récupération. Un impayé ne déclenche jamais la suppression automatique de vos données."
+  >
     {sites.length>1?<section className="panel"><label>Site<select value={siteId} onChange={e=>{setSiteId(e.target.value);void load(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
-    {message ? <p className="plans-note">{message}</p> : null}
+    {message ? <p className="account-note">{message}</p> : null}
     {billing ? <section className="usage-card"><div><p className="eyebrow">État</p><h2>{billing.state}</h2>
       {limited ? <p>L’IA est coupée pendant la grâce. À la restriction, l’édition, les imports, la publication et les nouveaux formulaires sont également arrêtés. Le site public reste en ligne jusqu’à sa date de suspension.</p> : <p>Votre site dispose de ses capacités normales selon votre offre.</p>}
       <dl className="billing-dates"><div><dt>Fin de grâce / restriction</dt><dd>{date(billing.graceUntil || billing.restrictedAt)}</dd></div><div><dt>Suspension publique</dt><dd>{date(billing.publicSuspendAt)}</dd></div><div><dt>Export disponible jusqu’au</dt><dd>{date(billing.exportUntil)}</dd></div><div><dt>Fin de la fenêtre de récupération prévue</dt><dd>{date(billing.deleteAfter)}</dd></div></dl>
@@ -57,7 +58,7 @@ export default function BillingPage() {
           </button>
         ) : null}
       </div>
-      {limited && !billing.hasBillingAccount ? <p className="plans-note">Aucun compte Stripe n’est encore rattaché à ce site. Si vous souhaitez passer à Pro, utilisez la page Mon offre.</p> : null}
+      {limited && !billing.hasBillingAccount ? <p className="account-note">Aucun compte Stripe n’est encore rattaché à ce site. Si vous souhaitez passer à Pro, utilisez la page Mon offre.</p> : null}
     </div></section> : null}
-  </main>;
+  </AccountShell>;
 }
