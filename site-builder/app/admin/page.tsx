@@ -241,7 +241,7 @@ export default function AdminPage() {
     setMessage("");
     setBetaInviteBusy(true);
     try {
-      const result = await adminInviteBetaMember(email, betaDurationDays, locale);
+      const result = await adminInviteBetaMember(email, betaDurationDays, betaLocale);
       setBetaEmail("");
       await load();
       setMessage(
@@ -260,7 +260,7 @@ export default function AdminPage() {
     setMessage("");
     setBetaInviteBusy(true);
     try {
-      const result = await adminInviteBetaMember(email, betaDurationDays, betaLocale);
+      const result = await adminInviteBetaMember(email, betaDurationDays, locale);
       await load();
       setMessage(
         `Accès Beta Tester renouvelé pour ${result.member.email} pendant ${betaDurationDays} jours.`
