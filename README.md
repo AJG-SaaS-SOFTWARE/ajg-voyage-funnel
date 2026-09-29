@@ -7,8 +7,7 @@ Landing page mobile-first pour qualifier des prospects intéressés par Travel A
 - Site EN : https://voyage.ajgsolutionsgroup.com/en/
 - Hébergement : Vercel
 - Collecte : API Vercel `/api/travel-presentation` → Supabase (`ajg_voyage_leads`), avec notification technique via Resend
-- Réservation FR : Google Calendar — présentation individuelle avec Benoit
-- Réservation EN : Calendly — présentation individuelle avec Thibaut
+- Réservation FR / EN : Calendly — présentation individuelle avec Thibaut
 - Dépôt : `AJG-SaaS-SOFTWARE/ajg-voyage-funnel`
 
 ## Inclus
@@ -17,34 +16,33 @@ Landing page mobile-first pour qualifier des prospects intéressés par Travel A
 - questionnaire en 4 étapes
 - scoring léger des leads
 - capture automatique UTM + URL d’entrée + référent
-- formulaire compatible Netlify Forms
+- formulaire envoyé côté serveur vers l’API Vercel, avec stockage Supabase
 - honeypot anti-spam
 - consentement marketing B2C séparé et facultatif
 - page de confirmation non indexable
-- réservation Google Calendar côté français
-- réservation Calendly côté anglais
+- réservation Calendly côté français et anglais
 - notice de confidentialité et mentions légales
 - sitemap + robots.txt
 - métadonnées SEO et partage social
-- headers de sécurité Netlify
+- headers de sécurité Vercel
 - styles de focus clavier et prise en charge de `prefers-reduced-motion`
 
 ## Déploiement
-La branche de production est `main`. Netlify redéploie automatiquement après fusion sur `main`.
+La branche de production est `main`. Vercel publie la production depuis `main`.
 
-Pour éviter des déploiements de production inutiles, développer sur une branche et fusionner après revue. Les Deploy Previews peuvent servir aux contrôles avant production.
+Méthode de référence : développer par sprint sur une branche dédiée, regrouper les changements, contrôler la Preview Vercel et ne fusionner sur `main` qu’une fois l’itération validée. Éviter les micro-déploiements de production.
 
 ## Structure
 - `index.html` : landing + questionnaire français
 - `en/index.html` : landing + questionnaire anglais
 - `app.js` : logique multi-étapes, validation, scoring et attribution
 - `styles.css` : design responsive et accessibilité
-- `merci.html` : confirmation FR + CTA Google Calendar Benoit
-- `en/thanks.html` : confirmation EN + CTA Calendly Thibaut
+- `merci.html` / `en/thanks.html` : confirmations FR / EN + CTA Calendly
 - `confidentialite.html` / `mentions.html` : pages légales françaises
 - `en/privacy.html` / `en/legal.html` : traductions anglaises
 - `robots.txt` / `sitemap.xml` : indexation
-- `netlify.toml` : publication et headers de sécurité
+- `api/travel-presentation.js` : validation serveur, stockage Supabase et notification Resend
+- `vercel.json` : région d’exécution et headers de sécurité
 
 ## À mettre à jour lors de l’immatriculation
 - statut juridique
