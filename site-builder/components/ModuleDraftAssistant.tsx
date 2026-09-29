@@ -101,6 +101,7 @@ export default function ModuleDraftAssistant({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-AJG-Locale": uiLocale,
           ...(data.session?.access_token
             ? { Authorization: `Bearer ${data.session.access_token}` }
             : {})
