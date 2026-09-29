@@ -35,3 +35,22 @@ test("webhook maps all commercial prices server-side", () => {
   assert.ok(webhook.includes("STRIPE_PRO_ANNUAL_PRICE_ID"));
   assert.ok(webhook.includes('entry is [string, "essential" | "pro"]'));
 });
+
+
+test("commercial readiness requires the complete billing catalog and launch gates", () => {
+  const readiness = fs.readFileSync(
+    new URL("../app/api/admin/release-readiness/route.ts", import.meta.url),
+    "utf8"
+  );
+  for (const key of [
+    "STRIPE_ESSENTIAL_MONTHLY_PRICE_ID",
+    "STRIPE_ESSENTIAL_ANNUAL_PRICE_ID",
+    "STRIPE_PRO_MONTHLY_PRICE_ID",
+    "STRIPE_PRO_ANNUAL_PRICE_ID",
+    "STRIPE_PORTAL_CONFIGURATION_ID",
+    "AJG_COMMERCIAL_LEGAL_READY",
+    "AJG_COMMERCIAL_TAX_READY",
+    "AJG_BILLING_CHECKOUT_ENABLED"
+  ]) assert.ok(readiness.includes(key));
+  assert.ok(stripe.includes("STRIPE_PORTAL_CONFIGURATION_ID"));
+});
