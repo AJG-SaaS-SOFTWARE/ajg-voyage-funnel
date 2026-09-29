@@ -841,9 +841,9 @@ function deterministicQualityIssues(
       const previous = pagePurposes.get(purpose);
       if (previous) {
         issues.push({
-          severity: "warning",
+          severity: "blocking",
           code: "duplicate_page_purpose",
-          detail: `Les pages ${previous} et ${page.title} ont le même rôle éditorial.`
+          detail: `Les pages ${previous} et ${page.title} ont le même rôle éditorial ; elles doivent être fusionnées ou clairement différenciées.`
         });
       } else {
         pagePurposes.set(purpose, page.title);
@@ -948,6 +948,7 @@ export async function generatePremiumSiteArchitect(
         "Use only supplied facts. Never create evidence, credentials, numbers, offers, prices, testimonials or product capabilities.",
         "When information is missing, identify it explicitly instead of guessing. Every missingInformation item must be a short, concrete question addressed directly to the user in the requested site language. Ask only questions whose answer could materially improve the website. Conservative assumptions are allowed only when they concern presentation or structure, never factual claims.",
         "Recommend the smallest useful site architecture, not the largest.",
+        "Each enabled page must have a distinct editorial job; if two pages would serve the same purpose, merge them instead of inflating the architecture.",
         "The result must be practical enough for a second model to create the website.",
         ...revisionScopeRules,
         input.affiliationRules
@@ -1059,6 +1060,7 @@ export async function generatePremiumSiteArchitect(
           "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
           "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
           "When a page title is generic or too long, replace it with a short navigation label that clearly reflects that page’s purpose.",
+          "When two pages have the same editorial purpose, merge them or rewrite the architecture so each remaining page has a genuinely distinct visitor job.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
           ...revisionScopeRules,
         input.affiliationRules

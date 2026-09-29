@@ -119,6 +119,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] anti-répétition sémantique simple : les blocs longs quasi identiques (fort recouvrement de vocabulaire significatif) déclenchent un raffinement pour redonner un rôle éditorial distinct à chaque section ;
 - [x] garde-fou CTA principal : les libellés vagues de type « cliquez ici », « envoyer », « continuer » sont rejetés et réécrits en prochaine action concrète, uniquement si elle est supportée par le contexte client ;
 - [x] garde-fou navigation : les pages actives ne peuvent plus conserver un titre générique (« Page », « Sans titre », « More »…) ni un libellé trop long pour la navigation ;
+- [x] garde-fou anti-pages redondantes : deux pages actives ayant le même rôle éditorial bloquent la proposition jusqu’à fusion ou différenciation réelle ;
 - [x] le score et les signaux d’évaluation utilisateur portent sur la version finale réellement affichée, pas seulement sur le premier brouillon ;
 - [x] aucune information factuelle manquante inventée : les manques sont explicitement remontés à l’utilisateur ;
 - [x] recommandations de modules appliquées uniquement lorsqu’un contenu réellement exploitable existe ;
