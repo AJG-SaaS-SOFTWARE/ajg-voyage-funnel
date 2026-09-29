@@ -166,7 +166,7 @@ export default function ModulesEditor({
               <div className="module-item" key={index}>
                 <input placeholder={tr("Question", "Question")} aria-label={`${tr("Question", "Question")} ${index + 1}`} value={item.question} onChange={(e) => change("faq", { ...modules.faq, items: modules.faq.items.map((q, i) => i === index ? { ...q, question: e.target.value } : q) })} />
                 <textarea placeholder={tr("Réponse", "Answer")} aria-label={`${tr("Réponse", "Answer")} ${index + 1}`} value={item.answer} onChange={(e) => change("faq", { ...modules.faq, items: modules.faq.items.map((q, i) => i === index ? { ...q, answer: e.target.value } : q) })} />
-                <button type="button" onClick={() => change("faq", { ...modules.faq, items: modules.faq.items.filter((_, i) => i !== index) })}>Retirer</button>
+                <button type="button" onClick={() => change("faq", { ...modules.faq, items: modules.faq.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
             <button type="button" className="secondary" disabled={modules.faq.items.length >= 12} onClick={() => change("faq", { ...modules.faq, items: [...modules.faq.items, { question: "", answer: "" }] })}>{tr("Ajouter une question manuellement", "Add a question manually")}</button>
@@ -184,7 +184,7 @@ export default function ModulesEditor({
               <div className="module-item" key={index}>
                 <textarea placeholder={tr("Témoignage obtenu avec accord de publication", "Testimonial received with permission to publish")} aria-label={`${tr("Témoignage", "Testimonial")} ${index + 1}`} value={item.quote} onChange={(e) => change("testimonials", { ...modules.testimonials, items: modules.testimonials.items.map((q, i) => i === index ? { ...q, quote: e.target.value } : q) })} />
                 <input placeholder={tr("Prénom ou attribution autorisée", "First name or authorized attribution")} aria-label={`${tr("Auteur", "Author")} ${index + 1}`} value={item.author} onChange={(e) => change("testimonials", { ...modules.testimonials, items: modules.testimonials.items.map((q, i) => i === index ? { ...q, author: e.target.value } : q) })} />
-                <button type="button" onClick={() => change("testimonials", { ...modules.testimonials, items: modules.testimonials.items.filter((_, i) => i !== index) })}>Retirer</button>
+                <button type="button" onClick={() => change("testimonials", { ...modules.testimonials, items: modules.testimonials.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
             <button type="button" className="secondary" disabled={modules.testimonials.items.length >= 12} onClick={() => change("testimonials", { ...modules.testimonials, items: [...modules.testimonials.items, { quote: "", author: "" }] })}>{tr("Ajouter un témoignage réel", "Add a real testimonial")}</button>
@@ -229,7 +229,7 @@ export default function ModulesEditor({
               <div className="module-item" key={index}>
                 <input aria-label={`${tr("Valeur", "Value")} ${index + 1}`} placeholder={tr("Votre valeur réelle", "Your real value")} value={item.value} onChange={(e) => change("figures", { ...modules.figures, items: modules.figures.items.map((entry, i) => i === index ? { ...entry, value: e.target.value } : entry) })} />
                 <input aria-label={`${tr("Libellé", "Label")} ${index + 1}`} placeholder={tr("Ce que ce chiffre représente", "What this figure represents")} value={item.label} onChange={(e) => change("figures", { ...modules.figures, items: modules.figures.items.map((entry, i) => i === index ? { ...entry, label: e.target.value } : entry) })} />
-                <button type="button" onClick={() => change("figures", { ...modules.figures, items: modules.figures.items.filter((_, i) => i !== index) })}>Retirer</button>
+                <button type="button" onClick={() => change("figures", { ...modules.figures, items: modules.figures.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
             <button type="button" className="secondary" disabled={modules.figures.items.length >= 12} onClick={() => change("figures", { ...modules.figures, items: [...modules.figures.items, { value: "", label: "" }] })}>{tr("Ajouter un chiffre manuellement", "Add a figure manually")}</button>
@@ -253,7 +253,7 @@ export default function ModulesEditor({
               <div className="module-item" key={index}>
                 <input aria-label={`${tr("Avantage", "Benefit")} ${index + 1}`} placeholder={tr("Titre", "Title")} value={item.title} onChange={(e) => change("benefits", { ...modules.benefits, items: modules.benefits.items.map((entry, i) => i === index ? { ...entry, title: e.target.value } : entry) })} />
                 <textarea aria-label={`${tr("Description avantage", "Benefit description")} ${index + 1}`} placeholder={tr("Description concrète", "Concrete description")} value={item.text} onChange={(e) => change("benefits", { ...modules.benefits, items: modules.benefits.items.map((entry, i) => i === index ? { ...entry, text: e.target.value } : entry) })} />
-                <button type="button" onClick={() => change("benefits", { ...modules.benefits, items: modules.benefits.items.filter((_, i) => i !== index) })}>Retirer</button>
+                <button type="button" onClick={() => change("benefits", { ...modules.benefits, items: modules.benefits.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
             <button type="button" className="secondary" disabled={modules.benefits.items.length >= 12} onClick={() => change("benefits", { ...modules.benefits, items: [...modules.benefits.items, { title: "", text: "" }] })}>{tr("Ajouter un avantage manuellement", "Add a benefit manually")}</button>
