@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
+import { LanguageSwitch, useUiLanguage } from "../../components/LanguageProvider";
 
 function MailIcon() {
   return (
@@ -24,6 +25,8 @@ function ShieldIcon() {
 }
 
 export default function LoginPage() {
+  const { locale } = useUiLanguage();
+  const en = locale === "en";
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
@@ -43,7 +46,7 @@ export default function LoginPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase n'est pas encore configuré dans cet environnement.");
+      setError(en ? "Supabase is not configured in this environment yet." : "Supabase n'est pas encore configuré dans cet environnement.");
       return;
     }
 
@@ -69,15 +72,14 @@ export default function LoginPage() {
         <div className="auth-visual-overlay" />
         <Link href="/" className="auth-brand">AJG Site Builder</Link>
         <div className="auth-visual-copy">
-          <p className="eyebrow">Création guidée · publication simplifiée</p>
-          <h1>Créez votre présence en ligne sans partir de zéro</h1>
+          <div className="builder-heading-row"><p className="eyebrow">{en ? "Guided creation · simple publishing" : "Création guidée · publication simplifiée"}</p><LanguageSwitch compact /></div>
+          <h1>{en ? "Build your online presence without starting from scratch" : "Créez votre présence en ligne sans partir de zéro"}</h1>
           <p>
-            Votre identité, votre histoire, vos rendez-vous et vos voyages réunis dans un site
-            cohérent, maintenable et prêt à évoluer.
+            {en ? "Bring your identity, story, appointments and content together in a coherent website that is easy to maintain and ready to grow." : "Votre identité, votre histoire, vos rendez-vous et vos voyages réunis dans un site cohérent, maintenable et prêt à évoluer."}
           </p>
           <div className="auth-benefits">
-            <span><ShieldIcon /> Conformité centralisée</span>
-            <span><MailIcon /> Connexion sans mot de passe</span>
+            <span><ShieldIcon /> {en ? "Centralized compliance" : "Conformité centralisée"}</span>
+            <span><MailIcon /> {en ? "Passwordless sign-in" : "Connexion sans mot de passe"}</span>
           </div>
         </div>
         <span className="auth-orbit" aria-hidden="true" />
@@ -87,15 +89,15 @@ export default function LoginPage() {
       <section className="auth-panel-wrap">
         <div className="auth-card premium-auth-card">
           <div className="auth-card-heading">
-            <p className="eyebrow">Espace membre</p>
-            <h2>Connexion</h2>
-            <p>Recevez un lien sécurisé par email. Aucun mot de passe à retenir.</p>
+            <p className="eyebrow">{en ? "Member area" : "Espace membre"}</p>
+            <h2>{en ? "Sign in" : "Connexion"}</h2>
+            <p>{en ? "Receive a secure sign-in link by email. No password to remember." : "Recevez un lien sécurisé par email. Aucun mot de passe à retenir."}</p>
           </div>
 
           {!isSupabaseConfigured() ? (
             <div className="helper-card premium-helper-card">
-              <b>Mode prototype local</b>
-              <p>Les variables Supabase ne sont pas encore renseignées dans cet environnement.</p>
+              <b>{en ? "Local prototype mode" : "Mode prototype local"}</b>
+              <p>{en ? "Supabase environment variables are not configured in this environment yet." : "Les variables Supabase ne sont pas encore renseignées dans cet environnement."}</p>
             </div>
           ) : null}
 
@@ -103,14 +105,14 @@ export default function LoginPage() {
             <div className="success-card premium-success-card">
               <span className="success-icon"><MailIcon /></span>
               <div>
-                <b>Vérifiez votre boîte mail</b>
-                <p>Le lien de connexion vient d&apos;être envoyé à {email}.</p>
+                <b>{en ? "Check your inbox" : "Vérifiez votre boîte mail"}</b>
+                <p>{en ? <>A sign-in link has just been sent to {email}.</> : <>Le lien de connexion vient d&apos;être envoyé à {email}.</>}</p>
               </div>
             </div>
           ) : (
             <form className="premium-auth-form" onSubmit={submit}>
               <label className="field premium-field">
-                <span>Adresse email</span>
+                <span>{en ? "Email address" : "Adresse email"}</span>
                 <div className="input-with-icon">
                   <MailIcon />
                   <input
@@ -118,21 +120,21 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="vous@exemple.fr"
+                    placeholder={en ? "you@example.com" : "vous@exemple.fr"}
                   />
                 </div>
               </label>
               {error ? <p className="form-error">{error}</p> : null}
               <button className="button primary auth-submit premium-button" disabled={state === "sending"}>
-                {state === "sending" ? "Envoi…" : "Recevoir mon lien de connexion"}
+                {state === "sending" ? (en ? "Sending…" : "Envoi…") : (en ? "Send me a sign-in link" : "Recevoir mon lien de connexion")}
                 {state !== "sending" ? <span aria-hidden="true">→</span> : null}
               </button>
             </form>
           )}
 
           <div className="auth-card-footer">
-            <Link className="text-link" href="/">← Retour à l&apos;accueil</Link>
-            <span>Lien sécurisé · accès personnel</span>
+            <Link className="text-link" href="/">← {en ? "Back to home" : "Retour à l’accueil"}</Link>
+            <span>{en ? "Secure link · personal access" : "Lien sécurisé · accès personnel"}</span>
           </div>
         </div>
       </section>
