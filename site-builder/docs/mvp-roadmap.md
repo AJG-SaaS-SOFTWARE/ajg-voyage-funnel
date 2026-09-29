@@ -459,7 +459,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] back-office admin prêt à afficher état/âge/volume/rétention et à lancer manuellement une sauvegarde via la même primitive serveur que le cron ;
 - [x] fraîcheur de la sauvegarde branchée au Cockpit Infrastructure AJG avec statuts sain / à surveiller / critique / non configuré ;
 - [x] store Vercel Blob privé `ajg-site-builder-backups` créé et connecté au projet Production en région Paris (`cdg1`) avec accès privé ;
-- [ ] exécuter la première sauvegarde réelle et vérifier la présence du manifest, des objets et l’état de santé.
+- [x] première sauvegarde réelle exécutée le 29 septembre 2026 : état `healthy`, 4 objets source détectés, manifest/état enregistrés et rétention 35 jours confirmée.
 
 ### Domaines personnalisés — automatisation
 - [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;
