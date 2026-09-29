@@ -121,6 +121,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] ordre des modules proposé par l’IA et conservé à l’application ;
 - [x] interface Premium enrichie : besoin compris, audience, objectif, positionnement, parcours visiteur, rationales architecture/design et audit ;
 - [x] boucle de clarification conversationnelle : les informations réellement manquantes sont formulées comme questions ciblées, le client répond uniquement à ce qu’il connaît puis l’IA reconstruit et réaudite la proposition ;
+- [x] garde-fou de brief initial : le pipeline Premium ne démarre pas sous un seuil minimal de contexte ; l’interface explique quoi ajouter et le serveur réapplique la même règle ;
 - [x] les réponses de clarification complètent le brief sans transformer une information absente en supposition ;
 - [x] E2E renforcée pour exiger la stratégie, l’audit Premium et le passage du quality gate final ;
 - [x] instrumentation dédiée sans contenu client : première génération, régénération, raffinement automatique et application ;
