@@ -621,7 +621,7 @@ function normalizeComparable(value: string) {
     .replace(/\s+/g, " ");
 }
 
-function deterministicQualityIssues(
+export function deterministicQualityIssues(
   proposal: PremiumArchitectCore,
   sourceEvidenceText = ""
 ): DeterministicQualityIssue[] {
