@@ -64,6 +64,7 @@ export default function AdminPage() {
   const [betaMetrics, setBetaMetrics] = useState<AdminBetaMetrics | null>(null);
   const [betaCohort, setBetaCohort] = useState<AdminBetaCohort | null>(null);
   const [betaEmail, setBetaEmail] = useState("");
+  const [betaDurationDays, setBetaDurationDays] = useState(30);
   const [betaInviteBusy, setBetaInviteBusy] = useState(false);
   const [managedDomains, setManagedDomains] = useState<AdminManagedDomain[]>([]);
   const [managedDomainBusy, setManagedDomainBusy] = useState<string | null>(null);
@@ -239,16 +240,34 @@ export default function AdminPage() {
     setMessage("");
     setBetaInviteBusy(true);
     try {
-      const result = await adminInviteBetaMember(email);
+      const result = await adminInviteBetaMember(email, betaDurationDays);
       setBetaEmail("");
       await load();
       setMessage(
         result.invited
-          ? `Invitation bêta envoyée à ${result.member.email}.`
-          : `${result.member.email} faisait déjà partie des comptes AJG ; le compte a été ajouté à la cohorte bêta sans nouvel e-mail.`
+          ? `Invitation Beta Tester envoyée à ${result.member.email} avec accès Pro complet pendant ${betaDurationDays} jours.`
+          : `${result.member.email} dispose maintenant de l’accès Beta Tester Pro complet pour ${betaDurationDays} jours, sans nouvel e-mail.`
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Invitation bêta impossible.");
+    } finally {
+      setBetaInviteBusy(false);
+    }
+  };
+
+  const renewBetaMember = async (email: string) => {
+    setMessage("");
+    setBetaInviteBusy(true);
+    try {
+      const result = await adminInviteBetaMember(email, betaDurationDays);
+      await load();
+      setMessage(
+        `Accès Beta Tester renouvelé pour ${result.member.email} pendant ${betaDurationDays} jours.`
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Renouvellement bêta impossible."
+      );
     } finally {
       setBetaInviteBusy(false);
     }
@@ -260,7 +279,7 @@ export default function AdminPage() {
     try {
       await adminRemoveBetaMember(userId);
       await load();
-      setMessage("Compte retiré de la cohorte bêta. Le compte AJG n’a pas été supprimé.");
+      setMessage("Statut Beta Tester retiré. Le compte AJG et ses sites ne sont pas supprimés ; les droits reviennent immédiatement à l’offre réelle.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Retrait impossible.");
     } finally {
@@ -323,6 +342,8 @@ export default function AdminPage() {
   const betaMemberCount = betaCohort?.members.length ?? 0;
   const betaActivatedCount =
     betaCohort?.members.filter((item) => item.lastSignInAt).length ?? 0;
+  const betaFullAccessCount =
+    betaCohort?.members.filter((item) => item.accessActive).length ?? 0;
   const betaTargetReached = betaMemberCount >= 5 && betaMemberCount <= 10;
   const betaInviteAllowed =
     betaTechnicalReady &&
@@ -476,15 +497,18 @@ export default function AdminPage() {
           <div className="admin-readiness-heading">
             <div>
               <p className="eyebrow">Bêta privée</p>
-              <h2>Cohorte de test</h2>
+              <h2>Beta Testers · accès Pro complet gratuit</h2>
               <p>
-                Invitez uniquement les testeurs choisis. Les métriques du funnel se limitent
-                automatiquement à cette cohorte dès qu’au moins un compte y est inscrit.
+                Chaque testeur reçoit temporairement tous les droits Pro — Architecte IA
+                Premium, domaine personnalisé, quotas Pro et fonctions payantes — sans créer
+                d’abonnement Stripe. À expiration, les droits reviennent automatiquement à
+                l’offre réelle du compte.
               </p>
             </div>
             <div className="beta-side-metrics">
               <span><b>{betaCohort?.members.length ?? 0}</b> comptes bêta</span>
-              <span><b>{betaCohort?.members.filter((item) => item.lastSignInAt).length ?? 0}</b> activés</span>
+              <span><b>{betaActivatedCount}</b> activés</span>
+              <span><b>{betaFullAccessCount}</b> accès Pro actifs</span>
               <span><b>{betaCohort?.limit ?? 25}</b> limite sécurité</span>
             </div>
           </div>
@@ -507,20 +531,34 @@ export default function AdminPage() {
                 disabled={betaInviteBusy}
               />
             </label>
+            <label className="field beta-duration-field">
+              <span>Accès complet</span>
+              <select
+                value={betaDurationDays}
+                onChange={(event) => setBetaDurationDays(Number(event.target.value))}
+                disabled={betaInviteBusy}
+              >
+                <option value={14}>14 jours</option>
+                <option value={30}>30 jours</option>
+                <option value={45}>45 jours</option>
+                <option value={60}>60 jours</option>
+                <option value={90}>90 jours</option>
+              </select>
+            </label>
             <button
               type="submit"
               className="button primary"
               disabled={betaInviteBusy || !betaEmail.trim() || !betaInviteAllowed}
               title={!betaTechnicalReady ? "Les prérequis techniques critiques doivent être prêts avant d’inviter." : betaMemberCount >= 10 ? "La cohorte cible est limitée à 10 testeurs pour cette phase." : undefined}
             >
-              {betaInviteBusy ? "Traitement…" : "Inviter à la bêta"}
+              {betaInviteBusy ? "Traitement…" : "Inviter comme Beta Tester"}
             </button>
           </form>
           <p className="plans-note">
-            Un nouveau compte reçoit l’invitation Supabase vers le Builder. Un compte AJG déjà
-            existant est seulement ajouté à la cohorte : aucun second e-mail n’est envoyé.
-            Cette phase est volontairement plafonnée à 10 testeurs même si la limite de sécurité
-            technique reste supérieure.
+            Le statut Beta Tester est un grant temporaire indépendant de Stripe et ne crée
+            aucune facturation. Un nouveau compte reçoit l’invitation Supabase ; un compte AJG
+            existant reçoit immédiatement les droits Pro. La durée est renouvelable depuis
+            cette page. Cette phase reste volontairement plafonnée à 10 testeurs.
           </p>
 
           {betaCohort?.members.length ? (
@@ -529,26 +567,51 @@ export default function AdminPage() {
                 <thead>
                   <tr>
                     <th>Testeur</th>
-                    <th>État</th>
-                    <th>Invitation</th>
+                    <th>Compte</th>
+                    <th>Accès Beta Tester</th>
+                    <th>Expiration</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {betaCohort.members.map((item) => (
                     <tr key={item.id}>
-                      <td><b>{item.email}</b></td>
-                      <td>{item.lastSignInAt ? "Compte activé" : "Invitation en attente"}</td>
-                      <td>{new Date(item.invitedAt || item.createdAt).toLocaleDateString("fr-FR")}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="text-button"
-                          disabled={betaInviteBusy}
-                          onClick={() => void removeBetaMember(item.id)}
-                        >
-                          Retirer de la cohorte
-                        </button>
+                        <b>{item.email}</b>
+                        <small className="admin-cell-note">
+                          invité le {new Date(item.invitedAt || item.createdAt).toLocaleDateString("fr-FR")}
+                        </small>
+                      </td>
+                      <td>{item.lastSignInAt ? "Activé" : "Invitation en attente"}</td>
+                      <td>
+                        <span className={item.accessActive ? "status-badge success" : "status-badge muted"}>
+                          {item.accessActive ? "Pro complet actif" : "Expiré / retiré"}
+                        </span>
+                      </td>
+                      <td>
+                        {item.accessExpiresAt
+                          ? new Date(item.accessExpiresAt).toLocaleDateString("fr-FR")
+                          : "—"}
+                      </td>
+                      <td>
+                        <div className="admin-inline-actions">
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={betaInviteBusy}
+                            onClick={() => void renewBetaMember(item.email)}
+                          >
+                            Renouveler {betaDurationDays} j
+                          </button>
+                          <button
+                            type="button"
+                            className="text-button danger"
+                            disabled={betaInviteBusy || !item.accessActive}
+                            onClick={() => void removeBetaMember(item.id)}
+                          >
+                            Retirer l’accès
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
