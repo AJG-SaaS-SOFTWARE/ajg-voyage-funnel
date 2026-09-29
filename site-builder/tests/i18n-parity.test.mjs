@@ -117,3 +117,24 @@ test("client-side repository and image errors are localized", () => {
   assert.match(image, /The image must not exceed 12 MB/);
   assert.match(image, /Unable to prepare this image/);
 });
+
+
+test("English Builder core has no known French-only residuals in customer paths", () => {
+  const builder = read("app/builder/page.tsx");
+  const privacyApi = read("app/api/privacy/erasure/request/route.ts");
+  const data = read("app/data/page.tsx");
+
+  assert.doesNotMatch(builder, />Architecture : /);
+  assert.doesNotMatch(builder, />Structure : /);
+  assert.doesNotMatch(builder, />Direction visuelle : /);
+  assert.doesNotMatch(builder, /Ces réponses sont facultatives\. Répondez uniquement/);
+  assert.doesNotMatch(builder, /throw new Error\("Connectez le stockage du site/);
+
+  assert.doesNotMatch(privacyApi, /error: "Reconnectez-vous pour continuer\."/);
+  assert.doesNotMatch(privacyApi, /error: "Impossible d'enregistrer la demande\."/);
+  assert.match(privacyApi, /Sign in again to continue/);
+  assert.match(privacyApi, /Unable to record the request/);
+
+  assert.doesNotMatch(data, /: "Impossible d'enregistrer la demande\."/);
+  assert.match(data, /Unable to record the request/);
+});
