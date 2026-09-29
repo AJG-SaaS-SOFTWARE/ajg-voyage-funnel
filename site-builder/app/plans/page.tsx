@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
+import { startPlanCheckout } from "../../lib/billing-access";
 import {
   freeEntitlements,
   getMyAiUsage,
@@ -26,6 +27,8 @@ export default function PlansPage() {
   const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
   const [sites, setSites] = useState<Array<{ id: string; slug: string }>>([]);
   const [siteId, setSiteId] = useState("");
+  const [checkoutBusy, setCheckoutBusy] = useState("");
+  const [checkoutMessage, setCheckoutMessage] = useState("");
 
   const load = async (selectedId?: string) => {
     const owned = await getMySites();
@@ -51,6 +54,19 @@ export default function PlansPage() {
       setLoaded(true);
     });
   }, []);
+
+  async function beginCheckout(planKey: "essential" | "pro", billingCycle: "monthly" | "annual") {
+    if (!siteId || betaAccess.active) return;
+    const key = `${planKey}:${billingCycle}`;
+    setCheckoutBusy(key);
+    setCheckoutMessage("");
+    try {
+      await startPlanCheckout(siteId, planKey, billingCycle);
+    } catch (error) {
+      setCheckoutMessage(error instanceof Error ? error.message : tr("Checkout indisponible.", "Checkout unavailable."));
+      setCheckoutBusy("");
+    }
+  }
 
   const betaExpiryLabel =
     betaAccess.active && betaAccess.expiresAt
@@ -124,6 +140,8 @@ export default function PlansPage() {
         </section>
       ) : null}
 
+      {checkoutMessage ? <p className="account-note" role="status">{checkoutMessage}</p> : null}
+
       <section className="pricing-positioning panel">
         <p className="eyebrow">{tr("Positionnement AJG", "AJG positioning")}</p>
         <h2>{tr("Deux niveaux d’aide IA, une même base de contrôle", "Two levels of AI support, one foundation of control")}</h2>
@@ -151,7 +169,7 @@ export default function PlansPage() {
           <p className="plan-status">{loaded && !betaAccess.active && current.planKey === "free" ? tr("Votre offre actuelle", "Your current plan") : tr("Accès de découverte / bêta", "Discovery / beta access")}</p>
         </article>
 
-        <article className="plan-card">
+        <article className={!betaAccess.active && current.planKey === "essential" ? "plan-card current" : "plan-card"}>
           <p className="eyebrow">{tr("Essentiel", "Essential")}</p>
           <h2>{tr("Construire avec l’aide de l’IA", "Build with AI assistance")}</h2>
           <p className="plan-price">19 € <small>/ {tr("mois", "month")}</small></p>
@@ -164,8 +182,23 @@ export default function PlansPage() {
             <li>{tr("Hébergement inclus", "Hosting included")}</li>
             <li>{tr("Sans Concepteur IA complet", "Without the full AI Designer")}</li>
           </ul>
-          <p className="plan-status">{tr("Offre commerciale retenue pour l’ouverture après la bêta. Stripe reste désactivé pendant les tests.", "Commercial offer selected for opening after beta. Stripe remains disabled during testing.")}</p>
-          <button type="button" className="button secondary" disabled>{tr("Ouverture après la bêta", "Opens after beta")}</button>
+          <p className="plan-status">
+            {current.status === "trialing" && current.planKey === "essential"
+              ? tr("Essai Pro IA en cours · Essentiel sera votre offre après l’essai", "Pro AI trial active · Essential will be your plan after the trial")
+              : loaded && current.planKey === "essential" && !betaAccess.active
+                ? tr("Votre offre actuelle", "Your current plan")
+                : tr("14 jours de Pro IA avant passage à Essentiel", "14 days of Pro AI before switching to Essential")}
+          </p>
+          {!betaAccess.active && current.planKey !== "essential" ? (
+            <div className="builder-actions">
+              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("essential", "monthly")}>
+                {checkoutBusy === "essential:monthly" ? tr("Ouverture…", "Opening…") : tr("Essayer puis 19 €/mois", "Try then €19/month")}
+              </button>
+              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("essential", "annual")}>
+                {checkoutBusy === "essential:annual" ? tr("Ouverture…", "Opening…") : tr("Essayer puis 190 €/an", "Try then €190/year")}
+              </button>
+            </div>
+          ) : null}
         </article>
 
         <article className={current.planKey === "pro" ? "plan-card current pro-offer-card" : "plan-card pro-offer-card"}>
@@ -184,11 +217,22 @@ export default function PlansPage() {
           <p className="plan-status">
             {betaAccess.active
               ? tr("Inclus gratuitement dans votre statut Beta Tester", "Included free with your Beta Tester status")
-              : loaded && current.planKey === "pro"
-                ? tr("Votre offre actuelle", "Your current plan")
-                : tr("14 jours d’expérience Pro IA prévus au lancement commercial", "14 days of Pro AI experience planned at commercial launch")}
+              : current.status === "trialing"
+                ? tr("Essai Pro IA en cours", "Pro AI trial active")
+                : loaded && current.planKey === "pro"
+                  ? tr("Votre offre actuelle", "Your current plan")
+                  : tr("14 jours d’expérience Pro IA inclus", "14 days of Pro AI included")}
           </p>
-          {!betaAccess.active && current.planKey !== "pro" ? <button type="button" className="button primary" disabled>{tr("Souscription ouverte après la bêta", "Subscriptions open after beta")}</button> : null}
+          {!betaAccess.active && current.planKey !== "pro" ? (
+            <div className="builder-actions">
+              <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("pro", "monthly")}>
+                {checkoutBusy === "pro:monthly" ? tr("Ouverture…", "Opening…") : tr("Essayer puis 39 €/mois", "Try then €39/month")}
+              </button>
+              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("pro", "annual")}>
+                {checkoutBusy === "pro:annual" ? tr("Ouverture…", "Opening…") : tr("Essayer puis 390 €/an", "Try then €390/year")}
+              </button>
+            </div>
+          ) : null}
         </article>
       </section>
 
