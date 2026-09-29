@@ -125,6 +125,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] garde-fou FAQ distincte : deux questions fortement similaires lexicalement sont désormais fusionnées ou différenciées avant affichage, même si leur formulation n’est pas strictement identique ;
 - [x] garde-fou CTA principal : les libellés vagues de type « cliquez ici », « envoyer », « continuer » sont rejetés et réécrits en prochaine action concrète, uniquement si elle est supportée par le contexte client ;
 - [x] complétude des libellés visibles : titre À propos et CTA principal obligatoires ; titres FAQ/avantages obligatoires dès que ces sections contiennent du contenu ;
+- [x] anti-libellés génériques : les entrées visibles de type « Question 1 », « Avantage 1 », « Benefit » ou « Feature » sont rejetées avant affichage ;
 - [x] garde-fou navigation : les pages actives ne peuvent plus conserver un titre générique (« Page », « Sans titre », « More »…) ni un libellé trop long pour la navigation ;
 - [x] garde-fou anti-pages redondantes : deux pages actives ayant le même rôle éditorial bloquent la proposition jusqu’à fusion ou différenciation réelle ;
 - [x] rôle éditorial obligatoire : toute page active doit expliciter sa fonction pour le visiteur ; une page sans objectif est retirée ou complétée avant affichage ;
