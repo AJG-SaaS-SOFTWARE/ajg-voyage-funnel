@@ -500,8 +500,8 @@ export default function AdminPage() {
               <p className="eyebrow">Bêta privée</p>
               <h2>Beta Testers · accès BUILD + Growth complet gratuit</h2>
               <p>
-                Chaque testeur reçoit temporairement tous les droits Pro — Architecte IA
-                Premium, domaine personnalisé, quotas Pro et fonctions payantes — sans créer
+                Chaque testeur reçoit temporairement tous les droits BUILD + Growth — Concepteur IA,
+                domaine personnalisé, quotas renforcés et fonctions payantes — sans créer
                 d’abonnement Stripe. À expiration, les droits reviennent automatiquement à
                 l’offre réelle du compte.
               </p>
