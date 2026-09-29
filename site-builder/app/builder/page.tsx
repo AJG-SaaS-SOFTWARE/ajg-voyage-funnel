@@ -15,6 +15,7 @@ import {
 import ModulesEditor from "../../components/ModulesEditor";
 import AiTextAssistant from "../../components/AiTextAssistant";
 import ComplianceEditor from "../../components/ComplianceEditor";
+import { LanguageSwitch, useUiLanguage } from "../../components/LanguageProvider";
 import {
   defaultSiteConfig,
   requiredDisclaimer,
@@ -39,58 +40,58 @@ import {
   uploadContentAsset
 } from "../../lib/supabase-site-repository";
 
-const steps = [
+const stepDefinitions = [
   {
     key: "identity",
-    label: "Identité",
-    eyebrow: "Votre base",
-    description: "Nom, adresse, langue et photo : les éléments qui rendent le site immédiatement personnel.",
+    label: { fr: "Identité", en: "Identity" },
+    eyebrow: { fr: "Votre base", en: "Your foundation" },
+    description: { fr: "Nom, adresse, langue et photo : les éléments qui rendent le site immédiatement personnel.", en: "Name, address, language and photo: the elements that immediately make the website yours." },
     time: "2 min",
-    guidance: "Commencez simplement par votre prénom et votre nom. Le nom du site et son adresse se préremplissent automatiquement."
+    guidance: { fr: "Commencez simplement par votre prénom et votre nom. Le nom du site et son adresse se préremplissent automatiquement.", en: "Start with your first and last name. The website name and address are pre-filled automatically." }
   },
   {
     key: "story",
-    label: "Message",
-    eyebrow: "Votre voix",
-    description: "Le titre, l'introduction et votre présentation. Le ton reste simple, humain et fidèle à vous.",
+    label: { fr: "Message", en: "Message" },
+    eyebrow: { fr: "Votre voix", en: "Your voice" },
+    description: { fr: "Le titre, l'introduction et votre présentation. Le ton reste simple, humain et fidèle à vous.", en: "Your headline, introduction and presentation, with a simple and human tone that sounds like you." },
     time: "4 min",
-    guidance: "Écrivez comme si vous expliquiez votre démarche à une connaissance. Quelques phrases naturelles suffisent."
+    guidance: { fr: "Écrivez comme si vous expliquiez votre démarche à une connaissance. Quelques phrases naturelles suffisent.", en: "Write as if you were explaining your approach to someone you know. A few natural sentences are enough." }
   },
   {
     key: "design",
-    label: "Style",
-    eyebrow: "Votre ambiance",
-    description: "Couleurs, motifs, images et sons pour donner une identité personnelle à votre site.",
+    label: { fr: "Style", en: "Style" },
+    eyebrow: { fr: "Votre ambiance", en: "Your look & feel" },
+    description: { fr: "Couleurs, motifs, images et sons pour donner une identité personnelle à votre site.", en: "Colors, patterns, images and audio to give your website a distinctive identity." },
     time: "5 min",
-    guidance: "Commencez par une couleur et un motif. Vous pouvez rechercher une image ou un son, puis revenir changer vos choix plus tard."
+    guidance: { fr: "Commencez par une couleur et un motif. Vous pouvez rechercher une image ou un son, puis revenir changer vos choix plus tard.", en: "Start with a color and a pattern. You can add an image or audio and change your choices later." }
   },
   {
     key: "booking",
-    label: "Rendez-vous",
-    eyebrow: "Passer à l'action",
-    description: "Reliez votre agenda et vos réseaux pour transformer la visite en échange concret.",
+    label: { fr: "Rendez-vous", en: "Booking" },
+    eyebrow: { fr: "Passer à l'action", en: "Turn visits into action" },
+    description: { fr: "Reliez votre agenda et vos réseaux pour transformer la visite en échange concret.", en: "Connect your booking page and social profiles to turn visits into real conversations." },
     time: "2 min",
-    guidance: "Copiez l'adresse de votre page de réservation, puis collez-la ci-dessous. Vous pouvez aussi passer cette étape et y revenir plus tard."
+    guidance: { fr: "Copiez l'adresse de votre page de réservation, puis collez-la ci-dessous. Vous pouvez aussi passer cette étape et y revenir plus tard.", en: "Copy your booking page address and paste it below. You can also skip this step and come back later." }
   },
   {
     key: "options",
-    label: "Options",
-    eyebrow: "Votre contenu",
-    description: "Configurez les rubriques facultatives, leur contenu et leur ordre d'affichage.",
+    label: { fr: "Options", en: "Options" },
+    eyebrow: { fr: "Votre contenu", en: "Your content" },
+    description: { fr: "Configurez les rubriques facultatives, leur contenu et leur ordre d'affichage.", en: "Configure optional sections, their content and display order." },
     time: "2 min",
-    guidance: "Activez uniquement les rubriques utiles. Elles restent masquées tant qu'elles ne contiennent pas de contenu publiable."
+    guidance: { fr: "Activez uniquement les rubriques utiles. Elles restent masquées tant qu'elles ne contiennent pas de contenu publiable.", en: "Enable only useful sections. They stay hidden until they contain publishable content." }
   },
   {
     key: "review",
-    label: "Publication",
-    eyebrow: "Dernière vérification",
-    description: "Contrôlez l'adresse, la langue et les informations essentielles avant la mise en ligne.",
+    label: { fr: "Publication", en: "Publish" },
+    eyebrow: { fr: "Dernière vérification", en: "Final review" },
+    description: { fr: "Contrôlez l'adresse, la langue et les informations essentielles avant la mise en ligne.", en: "Review the address, language and essential information before going live." },
     time: "1 min",
-    guidance: "Relisez le résumé. Si tout est vert, vous pouvez publier puis partager votre lien."
+    guidance: { fr: "Relisez le résumé. Si tout est vert, vous pouvez publier puis partager votre lien.", en: "Review the summary. If everything is green, you can publish and share your link." }
   }
 ] as const;
 
-type StepKey = (typeof steps)[number]["key"];
+type StepKey = (typeof stepDefinitions)[number]["key"];
 
 function Field({
   label,
@@ -150,6 +151,15 @@ function VisibilityOption({
 
 export default function BuilderPage() {
   const router = useRouter();
+  const { locale } = useUiLanguage();
+  const en = locale === "en";
+  const steps = stepDefinitions.map((item) => ({
+    ...item,
+    label: item.label[locale],
+    eyebrow: item.eyebrow[locale],
+    description: item.description[locale],
+    guidance: item.guidance[locale]
+  }));
   const remoteMode = isSupabaseConfigured();
 
   const [config, setConfig] = useState<SiteConfig>(defaultSiteConfig);
