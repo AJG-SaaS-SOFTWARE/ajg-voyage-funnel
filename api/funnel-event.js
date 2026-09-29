@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
   const eventName = clean(body.event_name, 64);
-  const sessionId = clean(body.session_id, 36);
+
   const language = body.language === "en" ? "en" : "fr";
   if (!ALLOWED_EVENTS.has(eventName)) {
     return json(res, 400, { error: "Invalid event" });
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
   if (!supabaseUrl || !supabaseKey) return json(res, 503, { error: "Analytics unavailable" });
 
   const row = {
-    session_id: sessionId,
+
     event_name: eventName,
     language,
     page_path: clean(body.page_path, 500) || "/",
