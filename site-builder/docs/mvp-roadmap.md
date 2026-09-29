@@ -293,7 +293,7 @@ Cette section fait foi pour la prochaine reprise. Les cases ouvertes ailleurs da
 6. **Routage réel AJG validé** : sous-domaine canari rattaché, CNAME configuré, domaine `verified + primary`, canonical automatique et contrôle HTTPS intégré au pipeline. Le domaine personnalisé utilisateur reste à recetter séparément avant lancement commercial.
 7. **Lancer la bêta 5–10 comptes** : l’administration sait constituer la cohorte, isoler ses métriques et bloque les invitations tant que le gate technique critique n’est pas vert ; il reste à choisir/inviter les testeurs réels puis observer le dashboard 30 jours et corriger uniquement les frictions confirmées.
 8. **Décisions commerciales utilisateur requises** : prix, périodicité, essai éventuel, nombre de sites inclus. La politique d’impayés reste J0/J14/J28/J104 sauf décision explicite signalée.
-9. **Après validation commerciale seulement** : connecter Stripe, Checkout/portail, webhook signé, synchronisation des statuts et recette des scénarios de paiement.
+9. **Stripe** : couche Checkout/Portal/Webhook et synchronisation par site désormais codées ; restent le Product/Price sandbox, les secrets Vercel et la recette Stripe réelle après décision prix/périodicité/essai.
 10. **Option externe de sécurité** : activer Supabase Auth Leaked Password Protection lorsque le plan le permet.
 
 Release production, Storage privé et recette E2E sont validés. Le sous-domaine canari AJG est désormais rattaché à Vercel et validé DNS. Le routage et les canonical n’utilisent plus de feature flag global : ils s’appuient sur le domaine primaire réellement vérifié, avec repli Vercel sinon.
@@ -338,11 +338,18 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 ### Itération 6C — billing
 - [x] modèle de droits et statuts d’abonnement prêt pour la synchronisation ;
 - [x] quotas Gratuit/Pro séparés du prix commercial ;
-- [ ] figer prix, périodicité, essai éventuel et délai de grâce ;
-- [ ] connecter Stripe ;
-- [ ] créer Checkout/portail client et webhook signé ;
-- [ ] synchroniser les événements Stripe vers `user_subscriptions` ;
-- [ ] tester renouvellement, échec de paiement, régularisation, annulation et suspension.
+- [ ] figer prix, périodicité, essai éventuel et nombre de sites inclus ; la politique d’impayés J0/J14/J28/J104 reste inchangée ;
+- [x] compte Stripe sandbox disponible pour le développement et architecture Billing retenue : Checkout hébergé + Customer Portal + abonnements récurrents par site ;
+- [x] couche Stripe serveur ajoutée sans prix codé : clé API restreinte privilégiée, Price Pro injecté par environnement et API Stripe versionnée ;
+- [x] Checkout Pro authentifié et ciblé par site, sans attribution de droits depuis la page de succès ;
+- [x] Customer Portal authentifié pour mise à jour du moyen de paiement et gestion de l’abonnement ;
+- [x] webhook Stripe signé sur corps brut, fenêtre anti-rejeu et journal fournisseur idempotent ;
+- [x] liaison Stripe Customer / Subscription / Price → `site_subscriptions`, réservée au backend service-role et isolée par site ;
+- [x] synchronisation des événements `checkout.session.*`, `customer.subscription.*`, `invoice.paid` et `invoice.payment_failed` vers le moteur d’accès existant ;
+- [x] un abonnement Stripe `incomplete` reste sans droits Pro ; seuls les statuts payés/essai valide activent les entitlements correspondants ;
+- [ ] créer le Product/Price Pro de sandbox après décision du montant/périodicité, puis configurer `STRIPE_RESTRICTED_KEY`, `STRIPE_WEBHOOK_SECRET` et `STRIPE_PRO_PRICE_ID` dans Vercel ;
+- [ ] recette Stripe sandbox réelle : souscription, renouvellement, échec de paiement, régularisation, annulation et reprise d’accès ;
+- [ ] passage live uniquement après validation commerciale et fiscale.
 
 ### Itération 6D — domaines personnalisés automatisés
 - [x] modèle de données, entitlement, demande et routage applicatif déjà prêts ;
@@ -372,7 +379,7 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] export structuré JSON v2 derrière endpoint serveur authentifié : configuration, domaines, carnets, messages de contact et inventaire récursif des médias ;
 - [x] export d’archive TAR.GZ avec copie binaire des médias publics et privés, manifeste JSON et rapport d’échec partiel ;
 - [x] file de notifications J0/J3/J7/J12/J74/J97 + réactivation, dédupliquée et avec worker Resend idempotent ; activation réelle après présence des secrets serveur et déploiement ;
-- [ ] ingestion Stripe signée/idempotente et réconciliation fournisseur ;
+- [x] ingestion Stripe signée/idempotente et réconciliation fournisseur codées : résolution prioritaire par Subscription ID, métadonnées utilisées uniquement comme bootstrap du premier rattachement ; recette sandbox réelle encore à exécuter après configuration des secrets/Price ;
 - [x] primitive serveur de réactivation après paiement confirmé : droits, site public et relances rétablis/annulés de façon idempotente ; branchement fournisseur restant à faire ;
 - [x] recette temporelle transactionnelle : J13, J14, J28/J104, réactivation, isolation de deux sites et blocage d’un UPDATE direct ; appels HTTP de production et fournisseur à finaliser après déploiement ;
 - [x] RLS durcies : un site suspendu n’est plus lisible anonymement via Data API et les mutations directes sites/drafts/domaines/Storage sont bloquées à partir de J14 ;
