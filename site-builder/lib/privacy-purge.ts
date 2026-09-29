@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cancelStripeSubscription } from "./stripe-billing";
+import { purgeStorageBackupForSite } from "./storage-backup";
 
 type PurgeResult = {
   systems: string[];
@@ -181,6 +182,14 @@ export async function purgeBuilderSite(
   );
   systems.push(`storage_public:${publicRemoved}`);
   systems.push(`storage_private:${privateRemoved}`);
+
+  const backupPurge = await purgeStorageBackupForSite(ownerId, site.id);
+  if (backupPurge.configured) {
+    systems.push(`backup_objects_removed:${backupPurge.deletedObjects}`);
+    systems.push(`backup_snapshots_rewritten:${backupPurge.rewrittenSnapshots}`);
+  } else {
+    systems.push("backup_store_not_configured");
+  }
 
   // These tables use ON DELETE SET NULL for site_id. Remove their site-scoped
   // records before deleting the site so content/usage traces are not orphaned.
