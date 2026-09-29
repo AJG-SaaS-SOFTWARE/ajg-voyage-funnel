@@ -9,6 +9,7 @@ import {
   adminRemoveBetaMember,
   adminRunBuilderE2E,
   adminRunStorageE2E,
+  adminRunStorageBackup,
   adminSetFeedbackStatus,
   adminSetPlan,
   adminSyncManagedDomain,
@@ -18,6 +19,7 @@ import {
   getAdminManagedDomains,
   getAdminMetrics,
   getAdminSites,
+  getAdminStorageBackupStatus,
   getReleaseReadiness,
   isCurrentUserAdmin,
   type AdminBetaCohort,
@@ -26,6 +28,7 @@ import {
   type AdminManagedDomain,
   type AdminMetrics,
   type AdminSiteRow,
+  type AdminStorageBackupStatus,
   type BuilderE2EResult,
   type ReleaseReadiness,
   type ReleaseReadinessCheck
@@ -69,6 +72,9 @@ export default function AdminPage() {
   const [storageTesting, setStorageTesting] = useState(false);
   const [storageTestMessage, setStorageTestMessage] = useState("");
   const [storageTestOk, setStorageTestOk] = useState<boolean | null>(null);
+  const [backupStatus, setBackupStatus] = useState<AdminStorageBackupStatus | null>(null);
+  const [backupRunning, setBackupRunning] = useState(false);
+  const [backupMessage, setBackupMessage] = useState("");
   const [builderE2ERunning, setBuilderE2ERunning] = useState(false);
   const [builderE2EResult, setBuilderE2EResult] = useState<BuilderE2EResult | null>(null);
   const [builderE2EError, setBuilderE2EError] = useState("");
@@ -90,16 +96,18 @@ export default function AdminPage() {
     setMetrics(nextMetrics);
     setFeedback(nextFeedback);
 
-    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextManagedDomains] = await Promise.all([
+    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextManagedDomains, nextBackupStatus] = await Promise.all([
       getReleaseReadiness().catch(() => null),
       getAdminBetaMetrics().catch(() => null),
       getAdminBetaCohort().catch(() => null),
-      getAdminManagedDomains().catch(() => [])
+      getAdminManagedDomains().catch(() => []),
+      getAdminStorageBackupStatus().catch(() => null)
     ]);
     setReadiness(nextReadiness);
     setBetaMetrics(nextBetaMetrics);
     setBetaCohort(nextBetaCohort);
     setManagedDomains(nextManagedDomains);
+    setBackupStatus(nextBackupStatus);
 
     setState("ready");
   };
@@ -154,6 +162,29 @@ export default function AdminPage() {
       );
     } finally {
       setStorageTesting(false);
+    }
+  };
+
+  const runStorageBackupNow = async () => {
+    setBackupRunning(true);
+    setBackupMessage("");
+    try {
+      const result = await adminRunStorageBackup();
+      setBackupMessage(
+        `Sauvegarde terminée : ${result.result.summary.sourceObjects} objet(s) analysé(s), ${result.result.summary.uploaded} copié(s), ${result.result.summary.unchanged} inchangé(s).`
+      );
+      const [nextStatus, nextReadiness] = await Promise.all([
+        getAdminStorageBackupStatus().catch(() => null),
+        getReleaseReadiness().catch(() => null)
+      ]);
+      setBackupStatus(nextStatus);
+      setReadiness(nextReadiness);
+    } catch (error) {
+      setBackupMessage(
+        error instanceof Error ? error.message : "Sauvegarde impossible."
+      );
+    } finally {
+      setBackupRunning(false);
     }
   };
 
@@ -883,6 +914,89 @@ export default function AdminPage() {
               back-office demeure utilisable.
             </p>
           )}
+        </section>
+      ) : null}
+
+      {state === "ready" ? (
+        <section className="panel admin-readiness">
+          <div className="admin-readiness-heading">
+            <div>
+              <p className="eyebrow">Continuité</p>
+              <h2>Sauvegarde externe des médias</h2>
+              <p>
+                Copie privée hors Supabase des buckets publics et privés. Le cron
+                quotidien reste actif ; ce contrôle permet aussi de lancer une
+                sauvegarde manuelle dès que le store Blob est connecté.
+              </p>
+            </div>
+            <div className="readiness-summary">
+              <span className={
+                backupStatus?.status === "healthy"
+                  ? "pass"
+                  : backupStatus?.status === "critical"
+                    ? "blocker"
+                    : backupStatus?.configured
+                      ? "warn"
+                      : "deferred"
+              }>
+                {backupStatus?.status === "healthy"
+                  ? "Saine"
+                  : backupStatus?.status === "critical"
+                    ? "Critique"
+                    : backupStatus?.configured
+                      ? "À vérifier"
+                      : "Store à connecter"}
+              </span>
+            </div>
+          </div>
+
+          <div className="backup-admin-grid">
+            <article>
+              <small>Dernière sauvegarde</small>
+              <b>
+                {backupStatus?.lastCompletedAt
+                  ? new Date(backupStatus.lastCompletedAt).toLocaleString("fr-FR")
+                  : "Aucune"}
+              </b>
+            </article>
+            <article>
+              <small>Âge</small>
+              <b>
+                {typeof backupStatus?.ageHours === "number"
+                  ? `${backupStatus.ageHours.toFixed(1)} h`
+                  : "—"}
+              </b>
+            </article>
+            <article>
+              <small>Objets source</small>
+              <b>{backupStatus?.sourceObjects ?? "—"}</b>
+            </article>
+            <article>
+              <small>Rétention</small>
+              <b>{backupStatus?.retentionDays ?? 35} j</b>
+            </article>
+          </div>
+
+          <div className="builder-actions">
+            <button
+              type="button"
+              className="button secondary"
+              disabled={backupRunning || backupStatus?.configured !== true}
+              onClick={() => void runStorageBackupNow()}
+            >
+              {backupRunning ? "Sauvegarde en cours…" : "Lancer une sauvegarde maintenant"}
+            </button>
+          </div>
+
+          {backupStatus?.configured !== true ? (
+            <p className="plans-note">
+              Connectez d’abord le store Vercel Blob privé au projet Production.
+              Le bouton s’activera automatiquement après redéploiement.
+            </p>
+          ) : null}
+          {backupMessage ? (
+            <p className="plans-note" role="status">{backupMessage}</p>
+          ) : null}
         </section>
       ) : null}
 
