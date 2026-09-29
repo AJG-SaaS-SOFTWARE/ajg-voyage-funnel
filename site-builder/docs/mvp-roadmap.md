@@ -511,7 +511,12 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] secrets de release : `SUPABASE_SECRET_KEY` runtime et `VERCEL_TOKEN` GitHub Actions ont permis la release contrôlée et la recette Storage ;
 - [ ] secrets opérationnels restants : configurer Resend et confirmer `NEXT_PUBLIC_APP_URL` ainsi que le périmètre minimal du token Vercel runtime pour les domaines personnalisés ; `CRON_SECRET` Production est désormais configuré ;
 - [x] catalogue Stripe sandbox : produits Essentiel / Pro IA et prix mensuels/annuels créés ; moteur Checkout plan-aware + essai 14 jours préparé côté serveur ;
-- [ ] paiement réel : volontairement non activé avant configuration des Price IDs live, validation juridique/fiscale et bascule explicite `AJG_BILLING_CHECKOUT_ENABLED=true` ;
+- [x] pages de préparation commerciale FR/EN ajoutées : mentions légales, confidentialité, conditions générales de service et résiliation ; les champs vendeur manquants restent visibles comme incomplets et ces pages sont noindex tant que la validation juridique n’est pas activée ;
+- [x] gate juridique renforcé : `AJG_COMMERCIAL_LEGAL_READY=true` ne suffit pas si l’identité vendeur obligatoire reste incomplète ;
+- [x] vente aux consommateurs désactivée par défaut tant que rétractation, médiateur de la consommation et informations précontractuelles B2C ne sont pas finalisés ;
+- [ ] identité juridique vendeur : renseigner dénomination/forme/adresse/email/téléphone/SIREN/immatriculation/directeur de publication/contact vie privée, puis effectuer la revue finale ;
+- [ ] fiscalité : confirmer régime TVA et stratégie Stripe Tax avant encaissement ;
+- [ ] paiement réel : volontairement non activé avant configuration des Price IDs live, secret webhook live, validation juridique/fiscale et bascule explicite `AJG_BILLING_CHECKOUT_ENABLED=true` ;
 - [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
 
 ### Checkpoints humains actifs
@@ -520,7 +525,9 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 1. **Offre commerciale** : grille validée Essentiel 19 €/mois ou 190 €/an et Pro IA 39 €/mois ou 390 €/an, 1 site. Les 4 Prices existent dans Stripe sandbox. Le Checkout est préparé avec 14 jours de droits Pro IA puis retour automatique au plan souscrit ; les Beta Testers restent gratuits et séparés de Stripe. L’ouverture commerciale reste protégée par `AJG_BILLING_CHECKOUT_ENABLED=false` tant que les secrets/prix live et le juridique ne sont pas finalisés.
 2. **Bêta réelle** : fournir/inviter 5 à 10 testeurs puis observer activation, publication, usage IA, régénération Premium et retours avant de modifier à nouveau le template public.
 3. **Domaine personnalisé réel** : choisir un domaine de test possédé par AJG ou un testeur afin d’exécuter la recette ajout → DNS → vérification → primaire → retrait.
-4. **Secrets opérationnels** : `CRON_SECRET` est finalisé ; restent Resend avant les notifications automatiques d’impayés, ainsi que la confirmation de `NEXT_PUBLIC_APP_URL` et du périmètre minimal du token Vercel runtime.
-5. **Supabase Auth** : activer la protection contre les mots de passe compromis uniquement si le plan Supabase utilisé la rend disponible.
+4. **Identité juridique AJG** : le nom commercial du produit est défini, mais la structure juridique du vendeur n’est pas encore arrêtée. Renseigner les variables légales réelles avant de lever le gate commercial.
+5. **Fiscalité / TVA** : confirmer le régime applicable et les règles de collecte avant Stripe live. Le lancement B2C reste désactivé tant que rétractation et médiation ne sont pas finalisées.
+6. **Secrets opérationnels** : `CRON_SECRET` est finalisé ; restent Resend avant les notifications automatiques d’impayés, ainsi que la confirmation de `NEXT_PUBLIC_APP_URL` et du périmètre minimal du token Vercel runtime.
+7. **Supabase Auth** : activer la protection contre les mots de passe compromis uniquement si le plan Supabase utilisé la rend disponible.
 
 Tant qu’un de ces éléments n’est pas fourni ou décidé, le développement correspondant reste volontairement bloqué plutôt que de créer une convention commerciale, un domaine ou un secret fictif.

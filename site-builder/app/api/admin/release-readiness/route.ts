@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "../../../../lib/app-url";
 import { getStorageBackupStatus } from "../../../../lib/storage-backup";
+import { commercialLegalMissing, commercialLegalProfile } from "../../../../lib/commercial-legal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,6 +84,10 @@ export async function GET(request: Request) {
   const serviceKey =
     process.env.SUPABASE_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const commercialLegal = commercialLegalProfile();
+  const commercialLegalMissingFields = commercialLegalMissing(commercialLegal);
+  const legalApproved =
+    process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true";
 
   const checks: ReadinessCheck[] = [
     check(
@@ -172,10 +177,12 @@ export async function GET(request: Request) {
     check(
       "commercial-legal",
       "Commercial · juridique",
-      process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true",
+      legalApproved && commercialLegalMissingFields.length === 0,
       "commercial",
-      "Validation juridique explicitement confirmée.",
-      "CGU/CGV, politique de confidentialité et informations vendeur AJG Builder doivent être finalisées avant encaissement.",
+      "Identité vendeur, mentions légales, confidentialité et conditions commerciales complètes et explicitement validées.",
+      commercialLegalMissingFields.length
+        ? `Identité juridique incomplète : ${commercialLegalMissingFields.join(", ")}.`
+        : "Les pages sont complètes mais AJG_COMMERCIAL_LEGAL_READY n’est pas encore activé.",
       "deferred"
     ),
     check(

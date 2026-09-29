@@ -116,3 +116,33 @@ Le navigateur ne transmet jamais de Price ID Stripe. Il transmet uniquement le p
 Un interrupteur serveur `AJG_BILLING_CHECKOUT_ENABLED` doit être explicitement positionné à `true` pour ouvrir Checkout. Sa valeur par défaut reste `false`.
 
 Pendant un abonnement Stripe au statut `trialing`, le plan cible est conservé en base mais les droits effectifs sont temporairement ceux de Pro IA pendant 14 jours. À la sortie du trial, les droits correspondent automatiquement au plan réellement souscrit.
+
+
+## Cadre juridique de pré-lancement
+
+Les routes publiques suivantes sont préparées en français et en anglais :
+
+- `/mentions-legales` / `/legal` ;
+- `/confidentialite` / `/privacy` ;
+- `/cgv` / `/terms` ;
+- `/resilier` / `/cancel`.
+
+Elles ne doivent jamais inventer les informations du vendeur. Tant que l’identité juridique finale n’est pas renseignée, elles indiquent explicitement leur statut de préparation et restent `noindex`.
+
+La validation commerciale utilise deux niveaux de sécurité complémentaires :
+
+1. complétude technique des champs vendeur obligatoires ;
+2. validation humaine explicite via `AJG_COMMERCIAL_LEGAL_READY=true`.
+
+La vente aux consommateurs est désactivée par défaut avec `AJG_COMMERCIAL_CONSUMER_SALES_ENABLED=false`. Elle ne doit être activée qu’après mise en place du parcours de rétractation, de la résiliation électronique, des informations précontractuelles B2C et du médiateur de la consommation compétent.
+
+La politique de confidentialité distingue les traitements propres à AJG Site Builder (compte, facturation, sécurité, support, pilotage produit) des cas où AJG peut traiter du contenu ou des données de visiteurs pour le compte du client qui publie son site.
+
+## Gates restant nécessaires avant Stripe live
+
+- identité juridique réelle du vendeur ;
+- CGS/Confidentialité relues sur cette identité ;
+- régime TVA et traitement fiscal confirmés ;
+- informations Stripe live et secret webhook live ;
+- médiateur + parcours consommateur uniquement si la vente B2C est activée ;
+- activation finale et volontaire de `AJG_BILLING_CHECKOUT_ENABLED`.
