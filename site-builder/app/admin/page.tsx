@@ -241,7 +241,7 @@ export default function AdminPage() {
     setMessage("");
     setBetaInviteBusy(true);
     try {
-      const result = await adminInviteBetaMember(email, betaDurationDays, betaLocale);
+      const result = await adminInviteBetaMember(email, betaDurationDays, locale);
       setBetaEmail("");
       await load();
       setMessage(
@@ -256,7 +256,7 @@ export default function AdminPage() {
     }
   };
 
-  const renewBetaMember = async (email: string) => {
+  const renewBetaMember = async (email: string, locale: "fr" | "en") => {
     setMessage("");
     setBetaInviteBusy(true);
     try {
@@ -611,7 +611,7 @@ export default function AdminPage() {
                             type="button"
                             className="text-button"
                             disabled={betaInviteBusy}
-                            onClick={() => void renewBetaMember(item.email)}
+                            onClick={() => void renewBetaMember(item.email, item.locale)}
                           >
                             Renouveler {betaDurationDays} j
                           </button>
