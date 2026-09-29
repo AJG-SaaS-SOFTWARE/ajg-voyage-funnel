@@ -13,7 +13,7 @@ function date(value: string | null, locale: string) {
 export default function BillingPage() {
   const { locale, tr } = useProductLocale();
   const [billing, setBilling] = useState<BillingState | null>(null);
-  const [message, setMessage] = useState("Chargement…");
+  const [message, setMessage] = useState("");
   const [sites,setSites]=useState<Array<{id:string;slug:string}>>([]);
   const [siteId,setSiteId]=useState("");
   const [billingBusy,setBillingBusy]=useState(false);
