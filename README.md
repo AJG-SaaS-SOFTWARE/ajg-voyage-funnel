@@ -5,8 +5,8 @@ Landing page mobile-first pour qualifier des prospects intéressés par Travel A
 ## Production
 - Site FR : https://voyage.ajgsolutionsgroup.com/
 - Site EN : https://voyage.ajgsolutionsgroup.com/en/
-- Hébergement : Netlify
-- Collecte : Netlify Forms (`travel-presentation`)
+- Hébergement : Vercel
+- Collecte : API Vercel `/api/travel-presentation` → Supabase (`ajg_voyage_leads`), avec notification technique via Resend
 - Réservation FR : Google Calendar — présentation individuelle avec Benoit
 - Réservation EN : Calendly — présentation individuelle avec Thibaut
 - Dépôt : `AJG-SaaS-SOFTWARE/ajg-voyage-funnel`
