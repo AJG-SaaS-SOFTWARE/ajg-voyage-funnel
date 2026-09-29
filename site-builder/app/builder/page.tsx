@@ -1215,7 +1215,7 @@ export default function BuilderPage() {
     return (
       <main className="loading-page premium-loading-page">
         <div className="loading-orbit"><span /></div>
-        <p>Chargement de votre espace…</p>
+        <p>{tr("Chargement de votre espace…", "Loading your workspace…")}</p>
       </main>
     );
   }
@@ -1235,26 +1235,26 @@ export default function BuilderPage() {
           <span style={{ width: completion + "%" }} />
         </div>
 
-        <div className="topbar-account premium-topbar-account">
-          {ownedSites.length>1?<select aria-label="Site actif" value={remoteSiteId||""} onChange={async e=>{
+        <div className="topbar-account premium-topbar-account"><LanguageSwitch compact />
+          {ownedSites.length>1?<select aria-label={tr("Site actif", "Active website")} value={remoteSiteId||""} onChange={async e=>{
             const next=await getMySite(e.target.value);
             if(!next)return;
             if(next.privacyState==="erasure_requested"){router.push("/data");return;}
             setRemoteSiteId(next.id);setConfig(next.config);setPublished(next.status==="published");setSaved(true);
             await refreshVerifiedPublicUrl(next.id);
           }}>{ownedSites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select>:null}
-          <Link className="preview-shortcut" href="/preview">Aperçu</Link>
+          <Link className="preview-shortcut" href="/preview">{tr("Aperçu", "Preview")}</Link>
           <span className={"cloud-pill " + (remoteMode ? "online" : "local")}>
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
-          {userEmail ? <Link href="/plans" className="button secondary">Mon offre</Link> : null}
-          {userEmail ? <Link href="/domains" className="button secondary">Domaines</Link> : null}
-          {userEmail ? <Link href="/data" className="button secondary">Mes données</Link> : null}
-          {userEmail ? <Link href="/feedback" className="button secondary">Donner mon avis</Link> : null}
+          {userEmail ? <Link href="/plans" className="button secondary">{tr("Mon offre", "My plan")}</Link> : null}
+          {userEmail ? <Link href="/domains" className="button secondary">{tr("Domaines", "Domains")}</Link> : null}
+          {userEmail ? <Link href="/data" className="button secondary">{tr("Mes données", "My data")}</Link> : null}
+          {userEmail ? <Link href="/feedback" className="button secondary">{tr("Donner mon avis", "Give feedback")}</Link> : null}
           {userEmail ? (
             <button type="button" className="account-button" onClick={logout} title={userEmail}>
               <span>{userEmail.charAt(0).toUpperCase()}</span>
-              <b>Déconnexion</b>
+              <b>{tr("Déconnexion", "Sign out")}</b>
             </button>
           ) : null}
         </div>
@@ -1263,12 +1263,12 @@ export default function BuilderPage() {
       <div className="builder-layout premium-builder-layout">
         <aside className="step-nav premium-step-nav">
           <div className="step-nav-heading">
-            <p className="eyebrow">Votre parcours</p>
-            <h2>Construire le site</h2>
-            <p>Avancez étape par étape. Vous pouvez revenir sur chaque section à tout moment.</p>
+            <p className="eyebrow">{tr("Votre parcours", "Your journey")}</p>
+            <h2>{tr("Construire le site", "Build your website")}</h2>
+            <p>{tr("Avancez étape par étape. Vous pouvez revenir sur chaque section à tout moment.", "Move through the steps at your own pace. You can return to any section at any time.")}</p>
             <div className="beginner-promise">
               <span>✓</span>
-              <p>Pas besoin de compétences techniques : remplissez simplement les questions, nous nous occupons du reste.</p>
+              <p>{tr("Pas besoin de compétences techniques : remplissez simplement les questions, nous nous occupons du reste.", "No technical skills needed: answer the questions and the Builder handles the rest.")}</p>
             </div>
           </div>
 
@@ -1285,8 +1285,8 @@ export default function BuilderPage() {
                 >
                   <span className="step-number">{isDone ? "✓" : index + 1}</span>
                   <span className="step-label">
-                    <b>{item.label}</b>
-                    <small>{item.eyebrow}</small>
+                    <b>{locale === "en" ? item.labelEn : item.label}</b>
+                    <small>{locale === "en" ? item.eyebrowEn : item.eyebrow}</small>
                   </span>
                 </button>
               );
@@ -1295,21 +1295,21 @@ export default function BuilderPage() {
 
           <div className="step-nav-footer">
             <span>Site</span>
-            <strong>{config.brandName || "Nouveau site"}</strong>
-            <small>{config.slug ? publicPath : "Adresse à définir"}</small>
+            <strong>{config.brandName || tr("Nouveau site", "New website")}</strong>
+            <small>{config.slug ? publicPath : tr("Adresse à définir", "Address to define")}</small>
           </div>
         </aside>
 
         <section className="panel editor builder-panel premium-builder-panel">
           <div className="panel-heading premium-panel-heading">
             <div className="step-copy">
-              <p className="step">Étape {stepIndex + 1} sur {steps.length} · {currentStep.eyebrow}</p>
+              <p className="step">{tr("Étape", "Step")} {stepIndex + 1} {tr("sur", "of")} {steps.length} · {currentStep.eyebrow}</p>
               <h1>{currentStep.label}</h1>
               <p className="step-description">{currentStep.description}</p>
             </div>
             <span aria-live="polite" className={"status premium-status " + (published ? "published" : saved ? "saved" : "draft")}>
               <i />
-              {busy ? "Synchronisation…" : published ? "Publié" : saved ? "Sauvegardé" : "Brouillon"}
+              {busy ? tr("Synchronisation…", "Syncing…") : published ? tr("Publié", "Published") : saved ? tr("Sauvegardé", "Saved") : tr("Brouillon", "Draft")}
             </span>
           </div>
 
@@ -1317,31 +1317,31 @@ export default function BuilderPage() {
             <div className="step-guidance-card">
               <div className="step-guidance-icon">?</div>
               <div>
-                <span>Ce que vous avez à faire · environ {currentStep.time}</span>
+                <span>{tr("Ce que vous avez à faire", "What you need to do")} · {tr("environ", "about")} {currentStep.time}</span>
                 <p>{currentStep.guidance}</p>
               </div>
             </div>
-            {syncError ? <div className="error-card premium-error-card"><b>Synchronisation</b><p>{syncError}</p></div> : null}
+            {syncError ? <div className="error-card premium-error-card"><b>{tr("Synchronisation", "Sync")}</b><p>{syncError}</p></div> : null}
 
             {step === "identity" ? (
               <>
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Votre identité</b><p>Ces informations donnent le ton à tout le site.</p></div>
+                  <div><b>{tr("Votre identité", "Your identity")}</b><p>{tr("Ces informations donnent le ton à tout le site.", "These details shape the tone of your whole website.")}</p></div>
                 </div>
 
                 <div className="grid two">
-                  <Field label="Prénom">
+                  <Field label={tr("Prénom", "First name")}>
                     <input spellCheck placeholder="Ex. Julie" value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
                   </Field>
-                  <Field label="Nom">
+                  <Field label={tr("Nom", "Last name")}>
                     <input spellCheck placeholder="Ex. Martin" value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
                   </Field>
                 </div>
 
-                <Field label="Nom affiché du site" hint="Nous le préremplissons avec votre nom. Vous pouvez le remplacer par votre marque si vous en avez une.">
+                <Field label={tr("Nom affiché du site", "Website display name")} hint={tr("Nous le préremplissons avec votre nom. Vous pouvez le remplacer par votre marque si vous en avez une.", "We prefill it with your name. Replace it with your brand name if you have one.")}>
                   <input
-                    placeholder="Ex. Julie Martin Voyages"
+                    placeholder={tr("Ex. Julie Martin Voyages", "e.g. Julie Martin Studio")}
                     value={config.brandName}
                     onChange={(e) => {
                       setBrandTouched(true);
@@ -1351,7 +1351,7 @@ export default function BuilderPage() {
                 </Field>
 
                 <div className="grid two">
-                  <Field label="Adresse souhaitée" hint="Exemple : julien-martin">
+                  <Field label={tr("Adresse souhaitée", "Preferred address")} hint={tr("Exemple : julien-martin", "Example: julie-martin")}>
                     <div className="slug-field premium-slug-field">
                       <input
                         value={config.slug}
@@ -1365,32 +1365,32 @@ export default function BuilderPage() {
                     </div>
                   </Field>
 
-                  <Field label="Langue">
+                  <Field label={tr("Langue", "Website language")}>
                     <select
                       value={config.language}
                       onChange={(e) => update("language", e.target.value as SiteLanguage)}
                     >
                       <option value="fr">Français</option>
                       <option value="en">English</option>
-                      <option value="both" disabled>Français + English (à venir)</option>
+                      <option value="both" disabled>{tr("Français + English (à venir)", "French + English (coming soon)")}</option>
                     </select>
                   </Field>
                 </div>
 
                 <div className="section-kicker photo-kicker">
                   <span>02</span>
-                  <div><b>Votre photo</b><p>Un visage réel renforce immédiatement la confiance.</p></div>
+                  <div><b>{tr("Votre photo", "Your photo")}</b><p>{tr("Un visage réel renforce immédiatement la confiance.", "A real face immediately builds trust.")}</p></div>
                 </div>
 
                 {remoteMode ? (
                   <Field
-                    label="Photo de profil"
-                    hint="JPEG, PNG, WebP ou AVIF · 8 Mo maximum. La photo est stockée dans votre espace Supabase."
+                    label={tr("Photo de profil", "Profile photo")}
+                    hint={tr("JPEG, PNG, WebP ou AVIF · 8 Mo maximum. La photo est stockée dans votre espace Supabase.", "JPEG, PNG, WebP or AVIF · 8 MB maximum. The photo is stored in your Supabase workspace.")}
                   >
                     <input spellCheck className="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadPhoto} disabled={busy} />
                   </Field>
                 ) : (
-                  <Field label="Photo de profil — URL" hint="L'upload direct fonctionne dès que Supabase est configuré.">
+                  <Field label={tr("Photo de profil — URL", "Profile photo — URL")} hint={tr("L’upload direct fonctionne dès que Supabase est configuré.", "Direct upload works once Supabase is configured.")}>
                     <input
                       type="url"
                       placeholder="https://..."
@@ -1402,10 +1402,10 @@ export default function BuilderPage() {
 
                 {config.profileImageUrl ? (
                   <div className="uploaded-photo premium-uploaded-photo">
-                    <img src={config.profileImageUrl} alt="Aperçu de la photo de profil" />
+                    <img src={config.profileImageUrl} alt={tr("Aperçu de la photo de profil", "Profile photo preview")} />
                     <div>
-                      <b>Photo chargée</b>
-                      <button type="button" onClick={() => update("profileImageUrl", "")}>Retirer la photo</button>
+                      <b>{tr("Photo chargée", "Photo uploaded")}</b>
+                      <button type="button" onClick={() => update("profileImageUrl", "")}>{tr("Retirer la photo", "Remove photo")}</button>
                     </div>
                   </div>
                 ) : null}
