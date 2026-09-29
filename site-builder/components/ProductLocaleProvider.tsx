@@ -19,7 +19,11 @@ export function ProductLocaleProvider({
   const [locale, setLocaleState] = useState<ProductLocale>(initialLocale);
 
   useEffect(() => {
-    const stored = getProductLocale();
+    const requested = new URLSearchParams(window.location.search).get("lang");
+    const explicitLocale: ProductLocale | null =
+      requested === "en" || requested === "fr" ? requested : null;
+    const stored = explicitLocale ?? getProductLocale();
+    if (explicitLocale) persistProductLocale(explicitLocale);
     if (stored !== locale) {
       setLocaleState(stored);
       document.documentElement.lang = stored;
