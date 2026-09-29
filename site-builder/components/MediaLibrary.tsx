@@ -82,7 +82,7 @@ export default function MediaLibrary({ design, onChange }: { design: SiteDesign;
     setSearched(true);
     try {
       const params = new URLSearchParams({ type: mediaType, q: term.trim(), page: String(page) });
-      const response = await fetch(`/api/media/search?${params}`, { signal: controller.signal });
+      const response = await fetch(`/api/media/search?${params}`, { signal: controller.signal, headers: { "X-AJG-Locale": tr("fr", "en") } });
       const data = await response.json() as { results?: SearchResult[]; hasMore?: boolean; error?: string };
       if (controller.signal.aborted) return;
       if (!response.ok) throw new Error(data.error || tr("Recherche indisponible.", "Search unavailable."));
