@@ -922,19 +922,19 @@ export default function BuilderPage() {
       if (!value.trim()) return true;
       try { const url = new URL(value); return url.protocol === "https:" && url.hostname.includes("."); } catch { return false; }
     };
-    checks.push({ label: "Identité complète", detail: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "Nom et identité du site renseignés." : "Complétez l’identité du site.", status: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "pass" : "warn", step: "identity" });
-    checks.push({ label: "Message d’accueil", detail: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "Titre et introduction suffisamment renseignés." : "Ajoutez un titre et une introduction plus complète.", status: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "pass" : "warn", step: "story" });
-    checks.push({ label: "Présentation personnelle", detail: words(config.aboutText) >= 25 ? "La présentation apporte assez de contexte." : "La présentation gagnerait à être un peu plus développée.", status: words(config.aboutText) >= 25 ? "pass" : "warn", step: "story" });
+    checks.push({ label: tr("Identité complète", "Complete identity"), detail: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? tr("Nom et identité du site renseignés.", "Website name and identity are filled in.") : tr("Complétez l’identité du site.", "Complete the website identity."), status: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "pass" : "warn", step: "identity" });
+    checks.push({ label: tr("Message d’accueil", "Homepage message"), detail: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? tr("Titre et introduction suffisamment renseignés.", "Headline and introduction are sufficiently complete.") : tr("Ajoutez un titre et une introduction plus complète.", "Add a headline and a fuller introduction."), status: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "pass" : "warn", step: "story" });
+    checks.push({ label: tr("Présentation personnelle", "Personal presentation"), detail: words(config.aboutText) >= 25 ? tr("La présentation apporte assez de contexte.", "The presentation provides enough context.") : tr("La présentation gagnerait à être un peu plus développée.", "The presentation would benefit from a little more detail."), status: words(config.aboutText) >= 25 ? "pass" : "warn", step: "story" });
     const bookingLabelLength = config.bookingLabel.trim().length;
     const ctaOk = !config.design.showBooking || !config.bookingUrl.trim() || (bookingLabelLength >= 3 && bookingLabelLength <= 60);
-    checks.push({ label: "Appel à l’action", detail: ctaOk ? "Le rendez-vous et le libellé du bouton sont cohérents." : "Utilisez un libellé de bouton clair et concis, entre 3 et 60 caractères.", status: ctaOk ? "pass" : "warn", step: "booking" });
+    checks.push({ label: tr("Appel à l’action", "Call to action"), detail: ctaOk ? tr("Le rendez-vous et le libellé du bouton sont cohérents.", "The booking link and button label are consistent.") : tr("Utilisez un libellé de bouton clair et concis, entre 3 et 60 caractères.", "Use a clear, concise button label between 3 and 60 characters."), status: ctaOk ? "pass" : "warn", step: "booking" });
     const socialOk = (!config.design.showInstagram || validOptionalUrl(config.instagramUrl)) && (!config.design.showFacebook || validOptionalUrl(config.facebookUrl));
-    checks.push({ label: "Liens externes", detail: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "Les liens affichés ont un format valide." : "Au moins un lien affiché doit être vérifié.", status: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "pass" : "warn", step: "booking" });
+    checks.push({ label: tr("Liens externes", "External links"), detail: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? tr("Les liens affichés ont un format valide.", "Displayed links use a valid format.") : tr("Au moins un lien affiché doit être vérifié.", "At least one displayed link needs checking."), status: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "pass" : "warn", step: "booking" });
     const mediaOk = Boolean(config.profileImageUrl || config.design.heroImage || config.design.backgroundPhotoUrl);
-    checks.push({ label: "Qualité visuelle", detail: mediaOk ? "Au moins un visuel personnel ou principal est présent." : "Ajoutez une photo ou une image principale pour renforcer l’impact visuel.", status: mediaOk ? "pass" : "warn", step: "design" });
+    checks.push({ label: tr("Qualité visuelle", "Visual quality"), detail: mediaOk ? tr("Au moins un visuel personnel ou principal est présent.", "At least one personal or primary visual is present.") : tr("Ajoutez une photo ou une image principale pour renforcer l’impact visuel.", "Add a photo or main image to strengthen the visual impact."), status: mediaOk ? "pass" : "warn", step: "design" });
     const portraitOk = !config.design.showPortrait || Boolean(config.profileImageUrl);
     checks.push({ label: "Photo de profil", detail: portraitOk ? (config.design.showPortrait ? "Le portrait affiché dispose d’une photo." : "Le portrait est volontairement masqué.") : "Le portrait est activé sans photo : les initiales seront affichées. Ajoutez une photo ou masquez le portrait.", status: portraitOk ? "pass" : "warn", step: "identity" });
-    checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Le profil d’activité indépendant est appliqué.", status: "pass", step: "options" });
+    checks.push({ label: tr("Conformité activité", "Activity compliance"), detail: config.affiliation === "mwr" ? tr("La mention d’indépendance obligatoire sera affichée.", "The required independence disclosure will be displayed.") : tr("Le profil d’activité indépendant est appliqué.", "The independent activity profile is applied."), status: "pass", step: "options" });
     const legalMissing = legalMissingFields(config.legal, config.firstName, config.lastName);
     checks.push({
       label: "Mentions légales & RGPD",
@@ -947,9 +947,9 @@ export default function BuilderPage() {
     checks.push({ label: "Contraste du bouton", detail: `Texte du bouton adapté à la couleur choisie (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`, status: "pass", step: "design" });
     const allText = [config.heroTagline, config.heroTitle, config.heroSubtitle, config.aboutHeading, config.aboutText].filter((value) => value.trim());
     const normalized = allText.map((value) => value.trim().toLowerCase().replace(/[.!?]+$/, ""));
-    checks.push({ label: "Répétitions évidentes", detail: new Set(normalized).size === normalized.length ? "Aucun texte identique entre les champs principaux." : "Deux champs contiennent le même texte : diversifiez-les.", status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
+    checks.push({ label: tr("Répétitions évidentes", "Obvious repetition"), detail: new Set(normalized).size === normalized.length ? tr("Aucun texte identique entre les champs principaux.", "No identical copy appears across the main fields.") : tr("Deux champs contiennent le même texte : diversifiez-les.", "Two fields contain the same text: make them more distinct."), status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
     const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter/i.test(allText.join(" "));
-    checks.push({ label: "Texte à compléter", detail: placeholders ? "Un texte de démonstration semble encore présent." : "Aucun texte de démonstration connu détecté.", status: placeholders ? "warn" : "pass", step: "story" });
+    checks.push({ label: tr("Texte à compléter", "Placeholder copy"), detail: placeholders ? tr("Un texte de démonstration semble encore présent.", "Demo or placeholder copy still appears to be present.") : tr("Aucun texte de démonstration connu détecté.", "No known placeholder copy detected."), status: placeholders ? "warn" : "pass", step: "story" });
     const responsiveTextOk = config.heroTitle.trim().length <= 90
       && config.heroSubtitle.trim().length <= 320
       && config.brandName.trim().length <= 70
@@ -957,7 +957,7 @@ export default function BuilderPage() {
     checks.push({ label: "Responsive du contenu", detail: responsiveTextOk ? "Les longueurs principales restent adaptées aux petits écrans." : "Un titre, une introduction, le nom du site ou le CTA est trop long pour un affichage mobile confortable.", status: responsiveTextOk ? "pass" : "warn", step: "story" });
     const focusOk = !config.design.backgroundPhotoUrl
       || (config.design.backgroundPositionX >= 10 && config.design.backgroundPositionX <= 90 && config.design.backgroundPositionY >= 10 && config.design.backgroundPositionY <= 85);
-    checks.push({ label: "Cadrage mobile", detail: focusOk ? "Le point focal de la photo reste dans une zone sûre pour le recadrage cover." : "Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", status: focusOk ? "pass" : "warn", step: "design" });
+    checks.push({ label: tr("Cadrage mobile", "Mobile cropping"), detail: focusOk ? tr("Le point focal de la photo reste dans une zone sûre pour le recadrage cover.", "The photo focal point remains in a safe area for cover cropping.") : tr("Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", "The focal point is very close to an edge: check the mobile result."), status: focusOk ? "pass" : "warn", step: "design" });
     const unknownRights = config.contentLibrary.assets.filter((asset) => asset.rights === "unknown");
     const publishableMissing = config.contentLibrary.assets.filter((asset) => asset.publishable && ((asset.kind !== "text" && (!asset.url || asset.url.startsWith("private://"))) || (asset.kind === "text" && !asset.text.trim())));
     const rightsSourceMissing = config.contentLibrary.assets.filter((asset) => (asset.rights === "licensed" || asset.rights === "public-domain") && !asset.sourceUrl.trim());
@@ -968,7 +968,7 @@ export default function BuilderPage() {
     const clearedAssetIds = new Set(config.contentLibrary.assets.filter((asset) => asset.publishable && asset.rights !== "unknown").map((asset) => asset.id));
     const invalidAssignments = enabledPages.flatMap((page) => page.assetIds || []).filter((id) => !clearedAssetIds.has(id));
     const architectureOk = enabledPages.some((page) => page.kind === "home") && new Set(pageSlugs).size === pageSlugs.length && (config.architecture.mode === "single" || enabledPages.length > 1);
-    checks.push({ label: "Affectation des contenus", detail: invalidAssignments.length ? "Une page référence un contenu non autorisé ou aux droits non validés." : "Les contenus affectés aux pages sont autorisés à la publication.", status: invalidAssignments.length ? "warn" : "pass", step: "story" });
+    checks.push({ label: tr("Affectation des contenus", "Content assignment"), detail: invalidAssignments.length ? tr("Une page référence un contenu non autorisé ou aux droits non validés.", "A page references content that is not authorized or whose rights are not validated.") : tr("Les contenus affectés aux pages sont autorisés à la publication.", "Content assigned to pages is authorized for publication."), status: invalidAssignments.length ? "warn" : "pass", step: "story" });
     checks.push({ label: "Architecture du site", detail: architectureOk ? `${enabledPages.length} page(s), hiérarchie et URLs cohérentes.` : "La structure des pages contient une incohérence à corriger.", status: architectureOk ? "pass" : "warn", step: "story" });
     const modules = config.design.modules;
     const validYoutubeUrl = (value: string) => {
@@ -994,10 +994,10 @@ export default function BuilderPage() {
     const moduleReady = moduleProblems.length === 0;
     checks.push({ label: "Modules activés", detail: moduleReady ? "Les rubriques activées ont du contenu publiable." : `À compléter : ${moduleProblems.join(", ")}.`, status: moduleReady ? "pass" : "warn", step: "options" });
     const galleryAccessible = !modules.gallery.enabled || modules.gallery.images.length === 0 || modules.gallery.images.every((image) => image.caption.trim().length >= 3);
-    checks.push({ label: "Images accessibles", detail: galleryAccessible ? "Les images de galerie ont une légende exploitable comme description." : "Ajoutez une légende descriptive aux images de galerie pour améliorer compréhension et accessibilité.", status: galleryAccessible ? "pass" : "warn", step: "options" });
+    checks.push({ label: tr("Images accessibles", "Accessible images"), detail: galleryAccessible ? tr("Les images de galerie ont une légende exploitable comme description.", "Gallery images have captions that can be used as descriptions.") : tr("Ajoutez une légende descriptive aux images de galerie pour améliorer compréhension et accessibilité.", "Add descriptive captions to gallery images to improve clarity and accessibility."), status: galleryAccessible ? "pass" : "warn", step: "options" });
     const sentences = [config.heroSubtitle, config.aboutText].filter(Boolean);
     const punctuation = sentences.every((text) => /[.!?…]$/.test(text.trim()));
-    checks.push({ label: "Ponctuation", detail: punctuation ? "Les paragraphes principaux se terminent correctement." : "Vérifiez la ponctuation de l’introduction et de la présentation.", status: punctuation ? "pass" : "warn", step: "story" });
+    checks.push({ label: tr("Ponctuation", "Punctuation"), detail: punctuation ? tr("Les paragraphes principaux se terminent correctement.", "The main paragraphs end correctly.") : tr("Vérifiez la ponctuation de l’introduction et de la présentation.", "Check punctuation in the introduction and presentation."), status: punctuation ? "pass" : "warn", step: "story" });
     const editorialReviewOk = reviewResult !== null && reviewResult.issues.length === 0;
     checks.push({
       label: "Relecture éditoriale IA",
@@ -1010,7 +1010,7 @@ export default function BuilderPage() {
       step: "review"
     });
     return checks;
-  }, [config, bookingLinkStatus, reviewResult]);
+  }, [config, bookingLinkStatus, reviewResult, tr]);
 
   const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
   const qualityWarnings = qualityChecks.length - qualityPassed;
@@ -1029,14 +1029,14 @@ export default function BuilderPage() {
 
   const errors = useMemo(() => {
     const next: { message: string; step: StepKey }[] = [];
-    if (!config.firstName.trim()) next.push({ message: "Prénom manquant", step: "identity" });
-    if (!config.lastName.trim()) next.push({ message: "Nom manquant", step: "identity" });
-    if (!config.brandName.trim()) next.push({ message: "Nom du site manquant", step: "identity" });
-    if (!config.slug.trim()) next.push({ message: "Adresse du site manquante", step: "identity" });
-    else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push({ message: "Adresse du site invalide", step: "identity" });
-    if (!config.heroTitle.trim()) next.push({ message: "Titre principal manquant", step: "story" });
+    if (!config.firstName.trim()) next.push({ message: tr("Prénom manquant", "First name missing"), step: "identity" });
+    if (!config.lastName.trim()) next.push({ message: tr("Nom manquant", "Last name missing"), step: "identity" });
+    if (!config.brandName.trim()) next.push({ message: tr("Nom du site manquant", "Website name missing"), step: "identity" });
+    if (!config.slug.trim()) next.push({ message: tr("Adresse du site manquante", "Website address missing"), step: "identity" });
+    else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push({ message: tr("Adresse du site invalide", "Invalid website address"), step: "identity" });
+    if (!config.heroTitle.trim()) next.push({ message: tr("Titre principal manquant", "Main headline missing"), step: "story" });
     if (config.design.showBooking && bookingLinkStatus === "invalid") {
-      next.push({ message: "Lien de rendez-vous invalide", step: "booking" });
+      next.push({ message: tr("Lien de rendez-vous invalide", "Invalid booking link"), step: "booking" });
     }
     if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName, JSON.stringify(config.design.modules)].join(" "))) {
       next.push({ message: "Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", step: "options" });
@@ -1046,7 +1046,7 @@ export default function BuilderPage() {
       next.push({ message: `Informations légales à compléter : ${missingLegal.slice(0, 3).join(", ")}${missingLegal.length > 3 ? "…" : ""}`, step: "options" });
     }
     return next;
-  }, [config, bookingLinkStatus]);
+  }, [config, bookingLinkStatus, tr]);
 
   const save = async () => {
     setBusy(true);
