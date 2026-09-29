@@ -21,7 +21,7 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return json(res, 405, { error: "Method not allowed" });
