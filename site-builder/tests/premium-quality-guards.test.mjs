@@ -289,3 +289,20 @@ test("generic benefit titles are blocked", () => {
   });
   assert.ok(codes(value).includes("generic_benefit_title"));
 });
+
+
+test("unresolved template variables are blocked in visible copy", () => {
+  const value = proposal({
+    heroSubtitle:
+      "Photographe à {{ville}} pour accompagner votre projet avec attention."
+  });
+  assert.ok(codes(value).includes("template_residue"));
+});
+
+test("normal bracket-free copy is not treated as a template residue", () => {
+  const value = proposal({
+    heroSubtitle:
+      "Photographe à Toulouse pour accompagner votre projet avec attention."
+  });
+  assert.ok(!codes(value).includes("template_residue"));
+});
