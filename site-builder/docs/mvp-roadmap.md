@@ -111,13 +111,15 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] Structured Outputs JSON Schema pour fiabiliser la forme des réponses Premium ;
 - [x] étape 3 : audit critique indépendant de la stratégie, du copywriting, de la conversion, de la crédibilité, du design et de la conformité ;
 - [x] raffinement automatique par le modèle Premium lorsqu’un problème majeur ou une qualité insuffisante est détecté ;
+- [x] quality gate final : toute proposition raffinée est relue une seconde fois par un critique IA indépendant ; elle n’est pas affichée si un problème majeur subsiste ou si le seuil qualité final n’est pas atteint ;
+- [x] le score et les signaux d’évaluation utilisateur portent sur la version finale réellement affichée, pas seulement sur le premier brouillon ;
 - [x] aucune information factuelle manquante inventée : les manques sont explicitement remontés à l’utilisateur ;
 - [x] recommandations de modules appliquées uniquement lorsqu’un contenu réellement exploitable existe ;
 - [x] ordre des modules proposé par l’IA et conservé à l’application ;
 - [x] interface Premium enrichie : besoin compris, audience, objectif, positionnement, parcours visiteur, rationales architecture/design et audit ;
 - [x] boucle de clarification conversationnelle : les informations réellement manquantes sont formulées comme questions ciblées, le client répond uniquement à ce qu’il connaît puis l’IA reconstruit et réaudite la proposition ;
 - [x] les réponses de clarification complètent le brief sans transformer une information absente en supposition ;
-- [x] E2E renforcée pour exiger la présence de la stratégie et de l’audit Premium ;
+- [x] E2E renforcée pour exiger la stratégie, l’audit Premium et le passage du quality gate final ;
 - [x] instrumentation dédiée sans contenu client : première génération, régénération, raffinement automatique et application ;
 - [x] dashboard admin qualité Premium : adoption utilisateurs, taux de régénération, taux de raffinement et applications/tentatives sur 30 jours ;
 - [x] télémétrie fournisseur server-only : modèle, appels, tokens d’entrée/cache/sortie/raisonnement et durée, sans prompt ni contenu client ;

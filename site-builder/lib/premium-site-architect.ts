@@ -12,7 +12,12 @@ export type PremiumArchitectAsset = {
 };
 
 export type PremiumArchitectUsage = {
-  operation: "premium_strategy" | "premium_creation" | "premium_review" | "premium_refinement";
+  operation:
+    | "premium_strategy"
+    | "premium_creation"
+    | "premium_review"
+    | "premium_refinement"
+    | "premium_final_review";
   model: string;
   inputTokens: number;
   cachedInputTokens: number;
@@ -90,9 +95,14 @@ export type PremiumArchitectProposal = {
   premiumAudit: {
     reviewed: true;
     refinementApplied: boolean;
+    finalReviewPerformed: boolean;
+    finalVerified: boolean;
     initialScore: number;
+    finalScore: number;
     issuesDetected: number;
     majorIssuesDetected: number;
+    finalIssuesDetected: number;
+    finalMajorIssuesDetected: number;
     strengths: string[];
     qualityNote: string;
   };
@@ -739,7 +749,62 @@ export async function generatePremiumSiteArchitect(
     );
   }
 
-  const strengths = (Array.isArray(review?.strengths) ? review.strengths : [])
+  let finalReview = review;
+  if (shouldRefine) {
+    finalReview = await structuredResponse({
+      apiKey: input.apiKey,
+      model: auxiliaryModel,
+      schemaName: "ajg_premium_site_final_review",
+      schema: reviewSchema as unknown as Record<string, unknown>,
+      maxOutputTokens: 1000,
+      effort: "low",
+      operation: "premium_final_review",
+      onUsage: input.onUsage,
+      instructions: [
+        "You are the final independent quality gate for AJG Premium Site Architect.",
+        "Review only the refined proposal that will actually be shown to the customer.",
+        "Verify that the previous review problems are resolved without introducing unsupported facts.",
+        "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
+        "Do not penalize facts that are explicitly marked as missing instead of invented.",
+        "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
+        "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
+        input.affiliationRules
+      ].join(" "),
+      input: JSON.stringify({
+        sourceContext,
+        strategy,
+        previousReview: {
+          score,
+          issues
+        },
+        refinedProposal: finalProposal
+      })
+    });
+  }
+
+  const finalIssues = Array.isArray(finalReview?.issues)
+    ? finalReview.issues.slice(0, 8)
+    : [];
+  const finalMajorIssues = finalIssues.filter(
+    (item: any) => item?.severity === "major"
+  );
+  const finalScore = clampScore(finalReview?.overallScore);
+  const finalVerified =
+    finalReview?.verdict === "pass" &&
+    finalMajorIssues.length === 0 &&
+    finalScore >= 88;
+
+  if (!finalVerified) {
+    throw new PremiumArchitectError(
+      "Premium Architect final quality gate did not pass",
+      502,
+      "quality_gate_failed"
+    );
+  }
+
+  const strengths = (
+    Array.isArray(finalReview?.strengths) ? finalReview.strengths : []
+  )
     .slice(0, 4)
     .map((item: unknown) => clean(item, 220))
     .filter(Boolean);
@@ -750,12 +815,17 @@ export async function generatePremiumSiteArchitect(
     premiumAudit: {
       reviewed: true,
       refinementApplied: shouldRefine,
+      finalReviewPerformed: shouldRefine,
+      finalVerified,
       initialScore: score,
+      finalScore,
       issuesDetected: issues.length,
       majorIssuesDetected: majorIssues.length,
+      finalIssuesDetected: finalIssues.length,
+      finalMajorIssuesDetected: finalMajorIssues.length,
       strengths,
       qualityNote: shouldRefine
-        ? `Audit premium effectué : ${issues.length} point(s) détecté(s), puis proposition automatiquement raffinée avant affichage.`
+        ? `Audit premium effectué : ${issues.length} point(s) détecté(s), proposition raffinée, puis contrôle final indépendant validé avant affichage.`
         : "Audit premium effectué : la proposition a passé le contrôle qualité sans raffinement supplémentaire."
     }
   };
