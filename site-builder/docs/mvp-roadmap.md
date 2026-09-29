@@ -458,7 +458,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] moteur quotidien de copie hors Supabase déployé : versionnement immuable, SHA-256, manifestes privés, tombstones et rétention glissante ;
 - [x] back-office admin prêt à afficher état/âge/volume/rétention et à lancer manuellement une sauvegarde via la même primitive serveur que le cron ;
 - [x] fraîcheur de la sauvegarde branchée au Cockpit Infrastructure AJG avec statuts sain / à surveiller / critique / non configuré ;
-- [ ] créer et connecter le store Vercel Blob privé `ajg-site-builder-backups` au projet Production ;
+- [x] store Vercel Blob privé `ajg-site-builder-backups` créé et connecté au projet Production en région Paris (`cdg1`) avec accès privé ;
 - [ ] exécuter la première sauvegarde réelle et vérifier la présence du manifest, des objets et l’état de santé.
 
 ### Domaines personnalisés — automatisation
