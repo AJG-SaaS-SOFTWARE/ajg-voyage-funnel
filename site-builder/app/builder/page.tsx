@@ -1706,7 +1706,7 @@ export default function BuilderPage() {
                   <p>{en ? "The prepared version is only a starting point. Change the words so they genuinely sound like you." : "La version préparée n'est qu'un point de départ. Changez les mots pour qu'ils vous ressemblent vraiment."}</p>
                 </div>
                 <Field label="Petite phrase au-dessus du titre" hint="Facultatif. Exemple : Voyagez autrement · partagez davantage.">
-                  <input spellCheck maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder="Voyage d'abord · découverte ensuite" />
+                  <input spellCheck maxLength={90} value={config.heroTagline} onChange={(e) => update("heroTagline", e.target.value)} placeholder={en ? "Independent · personal · authentic" : "Voyage d'abord · découverte ensuite"} />
                 </Field>
                 <AiTextAssistant
                   field="heroTagline"
@@ -1718,10 +1718,10 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroTagline", text)}
-                  placeholder="Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique"
+                  placeholder={en ? "E.g. A very short line that sums up my world without a generic sales slogan" : "Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique"}
                 />
-                <Field label="Titre principal">
-                  <textarea spellCheck rows={2} placeholder="Ex. Une autre façon de préparer et profiter de vos voyages" value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
+                <Field label={en ? "Main headline" : "Titre principal"}>
+                  <textarea spellCheck rows={2} placeholder={en ? "E.g. A simpler way to discover what I offer" : "Ex. Une autre façon de préparer et profiter de vos voyages"} value={config.heroTitle} onChange={(e) => update("heroTitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="heroTitle"
@@ -1733,10 +1733,10 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroTitle", text)}
-                  placeholder="Ex. Un titre clair et mémorable qui fait comprendre rapidement ce que je propose"
+                  placeholder={en ? "E.g. A clear, memorable headline that quickly explains what I offer" : "Ex. Un titre clair et mémorable qui fait comprendre rapidement ce que je propose"}
                 />
                 <Field label="Introduction">
-                  <textarea spellCheck rows={5} placeholder="En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager." value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
+                  <textarea spellCheck rows={5} placeholder={en ? "In 2 or 3 sentences: what you offer, what it brings to visitors and why it matters to you." : "En 2 ou 3 phrases : ce que vous avez découvert, ce que cela vous apporte et pourquoi vous souhaitez le partager."} value={config.heroSubtitle} onChange={(e) => update("heroSubtitle", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="heroSubtitle"
@@ -1748,19 +1748,19 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroSubtitle", text)}
-                  placeholder="Ex. Explique en 2 phrases mon activité, mon approche et ce que le visiteur peut attendre, avec un ton naturel"
+                  placeholder={en ? "E.g. Explain my activity, approach and what visitors can expect in 2 natural sentences" : "Ex. Explique en 2 phrases mon activité, mon approche et ce que le visiteur peut attendre, avec un ton naturel"}
                 />
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Votre présentation</b><p>Quelques lignes suffisent si elles sonnent juste et restent personnelles.</p></div>
+                  <div><b>{en ? "Your introduction" : "Votre présentation"}</b><p>{en ? "A few lines are enough if they sound right and stay personal." : "Quelques lignes suffisent si elles sonnent juste et restent personnelles."}</p></div>
                 </div>
-                <Field label="Titre de la rubrique" hint="Facultatif. Votre nom est utilisé si ce champ reste vide.">
+                <Field label={en ? "Section title" : "Titre de la rubrique"} hint={en ? "Optional. Your name is used if this field is left empty." : "Facultatif. Votre nom est utilisé si ce champ reste vide."}>
                   <input spellCheck maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
                 </Field>
                 <AiTextAssistant
                   field="aboutHeading"
-                  label="le titre de votre présentation"
+                  label={en ? "your introduction title" : "le titre de votre présentation"}
                   value={config.aboutHeading}
                   language={config.language}
                   affiliation={config.affiliation}
@@ -1768,14 +1768,14 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("aboutHeading", text)}
-                  placeholder="Ex. Un titre personnel et simple, moins formel que « À propos »"
+                  placeholder={en ? "E.g. A simple, personal title, less formal than “About”" : "Ex. Un titre personnel et simple, moins formel que « À propos »"}
                 />
-                <Field label="Votre présentation">
-                  <textarea spellCheck rows={7} placeholder="Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager." value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
+                <Field label={en ? "Your introduction" : "Votre présentation"}>
+                  <textarea spellCheck rows={7} placeholder={en ? "Talk about yourself as you would to someone you just met: your experience, approach and what you enjoy sharing." : "Parlez de vous comme vous le feriez à quelqu'un que vous venez de rencontrer : votre rapport au voyage, votre expérience et ce que vous aimez partager."} value={config.aboutText} onChange={(e) => update("aboutText", e.target.value)} />
                 </Field>
                 <AiTextAssistant
                   field="aboutText"
-                  label="votre présentation"
+                  label={en ? "your introduction" : "votre présentation"}
                   value={config.aboutText}
                   language={config.language}
                   affiliation={config.affiliation}
@@ -1783,7 +1783,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("aboutText", text)}
-                  placeholder="Ex. Présente-moi de façon humaine à partir de mon parcours, de mon approche et de ce qui compte dans ma façon de travailler"
+                  placeholder={en ? "E.g. Introduce me in a human way based on my background, approach and what matters in how I work" : "Ex. Présente-moi de façon humaine à partir de mon parcours, de mon approche et de ce qui compte dans ma façon de travailler"}
                 />
               </>
             ) : null}
@@ -1792,13 +1792,13 @@ export default function BuilderPage() {
               <>
                 <MediaLibrary design={config.design} onChange={(design) => update("design", design)} />
                 <div className="photo-background-editor module-editor">
-                  <b>Photo personnelle en arrière-plan</b>
-                  <p>La photo est compressée avant l'envoi et affichée en mode cover. AJG cherche automatiquement le point d'intérêt de l'image pour le centrage initial ; vous pouvez ensuite l'ajuster avec les curseurs.</p>
+                  <b>{en ? "Personal background photo" : "Photo personnelle en arrière-plan"}</b>
+                  <p>{en ? "The photo is compressed before upload and displayed in cover mode. AJG automatically finds an initial focal point, which you can then adjust." : "La photo est compressée avant l'envoi et affichée en mode cover. AJG cherche automatiquement le point d'intérêt de l'image pour le centrage initial ; vous pouvez ensuite l'ajuster avec les curseurs."}</p>
                   <label className="background-upload-field">Importer une photo<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage || busy} onChange={(event) => void uploadDesignImage(event, "background")} /></label>
                   {uploadingImage ? <p className="background-upload-status" role="status">Optimisation et envoi de la photo…</p> : null}
                   {config.design.backgroundPhotoUrl ? (
                     <div className="background-photo-adjustments">
-                      <button type="button" className="button secondary background-remove-button" onClick={() => update("design", { ...config.design, backgroundPhotoUrl: "" })}>Retirer la photo de fond</button>
+                      <button type="button" className="button secondary background-remove-button" onClick={() => update("design", { ...config.design, backgroundPhotoUrl: "" })}>{en ? "Remove background photo" : "Retirer la photo de fond"}</button>
                       <label className="background-position-control">
                         <span>Position horizontale <strong>{config.design.backgroundPositionX} %</strong></span>
                         <input aria-label="Position horizontale de la photo de fond" type="range" min="0" max="100" step="1" value={config.design.backgroundPositionX} onChange={(e) => update("design", { ...config.design, backgroundPositionX: Number(e.target.value) })} />
@@ -1814,7 +1814,7 @@ export default function BuilderPage() {
                 </div>
                 <label className="option-card premium-option-card portrait-option">
                   <input spellCheck type="checkbox" checked={config.design.showPortrait} onChange={(event) => update("design", { ...config.design, showPortrait: event.target.checked })} />
-                  <span><b>Afficher le portrait dans l'accueil</b><p>Si vous n'avez pas ajouté de photo, vos initiales apparaissent. Décochez pour laisser davantage de place à l'image de fond.</p></span>
+                  <span><b>{en ? "Show portrait on homepage" : "Afficher le portrait dans l'accueil"}</b><p>{en ? "If you have not added a photo, your initials are shown. Turn this off to give more space to the background image." : "Si vous n'avez pas ajouté de photo, vos initiales apparaissent. Décochez pour laisser davantage de place à l'image de fond."}</p></span>
                 </label>
               </>
             ) : null}
