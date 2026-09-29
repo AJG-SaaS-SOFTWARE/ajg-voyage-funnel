@@ -32,12 +32,14 @@ Visiteurs qui remplissent volontairement le formulaire AJG Voyage.
 
 **Destinataires / sous-traitants**
 - Alexandre Gallet ;
-- Netlify, Inc. : hébergement et collecte des formulaires ;
+- Vercel, Inc. : hébergement du site et exécution de l’API de formulaire ;
+- Supabase : stockage des demandes transmises via le formulaire ;
+- Resend : envoi de la notification technique de nouvelle demande ;
 - Calendly, LLC : uniquement lorsque la personne choisit d’ouvrir le service externe de réservation et y saisit des informations ;
 - organisateur du rendez-vous concerné.
 
 **Transferts internationaux**
-Netlify et Calendly sont établis aux États-Unis. Vérifier périodiquement leurs mécanismes de transfert en vigueur (EU-U.S. Data Privacy Framework et, lorsque prévu contractuellement, clauses contractuelles types).
+Vercel et Resend réalisent notamment des traitements aux États-Unis ; Supabase peut recourir à des traitements internationaux selon la région et ses sous-traitants ; Calendly peut également impliquer des transferts internationaux. Vérifier périodiquement les mécanismes applicables de chaque prestataire (EU-U.S. Data Privacy Framework lorsqu’applicable, clauses contractuelles types et autres garanties prévues contractuellement).
 
 **Conservation**
 Données prospect : maximum 3 ans à compter de la collecte ou du dernier contact émanant du prospect. Le retrait du consentement met fin à l’utilisation des données pour la prospection. Une demande d’effacement peut conduire à une suppression anticipée, sauf obligation légale contraire.
