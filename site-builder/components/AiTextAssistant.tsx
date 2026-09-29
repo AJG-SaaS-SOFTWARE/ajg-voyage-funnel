@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 import type { SiteLanguage } from "../lib/site-config";
+import { useUiLanguage } from "./LanguageProvider";
 
 export type AiWritableField =
   | "heroTagline"
@@ -47,6 +48,8 @@ export default function AiTextAssistant({
   onApply,
   placeholder
 }: Props) {
+  const { locale: uiLocale } = useUiLanguage();
+  const uiEnglish = uiLocale === "en";
   const [open, setOpen] = useState(false);
   const [instruction, setInstruction] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -57,9 +60,7 @@ export default function AiTextAssistant({
     const request = (quickInstruction || instruction).trim();
     if (!request) {
       setState("error");
-      setMessage(language === "en"
-        ? "Describe in a few words what you would like to obtain."
-        : "Décrivez en quelques mots ce que vous souhaitez obtenir.");
+      setMessage(uiEnglish ? "Describe in a few words what you would like to obtain." : "Décrivez en quelques mots ce que vous souhaitez obtenir.");
       return;
     }
 
@@ -101,35 +102,27 @@ export default function AiTextAssistant({
         throw new Error(
           result?.error ||
           (response.status === 503
-            ? (language === "en"
-              ? "The AI assistant is not enabled in this environment yet."
-              : "L'assistant IA n'est pas encore activé sur cet environnement.")
-            : (language === "en"
-              ? "The text could not be generated right now."
-              : "Impossible de générer le texte pour le moment."))
+            ? (uiEnglish ? "The AI assistant is not enabled in this environment yet." : "L'assistant IA n'est pas encore activé sur cet environnement.")
+            : (uiEnglish ? "The text could not be generated right now." : "Impossible de générer le texte pour le moment."))
         );
       }
 
       if (!result?.text || typeof result.text !== "string") {
-        throw new Error(language === "en"
-          ? "The AI response is empty. Try again with a slightly more specific request."
-          : "La réponse de l'IA est vide. Réessayez avec une demande un peu plus précise.");
+        throw new Error(uiEnglish ? "The AI response is empty. Try again with a slightly more specific request." : "La réponse de l'IA est vide. Réessayez avec une demande un peu plus précise.");
       }
 
       setSuggestion(result.text.trim());
       setState("done");
-      setMessage(language === "en"
-        ? "Suggestion ready. Review it before replacing your text."
-        : "Proposition prête. Relisez-la avant de remplacer votre texte.");
+      setMessage(uiEnglish ? "Suggestion ready. Review it before replacing your text." : "Proposition prête. Relisez-la avant de remplacer votre texte.");
     } catch (error) {
       setState("error");
       setMessage(error instanceof Error
         ? error.message
-        : (language === "en" ? "An error occurred." : "Une erreur est survenue."));
+        : (uiEnglish ? "An error occurred." : "Une erreur est survenue."));
     }
   };
 
-  const quickPrompts = language === "en"
+  const quickPromptsRaw = language === "en"
     ? [
         { label: "Improve", instruction: "Improve the current text for clarity, flow and impact while preserving every factual claim and the intended tone.", requiresValue: true },
         { label: "More natural", instruction: "Rewrite the current text so it sounds more natural, fluent and human, without adding new facts.", requiresValue: true },
@@ -147,7 +140,12 @@ export default function AiTextAssistant({
         { label: "Nouvelle proposition", instruction: "Rédige une nouvelle version réellement différente pour ce champ en utilisant le contexte disponible du site, sans inventer de faits.", requiresValue: false }
       ];
 
-  const ui = language === "en"
+  const quickPromptLabels = uiEnglish
+    ? ["Improve", "More natural", "Warmer", "More professional", "Shorter", "New suggestion"]
+    : ["Améliorer", "Plus naturel", "Plus chaleureux", "Plus professionnel", "Plus court", "Nouvelle proposition"];
+  const quickPrompts = quickPromptsRaw.map((prompt, index) => ({ ...prompt, label: quickPromptLabels[index] ?? prompt.label }));
+
+  const ui = uiEnglish
     ? {
         trigger: "Write with AI",
         optional: "Optional · you stay in control of the final text",
@@ -241,9 +239,7 @@ export default function AiTextAssistant({
                   onApply(suggestion);
                   setSuggestion("");
                   setState("done");
-                  setMessage(language === "en"
-                    ? "✓ Suggestion inserted. You can still edit it freely."
-                    : "✓ Proposition insérée. Vous pouvez encore la modifier librement.");
+                  setMessage(uiEnglish ? "✓ Suggestion inserted. You can still edit it freely." : "✓ Proposition insérée. Vous pouvez encore la modifier librement.");
                 }}>{ui.use}</button>
                 <button
                   type="button"
