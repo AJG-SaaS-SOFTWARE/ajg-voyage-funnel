@@ -21,44 +21,80 @@ Le produit distingue deux niveaux d'assistance :
 
 ## Offres publiques retenues
 
-### Essentiel — 19 € / mois ou 190 € / an
+### Essentiel — 15 € / mois ou 150 € / an
 
-Objectif : permettre à un indépendant ou une petite entreprise de construire et gérer son site avec une aide IA continue, sans automatiser toute la conception.
+Objectif : fournir le **RUN** du site avec un coût lisible et une expérience largement self-service.
 
 - 1 site professionnel ;
-- hébergement et publication inclus ;
+- hébergement et publication ;
 - domaine personnalisé ;
-- éditeur, personnalisation et design responsive ;
-- IA rédactionnelle dans les champs utiles ;
-- réécriture, amélioration et suggestions de contenu ;
+- éditeur complet ;
+- personnalisation et responsive ;
+- sauvegardes ;
 - SEO essentiel ;
-- sans Concepteur IA complet.
+- analytics essentiels ;
+- IA rédactionnelle légère ;
+- Quality Check ;
+- facturation, domaine, export et récupération en self-service.
 
-### Pro IA — 39 € / mois ou 390 € / an
+Essentiel ne comprend pas le pilotage continu du site par l'AI Website Manager.
 
-Objectif : accélérer fortement le passage du brief à une première version structurée.
+### Création IA complète — 49 € une fois
+
+Objectif : vendre **BUILD** comme une prestation automatisée distincte de l'abonnement.
+
+Le Concepteur IA réalise une première version complète du site à partir du brief client :
+
+- diagnostic du besoin ;
+- stratégie ;
+- architecture ;
+- pages ;
+- direction visuelle ;
+- textes ;
+- CTA ;
+- modules pertinents ;
+- audits qualité ;
+- raffinement automatique ;
+- proposition modifiable avant publication.
+
+Le paiement est ponctuel. Une fois le site créé, le client peut rester simplement sur Essentiel.
+
+### Growth — 29 € / mois ou 290 € / an
+
+Objectif : vendre **GROW**, c'est-à-dire le pilotage continu et l'amélioration du site, et non l'accès ponctuel à un générateur.
 
 - tout Essentiel ;
-- Concepteur IA de site ;
-- proposition de structure et de sections à partir du brief ;
-- premiers textes générés puis entièrement éditables ;
-- aide IA renforcée pour les itérations ;
-- quota IA supérieur ;
-- capacité média et stockage supérieure ;
-- accès prioritaire aux nouveaux modules IA.
+- AI Website Manager ;
+- diagnostics continus ;
+- interprétation des analytics ;
+- recommandations SEO/AEO ;
+- recommandations conversion / CTA ;
+- détection d'erreurs et d'opportunités ;
+- création de nouvelles pages/campagnes ;
+- adaptation du site à une nouvelle offre ou cible ;
+- capacité IA supérieure ;
+- synthèses et priorités d'action.
 
-Les limites exactes de générations IA et de stockage seront affichées avant activation de la facturation. Les quotas techniques actuels de bêta ne constituent pas une promesse commerciale définitive.
+Hypothèse commerciale retenue :
+
+- Création IA : +49 € pour Essentiel mensuel ou annuel ;
+- Création IA : +49 € pour Growth mensuel ;
+- Création IA offerte avec Growth annuel à 290 €, sous réserve de validation du coût réel moyen pendant la bêta.
+
+Les limites exactes d'IA, stockage et trafic seront définies sur la base des données de consommation réelles et resteront pilotables côté serveur.
 
 ## Essai commercial
 
-Au lancement commercial :
+La logique d'essai doit être réévaluée avec la nouvelle architecture BUILD / RUN / GROW.
 
-- **14 jours d'expérience Pro IA** ;
-- aucun droit payant n'est ouvert sans paiement confirmé à la fin de l'essai ;
-- l'utilisateur pourra ensuite choisir Essentiel ou Pro IA ;
-- les contrôles d'accès IA restent appliqués côté serveur.
+Le principe retenu est désormais :
 
-Pendant la bêta actuelle, Stripe reste désactivé et la page Tarifs indique explicitement que l'encaissement n'est pas encore ouvert.
+- la Création IA est une prestation ponctuelle et ne doit pas être obtenue artificiellement en prenant Growth un seul mois ;
+- Essentiel et Growth doivent pouvoir être testés sans contourner le prix de BUILD ;
+- Growth doit être conservé pour la valeur récurrente de l'AI Website Manager ;
+- les Beta Testers continuent à bénéficier de l'accès complet hors Stripe.
+
+Pendant la bêta actuelle, Stripe live reste désactivé et aucun paiement commercial n'est ouvert.
 
 ## Beta Tester
 
@@ -67,7 +103,7 @@ Les proches invités à la bêta ne sont pas des clients payants.
 Le statut **Beta Tester** :
 
 - est attribué par un administrateur ;
-- donne temporairement l'équivalent fonctionnel complet de Pro IA ;
+- donne temporairement l'équivalent fonctionnel complet de Growth ;
 - ne crée aucun Customer/Subscription Stripe ;
 - expire automatiquement à la date enregistrée ;
 - revient ensuite aux droits réels du compte, sans supprimer le site ;
@@ -104,19 +140,21 @@ L'IA accélère la conception ; l'utilisateur garde le contrôle.
 
 ## Catalogue Stripe sandbox
 
-Le catalogue de test reprend exactement la grille commerciale publique :
+Le catalogue Stripe sandbox actuel doit être **migré** vers le nouveau modèle avant tout test commercial final.
 
-- Essentiel mensuel : 19 € ;
-- Essentiel annuel : 190 € ;
-- Pro IA mensuel : 39 € ;
-- Pro IA annuel : 390 €.
+Cible :
 
-Le navigateur ne transmet jamais de Price ID Stripe. Il transmet uniquement le plan et la périodicité autorisés ; le serveur les convertit vers les Price IDs configurés dans l’environnement.
+- Essentiel mensuel : 15 € ;
+- Essentiel annuel : 150 € ;
+- Growth mensuel : 29 € ;
+- Growth annuel : 290 € ;
+- Création IA complète : 49 € en paiement unique.
 
-Un interrupteur serveur `AJG_BILLING_CHECKOUT_ENABLED` doit être explicitement positionné à `true` pour ouvrir Checkout. Sa valeur par défaut reste `false`.
+Le navigateur ne transmet jamais de Price ID Stripe. Il transmet uniquement une intention autorisée ; le serveur résout le produit/prix correspondant.
 
-Pendant un abonnement Stripe au statut `trialing`, le plan cible est conservé en base mais les droits effectifs sont temporairement ceux de Pro IA pendant 14 jours. À la sortie du trial, les droits correspondent automatiquement au plan réellement souscrit.
+L'achat de Création IA doit créer un droit ponctuel séparé de l'abonnement récurrent. Growth annuel pourra déclencher ce droit sans paiement supplémentaire lorsque l'offre promotionnelle "Création IA offerte" est activée.
 
+Un interrupteur serveur `AJG_BILLING_CHECKOUT_ENABLED` reste obligatoire pour ouvrir Checkout. Sa valeur par défaut demeure `false`.
 
 ## Cadre juridique de pré-lancement
 
@@ -152,7 +190,7 @@ La politique de confidentialité distingue les traitements propres à AJG Site B
 
 Le lancement initial est préparé en **B2B**, cohérent avec la cible indépendants / petites entreprises et avec la désactivation actuelle de la vente aux consommateurs.
 
-Les produits Stripe sandbox Essentiel et Pro IA utilisent le Product Tax Code officiel **Software as a Service (SaaS) - Business Use** (`txcd_10103001`).
+Les produits Stripe sandbox Essentiel et Growth utilisent le Product Tax Code officiel **Software as a Service (SaaS) - Business Use** (`txcd_10103001`).
 
 Checkout collecte :
 - l’adresse de facturation ;
@@ -165,3 +203,12 @@ Le calcul automatique de taxe n’est jamais activé par défaut. Le runtime dis
 - `AJG_VAT_REGIME=vat_registered` : le numéro de TVA du vendeur doit être renseigné et Stripe Tax doit être explicitement activé.
 
 `AJG_VAT_REGIME=unconfirmed` reste la valeur sûre tant que la situation fiscale réelle du vendeur n’est pas établie. Le gate commercial refuse alors l’ouverture des paiements.
+
+
+## Architecture BUILD / RUN / GROW
+
+La roadmap détaillée de mise en œuvre est versionnée dans :
+
+`site-builder/docs/build-run-grow-roadmap.md`
+
+Objectif : maximiser le self-service et automatiser le diagnostic, le support, le contrôle des coûts et la remédiation technique afin que le run humain AJG reste exceptionnel.
