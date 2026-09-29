@@ -401,10 +401,11 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] demande d’effacement d’un site : confirmation forte par slug + confirmation secondaire, suspension publique immédiate, arrêt de collecte/mutations côté serveur, journal de demande et export préalable proposé ;
 - [x] demande de suppression du compte : confirmation par e-mail + confirmation secondaire, suspension immédiate de tous les sites et arrêt des nouvelles mutations/collectes ; orchestration de la purge définitive restant séparée ;
 - [x] état RGPD séparé du billing : `privacy_state=erasure_requested` n’altère pas le statut de paiement ; RLS, Storage, IA, publication, domaines et formulaire public respectent ce verrou ;
-- [ ] purge contrôlée : supprimer via les API prévues les médias Storage publics/privés, puis les données applicatives dépendantes, domaines et contenus du site ;
-- [ ] révocation des sessions puis suppression de l’identité Supabase Auth uniquement après traitement des dépendances et vérification du périmètre à conserver ;
-- [ ] séparer les données à effacer des pièces dont la conservation reste légalement nécessaire ; documenter pour chaque exception la finalité et la durée, sans conserver davantage de données que nécessaire ;
-- [ ] journal d’exécution RGPD pseudonymisé : réception, portée, systèmes traités, date d’exécution et éventuelle justification de conservation ;
+- [x] purge contrôlée administrateur : annulation Stripe, détachement Vercel, suppression des médias via l’API Storage par lots, suppression des traces site-scoped puis cascade DB ; reprise idempotente en cas d’échec partiel ;
+- [x] suppression du compte Auth après purge des dépendances : blocage préalable des nouvelles connexions puis `auth.admin.deleteUser`; les access tokens déjà émis peuvent vivre jusqu’à expiration mais n’ont plus de données propriétaires à atteindre ;
+- [x] séparation technique documentée entre contenus Builder à effacer et pièces financières externes à ne pas supprimer aveuglément ;
+- [ ] finaliser dans le registre juridique/comptable les finalités et durées précises de conservation des pièces financières avant passage Stripe live ;
+- [x] journal d’exécution RGPD pseudonymisé : réception, portée, statut, systèmes traités et dates ; après purge les FK `user_id/site_id` passent à `null` et aucun contenu du site n’est copié dans le journal ;
 - [ ] recette E2E dédiée : export → demande → suspension → purge Storage/DB → suppression Auth, avec vérification qu’aucune donnée de contenu supprimée ne reste accessible.
 
 ### Durcissement préproduction — 28 septembre 2026
