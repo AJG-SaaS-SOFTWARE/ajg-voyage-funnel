@@ -1119,6 +1119,42 @@ export function deterministicQualityIssues(
     }
   }
 
+  const urgencyClaims = [
+    {
+      pattern: /\b(?:derniere chance|last chance)\b/giu,
+      label: "dernière chance / last chance"
+    },
+    {
+      pattern:
+        /\b(?:offres?|places?|disponibilites?|slots?|spots?)\s+(?:sont\s+|are\s+)?(?:tres\s+|very\s+)?(?:limitees?|limited)\b/giu,
+      label: "offre, places ou disponibilités limitées"
+    },
+    {
+      pattern:
+        /\b(?:temps limite|limited time|aujourd hui seulement|today only)\b/giu,
+      label: "échéance commerciale urgente"
+    }
+  ];
+
+  for (const [field, value] of visibleCopy) {
+    const normalizedValue = normalizeComparable(value);
+    for (const claim of urgencyClaims) {
+      const matches = normalizedValue.match(claim.pattern) || [];
+      if (!matches.length) continue;
+
+      const supported = (normalizedEvidence.match(claim.pattern) || []).length > 0;
+      if (supported) continue;
+
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_urgency_claim",
+        detail:
+          `Le contenu ${field} introduit une urgence ou une rareté non fournie par le client (${claim.label}).`
+      });
+      break;
+    }
+  }
+
   return issues.slice(0, 12);
 }
 
