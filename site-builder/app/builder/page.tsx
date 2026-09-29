@@ -2217,27 +2217,27 @@ export default function BuilderPage() {
                 <div className="review-checklist">
                   <div className={config.firstName && config.lastName && config.brandName && config.slug ? "done" : ""}>
                     <span>{config.firstName && config.lastName && config.brandName && config.slug ? "✓" : "1"}</span>
-                    <p><b>Identité</b><small>Nom du site et adresse</small></p>
+                    <p><b>{en ? "Identity" : "Identité"}</b><small>{en ? "Website name and address" : "Nom du site et adresse"}</small></p>
                   </div>
                   <div className={config.heroTitle ? "done" : ""}>
                     <span>{config.heroTitle ? "✓" : "2"}</span>
-                    <p><b>Message</b><small>Titre principal</small></p>
+                    <p><b>Message</b><small>{en ? "Main headline" : "Titre principal"}</small></p>
                   </div>
                   <div className={config.bookingUrl ? "done" : "optional"}>
                     <span>{config.bookingUrl ? "✓" : "○"}</span>
-                    <p><b>Rendez-vous</b><small>{config.bookingUrl ? "Lien ajouté" : "Facultatif"}</small></p>
+                    <p><b>{en ? "Booking" : "Rendez-vous"}</b><small>{config.bookingUrl ? (en ? "Link added" : "Lien ajouté") : (en ? "Optional" : "Facultatif")}</small></p>
                   </div>
                   <div className={config.affiliation === "mwr" ? "done" : "optional"}>
                     <span>{config.affiliation === "mwr" ? "✓" : "○"}</span>
-                    <p><b>Activité</b><small>{config.affiliation === "mwr" ? "Mention d'indépendance affichée" : "Mentions légales à vérifier"}</small></p>
+                    <p><b>{en ? "Activity" : "Activité"}</b><small>{config.affiliation === "mwr" ? (en ? "Independence disclosure shown" : "Mention d'indépendance affichée") : (en ? "Legal information to review" : "Mentions légales à vérifier")}</small></p>
                   </div>
                 </div>
 
                 <div className="publish-summary premium-publish-summary">
-                  <div><span>Lien du site après publication</span><strong>{betaPublicUrl}</strong></div>
-                  <div><span>Langue</span><strong>{config.language === "both" ? "Français (bilingue à venir)" : config.language.toUpperCase()}</strong></div>
-                  <div><span>Stockage</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
-                  <div><span>État</span><strong>{published ? "Publié" : "Prêt à publier"}</strong></div>
+                  <div><span>{en ? "Website link after publishing" : "Lien du site après publication"}</span><strong>{betaPublicUrl}</strong></div>
+                  <div><span>{en ? "Language" : "Langue"}</span><strong>{config.language === "both" ? (en ? "French + English (coming soon)" : "Français (bilingue à venir)") : config.language.toUpperCase()}</strong></div>
+                  <div><span>{en ? "Storage" : "Stockage"}</span><strong>{remoteMode ? "Supabase Cloud" : (en ? "Local browser" : "Navigateur local")}</strong></div>
+                  <div><span>{en ? "Status" : "État"}</span><strong>{published ? (en ? "Published" : "Publié") : (en ? "Ready to publish" : "Prêt à publier")}</strong></div>
                 </div>
 
                 <button
@@ -2246,20 +2246,20 @@ export default function BuilderPage() {
                   disabled={errors.length > 0 || busy}
                   onClick={publish}
                 >
-                  {busy ? "Publication…" : published ? "Republier les modifications" : "Publier le site"}
+                  {busy ? (en ? "Publishing…" : "Publication…") : published ? (en ? "Republish changes" : "Republier les modifications") : (en ? "Publish website" : "Publier le site")}
                   {!busy ? <span aria-hidden="true">→</span> : null}
                 </button>
                 {published ? (
                   <div className="published-share-card" aria-live="polite">
                     <div>
-                      <span className="mini">Lien bêta partageable</span>
+                      <span className="mini">{en ? "SHAREABLE BETA LINK" : "Lien bêta partageable"}</span>
                       <strong>{betaPublicUrl}</strong>
-                      <p>Ce lien fonctionne dès maintenant. Le sous-domaine personnalisé sera activé dans une étape ultérieure.</p>
+                      <p>{en ? "This link works now. The personalized subdomain can be activated in a later step." : "Ce lien fonctionne dès maintenant. Le sous-domaine personnalisé sera activé dans une étape ultérieure."}</p>
                     </div>
                     <div className="published-share-actions">
-                      <Link className="button secondary" href={publicPath} target="_blank">Ouvrir ↗</Link>
+                      <Link className="button secondary" href={publicPath} target="_blank">{en ? "Open ↗" : "Ouvrir ↗"}</Link>
                       <button type="button" className="button primary" onClick={copyPublicUrl}>
-                        {copyState === "copied" ? "✓ Lien copié" : copyState === "error" ? "Copie impossible" : "Copier le lien"}
+                        {copyState === "copied" ? (en ? "✓ Link copied" : "✓ Lien copié") : copyState === "error" ? (en ? "Could not copy" : "Copie impossible") : (en ? "Copy link" : "Copier le lien")}
                       </button>
                     </div>
                   </div>
