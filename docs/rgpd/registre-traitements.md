@@ -76,4 +76,4 @@ Aucun.
 - **Exclusions :** aucun nom, email ou téléphone n'est enregistré dans la table d'événements ; pas de publicité ciblée ni de suivi intersites.
 - **Stockage navigateur :** identifiant dans `sessionStorage`, limité à la session de navigation.
 - **Destinataire / stockage :** Supabase, table `ajg_voyage_funnel_events`.
-- **Revue :** contrôler périodiquement la durée de conservation et purger les événements devenus inutiles.
+- **Conservation :** objectif maximal de 13 mois pour les événements de mesure du funnel. La fonction Supabase `purge_ajg_voyage_funnel_events()` supprime les événements plus anciens lorsqu’elle est exécutée par un job de confiance ; prévoir son exécution planifiée et contrôler périodiquement son bon fonctionnement.
