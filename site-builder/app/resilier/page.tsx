@@ -3,7 +3,7 @@ import { CommercialLegalPage } from "../../components/CommercialLegalPage";
 
 export const metadata: Metadata = {
   title: "Résiliation — AJG Site Builder",
-  robots: { index: true, follow: true }
+  robots: { index: process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true", follow: true }
 };
 
 export default function Page() {
