@@ -310,6 +310,15 @@ export default function DataRightsPage() {
         règles de suspension de facturation et les demandes d’effacement restent
         deux mécanismes séparés.
       </section>
+
+      <section className="plans-note data-rights-note">
+        <b>Conservation légale limitée :</b> une suppression de compte efface les
+        données nécessaires au fonctionnement du Builder, mais certaines pièces
+        comptables peuvent devoir être conservées séparément lorsqu’une obligation
+        légale l’impose. En France, les factures et autres pièces justificatives
+        comptables sont conservées 10 ans à compter de la clôture de l’exercice.
+        Cette exception ne permet pas de conserver le contenu du site ou ses médias.
+      </section>
     </main>
   );
 }
