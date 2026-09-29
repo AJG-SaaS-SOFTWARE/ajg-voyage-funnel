@@ -656,6 +656,48 @@ function deterministicQualityIssues(
     }
   }
 
+  const mobileCopyLimits: Array<{
+    value: string;
+    blockingAt: number;
+    label: string;
+  }> = [
+    {
+      value: proposal.heroTitle,
+      blockingAt: 82,
+      label: "titre principal"
+    },
+    {
+      value: proposal.heroSubtitle,
+      blockingAt: 360,
+      label: "sous-titre du hero"
+    },
+    {
+      value: proposal.bookingLabel,
+      blockingAt: 36,
+      label: "libellé du CTA principal"
+    },
+    ...proposal.faq.items.map((item, index) => ({
+      value: item.question,
+      blockingAt: 170,
+      label: `question FAQ ${index + 1}`
+    })),
+    ...proposal.benefits.items.map((item, index) => ({
+      value: item.title,
+      blockingAt: 84,
+      label: `titre d’avantage ${index + 1}`
+    }))
+  ];
+
+  for (const item of mobileCopyLimits) {
+    if (item.value.trim().length <= item.blockingAt) continue;
+    issues.push({
+      severity: "blocking",
+      code: "mobile_copy_density",
+      detail:
+        `Le ${item.label} est trop long pour rester lisible sur mobile (${item.value.trim().length} caractères, cible ≤ ${item.blockingAt}).`
+    });
+  }
+
   const bodyCandidates = [
     ["heroSubtitle", proposal.heroSubtitle],
     ["aboutText", proposal.aboutText],
@@ -861,6 +903,7 @@ export async function generatePremiumSiteArchitect(
         "Treat strategy as the design brief, not text to copy mechanically.",
         "Optimize the visitor journey in this order: immediate comprehension, credibility, relevance, useful detail, then one clear next action.",
         "Each field must have a distinct role and avoid repeated wording.",
+        "Write for mobile-first scanning: keep the hero title compact, the hero subtitle concise, the main CTA short enough for a button, and FAQ/benefit headings easy to scan.",
         "Prefer concrete, human writing over generic marketing language, clichés and exaggerated claims.",
         "Never invent facts, testimonials, figures, prices, savings, certifications, customer results, contact details or capabilities.",
         "If a useful fact is missing, write safely around it and leave the missing-information signal in the strategy rather than fabricating it.",
@@ -936,6 +979,7 @@ export async function generatePremiumSiteArchitect(
           "Preserve strong parts of the proposal and preserve the strategy.",
           "Do not add unsupported claims to make the site sound stronger.",
           "Prefer deleting weak or unjustified material over filling gaps with generic copy.",
+          "When a deterministic issue mentions mobile copy density, shorten the affected field without removing essential meaning or adding unsupported claims.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
           ...revisionScopeRules,
         input.affiliationRules
