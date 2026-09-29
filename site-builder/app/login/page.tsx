@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
+import { useProductLocale } from "../../lib/product-i18n";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 
 function MailIcon() {
   return (
@@ -25,6 +27,7 @@ function ShieldIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { locale, tr } = useProductLocale();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState("");
@@ -67,17 +70,17 @@ export default function LoginPage() {
     <main className="auth-page premium-auth-page">
       <section className="auth-visual" aria-label="AJG Site Builder">
         <div className="auth-visual-overlay" />
-        <Link href="/" className="auth-brand">AJG Site Builder</Link>
+        <div className="auth-brand-row"><Link href="/" className="auth-brand">AJG Site Builder</Link><LanguageSwitch compact /></div>
         <div className="auth-visual-copy">
-          <p className="eyebrow">Création guidée · publication simplifiée</p>
-          <h1>Créez votre présence en ligne sans partir de zéro</h1>
+          <p className="eyebrow">{tr("Création guidée · publication simplifiée", "Guided creation · simplified publishing")}</p>
+          <h1>{tr("Créez votre présence en ligne sans partir de zéro", "Build your online presence without starting from scratch")}</h1>
           <p>
             Votre identité, votre histoire, vos rendez-vous et vos voyages réunis dans un site
             cohérent, maintenable et prêt à évoluer.
           </p>
           <div className="auth-benefits">
-            <span><ShieldIcon /> Conformité centralisée</span>
-            <span><MailIcon /> Connexion sans mot de passe</span>
+            <span><ShieldIcon /> {tr("Conformité centralisée", "Centralized compliance")}</span>
+            <span><MailIcon /> {tr("Connexion sans mot de passe", "Passwordless sign-in")}</span>
           </div>
         </div>
         <span className="auth-orbit" aria-hidden="true" />
@@ -87,15 +90,15 @@ export default function LoginPage() {
       <section className="auth-panel-wrap">
         <div className="auth-card premium-auth-card">
           <div className="auth-card-heading">
-            <p className="eyebrow">Espace membre</p>
-            <h2>Connexion</h2>
-            <p>Recevez un lien sécurisé par email. Aucun mot de passe à retenir.</p>
+            <p className="eyebrow">{tr("Espace membre", "Member area")}</p>
+            <h2>{tr("Connexion", "Sign in")}</h2>
+            <p>{tr("Recevez un lien sécurisé par email. Aucun mot de passe à retenir.", "Receive a secure sign-in link by email. No password to remember.")}</p>
           </div>
 
           {!isSupabaseConfigured() ? (
             <div className="helper-card premium-helper-card">
-              <b>Mode prototype local</b>
-              <p>Les variables Supabase ne sont pas encore renseignées dans cet environnement.</p>
+              <b>{tr("Mode prototype local", "Local prototype mode")}</b>
+              <p>{tr("Les variables Supabase ne sont pas encore renseignées dans cet environnement.", "Supabase variables are not configured in this environment yet.")}</p>
             </div>
           ) : null}
 
@@ -103,14 +106,14 @@ export default function LoginPage() {
             <div className="success-card premium-success-card">
               <span className="success-icon"><MailIcon /></span>
               <div>
-                <b>Vérifiez votre boîte mail</b>
-                <p>Le lien de connexion vient d&apos;être envoyé à {email}.</p>
+                <b>{tr("Vérifiez votre boîte mail", "Check your inbox")}</b>
+                <p>{tr("Le lien de connexion vient d’être envoyé à", "A sign-in link has been sent to")} {email}.</p>
               </div>
             </div>
           ) : (
             <form className="premium-auth-form" onSubmit={submit}>
               <label className="field premium-field">
-                <span>Adresse email</span>
+                <span>{tr("Adresse email", "Email address")}</span>
                 <div className="input-with-icon">
                   <MailIcon />
                   <input
@@ -118,21 +121,21 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="vous@exemple.fr"
+                    placeholder={locale === "en" ? "you@example.com" : "vous@exemple.fr"}
                   />
                 </div>
               </label>
               {error ? <p className="form-error">{error}</p> : null}
               <button className="button primary auth-submit premium-button" disabled={state === "sending"}>
-                {state === "sending" ? "Envoi…" : "Recevoir mon lien de connexion"}
+                {state === "sending" ? tr("Envoi…", "Sending…") : tr("Recevoir mon lien de connexion", "Send me a sign-in link")}
                 {state !== "sending" ? <span aria-hidden="true">→</span> : null}
               </button>
             </form>
           )}
 
           <div className="auth-card-footer">
-            <Link className="text-link" href="/">← Retour à l&apos;accueil</Link>
-            <span>Lien sécurisé · accès personnel</span>
+            <Link className="text-link" href="/">← {tr("Retour à l’accueil", "Back to home")}</Link>
+            <span>{tr("Lien sécurisé · accès personnel", "Secure link · personal access")}</span>
           </div>
         </div>
       </section>
