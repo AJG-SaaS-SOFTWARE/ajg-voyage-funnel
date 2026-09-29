@@ -3,7 +3,19 @@ import { defaultSiteLegalConfig, type SiteLegalConfig } from "./site-legal";
 
 export type SiteLanguage = "fr" | "en" | "both";
 export type SitePageKind = "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom";
-export type SitePagePlan = { id: string; slug: string; title: string; kind: SitePageKind; purpose: string; enabled: boolean; assetIds: string[] };
+export type SitePageSection = { heading: string; text: string };
+export type SitePagePlan = {
+  id: string;
+  slug: string;
+  title: string;
+  kind: SitePageKind;
+  purpose: string;
+  headline: string;
+  intro: string;
+  sections: SitePageSection[];
+  enabled: boolean;
+  assetIds: string[];
+};
 export type SiteArchitecture = { mode: "single" | "multi"; pages: SitePagePlan[] };
 export type ContentAssetKind = "image" | "audio" | "text" | "document";
 export type ContentAssetRights = "owned" | "licensed" | "public-domain" | "unknown";
@@ -72,7 +84,21 @@ export const defaultSiteConfig: SiteConfig = {
   design: defaultSiteDesign,
   affiliation: "mwr",
   legal: defaultSiteLegalConfig,
-  architecture: { mode: "single", pages: [{ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] }] },
+  architecture: {
+    mode: "single",
+    pages: [{
+      id: "home",
+      slug: "",
+      title: "Accueil",
+      kind: "home",
+      purpose: "Présenter l’activité et orienter le visiteur.",
+      headline: "",
+      intro: "",
+      sections: [],
+      enabled: true,
+      assetIds: []
+    }]
+  },
   contentLibrary: { assets: [] }
 };
 
@@ -97,9 +123,38 @@ export function normalizeSiteArchitecture(value: unknown): SiteArchitecture {
       while (usedSlugs.has(slug)) slug = `${base}-${suffix++}`.slice(0, 60);
       usedSlugs.add(slug);
     }
-    return { id: clean(page?.id, 60) || `page-${index + 1}`, slug, title: clean(page?.title, 80) || "Page", kind, purpose: clean(page?.purpose, 240), enabled: kind === "home" ? true : page?.enabled !== false, assetIds: [...new Set<string>((Array.isArray(page?.assetIds) ? page.assetIds : []).slice(0, 12).map((id: unknown) => clean(id, 80)).filter((id: string) => Boolean(id)))] };
+    const sections = (Array.isArray(page?.sections) ? page.sections : [])
+      .slice(0, 4)
+      .map((section: any) => ({
+        heading: clean(section?.heading, 120),
+        text: clean(section?.text, 1800)
+      }))
+      .filter((section: SitePageSection) => section.heading || section.text);
+    return {
+      id: clean(page?.id, 60) || `page-${index + 1}`,
+      slug,
+      title: clean(page?.title, 80) || "Page",
+      kind,
+      purpose: clean(page?.purpose, 240),
+      headline: kind === "home" ? "" : clean(page?.headline, 120),
+      intro: kind === "home" ? "" : clean(page?.intro, 600),
+      sections: kind === "home" ? [] : sections,
+      enabled: kind === "home" ? true : page?.enabled !== false,
+      assetIds: [...new Set<string>((Array.isArray(page?.assetIds) ? page.assetIds : []).slice(0, 12).map((id: unknown) => clean(id, 80)).filter((id: string) => Boolean(id)))]
+    };
   }).filter((page, index, all) => index === all.findIndex((item) => item.id === page.id));
-  if (!pages.some((page) => page.kind === "home")) pages.unshift({ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] });
+  if (!pages.some((page) => page.kind === "home")) pages.unshift({
+    id: "home",
+    slug: "",
+    title: "Accueil",
+    kind: "home",
+    purpose: "Présenter l’activité et orienter le visiteur.",
+    headline: "",
+    intro: "",
+    sections: [],
+    enabled: true,
+    assetIds: []
+  });
   return { mode: input.mode === "multi" && pages.filter((page) => page.enabled).length > 1 ? "multi" : "single", pages };
 }
 
