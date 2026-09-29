@@ -305,7 +305,10 @@ export default function AdminPage() {
           Vue opérationnelle des sites, offres, domaines et prérequis de mise en production.
           L’accès est contrôlé en base par un rôle administrateur dédié.
         </p>
-        <Link className="button secondary" href="/">← Tableau de bord</Link>
+        <div className="builder-actions">
+          <Link className="button secondary" href="/">← Tableau de bord</Link>
+          <Link className="button secondary" href="/admin/privacy">Demandes RGPD</Link>
+        </div>
       </section>
 
       {state === "loading" ? <p>Chargement…</p> : null}

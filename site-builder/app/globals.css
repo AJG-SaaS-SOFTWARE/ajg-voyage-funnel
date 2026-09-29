@@ -3032,3 +3032,68 @@ button.active .step-label small{color:#63817f}
   .data-rights-site .button{width:100%;justify-content:center}
   .data-rights-confirm{width:100%;min-width:0;flex-direction:column}
 }
+
+
+/* Admin GDPR purge */
+.privacy-admin-warning{
+  margin:22px 0;
+  padding:16px 18px;
+  border:1px solid rgba(160,66,49,.18);
+  border-radius:15px;
+  background:#fff8f5;
+}
+.privacy-admin-warning b{color:#8d392e}
+.privacy-admin-warning p{margin:5px 0 0;color:#715c57;line-height:1.55}
+.privacy-admin-list{display:grid;gap:16px}
+.privacy-admin-card{
+  padding:20px;
+  border:1px solid rgba(19,52,55,.1);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(25,55,58,.035);
+}
+.privacy-admin-card-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+}
+.privacy-admin-card-heading h2{margin:7px 0 4px;font-size:1.05rem}
+.privacy-admin-card-heading p{margin:0;color:#718083}
+.privacy-admin-card-heading>small{color:#8a9698;white-space:nowrap}
+.privacy-admin-status{
+  display:inline-flex;
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:.6rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  background:#fff2dc;
+  color:#875a18;
+}
+.privacy-admin-status.completed{background:#e7f7ef;color:#27664e}
+.privacy-admin-status.canceled{background:#eef1f2;color:#66777b}
+.privacy-admin-status.processing{background:#fff0e8;color:#9a5030}
+.privacy-admin-retry{
+  margin:14px 0;
+  padding:10px 12px;
+  border-radius:11px;
+  background:#fff3ec;
+  color:#85492f;
+  font-size:.72rem;
+}
+.privacy-admin-systems{margin:15px 0;display:grid;gap:8px}
+.privacy-admin-systems>b{font-size:.68rem;color:#41575c}
+.privacy-admin-systems>div{display:flex;gap:6px;flex-wrap:wrap}
+.privacy-admin-systems span{
+  padding:5px 8px;
+  border-radius:999px;
+  background:#f1f5f4;
+  color:#5e7275;
+  font-size:.58rem;
+}
+@media(max-width:700px){
+  .privacy-admin-card-heading{flex-direction:column}
+  .privacy-admin-card-heading>small{white-space:normal}
+}

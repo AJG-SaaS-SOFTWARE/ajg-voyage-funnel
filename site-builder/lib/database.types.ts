@@ -635,6 +635,7 @@ export type Database = {
           canceled_at: string | null
           completed_at: string | null
           id: string
+          last_error: string | null
           processing_started_at: string | null
           requested_at: string
           scope: string
@@ -647,6 +648,7 @@ export type Database = {
           canceled_at?: string | null
           completed_at?: string | null
           id?: string
+          last_error: string | null
           processing_started_at?: string | null
           requested_at?: string
           scope: string
@@ -659,6 +661,7 @@ export type Database = {
           canceled_at?: string | null
           completed_at?: string | null
           id?: string
+          last_error: string | null
           processing_started_at?: string | null
           requested_at?: string
           scope?: string
