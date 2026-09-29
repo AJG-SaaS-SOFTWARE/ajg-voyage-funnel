@@ -258,3 +258,34 @@ test("distinct benefit titles remain allowed", () => {
   const value = proposal();
   assert.ok(!codes(value).includes("near_duplicate_benefit_title"));
 });
+
+
+test("generic FAQ labels are blocked", () => {
+  const value = proposal({
+    faq: {
+      title: "Questions fréquentes",
+      items: [
+        {
+          question: "Question 1",
+          answer: "Une réponse réelle ne suffit pas à rendre un libellé générique acceptable."
+        }
+      ]
+    }
+  });
+  assert.ok(codes(value).includes("generic_faq_question"));
+});
+
+test("generic benefit titles are blocked", () => {
+  const value = proposal({
+    benefits: {
+      title: "Ce qui guide mon travail",
+      items: [
+        {
+          title: "Avantage 1",
+          text: "Un bénéfice doit être nommé de manière compréhensible."
+        }
+      ]
+    }
+  });
+  assert.ok(codes(value).includes("generic_benefit_title"));
+});
