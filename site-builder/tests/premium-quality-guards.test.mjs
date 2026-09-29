@@ -149,9 +149,9 @@ test("unsupported quantitative claims are blocked unless grounded in source evid
 test("near-duplicate long copy is blocked even when wording is not identical", () => {
   const value = proposal({
     heroSubtitle:
-      "Une approche humaine naturelle attentive pour préparer chaque séance avec confiance clarté sérénité écoute douceur et simplicité.",
+      "Une approche humaine naturelle attentive pour préparer chaque séance avec confiance clarté sérénité écoute douceur simplicité et accompagnement.",
     aboutText:
-      "Une approche humaine naturelle attentive prépare chaque séance avec confiance clarté sérénité écoute douceur simplicité et accompagnement personnalisé."
+      "Une approche humaine naturelle attentive pour préparer chaque séance avec confiance clarté sérénité écoute douceur simplicité et accompagnement personnalisé."
   });
   assert.ok(codes(value).includes("near_duplicate_copy"));
 });
