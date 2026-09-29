@@ -178,7 +178,7 @@ export default function BuilderPage() {
     heroTagline: string; heroTitle: string; heroSubtitle: string; aboutHeading: string; aboutText: string; bookingLabel: string;
     recommendedModules: string[];
     moduleOrder: string[];
-    architecture: { mode: "single" | "multi"; pages: { id: string; slug: string; title: string; kind: "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom"; purpose: string; enabled: boolean; assetIds: string[] }[] };
+    architecture: { mode: "single" | "multi"; pages: { id: string; slug: string; title: string; kind: "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom"; purpose: string; headline: string; intro: string; sections: { heading: string; text: string }[]; enabled: boolean; assetIds: string[] }[] };
     design: { layout: "classic" | "editorial" | "showcase" | "conversion"; heroLayout: "split" | "centered" | "immersive"; contentWidth: "compact" | "balanced" | "wide"; accent: string; background: "ivory" | "sand" | "mist" | "sage" | "slate"; pattern: "none" | "dots" | "lines" | "grid" | "rays"; patternStrength: "soft" | "bold" };
     faq: { title: string; items: { question: string; answer: string }[] };
     benefits: { title: string; items: { title: string; text: string }[] };
