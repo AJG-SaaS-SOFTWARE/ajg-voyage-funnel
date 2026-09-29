@@ -116,6 +116,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] contrôle déterministe complémentaire : placeholders, duplications de contenus/FAQ, pages redondantes et modules recommandés sans contenu déclenchent un raffinement ou bloquent l’affichage si le défaut subsiste ;
 - [x] tests comportementaux des garde-fous déterministes : cas sain et régressions ciblées sur CTA, densité mobile, architecture, rôles de pages, avantages, libellés visibles et chiffres non sourcés ;
 - [x] grounding quantitatif : pourcentages, prix, durées, années et quantités sensibles générés doivent réutiliser un nombre déjà présent dans le contexte client ; tout chiffre inédit déclenche un raffinement puis bloque l’affichage s’il subsiste ;
+- [x] grounding de crédibilité : les formulations d’autorité ou de preuve (« meilleur », « leader », « certifié », « primé », « garanti », « numéro 1 ») sont bloquées si elles ne figurent pas réellement dans les informations fournies par le client ;
 - [x] garde-fou de densité mobile : titre principal, sous-titre hero, CTA, questions FAQ et titres d’avantages trop longs déclenchent un raffinement avant affichage ;
 - [x] garde-fou de densité éditoriale : les textes À propos, réponses FAQ et descriptions d’avantages excessivement longs sont compressés avant affichage sans perdre les faits utiles ;
 - [x] anti-répétition sémantique simple : les blocs longs quasi identiques (fort recouvrement de vocabulaire significatif) déclenchent un raffinement pour redonner un rôle éditorial distinct à chaque section ;
