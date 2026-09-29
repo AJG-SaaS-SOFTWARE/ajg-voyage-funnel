@@ -12,14 +12,17 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const headerStore = await headers();
+  const routeLocale = headerStore.get("x-ajg-route-locale");
   const cookieLocale = cookieStore.get("ajg_builder_language")?.value;
   const browserLanguage = headerStore.get("accept-language") ?? "";
   const initialLocale: ProductLocale =
-    cookieLocale === "en" || cookieLocale === "fr"
-      ? cookieLocale
-      : browserLanguage.toLowerCase().startsWith("en")
-        ? "en"
-        : "fr";
+    routeLocale === "en" || routeLocale === "fr"
+      ? routeLocale
+      : cookieLocale === "en" || cookieLocale === "fr"
+        ? cookieLocale
+        : browserLanguage.toLowerCase().startsWith("en")
+          ? "en"
+          : "fr";
 
   return (
     <html lang={initialLocale}>
