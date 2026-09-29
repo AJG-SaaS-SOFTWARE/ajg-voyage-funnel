@@ -579,6 +579,38 @@ export type Database = {
           },
         ]
       }
+      site_ai_heavy_usage: {
+        Row: {
+          created_at: string
+          operation: string
+          owner_id: string
+          request_id: string
+          site_id: string
+        }
+        Insert: {
+          created_at?: string
+          operation: string
+          owner_id: string
+          request_id: string
+          site_id: string
+        }
+        Update: {
+          created_at?: string
+          operation?: string
+          owner_id?: string
+          request_id?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_ai_heavy_usage_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_ai_launch_entitlements: {
         Row: {
           expires_at: string | null
@@ -915,6 +947,7 @@ export type Database = {
           key: string
           name: string
           premium_architect: boolean
+          heavy_ai_monthly_limit: number
           storage_mb: number
         }
         Insert: {
@@ -939,6 +972,7 @@ export type Database = {
           key?: string
           name?: string
           premium_architect?: boolean
+          heavy_ai_monthly_limit?: number
           storage_mb?: number
         }
         Relationships: []
@@ -1224,6 +1258,18 @@ export type Database = {
       release_my_site_launch_operation: {
         Args: { p_request_id: string }
         Returns: boolean
+      }
+      release_my_site_heavy_ai: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
+      reserve_my_site_heavy_ai: {
+        Args: {
+          p_operation: string
+          p_request_id: string
+          p_site_id: string
+        }
+        Returns: string
       }
       reserve_my_site_launch_operation: {
         Args: {
