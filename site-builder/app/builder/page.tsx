@@ -201,9 +201,14 @@ export default function BuilderPage() {
     premiumAudit: {
       reviewed: true;
       refinementApplied: boolean;
+      finalReviewPerformed: boolean;
+      finalVerified: boolean;
       initialScore: number;
+      finalScore: number;
       issuesDetected: number;
       majorIssuesDetected: number;
+      finalIssuesDetected: number;
+      finalMajorIssuesDetected: number;
       strengths: string[];
       qualityNote: string;
     };
@@ -539,7 +544,9 @@ export default function BuilderPage() {
         verdict,
         reason: reason || null,
         attemptKind: architectAttemptKind,
-        auditScore: architectProposal.premiumAudit.initialScore,
+        auditScore:
+          architectProposal.premiumAudit.finalScore ||
+          architectProposal.premiumAudit.initialScore,
         refinementApplied: architectProposal.premiumAudit.refinementApplied
       });
       setArchitectQualityChoice(verdict);
@@ -1237,8 +1244,17 @@ export default function BuilderPage() {
                         <p>Structure : {architectProposal.design?.layout} · hero {architectProposal.design?.heroLayout} · largeur {architectProposal.design?.contentWidth}.</p>
                         <p>Direction visuelle : <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: architectProposal.design?.accent, verticalAlign: "middle", marginRight: 6 }} /> {architectProposal.design?.background} · {architectProposal.design?.pattern === "none" ? "fond uni" : `motif ${architectProposal.design?.pattern}`}.</p>
                         <div className="architect-audit">
-                          <b>✓ Audit Premium effectué</b>
+                          <b>
+                            ✓ {architectProposal.premiumAudit.finalReviewPerformed
+                              ? "Double contrôle Premium validé"
+                              : "Audit Premium validé"}
+                          </b>
                           <p>{architectProposal.premiumAudit.qualityNote}</p>
+                          {architectProposal.premiumAudit.finalReviewPerformed ? (
+                            <small>
+                              Le texte affiché a été relu une seconde fois après correction par un critique IA indépendant.
+                            </small>
+                          ) : null}
                           {architectProposal.premiumAudit.strengths.length ? <small>Points forts : {architectProposal.premiumAudit.strengths.join(" · ")}</small> : null}
                         </div>
                         <div className="architect-human-eval">
