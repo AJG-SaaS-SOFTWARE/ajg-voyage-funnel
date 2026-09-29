@@ -75,7 +75,11 @@ export async function downloadMySiteExport(siteId?: string) {
 }
 
 
-async function openStripeBillingPath(path: "/api/billing/checkout" | "/api/billing/portal", siteId: string) {
+async function openStripeBillingPath(
+  path: "/api/billing/checkout" | "/api/billing/portal",
+  siteId: string,
+  payload: Record<string, unknown> = {}
+) {
   const locale = getProductLocale();
   const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const supabase = getSupabaseBrowserClient();
@@ -99,8 +103,16 @@ async function openStripeBillingPath(path: "/api/billing/checkout" | "/api/billi
   window.location.assign(result.url);
 }
 
+export async function startPlanCheckout(
+  siteId: string,
+  planKey: "essential" | "pro",
+  billingCycle: "monthly" | "annual"
+) {
+  return openStripeBillingPath("/api/billing/checkout", siteId, { planKey, billingCycle });
+}
+
 export async function startProCheckout(siteId: string) {
-  return openStripeBillingPath("/api/billing/checkout", siteId);
+  return startPlanCheckout(siteId, "pro", "monthly");
 }
 
 export async function openStripeBillingPortal(siteId: string) {
