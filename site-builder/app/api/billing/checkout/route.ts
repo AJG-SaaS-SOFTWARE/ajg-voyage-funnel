@@ -5,13 +5,17 @@ import {
   billingUserContext,
   ownedBillingSite
 } from "../../../../lib/server-billing";
-import { createStripeSubscriptionCheckout } from "../../../../lib/stripe-billing";
+import {
+  createStripeOneTimeCheckout,
+  createStripeSubscriptionCheckout
+} from "../../../../lib/stripe-billing";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 
-type PaidPlanKey = "essential" | "pro";
+type PaidPlanKey = "essential" | "growth";
 type BillingCycle = "monthly" | "annual";
+type PurchaseType = "subscription" | "ai_launch";
 
 function checkoutEnabled() {
   return process.env.AJG_BILLING_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
@@ -24,9 +28,18 @@ function configuredPriceId(planKey: PaidPlanKey, billingCycle: BillingCycle) {
         ? "STRIPE_ESSENTIAL_ANNUAL_PRICE_ID"
         : "STRIPE_ESSENTIAL_MONTHLY_PRICE_ID"
       : billingCycle === "annual"
-        ? "STRIPE_PRO_ANNUAL_PRICE_ID"
-        : "STRIPE_PRO_MONTHLY_PRICE_ID";
+        ? "STRIPE_GROWTH_ANNUAL_PRICE_ID"
+        : "STRIPE_GROWTH_MONTHLY_PRICE_ID";
   return process.env[envName]?.trim() || "";
+}
+
+function configuredTrialDays(planKey: PaidPlanKey, billingCycle: BillingCycle) {
+  // Growth annual includes BUILD once paid, so it never starts with a free
+  // subscription trial that could unlock the included AI Launch before payment.
+  if (planKey === "growth" && billingCycle === "annual") return 0;
+  const raw = Number(process.env.AJG_SUBSCRIPTION_TRIAL_DAYS || "0");
+  if (!Number.isFinite(raw)) return 0;
+  return Math.max(0, Math.min(30, Math.floor(raw)));
 }
 
 export async function POST(request: Request) {
@@ -44,8 +57,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: tr(
-          "Les souscriptions Stripe ne sont pas encore ouvertes. La bêta reste gratuite.",
-          "Stripe subscriptions are not open yet. Beta access remains free."
+          "Les paiements Stripe ne sont pas encore ouverts. La bêta reste gratuite.",
+          "Stripe payments are not open yet. Beta access remains free."
         ),
         code: "checkout_disabled"
       },
@@ -55,16 +68,12 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const siteId = typeof body?.siteId === "string" ? body.siteId : "";
-  const planKey: PaidPlanKey | "" =
-    body?.planKey === "essential" || body?.planKey === "pro" ? body.planKey : "";
-  const billingCycle: BillingCycle | "" =
-    body?.billingCycle === "monthly" || body?.billingCycle === "annual"
-      ? body.billingCycle
-      : "";
+  const purchaseType: PurchaseType =
+    body?.purchaseType === "ai_launch" ? "ai_launch" : "subscription";
 
-  if (!siteId || !planKey || !billingCycle) {
+  if (!siteId) {
     return NextResponse.json(
-      { error: tr("Le site, l’offre et la périodicité doivent être identifiés.", "Website, plan and billing cycle are required.") },
+      { error: tr("Le site doit être identifié.", "Website is required.") },
       { status: 400 }
     );
   }
@@ -72,19 +81,6 @@ export async function POST(request: Request) {
   const site = await ownedBillingSite(auth.client, auth.user.id, siteId).catch(() => null);
   if (!site) {
     return NextResponse.json({ error: tr("Site introuvable.", "Website not found.") }, { status: 404 });
-  }
-
-  const priceId = configuredPriceId(planKey, billingCycle);
-  if (!priceId) {
-    return NextResponse.json(
-      {
-        error: tr(
-          "Ce tarif Stripe n’est pas encore activé sur cet environnement.",
-          "This Stripe price is not enabled in this environment yet."
-        )
-      },
-      { status: 503 }
-    );
   }
 
   const service = billingServiceClient();
@@ -117,8 +113,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: tr(
-          "Votre statut Beta Tester inclut déjà Pro IA sans abonnement Stripe.",
-          "Your Beta Tester status already includes Pro AI without a Stripe subscription."
+          "Votre statut Beta Tester inclut déjà l’accès complet sans paiement Stripe.",
+          "Your Beta Tester status already includes full access without a Stripe payment."
         ),
         code: "beta_access_active"
       },
@@ -139,6 +135,114 @@ export async function POST(request: Request) {
     );
   }
 
+  const appUrl = billingAppUrl(request);
+
+  if (purchaseType === "ai_launch") {
+    if (
+      !current ||
+      !["essential", "growth"].includes(current.plan_key) ||
+      !["active", "trialing", "past_due"].includes(current.status)
+    ) {
+      return NextResponse.json(
+        {
+          error: tr(
+            "La Création IA s’ajoute à un abonnement Essentiel ou Growth actif.",
+            "AI Launch is available with an active Essential or Growth subscription."
+          ),
+          code: "subscription_required"
+        },
+        { status: 409 }
+      );
+    }
+
+    const { data: launchRows, error: launchError } = await service
+      .from("site_ai_launch_entitlements")
+      .select("operations_total,operations_used,status,expires_at")
+      .eq("site_id", site.id)
+      .eq("owner_id", auth.user.id)
+      .eq("status", "active");
+
+    if (launchError) {
+      return NextResponse.json(
+        { error: tr("Impossible de vérifier votre droit Création IA.", "Unable to verify your AI Launch entitlement.") },
+        { status: 503 }
+      );
+    }
+
+    const hasRemainingLaunch = (launchRows || []).some((row: any) =>
+      Number(row.operations_total) > Number(row.operations_used) &&
+      (!row.expires_at || row.expires_at > now)
+    );
+    if (hasRemainingLaunch) {
+      return NextResponse.json(
+        {
+          error: tr(
+            "Une Création IA est déjà disponible pour ce site.",
+            "An AI Launch entitlement is already available for this website."
+          ),
+          code: "ai_launch_already_available"
+        },
+        { status: 409 }
+      );
+    }
+
+    const priceId = process.env.STRIPE_AI_LAUNCH_PRICE_ID?.trim() || "";
+    if (!priceId) {
+      return NextResponse.json(
+        { error: tr("Le tarif Création IA n’est pas configuré.", "AI Launch pricing is not configured.") },
+        { status: 503 }
+      );
+    }
+
+    try {
+      const session = await createStripeOneTimeCheckout({
+        siteId: site.id,
+        ownerId: auth.user.id,
+        ownerEmail: auth.user.email,
+        customerId:
+          current?.provider === "stripe" ? current.provider_customer_id : null,
+        priceId,
+        successUrl: `${appUrl}/plans?aiLaunch=success&siteId=${encodeURIComponent(site.id)}`,
+        cancelUrl: `${appUrl}/plans?aiLaunch=cancel&siteId=${encodeURIComponent(site.id)}`
+      });
+
+      if (!session.url) {
+        return NextResponse.json(
+          { error: tr("Stripe n’a pas renvoyé de page de paiement.", "Stripe did not return a checkout page.") },
+          { status: 502 }
+        );
+      }
+
+      return NextResponse.json({
+        url: session.url,
+        checkoutSessionId: session.id,
+        purchaseType: "ai_launch"
+      });
+    } catch (error) {
+      console.error("Stripe AI Launch Checkout creation failed", {
+        code: error instanceof Error ? error.message : "unknown"
+      });
+      return NextResponse.json(
+        { error: tr("Impossible d’ouvrir le paiement Création IA.", "Unable to open AI Launch checkout.") },
+        { status: 502 }
+      );
+    }
+  }
+
+  const planKey: PaidPlanKey | "" =
+    body?.planKey === "essential" || body?.planKey === "growth" ? body.planKey : "";
+  const billingCycle: BillingCycle | "" =
+    body?.billingCycle === "monthly" || body?.billingCycle === "annual"
+      ? body.billingCycle
+      : "";
+
+  if (!planKey || !billingCycle) {
+    return NextResponse.json(
+      { error: tr("L’offre et la périodicité doivent être identifiées.", "Plan and billing cycle are required.") },
+      { status: 400 }
+    );
+  }
+
   if (
     current?.provider === "stripe" &&
     current.provider_subscription_id &&
@@ -147,8 +251,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: tr(
-          "Un abonnement Stripe existe déjà pour ce site. Utilisez l’espace de facturation pour le gérer.",
-          "A Stripe subscription already exists for this website. Use Billing to manage it."
+          "Un abonnement Stripe existe déjà pour ce site. Utilisez l’espace de facturation pour le modifier.",
+          "A Stripe subscription already exists for this website. Use Billing to change it."
         ),
         code: "existing_subscription"
       },
@@ -156,7 +260,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const appUrl = billingAppUrl(request);
+  const priceId = configuredPriceId(planKey, billingCycle);
+  if (!priceId) {
+    return NextResponse.json(
+      {
+        error: tr(
+          "Ce tarif Stripe n’est pas encore activé sur cet environnement.",
+          "This Stripe price is not enabled in this environment yet."
+        )
+      },
+      { status: 503 }
+    );
+  }
+
+  const trialDays = configuredTrialDays(planKey, billingCycle);
+
   try {
     const session = await createStripeSubscriptionCheckout({
       siteId: site.id,
@@ -166,7 +284,7 @@ export async function POST(request: Request) {
         current?.provider === "stripe" ? current.provider_customer_id : null,
       priceId,
       planKey,
-      trialDays: 14,
+      trialDays,
       successUrl: `${appUrl}/billing?checkout=success&siteId=${encodeURIComponent(site.id)}`,
       cancelUrl: `${appUrl}/plans?checkout=cancel&siteId=${encodeURIComponent(site.id)}`
     });
@@ -183,10 +301,10 @@ export async function POST(request: Request) {
       checkoutSessionId: session.id,
       planKey,
       billingCycle,
-      trialDays: 14
+      trialDays
     });
   } catch (error) {
-    console.error("Stripe Checkout session creation failed", {
+    console.error("Stripe subscription Checkout creation failed", {
       code: error instanceof Error ? error.message : "unknown",
       planKey,
       billingCycle
