@@ -630,6 +630,53 @@ export type Database = {
           },
         ]
       }
+      data_erasure_requests: {
+        Row: {
+          canceled_at: string | null
+          completed_at: string | null
+          id: string
+          processing_started_at: string | null
+          requested_at: string
+          scope: string
+          site_id: string | null
+          status: string
+          systems_processed: Json
+          user_id: string | null
+        }
+        Insert: {
+          canceled_at?: string | null
+          completed_at?: string | null
+          id?: string
+          processing_started_at?: string | null
+          requested_at?: string
+          scope: string
+          site_id?: string | null
+          status?: string
+          systems_processed?: Json
+          user_id?: string | null
+        }
+        Update: {
+          canceled_at?: string | null
+          completed_at?: string | null
+          id?: string
+          processing_started_at?: string | null
+          requested_at?: string
+          scope?: string
+          site_id?: string | null
+          status?: string
+          systems_processed?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_erasure_requests_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sites: {
         Row: {
           about_heading: string
@@ -654,6 +701,8 @@ export type Database = {
           primary_language: string
           profile_image_url: string
           public_access_state: string
+          privacy_state: string
+          erasure_requested_at: string | null
           published_at: string | null
           show_travel_journals: boolean
           slug: string
@@ -683,6 +732,8 @@ export type Database = {
           primary_language?: string
           profile_image_url?: string
           public_access_state?: string
+          privacy_state?: string
+          erasure_requested_at?: string | null
           published_at?: string | null
           show_travel_journals?: boolean
           slug: string
@@ -712,6 +763,8 @@ export type Database = {
           primary_language?: string
           profile_image_url?: string
           public_access_state?: string
+          privacy_state?: string
+          erasure_requested_at?: string | null
           published_at?: string | null
           show_travel_journals?: boolean
           slug?: string
@@ -1068,6 +1121,14 @@ export type Database = {
       }
       reserve_my_site_ai_generation: {
         Args: { p_request_id: string; p_site_id: string }
+        Returns: string
+      }
+      request_builder_account_erasure: {
+        Args: { p_owner_id: string }
+        Returns: string
+      }
+      request_builder_site_erasure: {
+        Args: { p_owner_id: string; p_site_id: string }
         Returns: string
       }
       submit_contact_message: {
