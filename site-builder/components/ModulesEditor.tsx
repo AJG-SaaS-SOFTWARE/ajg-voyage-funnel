@@ -221,9 +221,9 @@ export default function ModulesEditor({
         {moduleHeader("contact")}
         {modules.contact.enabled ? (
           <div className="module-fields">
-            <label>Titre<input value={modules.contact.title} onChange={(e) => change("contact", { ...modules.contact, title: e.target.value })} /></label>
-            <label>Adresse e-mail publique<input type="email" value={modules.contact.email} onChange={(e) => change("contact", { ...modules.contact, email: e.target.value })} /></label>
-            <small>Le bouton ouvre la messagerie du visiteur ; votre adresse sera visible publiquement.</small>
+            <label>{en ? "Title" : "Titre"}<input value={modules.contact.title} onChange={(e) => change("contact", { ...modules.contact, title: e.target.value })} /></label>
+            <label>{en ? "Public email address" : "Adresse e-mail publique"}<input type="email" value={modules.contact.email} onChange={(e) => change("contact", { ...modules.contact, email: e.target.value })} /></label>
+            <small>{en ? "The button opens the visitor’s email app; your address will be publicly visible." : "Le bouton ouvre la messagerie du visiteur ; votre adresse sera visible publiquement."}</small>
           </div>
         ) : null}
       </section>
@@ -232,9 +232,9 @@ export default function ModulesEditor({
         {moduleHeader("video")}
         {modules.video.enabled ? (
           <div className="module-fields">
-            <label>Titre<input value={modules.video.title} onChange={(e) => change("video", { ...modules.video, title: e.target.value })} /></label>
-            <label>Lien YouTube<input type="url" placeholder="https://www.youtube.com/watch?v=…" value={modules.video.url} onChange={(e) => change("video", { ...modules.video, url: e.target.value })} /></label>
-            <small>Collez simplement l’adresse YouTube complète ; AJG s’occupe de l’intégration sur le site.</small>
+            <label>{en ? "Title" : "Titre"}<input value={modules.video.title} onChange={(e) => change("video", { ...modules.video, title: e.target.value })} /></label>
+            <label>{en ? "YouTube link" : "Lien YouTube"}<input type="url" placeholder="https://www.youtube.com/watch?v=…" value={modules.video.url} onChange={(e) => change("video", { ...modules.video, url: e.target.value })} /></label>
+            <small>{en ? "Paste the full YouTube address; AJG handles the website integration." : "Collez simplement l’adresse YouTube complète ; AJG s’occupe de l’intégration sur le site."}</small>
           </div>
         ) : null}
       </section>
@@ -249,16 +249,16 @@ export default function ModulesEditor({
               currentValue={modules.figures}
               onApply={(draft: any) => change("figures", { ...modules.figures, title: draft.title, items: draft.items })}
             />
-            <label>Titre<input value={modules.figures.title} onChange={(e) => change("figures", { ...modules.figures, title: e.target.value })} /></label>
+            <label>{en ? "Title" : "Titre"}<input value={modules.figures.title} onChange={(e) => change("figures", { ...modules.figures, title: e.target.value })} /></label>
             {modules.figures.items.map((item, index) => (
               <div className="module-item" key={index}>
-                <input aria-label={`Valeur ${index + 1}`} placeholder="Votre valeur réelle" value={item.value} onChange={(e) => change("figures", { ...modules.figures, items: modules.figures.items.map((entry, i) => i === index ? { ...entry, value: e.target.value } : entry) })} />
-                <input aria-label={`Libellé ${index + 1}`} placeholder="Ce que ce chiffre représente" value={item.label} onChange={(e) => change("figures", { ...modules.figures, items: modules.figures.items.map((entry, i) => i === index ? { ...entry, label: e.target.value } : entry) })} />
+                <input aria-label={`${en ? "Value" : "Valeur"} ${index + 1}`} placeholder={en ? "Your real value" : "Votre valeur réelle"} value={item.value} onChange={(e) => change("figures", { ...modules.figures, items: modules.figures.items.map((entry, i) => i === index ? { ...entry, value: e.target.value } : entry) })} />
+                <input aria-label={`${en ? "Label" : "Libellé"} ${index + 1}`} placeholder={en ? "What this figure represents" : "Ce que ce chiffre représente"} value={item.label} onChange={(e) => change("figures", { ...modules.figures, items: modules.figures.items.map((entry, i) => i === index ? { ...entry, label: e.target.value } : entry) })} />
                 <button type="button" onClick={() => change("figures", { ...modules.figures, items: modules.figures.items.filter((_, i) => i !== index) })}>{en ? "Remove" : "Retirer"}</button>
               </div>
             ))}
-            <button type="button" className="secondary" disabled={modules.figures.items.length >= 12} onClick={() => change("figures", { ...modules.figures, items: [...modules.figures.items, { value: "", label: "" }] })}>Ajouter un chiffre manuellement</button>
-            <small>AJG peut suggérer quoi mesurer, mais ne remplira jamais une valeur à votre place. Utilisez uniquement des chiffres vérifiables et à jour.</small>
+            <button type="button" className="secondary" disabled={modules.figures.items.length >= 12} onClick={() => change("figures", { ...modules.figures, items: [...modules.figures.items, { value: "", label: "" }] })}>{en ? "Add a figure manually" : "Ajouter un chiffre manuellement"}</button>
+            <small>{en ? "AJG can suggest what to measure, but will never invent a value for you. Use only current, verifiable figures." : "AJG peut suggérer quoi mesurer, mais ne remplira jamais une valeur à votre place. Utilisez uniquement des chiffres vérifiables et à jour."}</small>
           </div>
         ) : null}
       </section>
@@ -273,15 +273,15 @@ export default function ModulesEditor({
               currentValue={modules.benefits}
               onApply={(draft: any) => change("benefits", { ...modules.benefits, title: draft.title, items: draft.items })}
             />
-            <label>Titre<input value={modules.benefits.title} onChange={(e) => change("benefits", { ...modules.benefits, title: e.target.value })} /></label>
+            <label>{en ? "Title" : "Titre"}<input value={modules.benefits.title} onChange={(e) => change("benefits", { ...modules.benefits, title: e.target.value })} /></label>
             {modules.benefits.items.map((item, index) => (
               <div className="module-item" key={index}>
-                <input aria-label={`Avantage ${index + 1}`} placeholder="Titre" value={item.title} onChange={(e) => change("benefits", { ...modules.benefits, items: modules.benefits.items.map((entry, i) => i === index ? { ...entry, title: e.target.value } : entry) })} />
-                <textarea aria-label={`Description avantage ${index + 1}`} placeholder="Description concrète" value={item.text} onChange={(e) => change("benefits", { ...modules.benefits, items: modules.benefits.items.map((entry, i) => i === index ? { ...entry, text: e.target.value } : entry) })} />
+                <input aria-label={`${en ? "Benefit" : "Avantage"} ${index + 1}`} placeholder={en ? "Title" : "Titre"} value={item.title} onChange={(e) => change("benefits", { ...modules.benefits, items: modules.benefits.items.map((entry, i) => i === index ? { ...entry, title: e.target.value } : entry) })} />
+                <textarea aria-label={`${en ? "Benefit description" : "Description avantage"} ${index + 1}`} placeholder={en ? "Concrete description" : "Description concrète"} value={item.text} onChange={(e) => change("benefits", { ...modules.benefits, items: modules.benefits.items.map((entry, i) => i === index ? { ...entry, text: e.target.value } : entry) })} />
                 <button type="button" onClick={() => change("benefits", { ...modules.benefits, items: modules.benefits.items.filter((_, i) => i !== index) })}>{en ? "Remove" : "Retirer"}</button>
               </div>
             ))}
-            <button type="button" className="secondary" disabled={modules.benefits.items.length >= 12} onClick={() => change("benefits", { ...modules.benefits, items: [...modules.benefits.items, { title: "", text: "" }] })}>Ajouter un avantage manuellement</button>
+            <button type="button" className="secondary" disabled={modules.benefits.items.length >= 12} onClick={() => change("benefits", { ...modules.benefits, items: [...modules.benefits.items, { title: "", text: "" }] })}>{en ? "Add a benefit manually" : "Ajouter un avantage manuellement"}</button>
           </div>
         ) : null}
       </section>
