@@ -16,42 +16,57 @@ export type Database = {
     Tables: {
       ai_provider_usage: {
         Row: {
+          access_source: string
           cached_input_tokens: number
           created_at: string
           duration_ms: number
+          estimated_cost_usd_micros: number
           id: number
           input_tokens: number
           model: string
           operation: string
           output_tokens: number
+          plan_key: string
+          pricing_known: boolean
+          pricing_version: string
           reasoning_tokens: number
           site_id: string | null
           total_tokens: number
           user_id: string
         }
         Insert: {
+          access_source?: string
           cached_input_tokens?: number
           created_at?: string
           duration_ms?: number
+          estimated_cost_usd_micros?: number
           id?: never
           input_tokens?: number
           model: string
           operation: string
           output_tokens?: number
+          plan_key?: string
+          pricing_known?: boolean
+          pricing_version?: string
           reasoning_tokens?: number
           site_id?: string | null
           total_tokens?: number
           user_id: string
         }
         Update: {
+          access_source?: string
           cached_input_tokens?: number
           created_at?: string
           duration_ms?: number
+          estimated_cost_usd_micros?: number
           id?: never
           input_tokens?: number
           model?: string
           operation?: string
           output_tokens?: number
+          plan_key?: string
+          pricing_known?: boolean
+          pricing_version?: string
           reasoning_tokens?: number
           site_id?: string | null
           total_tokens?: number
@@ -960,6 +975,7 @@ export type Database = {
           key: string
           name: string
           premium_architect?: boolean
+          heavy_ai_monthly_limit?: number
           storage_mb: number
         }
         Update: {
