@@ -118,6 +118,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] garde-fou de densité mobile : titre principal, sous-titre hero, CTA, questions FAQ et titres d’avantages trop longs déclenchent un raffinement avant affichage ;
 - [x] garde-fou de densité éditoriale : les textes À propos, réponses FAQ et descriptions d’avantages excessivement longs sont compressés avant affichage sans perdre les faits utiles ;
 - [x] anti-répétition sémantique simple : les blocs longs quasi identiques (fort recouvrement de vocabulaire significatif) déclenchent un raffinement pour redonner un rôle éditorial distinct à chaque section ;
+- [x] garde-fou avantages distincts : deux cartes ne peuvent plus partager le même titre et l’IA est explicitement poussée à consolider les bénéfices qui se chevauchent ;
 - [x] garde-fou CTA principal : les libellés vagues de type « cliquez ici », « envoyer », « continuer » sont rejetés et réécrits en prochaine action concrète, uniquement si elle est supportée par le contexte client ;
 - [x] garde-fou navigation : les pages actives ne peuvent plus conserver un titre générique (« Page », « Sans titre », « More »…) ni un libellé trop long pour la navigation ;
 - [x] garde-fou anti-pages redondantes : deux pages actives ayant le même rôle éditorial bloquent la proposition jusqu’à fusion ou différenciation réelle ;
