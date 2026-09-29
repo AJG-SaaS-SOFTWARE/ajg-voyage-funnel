@@ -719,6 +719,38 @@ function deterministicQualityIssues(
     });
   }
 
+  const bodyCopyLimits: Array<{
+    value: string;
+    blockingAt: number;
+    label: string;
+  }> = [
+    {
+      value: proposal.aboutText,
+      blockingAt: 1500,
+      label: "texte À propos"
+    },
+    ...proposal.faq.items.map((item, index) => ({
+      value: item.answer,
+      blockingAt: 900,
+      label: `réponse FAQ ${index + 1}`
+    })),
+    ...proposal.benefits.items.map((item, index) => ({
+      value: item.text,
+      blockingAt: 420,
+      label: `texte d’avantage ${index + 1}`
+    }))
+  ];
+
+  for (const item of bodyCopyLimits) {
+    if (item.value.trim().length <= item.blockingAt) continue;
+    issues.push({
+      severity: "blocking",
+      code: "body_copy_density",
+      detail:
+        `Le ${item.label} est trop long pour une lecture web fluide (${item.value.trim().length} caractères, cible ≤ ${item.blockingAt}).`
+    });
+  }
+
   const bodyCandidates = [
     ["heroSubtitle", proposal.heroSubtitle],
     ["aboutText", proposal.aboutText],
@@ -979,6 +1011,7 @@ export async function generatePremiumSiteArchitect(
         "Optimize the visitor journey in this order: immediate comprehension, credibility, relevance, useful detail, then one clear next action.",
         "Each field must have a distinct role and avoid repeated wording.",
         "Write for mobile-first scanning: keep the hero title compact, the hero subtitle concise, the main CTA short enough for a button, and FAQ/benefit headings easy to scan.",
+        "Keep body copy web-readable too: About copy should stay focused, FAQ answers should answer directly before elaborating, and benefit descriptions should remain compact.",
         "The main CTA must be specific enough that the visitor understands what happens next; avoid generic labels such as click here, submit, continue or validate, and never promise an action that the supplied context does not support.",
         "Prefer concrete, human writing over generic marketing language, clichés and exaggerated claims.",
         "Never invent facts, testimonials, figures, prices, savings, certifications, customer results, contact details or capabilities.",
@@ -1057,6 +1090,7 @@ export async function generatePremiumSiteArchitect(
           "Do not add unsupported claims to make the site sound stronger.",
           "Prefer deleting weak or unjustified material over filling gaps with generic copy.",
           "When a deterministic issue mentions mobile copy density, shorten the affected field without removing essential meaning or adding unsupported claims.",
+          "When body copy density is flagged, compress the affected paragraph while preserving the useful facts and the section’s distinct purpose.",
           "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
           "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
           "When a page title is generic or too long, replace it with a short navigation label that clearly reflects that page’s purpose.",
