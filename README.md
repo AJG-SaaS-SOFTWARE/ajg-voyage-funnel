@@ -17,7 +17,7 @@ Landing page mobile-first pour qualifier des prospects intéressés par Travel A
 - scoring léger des leads
 - capture automatique UTM + URL d’entrée + référent
 - formulaire envoyé côté serveur vers l’API Vercel, avec stockage Supabase
-- honeypot anti-spam
+- honeypot anti-spam + validation serveur de l’origine, du type de contenu et des valeurs de qualification
 - consentement marketing B2C séparé et facultatif
 - page de confirmation non indexable
 - réservation Calendly côté français et anglais
