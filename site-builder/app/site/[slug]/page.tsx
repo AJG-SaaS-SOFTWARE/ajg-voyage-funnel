@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublishedSite from "../../../components/PublishedSite";
 import { getPublicSite, publicSiteUrl } from "../../../lib/public-site";
-import { publicRouteBase } from "../../../lib/public-request";
+import { publicRouteBase } from "../../../lib/public-request";\nimport { buildPublicMetadata } from "../../../lib/public-metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -21,25 +21,8 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${site.config.brandName} | Voyage`;
-  const description =
-    site.config.heroSubtitle ||
-    `Découvrez le site de ${site.config.firstName} ${site.config.lastName}.`;
   const canonical = await publicSiteUrl(site.id, slug);
-
-  return {
-    title,
-    description,
-    alternates: { canonical },
-    openGraph: {
-      title,
-      description,
-      url: canonical,
-      type: "website",
-      images: site.config.profileImageUrl ? [site.config.profileImageUrl] : undefined
-    },
-    robots: { index: true, follow: true }
-  };
+  return buildPublicMetadata(site.config, { canonical });
 }
 
 export default async function PublishedSitePage({
