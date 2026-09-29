@@ -508,7 +508,7 @@ export default function BuilderPage() {
 
       const response = await fetch("/api/ai/write", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, "X-AJG-Locale": locale },
         body: JSON.stringify({
           field: "guidedDraft",
           instruction: "À partir des réponses guidées, construis une première version cohérente et directement exploitable des textes du site. Transforme les notes en vraies phrases, donne un rôle distinct à chaque bloc et reste concret. Ne copie pas mécaniquement les réponses et n'invente aucun fait.",
@@ -595,7 +595,7 @@ export default function BuilderPage() {
       if (!remoteSiteId) setRemoteSiteId(architectSiteId);
       const response = await fetch("/api/ai/write", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale },
         body: JSON.stringify({
           field: "siteArchitect",
           siteId: architectSiteId,
@@ -738,7 +738,7 @@ export default function BuilderPage() {
         faq: config.design.modules.faq,
         benefits: config.design.modules.benefits
       };
-      const response = await fetch("/api/ai/write", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({
+      const response = await fetch("/api/ai/write", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale }, body: JSON.stringify({
         field: "siteRevision", siteId: revisionSiteId, instruction: revisionRequest,
         context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
       }) });
@@ -1086,7 +1086,7 @@ export default function BuilderPage() {
           if (!asset.publishable || asset.kind === "text" || !asset.url.startsWith("private://")) return asset;
           const response = await fetch("/api/media/promote", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale },
             body: JSON.stringify({ siteId: site.id, privateRef: asset.url, assetId: asset.id, rights: asset.rights, sourceUrl: asset.sourceUrl })
           });
           const result = await response.json();
@@ -1119,7 +1119,7 @@ export default function BuilderPage() {
       const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
       if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour lancer la relecture IA.", "Sign in again to run the AI review."));
       const response = await fetch("/api/ai/write", {
-        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale },
         body: JSON.stringify({ field: "qualityReview", instruction: "Relis les textes du site et propose uniquement des corrections utiles.", context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, siteContext: { ...aiSiteContext, bookingLabel: config.bookingLabel } } })
       });
       const result = await response.json();
