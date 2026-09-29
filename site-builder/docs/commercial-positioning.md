@@ -100,3 +100,19 @@ L'IA accélère la conception ; l'utilisateur garde le contrôle.
 - Les quotas IA doivent rester pilotables côté serveur.
 - Les fonctions IA payantes suivent la politique AJG d'impayés et sont protégées côté serveur.
 - Les prix, les CGV/CGU, Stripe et les entitlements doivent être synchronisés avant ouverture des paiements live.
+
+
+## Catalogue Stripe sandbox
+
+Le catalogue de test reprend exactement la grille commerciale publique :
+
+- Essentiel mensuel : 19 € ;
+- Essentiel annuel : 190 € ;
+- Pro IA mensuel : 39 € ;
+- Pro IA annuel : 390 €.
+
+Le navigateur ne transmet jamais de Price ID Stripe. Il transmet uniquement le plan et la périodicité autorisés ; le serveur les convertit vers les Price IDs configurés dans l’environnement.
+
+Un interrupteur serveur `AJG_BILLING_CHECKOUT_ENABLED` doit être explicitement positionné à `true` pour ouvrir Checkout. Sa valeur par défaut reste `false`.
+
+Pendant un abonnement Stripe au statut `trialing`, le plan cible est conservé en base mais les droits effectifs sont temporairement ceux de Pro IA pendant 14 jours. À la sortie du trial, les droits correspondent automatiquement au plan réellement souscrit.

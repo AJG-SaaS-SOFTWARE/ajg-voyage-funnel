@@ -301,7 +301,7 @@ export default function AdminPage() {
     }
   };
 
-  const changePlan = async (siteId: string, userId: string, plan: "free" | "pro") => {
+  const changePlan = async (siteId: string, userId: string, plan: "free" | "essential" | "pro") => {
     setMessage("");
     try {
       await adminSetPlan(siteId, userId, plan);
@@ -1141,11 +1141,12 @@ export default function AdminPage() {
                     <select
                       value={row.planKey}
                       onChange={(event) =>
-                        void changePlan(row.id, row.ownerId, event.target.value as "free" | "pro")
+                        void changePlan(row.id, row.ownerId, event.target.value as "free" | "essential" | "pro")
                       }
                     >
                       <option value="free">Gratuit</option>
-                      <option value="pro">Pro</option>
+                      <option value="essential">Essentiel</option>
+                      <option value="pro">Pro IA</option>
                     </select>
                   </td>
                   <td>
