@@ -89,7 +89,7 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
       </div>
 
       <div className="compliance-grid">
-        <label><span>{tr("N° TVA intracommunautaire", "EU VAT number")} <em>si applicable</em></span><input value={value.vatNumber} onChange={(e) => update("vatNumber", e.target.value)} placeholder="Ex. FR…" /></label>
+        <label><span>{tr("N° TVA intracommunautaire", "EU VAT number")} <em>{tr("si applicable", "if applicable")}</em></span><input value={value.vatNumber} onChange={(e) => update("vatNumber", e.target.value)} placeholder="Ex. FR…" /></label>
         <label>
           <span>{tr("Directeur de la publication", "Publication director")}</span>
           <input value={value.publicationDirector} onChange={(e) => update("publicationDirector", e.target.value)} placeholder={value.publisherType === "individual" ? effectiveName || tr("Prénom Nom", "First Last") : tr("Nom du représentant légal", "Legal representative name")} />
@@ -121,11 +121,11 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
           <input type="email" value={value.privacyEmail} onChange={(e) => update("privacyEmail", e.target.value)} placeholder={value.email || "privacy@exemple.fr"} />
           {!value.privacyEmail && effectivePrivacy ? <small>{tr("AJG utilisera l’e-mail professionnel ci-dessus.", "AJG will use the business email above.")}</small> : null}
         </label>
-        <label><span>{tr("DPO / Délégué à la protection des données", "DPO / Data Protection Officer")} <em>si désigné</em></span><input value={value.dpoContact} onChange={(e) => update("dpoContact", e.target.value)} placeholder={tr("Nom ou e-mail du DPO", "DPO name or email")} /></label>
+        <label><span>{tr("DPO / Délégué à la protection des données", "DPO / Data Protection Officer")} <em>{tr("si désigné", "if appointed")}</em></span><input value={value.dpoContact} onChange={(e) => update("dpoContact", e.target.value)} placeholder={tr("Nom ou e-mail du DPO", "DPO name or email")} /></label>
       </div>
 
       <label className="compliance-full">
-        <span>{tr("Mention légale complémentaire", "Additional legal notice")} <em>facultatif</em></span>
+        <span>{tr("Mention légale complémentaire", "Additional legal notice")} <em>{tr("facultatif", "optional")}</em></span>
         <textarea rows={3} value={value.additionalLegalNote} onChange={(e) => update("additionalLegalNote", e.target.value)} placeholder={tr("Ajoutez ici une obligation propre à votre activité si nécessaire.", "Add any activity-specific legal requirement here if necessary.")} />
       </label>
 
