@@ -108,7 +108,7 @@ Checkpoint de l’itération : le modèle de données, le moteur IA, la persista
 - [x] éditeur visuel d’arborescence et réaffectation manuelle des contenus.
 
 ### Itération 4D — AI Site Architect Premium v2
-État : développement en cours
+État : code et recette production validés ; observation bêta réelle à poursuivre
 
 Objectif : transformer la génération complète en véritable prestation de stratégie web automatisée, sans sacrifier le contrôle humain ni la factualité.
 
@@ -159,7 +159,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] empreinte technique Premium visible dans l’admin pour dimensionner les futurs quotas/prix sur les coûts réels plutôt que sur une hypothèse ;
 - [x] évaluation humaine structurée directement sur chaque proposition : pertinent / à améliorer, avec motif catégorisé mais aucun commentaire libre ni contenu client ;
 - [x] dashboard admin enrichi avec taux positif, taux de réponse et motifs principaux des propositions jugées à améliorer ;
-- [ ] valider une génération Premium v2 réelle en production après CI/release ;
+- [x] génération Premium v2 réelle validée en production via la recette E2E : stratégie, génération structurée, contrôles déterministes, audit critique, quality gate final et nettoyage du site temporaire confirmés ;
 - [ ] mesurer pendant la bêta le taux proposition → application et les demandes de régénération pour piloter les prochaines améliorations.
 
 ## Modules de contenu
@@ -199,7 +199,7 @@ Modules à étudier après validation bêta :
 - [x] droits renforcés : source obligatoire avant publication d’un contenu sous licence/domaine public ;
 - [x] build et production du dernier `main` validés via la release contrôlée ;
 - [x] recette E2E complète production validée : authentification → création → droit Pro temporaire → AI Site Architect réel → média privé/public → publication → rendu public → feedback → archive → nettoyage ; HTTP 200 confirmé côté runtime ;
-- [ ] validation finale des sous-domaines gérés en conditions réelles sur ce même déploiement ;
+- [x] validation finale des sous-domaines gérés en conditions réelles : canari `test-julien.voyage.ajgsolutionsgroup.com` attaché au déploiement production, HTTPS contrôlé automatiquement par le pipeline ;
 - [x] routage des sous-pages et pages légales corrigé sur les sous-domaines gérés, avec URLs de navigation propres ;
 - [x] accès direct à `ai_usage_events` retiré aux clients et RPC de quota explicitement limité à `authenticated` / `service_role`, avec contrôle `auth.uid()` conservé ;
 - [x] vérification des privilèges effective après migration : anon sans RPC, utilisateur connecté sans accès direct au ledger ;
@@ -227,7 +227,7 @@ Modules à étudier après validation bêta :
 - [x] types Supabase régénérés et migration versionnée ;
 - [x] audit sécurité/performance post-migration et index de relation ajouté ;
 - [ ] prix commercial, périodicité et éventuel essai à valider avant activation du paiement ;
-- [ ] connecter Stripe et ses webhooks ;
+- [x] Stripe sandbox relié au Builder : Checkout hébergé, Customer Portal et webhook signé/idempotent par site, sans prix commercial codé en dur ;
 - [x] droits Premium appliqués au runtime : domaine personnalisé côté repository et AI Site Architect côté API serveur ;
 - [x] mesurer le stockage `site-media` par propriétaire et l’afficher dans « Mon offre » ;
 - [x] refuser les nouveaux imports qui dépasseraient le quota de stockage de l’offre ;
@@ -239,12 +239,12 @@ Modules à étudier après validation bêta :
 - [x] aucun rôle administrateur attribué automatiquement : élévation volontaire uniquement ;
 - [x] droits Premium retombent automatiquement sur le niveau gratuit lorsque l’abonnement n’est plus `active`/`trialing`, tout en conservant le vrai statut (`past_due`, `canceled`, `suspended`) pour l’interface ;
 - [x] nouvelle publication bloquée pour un abonnement non régularisé, sans suppression automatique du site ni des données ;
-- [ ] connecter le statut Stripe aux états d’abonnement et appliquer la politique finale de grâce/suspension une fois les délais commerciaux validés.
+- [x] statuts Stripe reliés aux abonnements par site et au moteur d’accès J0/J14/J28/J104 ; les événements de paiement réussis/échoués, mises à jour et annulations alimentent le moteur serveur sans suppression automatique ;
 
 Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/mois et 2 Go) forment un catalogue bêta modifiable en base. Ils ne constituent pas encore l’offre commerciale définitive.
 
 ### Itération 5B — exploitation SaaS et domaines
-État : exploitation applicative terminée ; intégrations externes Vercel/Stripe à connecter
+État : exploitation applicative et Vercel opérationnels ; Stripe intégré en sandbox, activation commerciale encore différée
 
 - [x] quota de stockage mesuré et bloquant avant upload ;
 - [x] demande de domaine personnalisé réservée au droit Pro ;
@@ -258,7 +258,7 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 - [x] rattachement/vérification Vercel automatisé des domaines ; sous-domaines AJG gérés depuis le back-office, domaines personnels depuis l’espace propriétaire ;
 - [ ] activation Stripe après validation de l’offre commerciale ;
 - [x] moteur de droits déjà prêt pour `past_due` / `canceled` / `suspended` et blocage de nouvelle publication ;
-- [ ] synchronisation Stripe → statuts et délais de grâce dès validation des paramètres commerciaux.
+- [x] synchronisation Stripe → statuts codée et branchée sur la politique de grâce/suspension existante ; la recette sandbox réelle reste à exécuter après création du Price et configuration des secrets.
 
 ## Principe de conformité
 
@@ -490,7 +490,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;
 - [x] récupération client : archive TAR.GZ streamée avec manifeste v3 et copie des médias publics/privés, sans nouvelle dépendance ;
 - [x] domaines : endpoints Vercel utilisés conformes à la documentation actuelle ;
-- [x] Vercel : production synchronisée sur `91ac1c3…` ; `/api/health` retourne HTTP 200, `database: ok`, environnement `production` et région `cdg1` ;
+- [x] Vercel : production synchronisée sur `80af1cad…` après refonte du back-office ; déploiement `dpl_3cFRcdndq9iVYJJw3s2x8LyWq9tj` READY, live et canari HTTPS validés, aucune erreur runtime récente ;
 - [x] Storage privé : bucket réel, politiques RLS et recette privée → promotion publique → nettoyage validés ;
 - [x] secrets de release : `SUPABASE_SECRET_KEY` runtime et `VERCEL_TOKEN` GitHub Actions ont permis la release contrôlée et la recette Storage ;
 - [ ] secrets opérationnels restants : confirmer/configurer `CRON_SECRET`, Resend, `NEXT_PUBLIC_APP_URL` et le token Vercel runtime à périmètre minimal pour les domaines personnalisés ;
