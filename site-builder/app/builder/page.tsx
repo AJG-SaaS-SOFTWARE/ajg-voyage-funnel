@@ -327,7 +327,7 @@ export default function BuilderPage() {
         const remote = await saveMySite(config, false, remoteSiteId || undefined);
         setRemoteSiteId(remote.id);
         if (version === latestVersion.current) setSaved(true);
-      }).catch((error) => setSyncError(error instanceof Error ? error.message : "Sauvegarde automatique impossible."));
+      }).catch((error) => setSyncError(error instanceof Error ? error.message : tr("Sauvegarde automatique impossible.", "Automatic save failed.")));
     }, 1800);
     return () => window.clearTimeout(timer);
   }, [config, changeVersion, ready, remoteMode, remoteSiteId]);
@@ -381,7 +381,7 @@ export default function BuilderPage() {
         }
       } catch (error) {
         if (!cancelled) {
-          setSyncError(error instanceof Error ? error.message : "Impossible de charger le site.");
+          setSyncError(error instanceof Error ? error.message : tr("Impossible de charger le site.", "Unable to load the website."));
           setConfig(local.config);
           setBrandTouched(Boolean(local.config.brandName));
           setSlugTouched(Boolean(local.config.slug));
@@ -439,7 +439,7 @@ export default function BuilderPage() {
   const updateAffiliation = (affiliation: SiteConfig["affiliation"]) => {
     setChangeVersion((version) => version + 1);
     latestVersion.current += 1;
-    const neutralIntro = "Présentez votre activité, votre approche et ce que vos visiteurs peuvent découvrir avec vous.";
+    const neutralIntro = tr("Présentez votre activité, votre approche et ce que vos visiteurs peuvent découvrir avec vous.", "Present your activity, your approach and what visitors can discover with you.");
     setSaved(false);
     setPublished(false);
     setSyncError("");
@@ -494,17 +494,17 @@ export default function BuilderPage() {
       config.heroSubtitle !== defaultSiteConfig.heroSubtitle ||
       config.aboutText !== defaultSiteConfig.aboutText;
     if (hasPersonalizedText && !window.confirm(
-      "Les textes actuels seront remplacés par la nouvelle proposition. Voulez-vous continuer ?"
+      tr("Les textes actuels seront remplacés par la nouvelle proposition. Voulez-vous continuer ?", "The current copy will be replaced by the new proposal. Do you want to continue?")
     )) return;
 
     setBusy(true);
     setSyncError("");
     try {
       const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error("L'assistant IA nécessite une connexion au site.");
+      if (!supabase) throw new Error(tr("L’assistant IA nécessite une connexion au site.", "The AI assistant requires a signed-in website session."));
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      if (!token) throw new Error("Reconnectez-vous pour préparer vos textes avec l'IA.");
+      if (!token) throw new Error(tr("Reconnectez-vous pour préparer vos textes avec l’IA.", "Sign in again to prepare your copy with AI."));
 
       const response = await fetch("/api/ai/write", {
         method: "POST",
@@ -528,7 +528,7 @@ export default function BuilderPage() {
         })
       });
       const data = await response.json();
-      if (!response.ok || !data?.draft) throw new Error(data?.error || "Impossible de préparer les textes.");
+      if (!response.ok || !data?.draft) throw new Error(data?.error || tr("Impossible de préparer les textes.", "Unable to prepare the copy."));
 
       const nextConfig = {
         ...config,
@@ -544,7 +544,7 @@ export default function BuilderPage() {
       setPublished(false);
       setGuidedDraftReady(true);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Impossible de préparer les textes.");
+      setSyncError(error instanceof Error ? error.message : tr("Impossible de préparer les textes.", "Unable to prepare the copy."));
     } finally {
       setBusy(false);
     }
@@ -588,9 +588,9 @@ export default function BuilderPage() {
     setSyncError("");
     try {
       const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error("La création complète par IA nécessite une connexion.");
+      if (!supabase) throw new Error(tr("La création complète par IA nécessite une connexion.", "Full AI website creation requires a signed-in session."));
       const { data } = await supabase.auth.getSession();
-      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la création complète par IA.");
+      if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour utiliser la création complète par IA.", "Sign in again to use full AI website creation."));
       const architectSiteId = remoteSiteId || (await saveMySite(config, false)).id;
       if (!remoteSiteId) setRemoteSiteId(architectSiteId);
       const response = await fetch("/api/ai/write", {
@@ -634,7 +634,7 @@ export default function BuilderPage() {
         })
       });
       const result = await response.json();
-      if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer le site complet.");
+      if (!response.ok || !result?.proposal) throw new Error(result?.error || tr("Impossible de préparer le site complet.", "Unable to prepare the complete website."));
       setArchitectProposal(result.proposal);
       setArchitectStrategyContextKey(strategyContextKey);
       setArchitectProposalKey(crypto.randomUUID());
@@ -651,7 +651,7 @@ export default function BuilderPage() {
         void trackProductEvent("architect_refined", architectSiteId);
       }
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Impossible de préparer le site complet.");
+      setSyncError(error instanceof Error ? error.message : tr("Impossible de préparer le site complet.", "Unable to prepare the complete website."));
     } finally {
       setArchitectLoading(false);
     }
@@ -689,7 +689,7 @@ export default function BuilderPage() {
       setSyncError(
         error instanceof Error
           ? error.message
-          : "Votre évaluation n’a pas pu être enregistrée."
+          : tr("Votre évaluation n’a pas pu être enregistrée.", "Your feedback could not be recorded.")
       );
     } finally {
       setArchitectQualityBusy(false);
@@ -725,9 +725,9 @@ export default function BuilderPage() {
     setSyncError("");
     try {
       const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error("La révision globale nécessite une connexion.");
+      if (!supabase) throw new Error(tr("La révision globale nécessite une connexion.", "Full-site revision requires a signed-in session."));
       const { data } = await supabase.auth.getSession();
-      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour utiliser la révision globale.");
+      if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour utiliser la révision globale.", "Sign in again to use full-site revision."));
       const revisionSiteId = remoteSiteId || (await saveMySite(config, false)).id;
       if (!remoteSiteId) setRemoteSiteId(revisionSiteId);
       const existingProposal = {
@@ -743,9 +743,9 @@ export default function BuilderPage() {
         context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
       }) });
       const result = await response.json();
-      if (!response.ok || !result?.proposal) throw new Error(result?.error || "Impossible de préparer cette révision.");
+      if (!response.ok || !result?.proposal) throw new Error(result?.error || tr("Impossible de préparer cette révision.", "Unable to prepare this revision."));
       setRevisionProposal(result.proposal);
-    } catch (error) { setSyncError(error instanceof Error ? error.message : "Impossible de préparer cette révision."); }
+    } catch (error) { setSyncError(error instanceof Error ? error.message : tr("Impossible de préparer cette révision.", "Unable to prepare this revision.")); }
     finally { setRevisionLoading(false); }
   };
 
@@ -840,11 +840,11 @@ export default function BuilderPage() {
       revisionProposal.aboutHeading !== config.aboutHeading ||
       revisionProposal.aboutText !== config.aboutText
     ) {
-      changes.push("Présentation");
+      changes.push(tr("Présentation", "Presentation"));
     }
 
     if (revisionProposal.bookingLabel !== config.bookingLabel) {
-      changes.push("Bouton de rendez-vous");
+      changes.push(tr("Bouton de rendez-vous", "Booking button"));
     }
 
     if (!same(revisionProposal.architecture, config.architecture)) {
@@ -878,7 +878,7 @@ export default function BuilderPage() {
       ) ||
       !same(revisionProposal.moduleOrder, config.design.modules.order)
     ) {
-      changes.push("Rubriques");
+      changes.push(tr("Rubriques", "Sections"));
     }
 
     if (
@@ -933,18 +933,18 @@ export default function BuilderPage() {
     const mediaOk = Boolean(config.profileImageUrl || config.design.heroImage || config.design.backgroundPhotoUrl);
     checks.push({ label: tr("Qualité visuelle", "Visual quality"), detail: mediaOk ? tr("Au moins un visuel personnel ou principal est présent.", "At least one personal or primary visual is present.") : tr("Ajoutez une photo ou une image principale pour renforcer l’impact visuel.", "Add a photo or main image to strengthen the visual impact."), status: mediaOk ? "pass" : "warn", step: "design" });
     const portraitOk = !config.design.showPortrait || Boolean(config.profileImageUrl);
-    checks.push({ label: "Photo de profil", detail: portraitOk ? (config.design.showPortrait ? "Le portrait affiché dispose d’une photo." : "Le portrait est volontairement masqué.") : "Le portrait est activé sans photo : les initiales seront affichées. Ajoutez une photo ou masquez le portrait.", status: portraitOk ? "pass" : "warn", step: "identity" });
+    checks.push({ label: tr("Photo de profil", "Profile photo"), detail: portraitOk ? (config.design.showPortrait ? tr("Le portrait affiché dispose d’une photo.", "The displayed portrait has a photo.") : tr("Le portrait est volontairement masqué.", "The portrait is intentionally hidden.")) : tr("Le portrait est activé sans photo : les initiales seront affichées. Ajoutez une photo ou masquez le portrait.", "The portrait is enabled without a photo: initials will be displayed. Add a photo or hide the portrait."), status: portraitOk ? "pass" : "warn", step: "identity" });
     checks.push({ label: tr("Conformité activité", "Activity compliance"), detail: config.affiliation === "mwr" ? tr("La mention d’indépendance obligatoire sera affichée.", "The required independence disclosure will be displayed.") : tr("Le profil d’activité indépendant est appliqué.", "The independent activity profile is applied."), status: "pass", step: "options" });
     const legalMissing = legalMissingFields(config.legal, config.firstName, config.lastName);
     checks.push({
-      label: "Mentions légales & RGPD",
-      detail: legalMissing.length ? `À compléter : ${legalMissing.slice(0, 4).join(", ")}${legalMissing.length > 4 ? "…" : ""}` : "Les informations nécessaires aux pages Mentions légales, Confidentialité et Cookies sont renseignées.",
+      label: tr("Mentions légales & RGPD", "Legal notice & GDPR"),
+      detail: legalMissing.length ? `${tr("À compléter :", "To complete:")} ${legalMissing.slice(0, 4).join(", ")}${legalMissing.length > 4 ? "…" : ""}` : tr("Les informations nécessaires aux pages Mentions légales, Confidentialité et Cookies sont renseignées.", "The information required for the Legal notice, Privacy and Cookies pages is complete."),
       status: legalMissing.length ? "warn" : "pass",
       step: "options"
     });
     const { surface, ink } = surfaceInk(config.design);
-    checks.push({ label: "Lisibilité des rubriques", detail: `Contraste du fond et du texte : ${contrastRatio(surface, ink).toFixed(1)}:1.`, status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn", step: "design" });
-    checks.push({ label: "Contraste du bouton", detail: `Texte du bouton adapté à la couleur choisie (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`, status: "pass", step: "design" });
+    checks.push({ label: tr("Lisibilité des rubriques", "Section readability"), detail: `${tr("Contraste du fond et du texte :", "Background/text contrast:")} ${contrastRatio(surface, ink).toFixed(1)}:1.`, status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn", step: "design" });
+    checks.push({ label: tr("Contraste du bouton", "Button contrast"), detail: `${tr("Texte du bouton adapté à la couleur choisie", "Button text adapted to the selected color")} (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`, status: "pass", step: "design" });
     const allText = [config.heroTagline, config.heroTitle, config.heroSubtitle, config.aboutHeading, config.aboutText].filter((value) => value.trim());
     const normalized = allText.map((value) => value.trim().toLowerCase().replace(/[.!?]+$/, ""));
     checks.push({ label: tr("Répétitions évidentes", "Obvious repetition"), detail: new Set(normalized).size === normalized.length ? tr("Aucun texte identique entre les champs principaux.", "No identical copy appears across the main fields.") : tr("Deux champs contiennent le même texte : diversifiez-les.", "Two fields contain the same text: make them more distinct."), status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
@@ -961,8 +961,8 @@ export default function BuilderPage() {
     const unknownRights = config.contentLibrary.assets.filter((asset) => asset.rights === "unknown");
     const publishableMissing = config.contentLibrary.assets.filter((asset) => asset.publishable && ((asset.kind !== "text" && (!asset.url || asset.url.startsWith("private://"))) || (asset.kind === "text" && !asset.text.trim())));
     const rightsSourceMissing = config.contentLibrary.assets.filter((asset) => (asset.rights === "licensed" || asset.rights === "public-domain") && !asset.sourceUrl.trim());
-    checks.push({ label: "Droits des contenus", detail: unknownRights.length ? `${unknownRights.length} contenu(s) ont des droits à vérifier et restent exclus de la publication.` : rightsSourceMissing.length ? `${rightsSourceMissing.length} contenu(s) sous licence ou domaine public nécessitent encore une source vérifiable.` : "Les contenus fournis ont un statut de droits explicite et les sources requises.", status: unknownRights.length || rightsSourceMissing.length ? "warn" : "pass", step: "story" });
-    checks.push({ label: "Bibliothèque de contenus", detail: publishableMissing.length ? "Un contenu autorisé à la publication ne possède pas encore de fichier exploitable." : "Les contenus publiables disposent des informations nécessaires.", status: publishableMissing.length ? "warn" : "pass", step: "story" });
+    checks.push({ label: tr("Droits des contenus", "Content rights"), detail: unknownRights.length ? `${unknownRights.length} ${tr("contenu(s) ont des droits à vérifier et restent exclus de la publication.", "item(s) have rights that still need verification and remain excluded from publishing.")}` : rightsSourceMissing.length ? `${rightsSourceMissing.length} ${tr("contenu(s) sous licence ou domaine public nécessitent encore une source vérifiable.", "licensed or public-domain item(s) still need a verifiable source.")}` : tr("Les contenus fournis ont un statut de droits explicite et les sources requises.", "Provided content has an explicit rights status and the required sources."), status: unknownRights.length || rightsSourceMissing.length ? "warn" : "pass", step: "story" });
+    checks.push({ label: tr("Bibliothèque de contenus", "Content library"), detail: publishableMissing.length ? tr("Un contenu autorisé à la publication ne possède pas encore de fichier exploitable.", "Content authorized for publication is still missing a usable file.") : tr("Les contenus publiables disposent des informations nécessaires.", "Publishable content has the required information."), status: publishableMissing.length ? "warn" : "pass", step: "story" });
     const enabledPages = config.architecture.pages.filter((page) => page.enabled);
     const pageSlugs = enabledPages.map((page) => page.slug);
     const clearedAssetIds = new Set(config.contentLibrary.assets.filter((asset) => asset.publishable && asset.rights !== "unknown").map((asset) => asset.id));
@@ -992,7 +992,7 @@ export default function BuilderPage() {
     if (modules.figures.enabled && !modules.figures.items.some((item) => item.value.trim() && item.label.trim())) moduleProblems.push("chiffres clés");
     if (modules.benefits.enabled && !modules.benefits.items.some((item) => item.title.trim() && item.text.trim())) moduleProblems.push("avantages");
     const moduleReady = moduleProblems.length === 0;
-    checks.push({ label: "Modules activés", detail: moduleReady ? "Les rubriques activées ont du contenu publiable." : `À compléter : ${moduleProblems.join(", ")}.`, status: moduleReady ? "pass" : "warn", step: "options" });
+    checks.push({ label: tr("Modules activés", "Enabled sections"), detail: moduleReady ? tr("Les rubriques activées ont du contenu publiable.", "Enabled sections contain publishable content.") : `${tr("À compléter :", "To complete:")} ${moduleProblems.join(", ")}.`, status: moduleReady ? "pass" : "warn", step: "options" });
     const galleryAccessible = !modules.gallery.enabled || modules.gallery.images.length === 0 || modules.gallery.images.every((image) => image.caption.trim().length >= 3);
     checks.push({ label: tr("Images accessibles", "Accessible images"), detail: galleryAccessible ? tr("Les images de galerie ont une légende exploitable comme description.", "Gallery images have captions that can be used as descriptions.") : tr("Ajoutez une légende descriptive aux images de galerie pour améliorer compréhension et accessibilité.", "Add descriptive captions to gallery images to improve clarity and accessibility."), status: galleryAccessible ? "pass" : "warn", step: "options" });
     const sentences = [config.heroSubtitle, config.aboutText].filter(Boolean);
@@ -1000,11 +1000,11 @@ export default function BuilderPage() {
     checks.push({ label: tr("Ponctuation", "Punctuation"), detail: punctuation ? tr("Les paragraphes principaux se terminent correctement.", "The main paragraphs end correctly.") : tr("Vérifiez la ponctuation de l’introduction et de la présentation.", "Check punctuation in the introduction and presentation."), status: punctuation ? "pass" : "warn", step: "story" });
     const editorialReviewOk = reviewResult !== null && reviewResult.issues.length === 0;
     checks.push({
-      label: "Relecture éditoriale IA",
+      label: tr("Relecture éditoriale IA", "AI editorial review"),
       detail: reviewResult === null
-        ? "La relecture orthographe, grammaire et cohérence n’a pas encore été lancée."
+        ? tr("La relecture orthographe, grammaire et cohérence n’a pas encore été lancée.", "Spelling, grammar and consistency review has not been run yet.")
         : reviewResult.issues.length
-          ? `${reviewResult.issues.length} suggestion(s) restent à examiner avant publication.`
+          ? `${reviewResult.issues.length} ${tr("suggestion(s) restent à examiner avant publication.", "suggestion(s) remain to review before publishing.")}`
           : "Orthographe, grammaire, cohérence et clarté ont été relues sans correction restante.",
       status: editorialReviewOk ? "pass" : "warn",
       step: "review"
@@ -1039,7 +1039,7 @@ export default function BuilderPage() {
       next.push({ message: tr("Lien de rendez-vous invalide", "Invalid booking link"), step: "booking" });
     }
     if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName, JSON.stringify(config.design.modules)].join(" "))) {
-      next.push({ message: "Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", step: "options" });
+      next.push({ message: tr("Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", "The copy mentions MWR Life or Travel Advantage: choose the matching activity or remove those references"), step: "options" });
     }
     const missingLegal = legalMissingFields(config.legal, config.firstName, config.lastName);
     if (missingLegal.length) {
@@ -1061,7 +1061,7 @@ export default function BuilderPage() {
       setSaved(true);
       setPublished(false);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Erreur de sauvegarde.");
+      setSyncError(error instanceof Error ? error.message : tr("Erreur de sauvegarde.", "Save failed."));
     } finally {
       setBusy(false);
     }
@@ -1078,7 +1078,7 @@ export default function BuilderPage() {
       if (remoteMode) {
         const supabase = getSupabaseBrowserClient();
         const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
-        if (!data.session?.access_token) throw new Error("Reconnectez-vous pour publier.");
+        if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour publier.", "Sign in again to publish."));
         const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false, remoteSiteId || undefined);
         publishedSiteId = site.id;
         setRemoteSiteId(site.id);
@@ -1090,7 +1090,7 @@ export default function BuilderPage() {
             body: JSON.stringify({ siteId: site.id, privateRef: asset.url, assetId: asset.id, rights: asset.rights, sourceUrl: asset.sourceUrl })
           });
           const result = await response.json();
-          if (!response.ok) throw new Error(result.error || "Impossible de préparer un média pour la publication.");
+          if (!response.ok) throw new Error(result.error || tr("Impossible de préparer un média pour la publication.", "Unable to prepare media for publishing."));
           return { ...asset, url: result.url };
         }));
         publishConfig = { ...config, contentLibrary: { assets: promotedAssets } };
@@ -1105,7 +1105,7 @@ export default function BuilderPage() {
       setPublished(true);
       void trackProductEvent("publish_success", publishedSiteId);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Erreur de publication.");
+      setSyncError(error instanceof Error ? error.message : tr("Erreur de publication.", "Publishing failed."));
     } finally {
       setBusy(false);
     }
@@ -1117,16 +1117,16 @@ export default function BuilderPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
-      if (!data.session?.access_token) throw new Error("Reconnectez-vous pour lancer la relecture IA.");
+      if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour lancer la relecture IA.", "Sign in again to run the AI review."));
       const response = await fetch("/api/ai/write", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
         body: JSON.stringify({ field: "qualityReview", instruction: "Relis les textes du site et propose uniquement des corrections utiles.", context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, siteContext: { ...aiSiteContext, bookingLabel: config.bookingLabel } } })
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Relecture indisponible.");
+      if (!response.ok) throw new Error(result.error || tr("Relecture indisponible.", "Review unavailable."));
       setReviewResult(result);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Relecture indisponible.");
+      setSyncError(error instanceof Error ? error.message : tr("Relecture indisponible.", "Review unavailable."));
     } finally { setReviewing(false); }
   };
 
@@ -1163,7 +1163,7 @@ export default function BuilderPage() {
       setRemoteSiteId(savedRemote.id);
       setSaved(true);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Impossible d'envoyer la photo.");
+      setSyncError(error instanceof Error ? error.message : tr("Impossible d’envoyer la photo.", "Unable to upload the photo."));
     } finally {
       setBusy(false);
       event.target.value = "";
@@ -1193,7 +1193,7 @@ export default function BuilderPage() {
         : { ...config.design, modules: { ...config.design.modules, gallery: { ...config.design.modules.gallery, images: [...config.design.modules.gallery.images, { url, caption: "" }] } } };
       update("design", design);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "Impossible d'envoyer l'image.");
+      setSyncError(error instanceof Error ? error.message : tr("Impossible d’envoyer l’image.", "Unable to upload the image."));
     } finally {
       setUploadingImage(false);
       event.target.value = "";
@@ -1777,7 +1777,7 @@ export default function BuilderPage() {
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroSubtitle", text)}
-                  placeholder="Ex. Explique en 2 phrases mon activité, mon approche et ce que le visiteur peut attendre, avec un ton naturel"
+                  placeholder={tr("Ex. Explique en 2 phrases mon activité, mon approche et ce que le visiteur peut attendre, avec un ton naturel", "e.g. Explain my activity, approach and what visitors can expect in 2 natural sentences")}
                 />
 
                 <div className="section-kicker">
@@ -1789,7 +1789,7 @@ export default function BuilderPage() {
                 </Field>
                 <AiTextAssistant
                   field="aboutHeading"
-                  label="le titre de votre présentation"
+                  label={tr("le titre de votre présentation", "your presentation title")}
                   value={config.aboutHeading}
                   language={config.language}
                   affiliation={config.affiliation}
@@ -1804,7 +1804,7 @@ export default function BuilderPage() {
                 </Field>
                 <AiTextAssistant
                   field="aboutText"
-                  label="votre présentation"
+                  label={tr("votre présentation", "your presentation")}
                   value={config.aboutText}
                   language={config.language}
                   affiliation={config.affiliation}
@@ -1907,7 +1907,7 @@ export default function BuilderPage() {
                 </Field>
                 <AiTextAssistant
                   field="bookingLabel"
-                  label="le bouton de rendez-vous"
+                  label={tr("le bouton de rendez-vous", "the booking button")}
                   value={config.bookingLabel}
                   language={config.language}
                   affiliation={config.affiliation}
