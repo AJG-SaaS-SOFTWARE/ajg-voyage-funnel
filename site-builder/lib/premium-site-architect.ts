@@ -839,6 +839,15 @@ function deterministicQualityIssues(
   }
 
   const enabledPages = proposal.architecture.pages.filter((page) => page.enabled);
+  if (proposal.architecture.mode === "single" && enabledPages.length > 1) {
+    issues.push({
+      severity: "blocking",
+      code: "single_mode_multiple_pages",
+      detail:
+        `L’architecture est déclarée monopage mais contient ${enabledPages.length} pages actives.`
+    });
+  }
+
   const pageTitles = new Set<string>();
   const pagePurposes = new Map<string, string>();
   const genericPageTitles = new Set([
@@ -1039,6 +1048,7 @@ export async function generatePremiumSiteArchitect(
         "Never invent facts, testimonials, figures, prices, savings, certifications, customer results, contact details or capabilities.",
         "If a useful fact is missing, write safely around it and leave the missing-information signal in the strategy rather than fabricating it.",
         "Architecture must stay between one and six pages and include exactly one home page.",
+        "Keep architecture.mode consistent with the enabled pages: single means exactly one enabled home page; multi means more than one enabled page.",
         "Every enabled page needs a concise, meaningful navigation title; never use placeholders such as Page, Untitled, More or generic equivalents.",
         "Every enabled page must also state a concrete editorial purpose tied to a visitor need or next step; never leave a page purpose empty.",
         "Only assign asset IDs that exist in the supplied rights-cleared content library.",
@@ -1121,6 +1131,7 @@ export async function generatePremiumSiteArchitect(
           "When a page title is generic or too long, replace it with a short navigation label that clearly reflects that page’s purpose.",
           "When two pages have the same editorial purpose, merge them or rewrite the architecture so each remaining page has a genuinely distinct visitor job.",
           "When an enabled page lacks a purpose, either define a concrete visitor job for it or remove the page if it adds no value.",
+          "When architecture mode conflicts with the enabled page count, simplify the page list or switch to the correct mode instead of leaving an inconsistent structure.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
           ...revisionScopeRules,
         input.affiliationRules
