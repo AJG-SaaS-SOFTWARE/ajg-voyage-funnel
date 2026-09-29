@@ -35,7 +35,8 @@ function member(user: User, grant?: BetaGrant | null) {
         : null,
     accessActive,
     accessStartsAt: grant?.starts_at || null,
-    accessExpiresAt: grant?.expires_at || null
+    accessExpiresAt: grant?.expires_at || null,
+    locale: user.user_metadata?.ajg_builder_locale === "en" ? "en" : "fr"
   };
 }
 
