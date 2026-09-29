@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 type StepStatus = "pass" | "skipped";
 type Step = { key: string; label: string; status: StepStatus; detail: string };
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
           }
         }),
         cache: "no-store",
-        signal: AbortSignal.timeout(58000)
+        signal: AbortSignal.timeout(110000)
       });
 
       const aiBody = await aiResponse.json().catch(() => null);
@@ -197,9 +197,14 @@ export async function POST(request: NextRequest) {
       }
       if (
         !aiBody.proposal?.intelligence?.understoodNeed ||
-        aiBody.proposal?.premiumAudit?.reviewed !== true
+        aiBody.proposal?.premiumAudit?.reviewed !== true ||
+        aiBody.proposal?.premiumAudit?.finalVerified !== true ||
+        (aiBody.proposal?.premiumAudit?.refinementApplied === true &&
+          aiBody.proposal?.premiumAudit?.finalReviewPerformed !== true)
       ) {
-        throw new Error("Premium Architect strategy/audit metadata is missing.");
+        throw new Error(
+          "Premium Architect strategy, audit or final quality gate metadata is missing."
+        );
       }
       proposal = aiBody.proposal;
       steps.push({
@@ -208,8 +213,8 @@ export async function POST(request: NextRequest) {
         status: "pass",
         detail:
           aiBody.proposal.premiumAudit.refinementApplied
-            ? "Stratégie, génération structurée, audit critique et raffinement automatique validés."
-            : "Stratégie, génération structurée et audit critique validés sans raffinement nécessaire."
+            ? "Stratégie, génération structurée, audit critique, raffinement automatique et contrôle final indépendant validés."
+            : "Stratégie, génération structurée et audit critique validés sans raffinement nécessaire ; quality gate final validé."
       });
     } else {
       steps.push({
