@@ -47,10 +47,13 @@ export async function evaluatePrivateBetaGate(): Promise<PrivateBetaGateResult> 
       detail: "Clé OpenAI serveur absente."
     });
   }
-  if (!present(process.env.VERCEL_GIT_COMMIT_SHA)) {
+  const deploymentSha =
+    process.env.AJG_RELEASE_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA;
+  if (!present(deploymentSha)) {
     issues.push({
       key: "deployment-sha",
-      detail: "Révision Vercel courante non détectée."
+      detail: "Révision de production courante non détectée."
     });
   }
   if (!present(vercelToken)) {
