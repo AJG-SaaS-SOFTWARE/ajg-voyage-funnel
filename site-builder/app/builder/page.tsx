@@ -1208,6 +1208,7 @@ export default function BuilderPage() {
           </span>
           {userEmail ? <Link href="/plans" className="button secondary">Mon offre</Link> : null}
           {userEmail ? <Link href="/domains" className="button secondary">Domaines</Link> : null}
+          {userEmail ? <Link href="/data" className="button secondary">Mes données</Link> : null}
           {userEmail ? <Link href="/feedback" className="button secondary">Donner mon avis</Link> : null}
           {userEmail ? (
             <button type="button" className="account-button" onClick={logout} title={userEmail}>
