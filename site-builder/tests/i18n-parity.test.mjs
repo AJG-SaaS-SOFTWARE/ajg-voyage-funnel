@@ -70,3 +70,20 @@ test("core builder surfaces expose English product copy", () => {
   assert.match(compliance, /Website legal information/);
   assert.match(modules, /Section order/);
 });
+
+
+test("keeps the synchronized commercial pricing grid bilingual", () => {
+  const plans = read("app/plans/page.tsx");
+  const home = read("app/page.tsx");
+  const shell = read("components/AccountShell.tsx");
+
+  assert.match(plans, /19 €/);
+  assert.match(plans, /190 €/);
+  assert.match(plans, /39 €/);
+  assert.match(plans, /390 €/);
+  assert.match(plans, /Essential €19 \/ Pro AI €39/);
+  assert.match(home, /\/pricing/);
+  assert.match(home, /\/tarifs/);
+  assert.match(shell, /Pricing/);
+  assert.match(shell, /Tarifs/);
+});
