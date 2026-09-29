@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   const eventName = clean(body.event_name, 64);
   const sessionId = clean(body.session_id, 36);
   const language = body.language === "en" ? "en" : "fr";
-  if (!ALLOWED_EVENTS.has(eventName) || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId)) {
+  if (!ALLOWED_EVENTS.has(eventName)) {
     return json(res, 400, { error: "Invalid event" });
   }
 
