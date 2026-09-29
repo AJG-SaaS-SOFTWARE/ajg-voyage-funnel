@@ -336,6 +336,10 @@ export default function BuilderPage() {
         if (cancelled) return;
 
         if (remote) {
+          if (remote.privacyState === "erasure_requested") {
+            router.replace("/data");
+            return;
+          }
           setConfig(remote.config);
           setBrandTouched(Boolean(remote.config.brandName));
           setSlugTouched(Boolean(remote.config.slug));
@@ -1199,6 +1203,7 @@ export default function BuilderPage() {
           {ownedSites.length>1?<select aria-label="Site actif" value={remoteSiteId||""} onChange={async e=>{
             const next=await getMySite(e.target.value);
             if(!next)return;
+            if(next.privacyState==="erasure_requested"){router.push("/data");return;}
             setRemoteSiteId(next.id);setConfig(next.config);setPublished(next.status==="published");setSaved(true);
             await refreshVerifiedPublicUrl(next.id);
           }}>{ownedSites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select>:null}
@@ -1208,6 +1213,7 @@ export default function BuilderPage() {
           </span>
           {userEmail ? <Link href="/plans" className="button secondary">Mon offre</Link> : null}
           {userEmail ? <Link href="/domains" className="button secondary">Domaines</Link> : null}
+          {userEmail ? <Link href="/data" className="button secondary">Mes données</Link> : null}
           {userEmail ? <Link href="/feedback" className="button secondary">Donner mon avis</Link> : null}
           {userEmail ? (
             <button type="button" className="account-button" onClick={logout} title={userEmail}>

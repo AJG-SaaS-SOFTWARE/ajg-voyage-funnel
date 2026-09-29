@@ -397,9 +397,10 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] Builder aligné sur les entitlements du site actif : cartes Premium visiblement verrouillées en Gratuit, champs/actions coûteux désactivés et redirection vers l’offre ou la régularisation ;
 - [x] l’IA standard et le mode guidé restent accessibles en Gratuit dans leurs quotas, sauf blocage du moteur d’impayés ;
 - [x] principe figé : un impayé ou un non-renouvellement ne déclenche jamais une suppression automatique des sites ou données ;
-- [ ] ajouter un espace « Mes données » avec export par site, suivi des demandes et accès aux actions d’effacement ;
-- [ ] demande d’effacement d’un site : confirmation forte, suspension publique immédiate, arrêt de collecte, journal de demande et export préalable proposé ;
-- [ ] demande de suppression du compte : suspension de tous les sites, arrêt des traitements non nécessaires et orchestration de l’effacement des données de service ;
+- [x] ajouter un espace « Mes données » avec export par site, suivi des demandes et accès aux actions d’effacement ;
+- [x] demande d’effacement d’un site : confirmation forte par slug + confirmation secondaire, suspension publique immédiate, arrêt de collecte/mutations côté serveur, journal de demande et export préalable proposé ;
+- [x] demande de suppression du compte : confirmation par e-mail + confirmation secondaire, suspension immédiate de tous les sites et arrêt des nouvelles mutations/collectes ; orchestration de la purge définitive restant séparée ;
+- [x] état RGPD séparé du billing : `privacy_state=erasure_requested` n’altère pas le statut de paiement ; RLS, Storage, IA, publication, domaines et formulaire public respectent ce verrou ;
 - [ ] purge contrôlée : supprimer via les API prévues les médias Storage publics/privés, puis les données applicatives dépendantes, domaines et contenus du site ;
 - [ ] révocation des sessions puis suppression de l’identité Supabase Auth uniquement après traitement des dépendances et vérification du périmètre à conserver ;
 - [ ] séparer les données à effacer des pièces dont la conservation reste légalement nécessaire ; documenter pour chaque exception la finalité et la durée, sans conserver davantage de données que nécessaire ;
