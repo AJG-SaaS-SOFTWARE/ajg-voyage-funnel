@@ -40,11 +40,14 @@ test("admin Beta Tester API supports bounded duration and revocation", () => {
   assert.ok(route.includes("beta_access_expires_at"));
 });
 
-test("pricing page formalizes Free Essential and Founding Pro", () => {
-  assert.ok(plans.includes("Essential · trajectoire"));
-  assert.ok(plans.includes("Founding Pro"));
-  assert.ok(plans.includes("24,90 €"));
-  assert.ok(plans.includes("239 € / an"));
+test("account pricing reflects Essential and Pro AI commercial grid", () => {
+  assert.ok(plans.includes("Essentiel"));
+  assert.ok(plans.includes("Pro IA"));
+  assert.ok(plans.includes("19 €"));
+  assert.ok(plans.includes("190 € / an"));
+  assert.ok(plans.includes("39 €"));
+  assert.ok(plans.includes("390 € / an"));
   assert.ok(plans.includes("Beta Tester"));
-  assert.ok(plans.includes("Accès Pro complet offert pendant la bêta"));
+  assert.ok(plans.includes("Accès Pro IA complet offert pendant la bêta"));
+  assert.ok(plans.includes('href="/tarifs"'));
 });
