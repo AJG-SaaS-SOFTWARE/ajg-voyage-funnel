@@ -891,59 +891,183 @@ export default function BuilderPage() {
 
   const qualityChecks = useMemo(() => {
     const checks: { label: string; detail: string; status: "pass" | "warn"; step: StepKey }[] = [];
+    const t = (fr: string, enText: string) => en ? enText : fr;
     const words = (value: string) => value.trim().split(/\s+/).filter(Boolean).length;
     const validOptionalUrl = (value: string) => {
       if (!value.trim()) return true;
       try { const url = new URL(value); return url.protocol === "https:" && url.hostname.includes("."); } catch { return false; }
     };
-    checks.push({ label: "Identité complète", detail: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "Nom et identité du site renseignés." : "Complétez l’identité du site.", status: config.firstName.trim() && config.lastName.trim() && config.brandName.trim() ? "pass" : "warn", step: "identity" });
-    checks.push({ label: "Message d’accueil", detail: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "Titre et introduction suffisamment renseignés." : "Ajoutez un titre et une introduction plus complète.", status: config.heroTitle.trim() && words(config.heroSubtitle) >= 6 ? "pass" : "warn", step: "story" });
-    checks.push({ label: "Présentation personnelle", detail: words(config.aboutText) >= 25 ? "La présentation apporte assez de contexte." : "La présentation gagnerait à être un peu plus développée.", status: words(config.aboutText) >= 25 ? "pass" : "warn", step: "story" });
+
+    const identityComplete = Boolean(config.firstName.trim() && config.lastName.trim() && config.brandName.trim());
+    checks.push({
+      label: t("Identité complète", "Complete identity"),
+      detail: identityComplete ? t("Nom et identité du site renseignés.", "Website name and identity are complete.") : t("Complétez l’identité du site.", "Complete the website identity."),
+      status: identityComplete ? "pass" : "warn",
+      step: "identity"
+    });
+
+    const welcomeComplete = Boolean(config.heroTitle.trim() && words(config.heroSubtitle) >= 6);
+    checks.push({
+      label: t("Message d’accueil", "Homepage message"),
+      detail: welcomeComplete ? t("Titre et introduction suffisamment renseignés.", "Headline and introduction contain enough information.") : t("Ajoutez un titre et une introduction plus complète.", "Add a headline and a more complete introduction."),
+      status: welcomeComplete ? "pass" : "warn",
+      step: "story"
+    });
+
+    const aboutComplete = words(config.aboutText) >= 25;
+    checks.push({
+      label: t("Présentation personnelle", "Personal introduction"),
+      detail: aboutComplete ? t("La présentation apporte assez de contexte.", "The introduction provides enough context.") : t("La présentation gagnerait à être un peu plus développée.", "The introduction would benefit from a little more detail."),
+      status: aboutComplete ? "pass" : "warn",
+      step: "story"
+    });
+
     const bookingLabelLength = config.bookingLabel.trim().length;
     const ctaOk = !config.design.showBooking || !config.bookingUrl.trim() || (bookingLabelLength >= 3 && bookingLabelLength <= 60);
-    checks.push({ label: "Appel à l’action", detail: ctaOk ? "Le rendez-vous et le libellé du bouton sont cohérents." : "Utilisez un libellé de bouton clair et concis, entre 3 et 60 caractères.", status: ctaOk ? "pass" : "warn", step: "booking" });
+    checks.push({
+      label: t("Appel à l’action", "Call to action"),
+      detail: ctaOk ? t("Le rendez-vous et le libellé du bouton sont cohérents.", "The booking link and button label are consistent.") : t("Utilisez un libellé de bouton clair et concis, entre 3 et 60 caractères.", "Use a clear, concise button label between 3 and 60 characters."),
+      status: ctaOk ? "pass" : "warn",
+      step: "booking"
+    });
+
     const socialOk = (!config.design.showInstagram || validOptionalUrl(config.instagramUrl)) && (!config.design.showFacebook || validOptionalUrl(config.facebookUrl));
-    checks.push({ label: "Liens externes", detail: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "Les liens affichés ont un format valide." : "Au moins un lien affiché doit être vérifié.", status: socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid") ? "pass" : "warn", step: "booking" });
+    const linksOk = socialOk && (!config.design.showBooking || bookingLinkStatus !== "invalid");
+    checks.push({
+      label: t("Liens externes", "External links"),
+      detail: linksOk ? t("Les liens affichés ont un format valide.", "Displayed links use a valid format.") : t("Au moins un lien affiché doit être vérifié.", "At least one displayed link needs to be checked."),
+      status: linksOk ? "pass" : "warn",
+      step: "booking"
+    });
+
     const mediaOk = Boolean(config.profileImageUrl || config.design.heroImage || config.design.backgroundPhotoUrl);
-    checks.push({ label: "Qualité visuelle", detail: mediaOk ? "Au moins un visuel personnel ou principal est présent." : "Ajoutez une photo ou une image principale pour renforcer l’impact visuel.", status: mediaOk ? "pass" : "warn", step: "design" });
+    checks.push({
+      label: t("Qualité visuelle", "Visual quality"),
+      detail: mediaOk ? t("Au moins un visuel personnel ou principal est présent.", "At least one personal or primary visual is present.") : t("Ajoutez une photo ou une image principale pour renforcer l’impact visuel.", "Add a photo or primary image to strengthen visual impact."),
+      status: mediaOk ? "pass" : "warn",
+      step: "design"
+    });
+
     const portraitOk = !config.design.showPortrait || Boolean(config.profileImageUrl);
-    checks.push({ label: "Photo de profil", detail: portraitOk ? (config.design.showPortrait ? "Le portrait affiché dispose d’une photo." : "Le portrait est volontairement masqué.") : "Le portrait est activé sans photo : les initiales seront affichées. Ajoutez une photo ou masquez le portrait.", status: portraitOk ? "pass" : "warn", step: "identity" });
-    checks.push({ label: "Conformité activité", detail: config.affiliation === "mwr" ? "La mention d’indépendance obligatoire sera affichée." : "Le profil d’activité indépendant est appliqué.", status: "pass", step: "options" });
+    checks.push({
+      label: t("Photo de profil", "Profile photo"),
+      detail: portraitOk
+        ? (config.design.showPortrait ? t("Le portrait affiché dispose d’une photo.", "The displayed portrait has a photo.") : t("Le portrait est volontairement masqué.", "The portrait is intentionally hidden."))
+        : t("Le portrait est activé sans photo : les initiales seront affichées. Ajoutez une photo ou masquez le portrait.", "The portrait is enabled without a photo, so initials will be displayed. Add a photo or hide the portrait."),
+      status: portraitOk ? "pass" : "warn",
+      step: "identity"
+    });
+
+    checks.push({
+      label: t("Conformité activité", "Activity compliance"),
+      detail: config.affiliation === "mwr" ? t("La mention d’indépendance obligatoire sera affichée.", "The required independence disclosure will be displayed.") : t("Le profil d’activité indépendant est appliqué.", "The independent activity profile is applied."),
+      status: "pass",
+      step: "options"
+    });
+
     const legalMissing = legalMissingFields(config.legal, config.firstName, config.lastName);
     checks.push({
-      label: "Mentions légales & RGPD",
-      detail: legalMissing.length ? `À compléter : ${legalMissing.slice(0, 4).join(", ")}${legalMissing.length > 4 ? "…" : ""}` : "Les informations nécessaires aux pages Mentions légales, Confidentialité et Cookies sont renseignées.",
+      label: t("Mentions légales & RGPD", "Legal notice & privacy"),
+      detail: legalMissing.length
+        ? (en ? `${legalMissing.length} required legal field${legalMissing.length > 1 ? "s are" : " is"} still incomplete.` : `À compléter : ${legalMissing.slice(0, 4).join(", ")}${legalMissing.length > 4 ? "…" : ""}`)
+        : t("Les informations nécessaires aux pages Mentions légales, Confidentialité et Cookies sont renseignées.", "The information required for Legal Notice, Privacy and Cookies pages is complete."),
       status: legalMissing.length ? "warn" : "pass",
       step: "options"
     });
+
     const { surface, ink } = surfaceInk(config.design);
-    checks.push({ label: "Lisibilité des rubriques", detail: `Contraste du fond et du texte : ${contrastRatio(surface, ink).toFixed(1)}:1.`, status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn", step: "design" });
-    checks.push({ label: "Contraste du bouton", detail: `Texte du bouton adapté à la couleur choisie (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`, status: "pass", step: "design" });
+    checks.push({
+      label: t("Lisibilité des rubriques", "Section readability"),
+      detail: `${t("Contraste du fond et du texte", "Background/text contrast")}: ${contrastRatio(surface, ink).toFixed(1)}:1.`,
+      status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn",
+      step: "design"
+    });
+
+    checks.push({
+      label: t("Contraste du bouton", "Button contrast"),
+      detail: `${t("Texte du bouton adapté à la couleur choisie", "Button text adapted to the selected color")} (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`,
+      status: "pass",
+      step: "design"
+    });
+
     const allText = [config.heroTagline, config.heroTitle, config.heroSubtitle, config.aboutHeading, config.aboutText].filter((value) => value.trim());
     const normalized = allText.map((value) => value.trim().toLowerCase().replace(/[.!?]+$/, ""));
-    checks.push({ label: "Répétitions évidentes", detail: new Set(normalized).size === normalized.length ? "Aucun texte identique entre les champs principaux." : "Deux champs contiennent le même texte : diversifiez-les.", status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
-    const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter/i.test(allText.join(" "));
-    checks.push({ label: "Texte à compléter", detail: placeholders ? "Un texte de démonstration semble encore présent." : "Aucun texte de démonstration connu détecté.", status: placeholders ? "warn" : "pass", step: "story" });
+    const uniqueText = new Set(normalized).size === normalized.length;
+    checks.push({
+      label: t("Répétitions évidentes", "Obvious repetition"),
+      detail: uniqueText ? t("Aucun texte identique entre les champs principaux.", "No identical copy appears across the main fields.") : t("Deux champs contiennent le même texte : diversifiez-les.", "Two fields contain the same copy; differentiate them."),
+      status: uniqueText ? "pass" : "warn",
+      step: "story"
+    });
+
+    const placeholders = /lorem ipsum|votre texte ici|exemple de texte|texte à compléter|your text here|sample text|text to complete/i.test(allText.join(" "));
+    checks.push({
+      label: t("Texte à compléter", "Placeholder copy"),
+      detail: placeholders ? t("Un texte de démonstration semble encore présent.", "Demo or placeholder copy still appears to be present.") : t("Aucun texte de démonstration connu détecté.", "No known placeholder copy detected."),
+      status: placeholders ? "warn" : "pass",
+      step: "story"
+    });
+
     const responsiveTextOk = config.heroTitle.trim().length <= 90
       && config.heroSubtitle.trim().length <= 320
       && config.brandName.trim().length <= 70
       && (!config.design.showBooking || config.bookingLabel.trim().length <= 60);
-    checks.push({ label: "Responsive du contenu", detail: responsiveTextOk ? "Les longueurs principales restent adaptées aux petits écrans." : "Un titre, une introduction, le nom du site ou le CTA est trop long pour un affichage mobile confortable.", status: responsiveTextOk ? "pass" : "warn", step: "story" });
+    checks.push({
+      label: t("Responsive du contenu", "Responsive content"),
+      detail: responsiveTextOk ? t("Les longueurs principales restent adaptées aux petits écrans.", "Main copy lengths remain suitable for small screens.") : t("Un titre, une introduction, le nom du site ou le CTA est trop long pour un affichage mobile confortable.", "A headline, introduction, website name or CTA is too long for comfortable mobile display."),
+      status: responsiveTextOk ? "pass" : "warn",
+      step: "story"
+    });
+
     const focusOk = !config.design.backgroundPhotoUrl
       || (config.design.backgroundPositionX >= 10 && config.design.backgroundPositionX <= 90 && config.design.backgroundPositionY >= 10 && config.design.backgroundPositionY <= 85);
-    checks.push({ label: "Cadrage mobile", detail: focusOk ? "Le point focal de la photo reste dans une zone sûre pour le recadrage cover." : "Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", status: focusOk ? "pass" : "warn", step: "design" });
+    checks.push({
+      label: t("Cadrage mobile", "Mobile crop"),
+      detail: focusOk ? t("Le point focal de la photo reste dans une zone sûre pour le recadrage cover.", "The photo focal point stays in a safe area for cover cropping.") : t("Le point focal est très proche d’un bord : vérifiez le rendu sur mobile.", "The focal point is very close to an edge; check the mobile rendering."),
+      status: focusOk ? "pass" : "warn",
+      step: "design"
+    });
+
     const unknownRights = config.contentLibrary.assets.filter((asset) => asset.rights === "unknown");
     const publishableMissing = config.contentLibrary.assets.filter((asset) => asset.publishable && ((asset.kind !== "text" && (!asset.url || asset.url.startsWith("private://"))) || (asset.kind === "text" && !asset.text.trim())));
     const rightsSourceMissing = config.contentLibrary.assets.filter((asset) => (asset.rights === "licensed" || asset.rights === "public-domain") && !asset.sourceUrl.trim());
-    checks.push({ label: "Droits des contenus", detail: unknownRights.length ? `${unknownRights.length} contenu(s) ont des droits à vérifier et restent exclus de la publication.` : rightsSourceMissing.length ? `${rightsSourceMissing.length} contenu(s) sous licence ou domaine public nécessitent encore une source vérifiable.` : "Les contenus fournis ont un statut de droits explicite et les sources requises.", status: unknownRights.length || rightsSourceMissing.length ? "warn" : "pass", step: "story" });
-    checks.push({ label: "Bibliothèque de contenus", detail: publishableMissing.length ? "Un contenu autorisé à la publication ne possède pas encore de fichier exploitable." : "Les contenus publiables disposent des informations nécessaires.", status: publishableMissing.length ? "warn" : "pass", step: "story" });
+    checks.push({
+      label: t("Droits des contenus", "Content rights"),
+      detail: unknownRights.length
+        ? (en ? `${unknownRights.length} asset${unknownRights.length > 1 ? "s have" : " has"} unverified rights and remain excluded from publishing.` : `${unknownRights.length} contenu(s) ont des droits à vérifier et restent exclus de la publication.`)
+        : rightsSourceMissing.length
+          ? (en ? `${rightsSourceMissing.length} licensed/public-domain asset${rightsSourceMissing.length > 1 ? "s still need" : " still needs"} a verifiable source.` : `${rightsSourceMissing.length} contenu(s) sous licence ou domaine public nécessitent encore une source vérifiable.`)
+          : t("Les contenus fournis ont un statut de droits explicite et les sources requises.", "Provided assets have explicit rights status and required sources."),
+      status: unknownRights.length || rightsSourceMissing.length ? "warn" : "pass",
+      step: "story"
+    });
+
+    checks.push({
+      label: t("Bibliothèque de contenus", "Content library"),
+      detail: publishableMissing.length ? t("Un contenu autorisé à la publication ne possède pas encore de fichier exploitable.", "A publishable asset does not yet have a usable file.") : t("Les contenus publiables disposent des informations nécessaires.", "Publishable assets contain the required information."),
+      status: publishableMissing.length ? "warn" : "pass",
+      step: "story"
+    });
+
     const enabledPages = config.architecture.pages.filter((page) => page.enabled);
     const pageSlugs = enabledPages.map((page) => page.slug);
     const clearedAssetIds = new Set(config.contentLibrary.assets.filter((asset) => asset.publishable && asset.rights !== "unknown").map((asset) => asset.id));
     const invalidAssignments = enabledPages.flatMap((page) => page.assetIds || []).filter((id) => !clearedAssetIds.has(id));
     const architectureOk = enabledPages.some((page) => page.kind === "home") && new Set(pageSlugs).size === pageSlugs.length && (config.architecture.mode === "single" || enabledPages.length > 1);
-    checks.push({ label: "Affectation des contenus", detail: invalidAssignments.length ? "Une page référence un contenu non autorisé ou aux droits non validés." : "Les contenus affectés aux pages sont autorisés à la publication.", status: invalidAssignments.length ? "warn" : "pass", step: "story" });
-    checks.push({ label: "Architecture du site", detail: architectureOk ? `${enabledPages.length} page(s), hiérarchie et URLs cohérentes.` : "La structure des pages contient une incohérence à corriger.", status: architectureOk ? "pass" : "warn", step: "story" });
+    checks.push({
+      label: t("Affectation des contenus", "Content assignment"),
+      detail: invalidAssignments.length ? t("Une page référence un contenu non autorisé ou aux droits non validés.", "A page references an unauthorized asset or one whose rights are not validated.") : t("Les contenus affectés aux pages sont autorisés à la publication.", "Assets assigned to pages are cleared for publishing."),
+      status: invalidAssignments.length ? "warn" : "pass",
+      step: "story"
+    });
+
+    checks.push({
+      label: t("Architecture du site", "Website architecture"),
+      detail: architectureOk ? `${enabledPages.length} ${t("page(s), hiérarchie et URLs cohérentes", "page(s), hierarchy and URLs are consistent")}.` : t("La structure des pages contient une incohérence à corriger.", "The page structure contains an inconsistency that needs to be fixed."),
+      status: architectureOk ? "pass" : "warn",
+      step: "story"
+    });
+
     const modules = config.design.modules;
     const validYoutubeUrl = (value: string) => {
       try {
@@ -957,44 +1081,64 @@ export default function BuilderPage() {
         return false;
       }
     };
+
     const moduleProblems: string[] = [];
-    if (modules.gallery.enabled && modules.gallery.images.length === 0) moduleProblems.push("galerie");
+    if (modules.gallery.enabled && modules.gallery.images.length === 0) moduleProblems.push(t("galerie", "gallery"));
     if (modules.faq.enabled && !modules.faq.items.some((item) => item.question.trim() && item.answer.trim())) moduleProblems.push("FAQ");
-    if (modules.testimonials.enabled && !modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) moduleProblems.push("témoignages");
-    if (modules.contact.enabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email)) moduleProblems.push("contact");
-    if (modules.video.enabled && !validYoutubeUrl(modules.video.url)) moduleProblems.push("vidéo");
-    if (modules.figures.enabled && !modules.figures.items.some((item) => item.value.trim() && item.label.trim())) moduleProblems.push("chiffres clés");
-    if (modules.benefits.enabled && !modules.benefits.items.some((item) => item.title.trim() && item.text.trim())) moduleProblems.push("avantages");
+    if (modules.testimonials.enabled && !modules.testimonials.items.some((item) => item.quote.trim() && item.author.trim())) moduleProblems.push(t("témoignages", "testimonials"));
+    if (modules.contact.enabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modules.contact.email)) moduleProblems.push(t("contact", "contact"));
+    if (modules.video.enabled && !validYoutubeUrl(modules.video.url)) moduleProblems.push(t("vidéo", "video"));
+    if (modules.figures.enabled && !modules.figures.items.some((item) => item.value.trim() && item.label.trim())) moduleProblems.push(t("chiffres clés", "key figures"));
+    if (modules.benefits.enabled && !modules.benefits.items.some((item) => item.title.trim() && item.text.trim())) moduleProblems.push(t("avantages", "benefits"));
     const moduleReady = moduleProblems.length === 0;
-    checks.push({ label: "Modules activés", detail: moduleReady ? "Les rubriques activées ont du contenu publiable." : `À compléter : ${moduleProblems.join(", ")}.`, status: moduleReady ? "pass" : "warn", step: "options" });
+    checks.push({
+      label: t("Modules activés", "Enabled sections"),
+      detail: moduleReady ? t("Les rubriques activées ont du contenu publiable.", "Enabled sections contain publishable content.") : `${t("À compléter", "Complete")}: ${moduleProblems.join(", ")}.`,
+      status: moduleReady ? "pass" : "warn",
+      step: "options"
+    });
+
     const galleryAccessible = !modules.gallery.enabled || modules.gallery.images.length === 0 || modules.gallery.images.every((image) => image.caption.trim().length >= 3);
-    checks.push({ label: "Images accessibles", detail: galleryAccessible ? "Les images de galerie ont une légende exploitable comme description." : "Ajoutez une légende descriptive aux images de galerie pour améliorer compréhension et accessibilité.", status: galleryAccessible ? "pass" : "warn", step: "options" });
+    checks.push({
+      label: t("Images accessibles", "Accessible images"),
+      detail: galleryAccessible ? t("Les images de galerie ont une légende exploitable comme description.", "Gallery images have captions usable as descriptions.") : t("Ajoutez une légende descriptive aux images de galerie pour améliorer compréhension et accessibilité.", "Add a descriptive caption to gallery images to improve understanding and accessibility."),
+      status: galleryAccessible ? "pass" : "warn",
+      step: "options"
+    });
+
     const sentences = [config.heroSubtitle, config.aboutText].filter(Boolean);
     const punctuation = sentences.every((text) => /[.!?…]$/.test(text.trim()));
-    checks.push({ label: "Ponctuation", detail: punctuation ? "Les paragraphes principaux se terminent correctement." : "Vérifiez la ponctuation de l’introduction et de la présentation.", status: punctuation ? "pass" : "warn", step: "story" });
+    checks.push({
+      label: t("Ponctuation", "Punctuation"),
+      detail: punctuation ? t("Les paragraphes principaux se terminent correctement.", "Main paragraphs end with appropriate punctuation.") : t("Vérifiez la ponctuation de l’introduction et de la présentation.", "Check punctuation in the introduction and personal presentation."),
+      status: punctuation ? "pass" : "warn",
+      step: "story"
+    });
+
     const editorialReviewOk = reviewResult !== null && reviewResult.issues.length === 0;
     checks.push({
-      label: "Relecture éditoriale IA",
+      label: t("Relecture éditoriale IA", "AI editorial review"),
       detail: reviewResult === null
-        ? "La relecture orthographe, grammaire et cohérence n’a pas encore été lancée."
+        ? t("La relecture orthographe, grammaire et cohérence n’a pas encore été lancée.", "The spelling, grammar and consistency review has not been run yet.")
         : reviewResult.issues.length
-          ? `${reviewResult.issues.length} suggestion(s) restent à examiner avant publication.`
-          : "Orthographe, grammaire, cohérence et clarté ont été relues sans correction restante.",
+          ? (en ? `${reviewResult.issues.length} writing suggestion${reviewResult.issues.length > 1 ? "s remain" : " remains"} to review before publishing.` : `${reviewResult.issues.length} suggestion(s) restent à examiner avant publication.`)
+          : t("Orthographe, grammaire, cohérence et clarté ont été relues sans correction restante.", "Spelling, grammar, consistency and clarity have been reviewed with no remaining correction."),
       status: editorialReviewOk ? "pass" : "warn",
       step: "review"
     });
+
     return checks;
-  }, [config, bookingLinkStatus, reviewResult]);
+  }, [config, bookingLinkStatus, reviewResult, en]);
 
   const qualityPassed = qualityChecks.filter((check) => check.status === "pass").length;
   const qualityWarnings = qualityChecks.length - qualityPassed;
   const reviewFieldLabels: Partial<Record<keyof SiteConfig, string>> = {
-    heroTagline: "Accroche",
-    heroTitle: "Titre principal",
-    heroSubtitle: "Introduction",
-    aboutHeading: "Titre de présentation",
-    aboutText: "Présentation",
-    bookingLabel: "Bouton de rendez-vous"
+    heroTagline: en ? "Tagline" : "Accroche",
+    heroTitle: en ? "Main headline" : "Titre principal",
+    heroSubtitle: en ? "Introduction" : "Introduction",
+    aboutHeading: en ? "Introduction title" : "Titre de présentation",
+    aboutText: en ? "Personal introduction" : "Présentation",
+    bookingLabel: en ? "Booking button" : "Bouton de rendez-vous"
   };
   const currentReviewText = (field: keyof SiteConfig) => {
     const value = config[field];
@@ -1003,24 +1147,28 @@ export default function BuilderPage() {
 
   const errors = useMemo(() => {
     const next: { message: string; step: StepKey }[] = [];
-    if (!config.firstName.trim()) next.push({ message: "Prénom manquant", step: "identity" });
-    if (!config.lastName.trim()) next.push({ message: "Nom manquant", step: "identity" });
-    if (!config.brandName.trim()) next.push({ message: "Nom du site manquant", step: "identity" });
-    if (!config.slug.trim()) next.push({ message: "Adresse du site manquante", step: "identity" });
-    else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push({ message: "Adresse du site invalide", step: "identity" });
-    if (!config.heroTitle.trim()) next.push({ message: "Titre principal manquant", step: "story" });
+    const t = (fr: string, enText: string) => en ? enText : fr;
+    if (!config.firstName.trim()) next.push({ message: t("Prénom manquant", "First name is missing"), step: "identity" });
+    if (!config.lastName.trim()) next.push({ message: t("Nom manquant", "Last name is missing"), step: "identity" });
+    if (!config.brandName.trim()) next.push({ message: t("Nom du site manquant", "Website name is missing"), step: "identity" });
+    if (!config.slug.trim()) next.push({ message: t("Adresse du site manquante", "Website address is missing"), step: "identity" });
+    else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug)) next.push({ message: t("Adresse du site invalide", "Website address is invalid"), step: "identity" });
+    if (!config.heroTitle.trim()) next.push({ message: t("Titre principal manquant", "Main headline is missing"), step: "story" });
     if (config.design.showBooking && bookingLinkStatus === "invalid") {
-      next.push({ message: "Lien de rendez-vous invalide", step: "booking" });
+      next.push({ message: t("Lien de rendez-vous invalide", "Booking link is invalid"), step: "booking" });
     }
     if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName, JSON.stringify(config.design.modules)].join(" "))) {
-      next.push({ message: "Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", step: "options" });
+      next.push({ message: t("Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", "The copy mentions MWR Life or Travel Advantage: choose the matching activity or remove those references"), step: "options" });
     }
     const missingLegal = legalMissingFields(config.legal, config.firstName, config.lastName);
     if (missingLegal.length) {
-      next.push({ message: `Informations légales à compléter : ${missingLegal.slice(0, 3).join(", ")}${missingLegal.length > 3 ? "…" : ""}`, step: "options" });
+      next.push({
+        message: en ? `${missingLegal.length} required legal field${missingLegal.length > 1 ? "s are" : " is"} incomplete` : `Informations légales à compléter : ${missingLegal.slice(0, 3).join(", ")}${missingLegal.length > 3 ? "…" : ""}`,
+        step: "options"
+      });
     }
     return next;
-  }, [config, bookingLinkStatus]);
+  }, [config, bookingLinkStatus, en]);
 
   const save = async () => {
     setBusy(true);
