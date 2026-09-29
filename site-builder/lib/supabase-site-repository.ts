@@ -9,6 +9,8 @@ export type RemoteSite = {
   ownerId: string;
   slug: string;
   status: "draft" | "published" | "suspended";
+  privacyState: "active" | "erasure_requested";
+  erasureRequestedAt: string | null;
   config: SiteConfig;
   publishedAt: string | null;
   updatedAt: string;
@@ -95,6 +97,8 @@ function toRemote(row: any, draft?: any): RemoteSite {
     ownerId: row.owner_id,
     slug: row.slug,
     status: row.status,
+    privacyState: row.privacy_state === "erasure_requested" ? "erasure_requested" : "active",
+    erasureRequestedAt: row.erasure_requested_at || null,
     config: draftFromRow(row, draft),
     publishedAt: row.published_at,
     updatedAt: row.updated_at
