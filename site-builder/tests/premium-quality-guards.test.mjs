@@ -144,3 +144,37 @@ test("unsupported quantitative claims are blocked unless grounded in source evid
   assert.ok(codes(value).includes("unsupported_quantitative_claim"));
   assert.ok(!codes(value, "Le client a fourni le chiffre 90 % dans son brief.").includes("unsupported_quantitative_claim"));
 });
+
+
+test("near-duplicate long copy is blocked even when wording is not identical", () => {
+  const value = proposal({
+    heroSubtitle:
+      "Une approche humaine naturelle attentive pour préparer chaque séance avec confiance clarté sérénité écoute douceur et simplicité.",
+    aboutText:
+      "Une approche humaine naturelle attentive prépare chaque séance avec confiance clarté sérénité écoute douceur simplicité et accompagnement personnalisé."
+  });
+  assert.ok(codes(value).includes("near_duplicate_copy"));
+});
+
+test("two enabled pages cannot share the same editorial purpose", () => {
+  const value = proposal();
+  value.architecture = {
+    mode: "multi",
+    pages: [
+      {
+        ...value.architecture.pages[0],
+        purpose: "Présenter l’univers et orienter vers une prise de contact."
+      },
+      {
+        id: "about",
+        slug: "a-propos",
+        title: "À propos",
+        kind: "about",
+        purpose: "Présenter l’univers et orienter vers une prise de contact.",
+        enabled: true,
+        assetIds: []
+      }
+    ]
+  };
+  assert.ok(codes(value).includes("duplicate_page_purpose"));
+});
