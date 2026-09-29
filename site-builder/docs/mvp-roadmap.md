@@ -115,6 +115,7 @@ Objectif : transformer la génération complète en véritable prestation de str
 - [x] quality gate final systématique : toute proposition, raffinée ou non, est relue une seconde fois par un critique IA indépendant ; elle n’est pas affichée si un problème majeur subsiste ou si le seuil qualité final n’est pas atteint ;
 - [x] contrôle déterministe complémentaire : placeholders, duplications de contenus/FAQ, pages redondantes et modules recommandés sans contenu déclenchent un raffinement ou bloquent l’affichage si le défaut subsiste ;
 - [x] anti-résidus de template : les variables visibles non résolues comme `{{ville}}`, `[Nom]`, `[email]` ou `${company}` sont rejetées avant affichage ;
+- [x] anti-Markdown brut : balises de gras, titres, liens Markdown ou blocs de code laissés dans les textes visibles sont rejetés avant affichage ;
 - [x] tests comportementaux des garde-fous déterministes : cas sain et régressions ciblées sur CTA, densité mobile, architecture, rôles de pages, avantages, libellés visibles et chiffres non sourcés ;
 - [x] grounding quantitatif : pourcentages, prix, durées, années et quantités sensibles générés doivent réutiliser un nombre déjà présent dans le contexte client ; tout chiffre inédit déclenche un raffinement puis bloque l’affichage s’il subsiste ;
 - [x] grounding de crédibilité : les formulations d’autorité ou de preuve (« meilleur », « leader », « certifié », « primé », « garanti », « numéro 1 ») sont bloquées si elles ne figurent pas réellement dans les informations fournies par le client ;

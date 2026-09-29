@@ -306,3 +306,20 @@ test("normal bracket-free copy is not treated as a template residue", () => {
   });
   assert.ok(!codes(value).includes("template_residue"));
 });
+
+
+test("raw Markdown formatting is blocked in visible Premium copy", () => {
+  const value = proposal({
+    heroSubtitle:
+      "**Photographe à Toulouse** pour accompagner votre projet avec attention."
+  });
+  assert.ok(codes(value).includes("markdown_residue"));
+});
+
+test("plain text with a normal URL is not treated as Markdown", () => {
+  const value = proposal({
+    aboutText:
+      "Retrouvez les informations pratiques sur https://example.com avant votre séance."
+  });
+  assert.ok(!codes(value).includes("markdown_residue"));
+});

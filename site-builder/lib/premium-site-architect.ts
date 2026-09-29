@@ -648,6 +648,8 @@ export function deterministicQualityIssues(
 
   const templateResiduePattern =
     /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|<(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^>]{0,30})>)/giu;
+  const markdownResiduePattern =
+    /(?:\*\*[^*\n]+\*\*|__[^_\n]+__|(?:^|\n)\s{0,3}#{1,6}\s+\S|```|!?\[[^\]\n]+\]\([^)\n]+\))/u;
 
   for (const [field, value] of visibleCopy) {
     if (placeholderPattern.test(value)) {
@@ -663,6 +665,14 @@ export function deterministicQualityIssues(
         code: "template_residue",
         detail:
           `Le contenu ${field} contient encore une variable de template ou une donnée factice à remplacer.`
+      });
+    }
+    if (markdownResiduePattern.test(value)) {
+      issues.push({
+        severity: "blocking",
+        code: "markdown_residue",
+        detail:
+          `Le contenu ${field} contient encore du balisage Markdown brut qui serait visible sur le site.`
       });
     }
   }
