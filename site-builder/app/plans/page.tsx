@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { freeEntitlements, getMyAiUsage, getMySiteEntitlements, getMyStorageUsage, type AiUsage, type StorageUsage, type SubscriptionEntitlements } from "../../lib/subscription";
 import { getMySites } from "../../lib/supabase-site-repository";
+import { startProCheckout } from "../../lib/billing-access";
 
 export default function PlansPage() {
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
@@ -12,8 +13,12 @@ export default function PlansPage() {
   const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
   const [sites,setSites]=useState<Array<{id:string;slug:string}>>([]);
   const [siteId,setSiteId]=useState("");
+  const [checkoutBusy,setCheckoutBusy]=useState(false);
+  const [checkoutMessage,setCheckoutMessage]=useState("");
   const load=async(selectedId?:string)=>{const owned=await getMySites();const site=owned.find(s=>s.id===(selectedId||siteId))||owned[0];setSites(owned.map(s=>({id:s.id,slug:s.slug})));if(site&&!siteId)setSiteId(site.id);const [entitlements,aiUsage,storageUsage]=await Promise.all([site?getMySiteEntitlements(site.id):Promise.resolve(freeEntitlements),getMyAiUsage(),getMyStorageUsage(site?.id)]);setCurrent(entitlements);setUsage(aiUsage);setStorage(storageUsage);setLoaded(true);};
   useEffect(() => { void load().catch(() => {setCurrent(freeEntitlements);setLoaded(true);}); }, []);
+
+  const checkout=async()=>{if(!siteId)return;setCheckoutBusy(true);setCheckoutMessage("");try{await startProCheckout(siteId);}catch(error){setCheckoutMessage(error instanceof Error?error.message:"Paiement Stripe indisponible.");setCheckoutBusy(false);}};
 
   return <main className="plans-page">
     <section className="plans-hero">
@@ -35,9 +40,11 @@ export default function PlansPage() {
       <article className={current.planKey === "pro" ? "plan-card current" : "plan-card"}>
         <p className="eyebrow">Pro</p><h2>Créer avec l’IA avancée</h2>
         <ul><li>500 générations IA / mois</li><li>2 Go de stockage</li><li>Architecte Premium : stratégie → création → audit → raffinement</li><li>Architecture, textes, modules et direction visuelle cohérents</li><li>Domaine personnalisé</li></ul>
-        <p className="plan-status">{loaded && current.planKey === "pro" ? "Votre offre actuelle" : "Paiement à connecter — aucun achat possible pour le moment"}</p>
+        <p className="plan-status">{loaded && current.planKey === "pro" ? "Votre offre actuelle" : "Souscription sécurisée via Stripe"}</p>
+        {loaded && current.planKey !== "pro" ? <button type="button" className="button primary" disabled={!siteId || checkoutBusy} onClick={() => void checkout()}>{checkoutBusy ? "Ouverture de Stripe…" : "Passer à Pro"}</button> : null}
+        {checkoutMessage ? <p className="plans-note" role="status">{checkoutMessage}</p> : null}
       </article>
     </section>
-    <p className="plans-note">Les quotas constituent le catalogue bêta technique. Le prix, la périodicité, les essais et les conditions commerciales seront validés avant activation du paiement.</p>
+    <p className="plans-note">Les quotas constituent le catalogue technique. Le prix, la périodicité et un éventuel essai restent configurés dans Stripe : aucune valeur commerciale n’est codée dans le Builder.</p>
   </main>;
 }
