@@ -32,6 +32,15 @@ test("controlled purge cancels Stripe and detaches Vercel domains before databas
   assert.ok(siteDelete > vercel);
 });
 
+test("GDPR purge removes off-provider media backups before completing site deletion", () => {
+  const backupPurge = purge.indexOf("purgeStorageBackupForSite(ownerId, site.id)");
+  const siteDelete = purge.indexOf('.from("sites")\n    .delete()');
+  assert.ok(backupPurge >= 0);
+  assert.ok(siteDelete > backupPurge);
+  assert.ok(purge.includes("backup_objects_removed:"));
+  assert.ok(purge.includes("backup_snapshots_rewritten:"));
+});
+
 test("site-scoped SET NULL traces are explicitly erased before the site row", () => {
   assert.ok(
     purge.includes(
