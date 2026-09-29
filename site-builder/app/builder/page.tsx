@@ -1939,7 +1939,7 @@ export default function BuilderPage() {
               <>
                 <div className="section-kicker">
                   <span>01</span>
-                  <div><b>Modules du site</b><p>Les contenus affichés sur votre site doivent être prêts à être partagés.</p></div>
+                  <div><b>{en ? "Website sections" : "Modules du site"}</b><p>{en ? "Content displayed on your website should be ready to share." : "Les contenus affichés sur votre site doivent être prêts à être partagés."}</p></div>
                 </div>
                 <ModulesEditor
                   modules={config.design.modules}
@@ -1955,52 +1955,52 @@ export default function BuilderPage() {
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>Activité et identité</b><p>Les mentions MWR Life concernent uniquement les sites d'ambassadeurs.</p></div>
+                  <div><b>{en ? "Activity and identity" : "Activité et identité"}</b><p>{en ? "MWR Life disclosures apply only to ambassador websites." : "Les mentions MWR Life concernent uniquement les sites d'ambassadeurs."}</p></div>
                 </div>
-                <Field label="Votre activité">
+                <Field label={en ? "Your activity" : "Votre activité"}>
                   <select value={config.affiliation} onChange={(event) => updateAffiliation(event.target.value as SiteConfig["affiliation"])}>
-                    <option value="mwr">Ambassadeur indépendant MWR Life</option>
-                    <option value="independent">Autre activité indépendante</option>
+                    <option value="mwr">{en ? "Independent MWR Life Ambassador" : "Ambassadeur indépendant MWR Life"}</option>
+                    <option value="independent">{en ? "Other independent activity" : "Autre activité indépendante"}</option>
                   </select>
                 </Field>
                 {config.affiliation === "mwr" ? <>
                   <div className="locked premium-locked">
-                    <span>Mention d'indépendance maintenue</span>
+                    <span>{en ? "Independence disclosure retained" : "Mention d'indépendance maintenue"}</span>
                     <p>{requiredDisclaimer}</p>
                   </div>
-                  <p className="media-license-note">Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d'indépendance.</p>
+                  <p className="media-license-note">{en ? "Logos are optional. Enable only visuals you are authorized to use; they do not replace the required independence disclosure." : "Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d'indépendance."}</p>
                   <div className="visibility-options-stack logo-visibility-options">
                     <VisibilityOption
                       checked={config.design.showMwrLogo}
                       title="Logo MWR Life « Independent Distributor »"
-                      activeLabel="Affiché"
-                      inactiveLabel="Masqué"
+                      activeLabel={en ? "Shown" : "Affiché"}
+                      inactiveLabel={en ? "Hidden" : "Masqué"}
                       description={config.design.showMwrLogo
-                        ? "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire."
-                        : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée."}
+                        ? (en ? "The logo will appear at the bottom of the website with the required independence disclosure." : "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire.")
+                        : (en ? "The logo does not appear on the website. The independence disclosure remains visible." : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée.")}
                       logo="/logos/mwr-life-independent.svg"
                       onChange={(checked) => update("design", { ...config.design, showMwrLogo: checked })}
                     />
                     <VisibilityOption
                       checked={config.design.showTravelAdvantageLogo}
                       title="Logo Travel Advantage « Independent Distributor »"
-                      activeLabel="Affiché"
-                      inactiveLabel="Masqué"
+                      activeLabel={en ? "Shown" : "Affiché"}
+                      inactiveLabel={en ? "Hidden" : "Masqué"}
                       description={config.design.showTravelAdvantageLogo
-                        ? "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire."
-                        : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée."}
+                        ? (en ? "The logo will appear at the bottom of the website with the required independence disclosure." : "Le logo sera visible en bas du site avec la mention d'indépendance obligatoire.")
+                        : (en ? "The logo does not appear on the website. The independence disclosure remains visible." : "Le logo n'apparaît pas sur le site. La mention d'indépendance reste affichée.")}
                       logo="/logos/travel-advantage-independent.svg"
                       onChange={(checked) => update("design", { ...config.design, showTravelAdvantageLogo: checked })}
                     />
                   </div>
                 </> : <div className="helper-card premium-helper-card">
-                  <b>Site indépendant sans mention MWR Life</b>
-                  <p>Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Les pages légales ci-dessous seront adaptées aux informations que vous renseignez.</p>
+                  <b>{en ? "Independent website without MWR Life references" : "Site indépendant sans mention MWR Life"}</b>
+                  <p>{en ? "Automatic MWR Life and Travel Advantage references and logos will be absent. The legal pages below will adapt to the information you provide." : "Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Les pages légales ci-dessous seront adaptées aux informations que vous renseignez."}</p>
                 </div>}
 
                 <div className="section-kicker">
                   <span>03</span>
-                  <div><b>Conformité du site</b><p>Préparez automatiquement les pages légales et la transparence RGPD du site.</p></div>
+                  <div><b>{en ? "Website compliance" : "Conformité du site"}</b><p>{en ? "Prepare legal pages and privacy transparency for the website." : "Préparez automatiquement les pages légales et la transparence RGPD du site."}</p></div>
                 </div>
                 <ComplianceEditor
                   value={config.legal}
@@ -2016,11 +2016,11 @@ export default function BuilderPage() {
               <>
                 <div className="section-kicker">
                   <span>✓</span>
-                  <div><b>Contrôle final</b><p>Une dernière vérification avant de rendre le site accessible.</p></div>
+                  <div><b>{en ? "Final check" : "Contrôle final"}</b><p>{en ? "One last review before making the website accessible." : "Une dernière vérification avant de rendre le site accessible."}</p></div>
                 </div>
                 {errors.length ? (
                   <div className="error-card premium-error-card">
-                    <b>À corriger avant publication</b>
+                    <b>{en ? "Fix before publishing" : "À corriger avant publication"}</b>
                     <ul>{errors.map((error) => (
                       <li key={error.message}>
                         <button type="button" className="review-error-link" onClick={() => {
@@ -2035,10 +2035,10 @@ export default function BuilderPage() {
                 ) : (
                   <div className="success-card premium-success-card review-success">
                     <div>
-                      <b>{remoteMode ? "Contrôle qualité structurel réussi." : "Le site est prêt pour le prototype local."}</b>
+                      <b>{remoteMode ? (en ? "Structural quality check passed." : "Contrôle qualité structurel réussi.") : (en ? "The website is ready for the local prototype." : "Le site est prêt pour le prototype local.")}</b>
                       <p>
                         {remoteMode
-                          ? "Identité, message, liens requis et conformité structurelle sont cohérents. Relisez l'aperçu visuel avant publication."
+                          ? (en ? "Identity, message, required links and structural compliance are consistent. Review the visual preview before publishing." : "Identité, message, liens requis et conformité structurelle sont cohérents. Relisez l'aperçu visuel avant publication.")
                           : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil."}
                       </p>
                     </div>
@@ -2047,8 +2047,8 @@ export default function BuilderPage() {
 
                 <div className="quality-summary-card">
                   <div className="quality-summary-head">
-                    <div><span className="mini">QUALITY CHECK AJG</span><strong>{qualityPassed}/{qualityChecks.length} contrôles réussis</strong></div>
-                    <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} amélioration${qualityWarnings > 1 ? "s" : ""}` : "Prêt ✓"}</span>
+                    <div><span className="mini">QUALITY CHECK AJG</span><strong>{qualityPassed}/{qualityChecks.length} {en ? "checks passed" : "contrôles réussis"}</strong></div>
+                    <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? (en ? `${qualityWarnings} improvement${qualityWarnings > 1 ? "s" : ""}` : `${qualityWarnings} amélioration${qualityWarnings > 1 ? "s" : ""}`) : (en ? "Ready ✓" : "Prêt ✓")}</span>
                   </div>
                   <div className="quality-check-list">
                     {qualityChecks.map((check) => <button type="button" key={check.label} className={`quality-check ${check.status}`} onClick={() => { setStep(check.step); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
@@ -2057,12 +2057,12 @@ export default function BuilderPage() {
                       <i>{check.status === "pass" ? "Voir →" : "Corriger →"}</i>
                     </button>)}
                   </div>
-                  <p className="quality-note">Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.</p>
+                  <p className="quality-note">{en ? "Recommendations do not prevent publishing. Required errors above remain blocking." : "Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus."}</p>
                 </div>
                 <div className="quality-summary-card">
-                  <div className="quality-summary-head"><div><span className="mini">RELECTURE ÉDITORIALE</span><strong>Orthographe, grammaire et clarté</strong></div></div>
-                  <p>Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement.</p>
-                  <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? "Relecture en cours…" : "Relire avec l’IA"}</button>
+                  <div className="quality-summary-head"><div><span className="mini">{en ? "EDITORIAL REVIEW" : "RELECTURE ÉDITORIALE"}</span><strong>{en ? "Spelling, grammar and clarity" : "Orthographe, grammaire et clarté"}</strong></div></div>
+                  <p>{en ? "The automated checks above validate structure. Run an AI review to receive copy suggestions you can accept individually." : "Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement."}</p>
+                  <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? (en ? "Reviewing…" : "Relecture en cours…") : (en ? "Review with AI" : "Relire avec l’IA")}</button>
                   {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{reviewFieldLabels[issue.field] || issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p><small>Texte actuel</small><br />{currentReviewText(issue.field)}</p><p><small>Proposition</small><br />{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
                 </div>
 
