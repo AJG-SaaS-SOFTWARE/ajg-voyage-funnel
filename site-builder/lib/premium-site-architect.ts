@@ -1008,9 +1008,7 @@ export function deterministicQualityIssues(
       const matches = normalizedValue.match(claim.pattern) || [];
       if (!matches.length) continue;
 
-      const supported = matches.some((match) =>
-        normalizedEvidence.includes(normalizeComparable(match))
-      );
+      const supported = (normalizedEvidence.match(claim.pattern) || []).length > 0;
       if (supported) continue;
 
       issues.push({
