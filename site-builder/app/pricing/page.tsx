@@ -3,7 +3,7 @@ import { PricingPage } from "../../components/PricingPage";
 
 export const metadata: Metadata = {
   title: "Pricing — AJG Site Builder",
-  description: "Compare AJG Site Builder Essential and Pro AI plans.",
+  description: "Compare AJG Site Builder Essential, Growth and AI Launch.",
   alternates: {
     canonical: "https://ajg-site-builder.vercel.app/pricing",
     languages: {

@@ -117,6 +117,57 @@ async function releasePremiumAiAllowance(
   if (error) throw error;
 }
 
+async function reserveHeavyAiOperation(
+  supabase: any,
+  siteId: string,
+  requestId: string,
+  operation: "site_create" | "site_revision"
+) {
+  const { data, error } = await supabase.rpc("reserve_my_site_heavy_ai", {
+    p_site_id: siteId,
+    p_request_id: requestId,
+    p_operation: operation
+  });
+  if (error) throw error;
+  return typeof data === "string" ? data : "unavailable";
+}
+
+async function releaseHeavyAiOperation(supabase: any, requestId: string) {
+  const { error } = await supabase.rpc("release_my_site_heavy_ai", {
+    p_request_id: requestId
+  });
+  if (error) throw error;
+}
+
+async function reserveLaunchOperation(
+  supabase: any,
+  siteId: string,
+  requestId: string,
+  operation: "site_create" | "site_revision"
+) {
+  const { data, error } = await supabase.rpc("reserve_my_site_launch_operation", {
+    p_site_id: siteId,
+    p_request_id: requestId,
+    p_operation: operation
+  });
+  if (error) throw error;
+  return typeof data === "string" ? data : "launch_required";
+}
+
+async function commitLaunchOperation(supabase: any, requestId: string) {
+  const { error } = await supabase.rpc("commit_my_site_launch_operation", {
+    p_request_id: requestId
+  });
+  if (error) throw error;
+}
+
+async function releaseLaunchOperation(supabase: any, requestId: string) {
+  const { error } = await supabase.rpc("release_my_site_launch_operation", {
+    p_request_id: requestId
+  });
+  if (error) throw error;
+}
+
 async function recordPremiumArchitectFailure(
   userId: string,
   siteId: string
@@ -332,11 +383,47 @@ export async function POST(request: Request) {
     );
   }
 
+  let premiumAccessSource = "none";
   if (field === "siteArchitect" || field === "siteRevision") {
-    const { data: entitlements, error: entitlementError } = await auth.supabase.rpc("get_my_site_entitlements", { p_site_id: siteId });
-    if (entitlementError) return NextResponse.json({ error: tr("Impossible de vérifier votre offre.", "Unable to verify your plan.") }, { status: 503 });
-    const entitlement = Array.isArray(entitlements) ? entitlements[0] : entitlements;
-    if (entitlement?.premium_architect !== true) return NextResponse.json({ error: tr("AI Site Architect est disponible avec l’offre Pro.", "AI Site Architect is available with the Pro plan.") }, { status: 403 });
+    const { data: aiAccess, error: accessError } = await auth.supabase.rpc(
+      "get_my_site_ai_access",
+      { p_site_id: siteId }
+    );
+    if (accessError) {
+      return NextResponse.json(
+        { error: tr("Impossible de vérifier vos droits IA.", "Unable to verify your AI access.") },
+        { status: 503 }
+      );
+    }
+    const access = Array.isArray(aiAccess) ? aiAccess[0] : aiAccess;
+    premiumAccessSource =
+      typeof access?.access_source === "string" ? access.access_source : "none";
+
+    if (field === "siteArchitect" && access?.can_create_site !== true) {
+      return NextResponse.json(
+        {
+          error: tr(
+            "La création complète du site nécessite une Création IA disponible. Elle est incluse avec le statut Beta Tester, achetable une fois, ou offerte avec Growth annuel lorsqu’elle est activée.",
+            "Full website creation requires an available AI Launch entitlement. It is included for Beta Testers, can be purchased once, or is included with annual Growth when enabled."
+          ),
+          code: "ai_launch_required"
+        },
+        { status: 403 }
+      );
+    }
+
+    if (field === "siteRevision" && access?.can_revise_site !== true) {
+      return NextResponse.json(
+        {
+          error: tr(
+            "Le pilotage global du site nécessite Growth ou une Création IA encore disponible.",
+            "Global website management requires Growth or a remaining AI Launch entitlement."
+          ),
+          code: "growth_or_ai_launch_required"
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const premiumRequest =
@@ -361,6 +448,75 @@ export async function POST(request: Request) {
           ? tr("Votre quota IA mensuel est atteint. Il sera renouvelé au début du mois prochain.", "Your monthly AI quota has been reached. It will reset at the beginning of next month.")
           : tr("L’assistant IA est temporairement indisponible.", "The AI assistant is temporarily unavailable.");
     return NextResponse.json({ error: message }, { status: 429 });
+  }
+
+  let launchReservation = "";
+  let heavyAiReserved = false;
+  if (premiumRequest) {
+    try {
+      launchReservation = await reserveLaunchOperation(
+        auth.supabase,
+        siteId,
+        premiumRequestId,
+        field === "siteRevision" ? "site_revision" : "site_create"
+      );
+    } catch (error) {
+      console.error("AI Launch reservation failed", error);
+      await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
+      return NextResponse.json(
+        { error: tr("Impossible de réserver la capacité IA pour cette demande.", "Unable to reserve AI capacity for this request.") },
+        { status: 503 }
+      );
+    }
+
+    if (!["ok", "unmetered_beta", "unmetered_growth"].includes(launchReservation)) {
+      await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
+      return NextResponse.json(
+        {
+          error: tr(
+            "Votre forfait Création IA ne dispose plus d’opération complète. Growth conserve les révisions globales, mais une nouvelle création complète nécessite un nouveau droit BUILD.",
+            "Your AI Launch package has no full operation remaining. Growth keeps global revisions, but a new full website creation requires a new BUILD entitlement."
+          ),
+          code: launchReservation
+        },
+        { status: 403 }
+      );
+    }
+
+    if (launchReservation === "unmetered_growth" || launchReservation === "unmetered_beta") {
+      let heavyAllowance = "unavailable";
+      try {
+        heavyAllowance = await reserveHeavyAiOperation(
+          auth.supabase,
+          siteId,
+          premiumRequestId,
+          field === "siteRevision" ? "site_revision" : "site_create"
+        );
+      } catch (error) {
+        console.error("Heavy AI reservation failed", error);
+        await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
+        return NextResponse.json(
+          { error: tr("Impossible de vérifier le budget des opérations IA avancées.", "Unable to verify the advanced AI operation budget.") },
+          { status: 503 }
+        );
+      }
+      if (heavyAllowance !== "ok") {
+        await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
+        return NextResponse.json(
+          {
+            error: heavyAllowance === "monthly_limit"
+              ? tr(
+                  "Votre quota mensuel d’opérations Growth lourdes est atteint. Les fonctions légères et votre site restent disponibles.",
+                  "Your monthly heavy Growth operation allowance has been reached. Light AI features and your website remain available."
+                )
+              : tr("Cette opération Growth n’est pas disponible actuellement.", "This Growth operation is not currently available."),
+            code: heavyAllowance
+          },
+          { status: heavyAllowance === "monthly_limit" ? 429 : 403 }
+        );
+      }
+      heavyAiReserved = true;
+    }
   }
 
   if (field === "siteArchitect" || field === "siteRevision") {
@@ -409,10 +565,31 @@ export async function POST(request: Request) {
           }
         }
       });
-      return NextResponse.json({ proposal, premium: true });
+      if (launchReservation === "ok") {
+        await commitLaunchOperation(auth.supabase, premiumRequestId);
+      }
+      return NextResponse.json({
+        proposal,
+        premium: true,
+        premiumAccessSource
+      });
     } catch (error) {
       console.error("Premium Site Architect failed", error);
       if (premiumRequestId) {
+        if (heavyAiReserved) {
+          try {
+            await releaseHeavyAiOperation(auth.supabase, premiumRequestId);
+          } catch (releaseError) {
+            console.error("Heavy AI reservation release failed", releaseError);
+          }
+        }
+        if (launchReservation === "ok") {
+          try {
+            await releaseLaunchOperation(auth.supabase, premiumRequestId);
+          } catch (releaseError) {
+            console.error("AI Launch reservation release failed", releaseError);
+          }
+        }
         try {
           await releasePremiumAiAllowance(auth.supabase, premiumRequestId);
         } catch (releaseError) {

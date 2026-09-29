@@ -159,11 +159,11 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "2. Offres, prix et essai" : "2. Plans, pricing and trial"}</h2>
                 <p>{fr
-                  ? "La grille préparée comprend Essentiel à 19 € par mois ou 190 € par an, et Pro IA à 39 € par mois ou 390 € par an, pour un site. Le traitement fiscal final et l’affichage TTC applicable seront validés avant encaissement."
-                  : "The prepared pricing grid includes Essential at €19/month or €190/year and Pro AI at €39/month or €390/year, for one website. Final tax treatment and any required tax-inclusive display will be validated before charging begins."}</p>
+                  ? "La grille préparée comprend Essentiel à 15 € par mois ou 150 € par an, Growth à 29 € par mois ou 290 € par an, et la Création IA complète à 49 € en paiement unique. Growth annuel peut inclure la Création IA. Le traitement fiscal final et l’affichage TTC applicable seront validés avant encaissement."
+                  : "The prepared pricing grid includes Essential at €15/month or €150/year, Growth at €29/month or €290/year, and Full AI Launch at €49 as a one-time purchase. Annual Growth may include AI Launch. Final tax treatment and any required tax-inclusive display will be validated before charging begins."}</p>
                 <p>{fr
-                  ? "Le parcours commercial prévoit 14 jours d’essai avec les capacités Pro IA. Lorsque le paiement est activé, le moyen de paiement est enregistré au démarrage de l’essai et l’abonnement devient payant à l’issue des 14 jours selon la formule choisie, sauf résiliation dans les conditions affichées au moment de la souscription."
-                  : "The commercial flow provides a 14-day trial with Pro AI capabilities. Once payments are enabled, a payment method is collected when the trial starts and the subscription becomes paid after 14 days according to the selected plan unless cancelled under the conditions shown at checkout."}</p>
+                  ? "La Création IA complète est un droit BUILD ponctuel distinct de l’abonnement. Toute éventuelle période d’essai sur Essentiel ou Growth sera affichée au moment de la souscription et ne donnera pas automatiquement accès à une Création IA gratuite."
+                  : "Full AI Launch is a one-time BUILD entitlement separate from the subscription. Any trial offered on Essential or Growth will be shown at checkout and will not automatically grant a free AI Launch."}</p>
                 <p>{fr
                   ? "Les Beta Testers invités restent hors facturation Stripe et ne sont pas engagés dans une offre payante du seul fait de leur participation à la bêta."
                   : "Invited Beta Testers remain outside Stripe billing and do not enter a paid plan merely by participating in the beta."}</p>
@@ -238,8 +238,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "Droit de rétractation" : "Right of withdrawal"}</h2>
                 <p>{fr
-                  ? "La vente aux consommateurs reste désactivée tant que le parcours légal de rétractation, l’identité du vendeur et le médiateur compétent ne sont pas finalisés. L’essai de 14 jours ne sera pas présenté comme un remplacement du droit légal de rétractation."
-                  : "Consumer sales remain disabled until the statutory withdrawal flow, seller identity and eligible mediator are finalized. The 14-day trial will not be presented as a replacement for any statutory withdrawal right."}</p>
+                  ? "La vente aux consommateurs reste désactivée tant que le parcours légal de rétractation, l’identité du vendeur et le médiateur compétent ne sont pas finalisés. Une éventuelle période d’essai commerciale ne sera jamais présentée comme un remplacement du droit légal de rétractation."
+                  : "Consumer sales remain disabled until the statutory withdrawal flow, seller identity and eligible mediator are finalized. Any commercial trial will never be presented as a replacement for a statutory withdrawal right."}</p>
               </section>
             </>
           ) : null}

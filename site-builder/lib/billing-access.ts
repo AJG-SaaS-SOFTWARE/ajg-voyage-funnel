@@ -94,7 +94,7 @@ async function openStripeBillingPath(
       Authorization: `Bearer ${session.access_token}`,
       "X-AJG-Locale": locale
     },
-    body: JSON.stringify({ siteId, locale })
+    body: JSON.stringify({ siteId, locale, ...payload })
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || typeof result?.url !== "string") {
@@ -105,14 +105,20 @@ async function openStripeBillingPath(
 
 export async function startPlanCheckout(
   siteId: string,
-  planKey: "essential" | "pro",
+  planKey: "essential" | "growth",
   billingCycle: "monthly" | "annual"
 ) {
   return openStripeBillingPath("/api/billing/checkout", siteId, { planKey, billingCycle });
 }
 
-export async function startProCheckout(siteId: string) {
-  return startPlanCheckout(siteId, "pro", "monthly");
+export async function startGrowthCheckout(siteId: string) {
+  return startPlanCheckout(siteId, "growth", "monthly");
+}
+
+export async function startAiLaunchCheckout(siteId: string) {
+  return openStripeBillingPath("/api/billing/checkout", siteId, {
+    purchaseType: "ai_launch"
+  });
 }
 
 export async function openStripeBillingPortal(siteId: string) {

@@ -172,11 +172,23 @@ export async function GET(request: Request) {
         present(process.env.STRIPE_WEBHOOK_SECRET) &&
         present(process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID) &&
         present(process.env.STRIPE_ESSENTIAL_ANNUAL_PRICE_ID) &&
-        present(process.env.STRIPE_PRO_MONTHLY_PRICE_ID) &&
-        present(process.env.STRIPE_PRO_ANNUAL_PRICE_ID),
+        present(process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID) &&
+        present(process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID) &&
+        present(process.env.STRIPE_AI_LAUNCH_PRICE_ID),
       "commercial",
-      "Clé API Stripe, secret webhook et 4 Price IDs Essentiel/Pro IA configurés.",
-      "Runtime Stripe incomplet : clé API, secret webhook ou l’un des 4 Price IDs Essentiel/Pro IA manque.",
+      "Clé API Stripe, secret webhook, 4 Price IDs récurrents Essentiel/Growth et Price Création IA configurés.",
+      "Runtime Stripe incomplet : clé API, secret webhook, Price Essentiel/Growth ou Price Création IA manquant.",
+      "deferred"
+    ),
+    check(
+      "ai-launch-budget",
+      "Création IA · garde-fou BUILD",
+      Number.isInteger(Number(process.env.AJG_AI_LAUNCH_OPERATIONS || "4")) &&
+        Number(process.env.AJG_AI_LAUNCH_OPERATIONS || "4") >= 1 &&
+        Number(process.env.AJG_AI_LAUNCH_OPERATIONS || "4") <= 20,
+      "commercial",
+      `Création IA bornée à ${Number(process.env.AJG_AI_LAUNCH_OPERATIONS || "4")} opération(s) complète(s) réussie(s) par droit BUILD.`,
+      "AJG_AI_LAUNCH_OPERATIONS doit être un entier entre 1 et 20.",
       "deferred"
     ),
     check(

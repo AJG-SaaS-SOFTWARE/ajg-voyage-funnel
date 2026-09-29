@@ -109,7 +109,7 @@ export async function createStripeSubscriptionCheckout(input: {
   ownerEmail?: string | null;
   customerId?: string | null;
   priceId: string;
-  planKey: "essential" | "pro";
+  planKey: "essential" | "growth";
   trialDays?: number;
   successUrl: string;
   cancelUrl: string;
@@ -152,6 +152,48 @@ export async function createStripeSubscriptionCheckout(input: {
           owner_id: input.ownerId,
           plan_key: input.planKey
         }
+      }
+    }
+  });
+}
+
+export async function createStripeOneTimeCheckout(input: {
+  siteId: string;
+  ownerId: string;
+  ownerEmail?: string | null;
+  customerId?: string | null;
+  priceId: string;
+  successUrl: string;
+  cancelUrl: string;
+}) {
+  return stripeRequest<{
+    id: string;
+    url: string | null;
+    customer?: string | null;
+    payment_intent?: string | null;
+  }>("/checkout/sessions", {
+    params: {
+      mode: "payment",
+      line_items: [{ price: input.priceId, quantity: 1 }],
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      client_reference_id: input.siteId,
+      integration_identifier: integrationIdentifier(),
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true, required: "if_supported" },
+      ...(process.env.AJG_STRIPE_TAX_ENABLED?.trim().toLowerCase() === "true"
+        ? { automatic_tax: { enabled: true } }
+        : {}),
+      ...(input.customerId
+        ? { customer: input.customerId }
+        : input.ownerEmail
+          ? { customer_email: input.ownerEmail }
+          : {}),
+      metadata: {
+        site_id: input.siteId,
+        owner_id: input.ownerId,
+        purchase_type: "ai_launch",
+        commercial_market: "b2b"
       }
     }
   });

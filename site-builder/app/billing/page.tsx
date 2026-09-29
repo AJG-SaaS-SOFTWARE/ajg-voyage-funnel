@@ -60,7 +60,7 @@ export default function BillingPage() {
           </button>
         ) : null}
       </div>
-      {limited && !billing.hasBillingAccount ? <p className="account-note">{tr("Aucun compte Stripe n’est encore rattaché à ce site. Si vous souhaitez passer à Pro, utilisez la page Mon offre.", "No Stripe account is linked to this website yet. To upgrade to Pro, use the My plan page.")}</p> : null}
+      {limited && !billing.hasBillingAccount ? <p className="account-note">{tr("Aucun compte Stripe n’est encore rattaché à ce site. Si vous souhaitez souscrire à Essentiel ou Growth, utilisez la page Mon offre.", "No Stripe account is linked to this website yet. To subscribe to Essential or Growth, use the My plan page.")}</p> : null}
     </div></section> : null}
   </AccountShell>;
 }

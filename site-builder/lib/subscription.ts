@@ -1,7 +1,7 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
 export type SubscriptionEntitlements = {
-  planKey: "free" | "essential" | "pro";
+  planKey: "free" | "essential" | "growth";
   planName: string;
   aiMinuteLimit: number;
   aiDailyLimit: number;
@@ -32,7 +32,7 @@ export async function getMyEntitlements(): Promise<SubscriptionEntitlements> {
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return freeEntitlements;
   return {
-    planKey: row.plan_key === "pro" ? "pro" : row.plan_key === "essential" ? "essential" : "free",
+    planKey: row.plan_key === "growth" ? "growth" : row.plan_key === "essential" ? "essential" : "free",
     planName: row.plan_name || "Gratuit",
     aiMinuteLimit: Number(row.ai_minute_limit) || 5,
     aiDailyLimit: Number(row.ai_daily_limit) || 20,
@@ -52,7 +52,7 @@ export async function getMySiteEntitlements(siteId: string): Promise<Subscriptio
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return freeEntitlements;
   return {
-    planKey: row.plan_key === "pro" ? "pro" : row.plan_key === "essential" ? "essential" : "free",
+    planKey: row.plan_key === "growth" ? "growth" : row.plan_key === "essential" ? "essential" : "free",
     planName: row.plan_name || "Gratuit",
     aiMinuteLimit: Number(row.ai_minute_limit) || 5,
     aiDailyLimit: Number(row.ai_daily_limit) || 20,
@@ -106,4 +106,45 @@ export async function getMyStorageUsage(siteId?: string): Promise<StorageUsage> 
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   return { usedBytes: Number(row?.used_bytes) || 0, limitMb: Number(row?.storage_limit_mb) || freeEntitlements.storageMb };
+}
+
+
+export type SiteAiAccess = {
+  canCreateSite: boolean;
+  canReviseSite: boolean;
+  accessSource: "none" | "beta" | "growth" | "ai_launch" | "growth_launch";
+  launchOperationsRemaining: number;
+};
+
+export async function getMySiteAiAccess(siteId: string): Promise<SiteAiAccess> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return {
+      canCreateSite: false,
+      canReviseSite: false,
+      accessSource: "none",
+      launchOperationsRemaining: 0
+    };
+  }
+  const { data, error } = await supabase.rpc("get_my_site_ai_access", {
+    p_site_id: siteId
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  const source =
+    row?.access_source === "beta" ||
+    row?.access_source === "growth" ||
+    row?.access_source === "ai_launch" ||
+    row?.access_source === "growth_launch"
+      ? row.access_source
+      : "none";
+  return {
+    canCreateSite: row?.can_create_site === true,
+    canReviseSite: row?.can_revise_site === true,
+    accessSource: source,
+    launchOperationsRemaining: Math.max(
+      0,
+      Number(row?.launch_operations_remaining) || 0
+    )
+  };
 }

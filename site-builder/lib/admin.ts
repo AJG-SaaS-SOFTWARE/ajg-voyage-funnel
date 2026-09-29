@@ -460,7 +460,7 @@ export async function getAdminSites():Promise<AdminSiteRow[]> {
     return {id:site.id,ownerId:site.owner_id,slug:site.slug,status:site.status,updatedAt:site.updated_at,planKey:sub?.plan_key||"free",subscriptionStatus:sub?.status||"active",customDomain:domain?.hostname||"",domainStatus:domain?.verification_status||""};});
 }
 
-export async function adminSetPlan(siteId:string,userId:string,planKey:"free"|"essential"|"pro"){
+export async function adminSetPlan(siteId:string,userId:string,planKey:"free"|"essential"|"growth"){
   const supabase=getSupabaseBrowserClient();if(!supabase) throw new Error("Supabase n'est pas configuré.");
   if(!await isCurrentUserAdmin()) throw new Error("Accès administrateur requis.");
   const {error}=await supabase.from("site_subscriptions").upsert({site_id:siteId,owner_id:userId,plan_key:planKey,status:"active",updated_at:new Date().toISOString()},{onConflict:"site_id"});
