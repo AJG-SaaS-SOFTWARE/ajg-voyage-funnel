@@ -408,6 +408,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] journal d’exécution RGPD pseudonymisé : réception, portée, statut, systèmes traités et dates ; après purge les FK `user_id/site_id` passent à `null` et aucun contenu du site n’est copié dans le journal ;
 - [x] runner E2E RGPD admin isolé : compte/site/médias jetables → demande compte réelle → suspension → vraie route de purge → vérification Storage/DB/Auth + journal pseudonymisé ;
 - [x] back-office administration rationalisé : shell dédié, navigation admin persistante, en-têtes compacts, densité desktop améliorée, cartes/tables/statuts harmonisés et page RGPD alignée sur le cockpit ;
+- [x] back-office client harmonisé : navigation commune Builder / Mon offre / Facturation / Domaines / Mes données, en-têtes compacts, densité desktop et responsive mobile cohérents sans modifier les règles métier ;
 - [x] recette E2E RGPD exécutée en production le 29 septembre 2026 : 6 contrôles passés, médias public/privé supprimés, traces site-scoped purgées, cascade DB terminée, identité Supabase Auth supprimée et journal RGPD pseudonymisé conservé ;
 
 ### Durcissement préproduction — 28 septembre 2026
@@ -490,9 +491,20 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] résilience impayés : répétition d’échec sans reset du calendrier + reprise des jobs email bloqués ;
 - [x] récupération client : archive TAR.GZ streamée avec manifeste v3 et copie des médias publics/privés, sans nouvelle dépendance ;
 - [x] domaines : endpoints Vercel utilisés conformes à la documentation actuelle ;
-- [x] Vercel : production synchronisée sur `80af1cad…` après refonte du back-office ; déploiement `dpl_3cFRcdndq9iVYJJw3s2x8LyWq9tj` READY, live et canari HTTPS validés, aucune erreur runtime récente ;
+- [x] Vercel : production synchronisée sur `a2ef5913…` après harmonisation admin + back-office client ; déploiement `dpl_HeNRi8uKiABuXCWjjxZS1dhXitW3` READY, live et canari HTTPS validés, aucune erreur runtime récente ;
 - [x] Storage privé : bucket réel, politiques RLS et recette privée → promotion publique → nettoyage validés ;
 - [x] secrets de release : `SUPABASE_SECRET_KEY` runtime et `VERCEL_TOKEN` GitHub Actions ont permis la release contrôlée et la recette Storage ;
 - [ ] secrets opérationnels restants : confirmer/configurer `CRON_SECRET`, Resend, `NEXT_PUBLIC_APP_URL` et le token Vercel runtime à périmètre minimal pour les domaines personnalisés ;
 - [ ] paiement réel : volontairement non activé avant validation prix/périodicité/essai et nombre de sites inclus par offre ;
 - [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
+
+### Checkpoints humains actifs
+À ce stade, les prochains jalons ne doivent pas être devinés par le code :
+
+1. **Offre commerciale** : valider prix Pro, périodicité, essai éventuel et nombre de sites inclus ; ces décisions débloquent la création du Product/Price Stripe sandbox puis la recette de paiement réelle.
+2. **Bêta réelle** : fournir/inviter 5 à 10 testeurs puis observer activation, publication, usage IA, régénération Premium et retours avant de modifier à nouveau le template public.
+3. **Domaine personnalisé réel** : choisir un domaine de test possédé par AJG ou un testeur afin d’exécuter la recette ajout → DNS → vérification → primaire → retrait.
+4. **Secrets opérationnels** : finaliser `CRON_SECRET` et Resend avant les notifications automatiques d’impayés ; confirmer `NEXT_PUBLIC_APP_URL` et le périmètre minimal du token Vercel runtime.
+5. **Supabase Auth** : activer la protection contre les mots de passe compromis uniquement si le plan Supabase utilisé la rend disponible.
+
+Tant qu’un de ces éléments n’est pas fourni ou décidé, le développement correspondant reste volontairement bloqué plutôt que de créer une convention commerciale, un domaine ou un secret fictif.
