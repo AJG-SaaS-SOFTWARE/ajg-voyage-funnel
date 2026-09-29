@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useProductLocale } from "../../lib/product-i18n";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
 import ContentLibraryEditor from "../../components/ContentLibraryEditor";
@@ -43,50 +45,74 @@ const steps = [
   {
     key: "identity",
     label: "Identité",
+    labelEn: "Identity",
     eyebrow: "Votre base",
+    eyebrowEn: "Your foundation",
     description: "Nom, adresse, langue et photo : les éléments qui rendent le site immédiatement personnel.",
+    descriptionEn: "Name, address, language and photo: the essentials that make the website immediately yours.",
     time: "2 min",
-    guidance: "Commencez simplement par votre prénom et votre nom. Le nom du site et son adresse se préremplissent automatiquement."
+    guidance: "Commencez simplement par votre prénom et votre nom. Le nom du site et son adresse se préremplissent automatiquement.",
+    guidanceEn: "Start with your first and last name. The website name and address are filled in automatically."
   },
   {
     key: "story",
     label: "Message",
+    labelEn: "Message",
     eyebrow: "Votre voix",
+    eyebrowEn: "Your voice",
     description: "Le titre, l'introduction et votre présentation. Le ton reste simple, humain et fidèle à vous.",
+    descriptionEn: "Your headline, introduction and presentation. Keep the tone simple, human and true to you.",
     time: "4 min",
-    guidance: "Écrivez comme si vous expliquiez votre démarche à une connaissance. Quelques phrases naturelles suffisent."
+    guidance: "Écrivez comme si vous expliquiez votre démarche à une connaissance. Quelques phrases naturelles suffisent.",
+    guidanceEn: "Write as if you were explaining what you do to someone you know. A few natural sentences are enough."
   },
   {
     key: "design",
     label: "Style",
+    labelEn: "Style",
     eyebrow: "Votre ambiance",
+    eyebrowEn: "Your look & feel",
     description: "Couleurs, motifs, images et sons pour donner une identité personnelle à votre site.",
+    descriptionEn: "Colors, patterns, images and sound to give your website a distinctive identity.",
     time: "5 min",
-    guidance: "Commencez par une couleur et un motif. Vous pouvez rechercher une image ou un son, puis revenir changer vos choix plus tard."
+    guidance: "Commencez par une couleur et un motif. Vous pouvez rechercher une image ou un son, puis revenir changer vos choix plus tard.",
+    guidanceEn: "Start with a color and pattern. You can search for an image or sound and change your choices later."
   },
   {
     key: "booking",
     label: "Rendez-vous",
+    labelEn: "Bookings",
     eyebrow: "Passer à l'action",
+    eyebrowEn: "Drive action",
     description: "Reliez votre agenda et vos réseaux pour transformer la visite en échange concret.",
+    descriptionEn: "Connect your booking page and social networks so visits can turn into real conversations.",
     time: "2 min",
-    guidance: "Copiez l'adresse de votre page de réservation, puis collez-la ci-dessous. Vous pouvez aussi passer cette étape et y revenir plus tard."
+    guidance: "Copiez l'adresse de votre page de réservation, puis collez-la ci-dessous. Vous pouvez aussi passer cette étape et y revenir plus tard.",
+    guidanceEn: "Copy your booking page address and paste it below. You can also skip this step and return later."
   },
   {
     key: "options",
     label: "Options",
+    labelEn: "Options",
     eyebrow: "Votre contenu",
+    eyebrowEn: "Your content",
     description: "Configurez les rubriques facultatives, leur contenu et leur ordre d'affichage.",
+    descriptionEn: "Configure optional sections, their content and display order.",
     time: "2 min",
-    guidance: "Activez uniquement les rubriques utiles. Elles restent masquées tant qu'elles ne contiennent pas de contenu publiable."
+    guidance: "Activez uniquement les rubriques utiles. Elles restent masquées tant qu'elles ne contiennent pas de contenu publiable.",
+    guidanceEn: "Enable only useful sections. They stay hidden until they contain publishable content."
   },
   {
     key: "review",
     label: "Publication",
+    labelEn: "Publish",
     eyebrow: "Dernière vérification",
+    eyebrowEn: "Final review",
     description: "Contrôlez l'adresse, la langue et les informations essentielles avant la mise en ligne.",
+    descriptionEn: "Review the address, language and essential information before going live.",
     time: "1 min",
-    guidance: "Relisez le résumé. Si tout est vert, vous pouvez publier puis partager votre lien."
+    guidance: "Relisez le résumé. Si tout est vert, vous pouvez publier puis partager votre lien.",
+    guidanceEn: "Review the summary. If everything is green, publish and share your link."
   }
 ] as const;
 
@@ -150,6 +176,7 @@ function VisibilityOption({
 
 export default function BuilderPage() {
   const router = useRouter();
+  const { locale, tr } = useProductLocale();
   const remoteMode = isSupabaseConfigured();
 
   const [config, setConfig] = useState<SiteConfig>(defaultSiteConfig);
@@ -279,7 +306,7 @@ export default function BuilderPage() {
       ? "/billing"
       : "/plans";
   const premiumAccessLabel =
-    premiumAccessHref === "/billing" ? "Régulariser mon accès" : "Voir l’offre Pro";
+    premiumAccessHref === "/billing" ? tr("Régulariser mon accès", "Restore my access") : tr("Voir l’offre Pro", "View Pro plan");
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
@@ -384,7 +411,14 @@ export default function BuilderPage() {
   };
 
   const stepIndex = steps.findIndex((item) => item.key === step);
-  const currentStep = steps[stepIndex];
+  const rawCurrentStep = steps[stepIndex];
+  const currentStep = {
+    ...rawCurrentStep,
+    label: locale === "en" ? rawCurrentStep.labelEn : rawCurrentStep.label,
+    eyebrow: locale === "en" ? rawCurrentStep.eyebrowEn : rawCurrentStep.eyebrow,
+    description: locale === "en" ? rawCurrentStep.descriptionEn : rawCurrentStep.description,
+    guidance: locale === "en" ? rawCurrentStep.guidanceEn : rawCurrentStep.guidance
+  };
   const completion = Math.round(((stepIndex + 1) / steps.length) * 100);
 
   const update = <K extends keyof SiteConfig>(key: K, value: SiteConfig[K], preserveReview = false) => {
@@ -450,7 +484,9 @@ export default function BuilderPage() {
   };
 
   const nextStepLabel =
-    stepIndex < steps.length - 1 ? steps[stepIndex + 1].label : "";
+    stepIndex < steps.length - 1
+      ? (locale === "en" ? steps[stepIndex + 1].labelEn : steps[stepIndex + 1].label)
+      : "";
 
   const createGuidedDraft = async () => {
     const hasPersonalizedText =
