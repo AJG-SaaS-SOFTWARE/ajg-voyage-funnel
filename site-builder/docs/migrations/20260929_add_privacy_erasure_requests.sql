@@ -238,6 +238,27 @@ grant execute on function public.can_modify_site_media(uuid)
 to authenticated,service_role;
 
 -- Owner mutations cannot bypass a pending erasure request through the Data API.
+-- Site creation is blocked after an account-erasure request. Direct site deletion is
+-- removed so Storage/domain cleanup must go through the controlled server purge.
+drop policy if exists "owners create sites" on public.sites;
+create policy "owners create sites"
+on public.sites
+for insert
+to authenticated
+with check(
+  owner_id=(select auth.uid())
+  and not exists(
+    select 1
+    from public.data_erasure_requests r
+    where r.user_id=(select auth.uid())
+      and r.scope='account'
+      and r.status in ('requested','processing')
+  )
+);
+
+drop policy if exists "owners delete sites" on public.sites;
+revoke delete on public.sites from authenticated;
+
 drop policy if exists "owners update sites" on public.sites;
 create policy "owners update sites"
 on public.sites
