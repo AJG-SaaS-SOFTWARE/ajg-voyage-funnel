@@ -102,3 +102,18 @@ test("server-seeded locale avoids a French-first render for English users", () =
   assert.match(provider, /ProductLocaleContext\.Provider/);
   assert.match(locale, /persistProductLocale/);
 });
+
+
+test("client-side repository and image errors are localized", () => {
+  const repository = read("lib/supabase-site-repository.ts");
+  const billing = read("lib/billing-access.ts");
+  const image = read("lib/optimize-image.ts");
+
+  assert.match(repository, /Your storage quota has been reached/);
+  assert.match(repository, /You must be signed in/);
+  assert.match(repository, /Unable to save this domain/);
+  assert.match(billing, /Supabase is not configured/);
+  assert.match(billing, /Your session has expired/);
+  assert.match(image, /The image must not exceed 12 MB/);
+  assert.match(image, /Unable to prepare this image/);
+});

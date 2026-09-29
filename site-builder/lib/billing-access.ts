@@ -79,9 +79,9 @@ async function openStripeBillingPath(path: "/api/billing/checkout" | "/api/billi
   const locale = getProductLocale();
   const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!supabase) throw new Error(tr("Supabase n’est pas configuré.", "Supabase is not configured."));
   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  if (error || !session?.access_token) throw new Error(tr("Votre session a expiré.", "Your session has expired."));
 
   const response = await fetch(path, {
     method: "POST",

@@ -1,3 +1,5 @@
+import { getProductLocale } from "./product-i18n";
+
 type ImageFocus = {
   x: number;
   y: number;
@@ -12,12 +14,16 @@ type FaceDetectorConstructor = new (options?: { fastMode?: boolean; maxDetectedF
 
 const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
 
+function clientTr(fr: string, en: string) {
+  return getProductLocale() === "en" ? en : fr;
+}
+
 function validateImage(file: File) {
   if (!(acceptedTypes as readonly string[]).includes(file.type)) {
-    throw new Error("Utilisez une image JPEG, PNG, WebP ou AVIF.");
+    throw new Error(clientTr("Utilisez une image JPEG, PNG, WebP ou AVIF.", "Use a JPEG, PNG, WebP or AVIF image."));
   }
   if (file.size > 12 * 1024 * 1024) {
-    throw new Error("La photo ne doit pas dépasser 12 Mo.");
+    throw new Error(clientTr("La photo ne doit pas dépasser 12 Mo.", "The image must not exceed 12 MB."));
   }
 }
 
@@ -132,7 +138,7 @@ function renderOptimizedImage(bitmap: ImageBitmap): Promise<Blob> {
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("Impossible de préparer cette image.");
+  if (!context) throw new Error(clientTr("Impossible de préparer cette image.", "Unable to prepare this image."));
   context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
   return new Promise<Blob>((resolve, reject) => {
