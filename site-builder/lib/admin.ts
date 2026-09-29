@@ -155,10 +155,14 @@ export type AdminBetaCohortMember = {
   createdAt: string;
   lastSignInAt: string | null;
   invitedAt: string | null;
+  accessActive: boolean;
+  accessStartsAt: string | null;
+  accessExpiresAt: string | null;
 };
 
 export type AdminBetaCohort = {
   limit: number;
+  defaultAccessDays: number;
   members: AdminBetaCohortMember[];
 };
 
@@ -177,7 +181,7 @@ export async function getAdminBetaCohort(): Promise<AdminBetaCohort> {
   return body as AdminBetaCohort;
 }
 
-export async function adminInviteBetaMember(email: string) {
+export async function adminInviteBetaMember(email: string, durationDays = 30) {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { data: { session }, error } = await supabase.auth.getSession();
@@ -189,7 +193,7 @@ export async function adminInviteBetaMember(email: string) {
       Authorization: `Bearer ${session.access_token}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, durationDays }),
     cache: "no-store"
   });
   const body = await response.json().catch(() => null);

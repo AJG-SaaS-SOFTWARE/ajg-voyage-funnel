@@ -226,7 +226,7 @@ Modules à étudier après validation bêta :
 - [x] page `/plans` et accès « Mon offre » depuis le builder ;
 - [x] types Supabase régénérés et migration versionnée ;
 - [x] audit sécurité/performance post-migration et index de relation ajouté ;
-- [ ] prix commercial, périodicité et éventuel essai à valider avant activation du paiement ;
+- [x] positionnement commercial formalisé : Gratuit → Essential cible → Founding Pro ; hypothèse Founding retenue pour test à 24,90 € TTC/mois ou 239 € TTC/an pour 1 site et les 10 premiers clients payants ; éventuel essai commercial reste à décider avant Stripe live ;
 - [x] Stripe sandbox relié au Builder : Checkout hébergé, Customer Portal et webhook signé/idempotent par site, sans prix commercial codé en dur ;
 - [x] droits Premium appliqués au runtime : domaine personnalisé côté repository et AI Site Architect côté API serveur ;
 - [x] mesurer le stockage `site-media` par propriétaire et l’afficher dans « Mon offre » ;
@@ -331,6 +331,8 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 - [x] métriques isolées automatiquement sur la cohorte dès qu’au moins un testeur est marqué bêta ; avant cela, le dashboard indique explicitement qu’il couvre tous les utilisateurs ;
 - [x] gate bêta privé ajouté et doublé côté serveur : l’interface désactive les invitations si un prérequis critique n’est pas au vert et l’API refait les contrôles avant toute invitation ; warnings non bloquants et fonctions commerciales différées restent séparés ;
 - [x] cohorte opérationnelle volontairement plafonnée à 10 testeurs pour cette phase malgré la limite technique supérieure ;
+- [x] statut Beta Tester séparé de Stripe : accès Pro complet temporaire (Architecte Premium, domaine personnalisé, quotas Pro), expiration automatique, renouvellement/retrait admin et retour à l’offre réelle sans suppression du site ;
+- [x] page « Mon offre » alignée sur le positionnement : Gratuit, Essential conservé comme trajectoire non commercialisée avant retours bêta, Founding Pro 24,90 €/mois ou 239 €/an ;
 - [ ] inviter puis faire tester 5 à 10 comptes réels ;
 - [ ] mesurer activation, publication, usage IA, abandons et retours ;
 - [ ] corriger uniquement les frictions confirmées par ces observations.
@@ -338,7 +340,7 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 ### Itération 6C — billing
 - [x] modèle de droits et statuts d’abonnement prêt pour la synchronisation ;
 - [x] quotas Gratuit/Pro séparés du prix commercial ;
-- [ ] figer prix, périodicité, essai éventuel et nombre de sites inclus ; la politique d’impayés J0/J14/J28/J104 reste inchangée ;
+- [ ] finaliser uniquement l’éventuel essai commercial avant Stripe live ; prix Founding (24,90 €/mois ou 239 €/an) et 1 site inclus sont retenus comme hypothèse de lancement à tester ; la politique d’impayés J0/J14/J28/J104 reste inchangée ;
 - [x] compte Stripe sandbox disponible pour le développement et architecture Billing retenue : Checkout hébergé + Customer Portal + abonnements récurrents par site ;
 - [x] couche Stripe serveur ajoutée sans prix codé : clé API restreinte privilégiée, Price Pro injecté par environnement et API Stripe versionnée ;
 - [x] Checkout Pro authentifié et ciblé par site, sans attribution de droits depuis la page de succès ;
@@ -514,7 +516,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 ### Checkpoints humains actifs
 À ce stade, les prochains jalons ne doivent pas être devinés par le code :
 
-1. **Offre commerciale** : valider prix Pro, périodicité, essai éventuel et nombre de sites inclus ; ces décisions débloquent la création du Product/Price Stripe sandbox puis la recette de paiement réelle.
+1. **Offre commerciale** : le positionnement et l’hypothèse Founding sont validés pour test (24,90 €/mois ou 239 €/an, 1 site). Reste à décider s’il existe un essai commercial avant activation Stripe live ; les Beta Testers restent gratuits et séparés de Stripe.
 2. **Bêta réelle** : fournir/inviter 5 à 10 testeurs puis observer activation, publication, usage IA, régénération Premium et retours avant de modifier à nouveau le template public.
 3. **Domaine personnalisé réel** : choisir un domaine de test possédé par AJG ou un testeur afin d’exécuter la recette ajout → DNS → vérification → primaire → retrait.
 4. **Secrets opérationnels** : `CRON_SECRET` est finalisé ; restent Resend avant les notifications automatiques d’impayés, ainsi que la confirmation de `NEXT_PUBLIC_APP_URL` et du périmètre minimal du token Vercel runtime.
