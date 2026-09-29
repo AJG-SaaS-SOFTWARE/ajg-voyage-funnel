@@ -185,7 +185,7 @@ jobs:
           echo "deployment_id=$PREVIOUS_ID" >> "$GITHUB_OUTPUT"
           echo "Rollback target captured: $PREVIOUS_ID" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Deploy tested Builder directory with pinned Vercel CLI
+      - name: Deploy and explicitly promote tested Builder artifact
         id: release
         shell: bash
         working-directory: ${{ github.workspace }}
@@ -223,22 +223,23 @@ jobs:
             exit "$DEPLOY_EXIT"
           fi
 
-          RESPONSE="$(curl --fail-with-body --silent --show-error \
-            "https://api.vercel.com/v4/aliases/$PRODUCTION_ALIAS?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID" \
-            -H "Authorization: Bearer $VERCEL_TOKEN" \
-            -H "Accept: application/json")"
+          DEPLOYMENT_HOST="$(
+            grep -Eo 'https://[A-Za-z0-9.-]+\.vercel\.app' /tmp/vercel-deploy.log \
+              | sed 's#https://##' \
+              | tail -n 1
+          )"
 
-          DEPLOYMENT_ID="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.deploymentId!=="string"||!x.deploymentId.startsWith("dpl_")){console.error(s);process.exit(2)}process.stdout.write(x.deploymentId)})')"
-
-          if [ "$DEPLOYMENT_ID" = "${{ steps.previous.outputs.deployment_id }}" ]; then
-            echo "::error::Vercel CLI returned without changing the production deployment."
+          if [ -z "$DEPLOYMENT_HOST" ]; then
+            echo "::error::Unable to extract the Vercel deployment URL from CLI output."
             exit 1
           fi
 
           DETAILS="$(curl --fail-with-body --silent --show-error \
-            "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+            "https://api.vercel.com/v13/deployments/$DEPLOYMENT_HOST?teamId=$VERCEL_ORG_ID" \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             -H "Accept: application/json")"
+
+          DEPLOYMENT_ID="$(printf '%s' "$DETAILS" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.id!=="string"||!x.id.startsWith("dpl_")){console.error(s);process.exit(2)}process.stdout.write(x.id)})')"
 
           node -e '
             const payload = JSON.parse(process.argv[1]);
@@ -253,11 +254,48 @@ jobs:
             }
           ' "$DETAILS"
 
-          DEPLOYMENT_HOST="$(printf '%s' "$DETAILS" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);if(typeof x.url!=="string"){console.error(s);process.exit(2)}process.stdout.write(x.url)})')"
+          if [ "$DEPLOYMENT_ID" = "${{ steps.previous.outputs.deployment_id }}" ]; then
+            echo "::error::Vercel returned the existing production deployment instead of a new artifact."
+            exit 1
+          fi
+
+          PROMOTE_CODE="$(curl --silent --show-error \
+            --output /tmp/vercel-promote.json \
+            --write-out "%{http_code}" \
+            --request POST \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json")"
+
+          if [ "$PROMOTE_CODE" -lt 200 ] || [ "$PROMOTE_CODE" -ge 300 ]; then
+            echo "::error::Vercel promotion failed (HTTP $PROMOTE_CODE)."
+            cat /tmp/vercel-promote.json
+            exit 1
+          fi
+
+          PROMOTED=0
+          for attempt in $(seq 1 18); do
+            RESPONSE="$(curl --fail-with-body --silent --show-error \
+              "https://api.vercel.com/v4/aliases/$PRODUCTION_ALIAS?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Accept: application/json")"
+            ALIAS_DEPLOYMENT_ID="$(printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const x=JSON.parse(s);process.stdout.write(typeof x.deploymentId==="string"?x.deploymentId:"")})')"
+            if [ "$ALIAS_DEPLOYMENT_ID" = "$DEPLOYMENT_ID" ]; then
+              PROMOTED=1
+              break
+            fi
+            echo "Waiting for production alias promotion ($attempt/18)..."
+            sleep 5
+          done
+
+          if [ "$PROMOTED" -ne 1 ]; then
+            echo "::error::Production alias did not move to $DEPLOYMENT_ID after explicit promotion."
+            exit 1
+          fi
 
           echo "deployment_id=$DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
           echo "url=https://$DEPLOYMENT_HOST" >> "$GITHUB_OUTPUT"
-          echo "Pinned Vercel CLI 59.19.1 deployed an isolated bundle containing only site-builder/: $DEPLOYMENT_ID." >> "$GITHUB_STEP_SUMMARY"
+          echo "Vercel artifact $DEPLOYMENT_ID explicitly promoted to $PRODUCTION_ALIAS." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify live production or rollback
         shell: bash
