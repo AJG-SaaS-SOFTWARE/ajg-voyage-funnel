@@ -193,14 +193,20 @@ jobs:
         run: |
           BODY="$(node -e 'process.stdout.write(JSON.stringify({
             name:"ajg-site-builder",
-            deploymentId:process.env.PREVIOUS_DEPLOYMENT_ID,
-            withLatestCommit:true,
             target:"production",
+            gitSource:{
+              type:"github",
+              org:"AJG-SaaS-SOFTWARE",
+              repo:"ajg-voyage-funnel",
+              ref:"main",
+              sha:process.env.GITHUB_SHA
+            },
             projectSettings:{
               rootDirectory:"site-builder",
               framework:"nextjs"
             },
             gitMetadata:{
+              remoteUrl:"https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel",
               rootDirectory:"site-builder",
               ci:true,
               ciType:"github-actions",
@@ -230,7 +236,7 @@ jobs:
 
           echo "deployment_id=$DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
           echo "url=https://$DEPLOYMENT_HOST" >> "$GITHUB_OUTPUT"
-          echo "Atomic production deployment created: $DEPLOYMENT_ID / https://$DEPLOYMENT_HOST" >> "$GITHUB_STEP_SUMMARY"
+          echo "Fresh Git production deployment created from $GITHUB_SHA: $DEPLOYMENT_ID / https://$DEPLOYMENT_HOST" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Wait for production deployment to become READY
         shell: bash
