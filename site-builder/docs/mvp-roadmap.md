@@ -2,6 +2,28 @@
 
 Dernière mise à jour : 29 septembre 2026.
 
+
+## Mode commercialisation prioritaire — gel fonctionnel
+
+Décision de pilotage du 29 septembre 2026 : le produit passe d'un cycle dominé par la construction fonctionnelle à un cycle dominé par la validation marché, l'activation et la monétisation.
+
+Jusqu'à validation de la première cohorte réelle, aucune nouvelle fonctionnalité majeure, nouveau module ou refonte structurelle ne doit être ajoutée sauf si elle répond à l'un des cas suivants :
+- correction d'un bug bloquant ou d'une régression ;
+- sécurité, RGPD, continuité ou conformité ;
+- fiabilité de production, observabilité ou récupération ;
+- friction confirmée par plusieurs utilisateurs bêta ou empêchant la publication ;
+- prérequis direct au paiement ou à la conversion commerciale déjà décidé.
+
+Ordre de priorité :
+1. inviter 5 à 10 utilisateurs externes réels et les accompagner jusqu'à un site publié ;
+2. mesurer activation, publication, usage IA standard/Premium, régénération, abandons, feedback et coût fournisseur ;
+3. corriger uniquement les frictions confirmées ;
+4. figer l'offre commerciale : prix, périodicité, essai et nombre de sites inclus ;
+5. créer le Product/Price Stripe sandbox et recetter souscription, renouvellement, impayé, régularisation et annulation ;
+6. ouvrir le paiement live seulement après validation des gates produit, exploitation, fiscalité et conformité.
+
+Le template, l'Architecte Premium et les modules actuels sont donc considérés comme suffisamment complets pour la bêta. Les idées supplémentaires restent en backlog jusqu'à preuve utilisateur.
+
 ## Sprint 1 — configurateur utilisable
 État : terminé pour le prototype bêta
 
