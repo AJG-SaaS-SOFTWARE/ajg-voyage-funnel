@@ -273,11 +273,11 @@ export function normalizeStandardStructuredOutput(
             item.text.trim()
         )
         .slice(0, 6)
-        .map((item: any) => [
+        .map((item: any): [string, string] => [
           item.field,
           sanitizeStandardText(item.field as EditableField, item.text)
         ])
-        .filter(([, text]) => Boolean(text))
+        .filter((entry: [string, string]) => Boolean(entry[1]))
     );
 
     return { issues, suggestions };
