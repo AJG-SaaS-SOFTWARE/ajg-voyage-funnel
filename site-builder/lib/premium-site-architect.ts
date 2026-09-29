@@ -63,6 +63,9 @@ export type PremiumArchitectProposal = {
       title: string;
       kind: "home" | "about" | "services" | "gallery" | "faq" | "contact" | "custom";
       purpose: string;
+      headline: string;
+      intro: string;
+      sections: { heading: string; text: string }[];
       enabled: boolean;
       assetIds: string[];
     }[];
@@ -166,10 +169,24 @@ const pageSchema = {
     title: { type: "string" },
     kind: { type: "string", enum: ["home", "about", "services", "gallery", "faq", "contact", "custom"] },
     purpose: { type: "string" },
+    headline: { type: "string" },
+    intro: { type: "string" },
+    sections: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          heading: { type: "string" },
+          text: { type: "string" }
+        },
+        required: ["heading", "text"]
+      }
+    },
     enabled: { type: "boolean" },
     assetIds: { type: "array", items: { type: "string" } }
   },
-  required: ["id", "slug", "title", "kind", "purpose", "enabled", "assetIds"]
+  required: ["id", "slug", "title", "kind", "purpose", "headline", "intro", "sections", "enabled", "assetIds"]
 } as const;
 
 const proposalSchema = {
@@ -467,12 +484,28 @@ function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumAr
         )
       ].slice(0, 12);
 
+      const sections =
+        kind === "home"
+          ? []
+          : (Array.isArray(page?.sections) ? page.sections : [])
+              .slice(0, 4)
+              .map((section: any) => ({
+                heading: clean(section?.heading, 120),
+                text: clean(section?.text, 1800)
+              }))
+              .filter((section: { heading: string; text: string }) =>
+                Boolean(section.heading || section.text)
+              );
+
       return {
         id,
         slug,
         title: clean(page?.title, 80) || (kind === "home" ? "Accueil" : "Page"),
         kind,
         purpose: clean(page?.purpose, 280),
+        headline: kind === "home" ? "" : clean(page?.headline, 120),
+        intro: kind === "home" ? "" : clean(page?.intro, 600),
+        sections,
         enabled: kind === "home" ? true : page?.enabled !== false,
         assetIds
       };
@@ -485,6 +518,9 @@ function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumAr
       title: "Accueil",
       kind: "home",
       purpose: "Présenter clairement l’activité et orienter le visiteur vers la prochaine action utile.",
+      headline: "",
+      intro: "",
+      sections: [],
       enabled: true,
       assetIds: []
     });
@@ -672,6 +708,10 @@ export async function generatePremiumSiteArchitect(
         "Never invent facts, testimonials, figures, prices, savings, certifications, customer results, contact details or capabilities.",
         "If a useful fact is missing, write safely around it and leave the missing-information signal in the strategy rather than fabricating it.",
         "Architecture must stay between one and six pages and include exactly one home page.",
+        "The home page uses the top-level hero/about fields, so keep its page-level headline, intro and sections empty.",
+        "For every enabled non-home page, write page-specific copy when the supplied facts justify it: a distinct headline, a concise intro, and zero to four useful sections. Each section must add information or explanation rather than restate the hero or another section.",
+        "About pages may deepen the person's story only from supplied facts. Services pages may explain an offer only from supplied facts. Gallery, FAQ and contact pages should use minimal supporting copy because their module carries the main content. Custom pages should receive the strongest useful page-specific content supported by the brief.",
+        "Do not create filler sections merely to make a page longer. If the evidence is too thin, keep sections empty and preserve the missing-information signal instead of fabricating material.",
         "Only assign asset IDs that exist in the supplied rights-cleared content library.",
         "FAQ and benefits may contain only claims supported by the source context.",
         "Do not create testimonial copy, numeric figures, video URLs or contact details.",
@@ -696,7 +736,8 @@ export async function generatePremiumSiteArchitect(
     instructions: [
       "You are the independent QA critic for AJG Premium Site Architect.",
       "Audit the proposal against the source context and strategy.",
-      "Be demanding. Check strategic fit, clarity, editorial quality, information architecture, conversion logic, credibility, design coherence and compliance.",
+      "Be demanding. Check strategic fit, clarity, editorial quality, information architecture, page-specific copy, conversion logic, credibility, design coherence and compliance.",
+      "For multi-page proposals, verify that each enabled secondary page earns its place and has distinct useful copy where the source facts support it; flag repeated hero copy, filler sections and pages that should be merged.",
       "A score above 90 requires a genuinely strong, differentiated and coherent proposal with no unsupported factual claim.",
       "Mark refine when there is any major issue, unsupported claim, generic copy, weak visitor journey, unnecessary page, contradictory module choice or obvious design mismatch.",
       "Do not request invented information. Missing factual information should remain explicitly missing.",
@@ -764,7 +805,8 @@ export async function generatePremiumSiteArchitect(
         "You are the final independent quality gate for AJG Premium Site Architect.",
         "Review only the refined proposal that will actually be shown to the customer.",
         "Verify that the previous review problems are resolved without introducing unsupported facts.",
-        "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
+        "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture, page-specific copy and design coherence.",
+        "For multi-page sites, confirm that secondary-page headlines, intros and sections are useful, non-repetitive and fully supported by the source context.",
         "Do not penalize facts that are explicitly marked as missing instead of invented.",
         "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
         "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
