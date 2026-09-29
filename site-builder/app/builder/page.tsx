@@ -212,6 +212,7 @@ export default function BuilderPage() {
       deterministicChecksPerformed: true;
       deterministicIssuesDetected: number;
       deterministicBlockingIssuesDetected: number;
+      strategyReused: boolean;
       strengths: string[];
       qualityNote: string;
     };
@@ -485,6 +486,10 @@ export default function BuilderPage() {
       .join("\n\n")
       .slice(0, 7000);
     const isRegeneration = architectProposal !== null;
+    const canReuseStrategy =
+      isRegeneration &&
+      !extraBrief.trim() &&
+      Boolean(architectProposal?.intelligence);
     setArchitectLoading(true);
     setSyncError("");
     try {
@@ -501,7 +506,37 @@ export default function BuilderPage() {
           field: "siteArchitect",
           siteId: architectSiteId,
           instruction: "Construis une première proposition cohérente de site à partir du besoin décrit. N'invente aucune information absente. Utilise en priorité les contenus utilisateur publiables dont les droits sont connus et ne recommande jamais pour publication un média aux droits inconnus.",
-          context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, architectBrief: briefForRequest, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, text: asset.kind === "text" ? asset.text : "", rights: asset.rights, publishable: asset.publishable, sourceUrl: asset.sourceUrl, notes: asset.notes })), siteContext: aiSiteContext }
+          context: {
+            language: config.language,
+            affiliation: config.affiliation,
+            firstName: config.firstName,
+            brandName: config.brandName,
+            architectBrief: briefForRequest,
+            reuseStrategy: canReuseStrategy,
+            existingStrategy: canReuseStrategy ? architectProposal?.intelligence : null,
+            variationReference: canReuseStrategy && architectProposal
+              ? {
+                  heroTagline: architectProposal.heroTagline,
+                  heroTitle: architectProposal.heroTitle,
+                  heroSubtitle: architectProposal.heroSubtitle,
+                  bookingLabel: architectProposal.bookingLabel,
+                  recommendedModules: architectProposal.recommendedModules,
+                  architecture: architectProposal.architecture,
+                  design: architectProposal.design
+                }
+              : null,
+            contentLibrary: config.contentLibrary.assets.map((asset) => ({
+              id: asset.id,
+              kind: asset.kind,
+              name: asset.name,
+              text: asset.kind === "text" ? asset.text : "",
+              rights: asset.rights,
+              publishable: asset.publishable,
+              sourceUrl: asset.sourceUrl,
+              notes: asset.notes
+            })),
+            siteContext: aiSiteContext
+          }
         })
       });
       const result = await response.json();
@@ -1350,6 +1385,11 @@ export default function BuilderPage() {
                           {architectProposal.premiumAudit.finalReviewPerformed ? (
                             <small>
                               Le texte affiché a été relu une seconde fois après correction par un critique IA indépendant.
+                            </small>
+                          ) : null}
+                          {architectProposal.premiumAudit.strategyReused ? (
+                            <small>
+                              Variante efficiente : la stratégie déjà validée a été conservée, puis la création et les contrôles qualité ont été relancés.
                             </small>
                           ) : null}
                           {architectProposal.premiumAudit.deterministicChecksPerformed ? (
