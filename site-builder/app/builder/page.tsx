@@ -2175,7 +2175,7 @@ export default function BuilderPage() {
                           setStep(error.step);
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}>
-                          {error.message} · Corriger dans « {steps.find((item) => item.key === error.step)?.label} »
+                          {error.message} · {en ? "Fix in" : "Corriger dans"} « {steps.find((item) => item.key === error.step)?.label} »
                         </button>
                       </li>
                     ))}</ul>
@@ -2187,7 +2187,7 @@ export default function BuilderPage() {
                       <p>
                         {remoteMode
                           ? (en ? "Identity, message, required links and structural compliance are consistent. Review the visual preview before publishing." : "Identité, message, liens requis et conformité structurelle sont cohérents. Relisez l'aperçu visuel avant publication.")
-                          : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil."}
+                          : (en ? "Configure Supabase to make this publication accessible from another device." : "Configurez Supabase pour rendre cette publication accessible depuis un autre appareil.")}
                       </p>
                     </div>
                   </div>
@@ -2202,7 +2202,7 @@ export default function BuilderPage() {
                     {qualityChecks.map((check) => <button type="button" key={check.label} className={`quality-check ${check.status}`} onClick={() => { setStep(check.step); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                       <span>{check.status === "pass" ? "✓" : "!"}</span>
                       <p><b>{check.label}</b><small>{check.detail}</small></p>
-                      <i>{check.status === "pass" ? "Voir →" : "Corriger →"}</i>
+                      <i>{check.status === "pass" ? (en ? "View →" : "Voir →") : (en ? "Fix →" : "Corriger →")}</i>
                     </button>)}
                   </div>
                   <p className="quality-note">{en ? "Recommendations do not prevent publishing. Required errors above remain blocking." : "Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus."}</p>
@@ -2211,7 +2211,7 @@ export default function BuilderPage() {
                   <div className="quality-summary-head"><div><span className="mini">{en ? "EDITORIAL REVIEW" : "RELECTURE ÉDITORIALE"}</span><strong>{en ? "Spelling, grammar and clarity" : "Orthographe, grammaire et clarté"}</strong></div></div>
                   <p>{en ? "The automated checks above validate structure. Run an AI review to receive copy suggestions you can accept individually." : "Les contrôles automatiques ci-dessus vérifient la structure. Lancez une relecture IA pour obtenir des corrections de texte à accepter individuellement."}</p>
                   <button type="button" className="secondary" disabled={reviewing || busy} onClick={() => void reviewWithAi()}>{reviewing ? (en ? "Reviewing…" : "Relecture en cours…") : (en ? "Review with AI" : "Relire avec l’IA")}</button>
-                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} suggestion(s) de rédaction` : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{reviewFieldLabels[issue.field] || issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p><small>Texte actuel</small><br />{currentReviewText(issue.field)}</p><p><small>Proposition</small><br />{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>Utiliser cette correction</button></> : null}</div>)}</div> : null}
+                  {reviewResult ? <div role="status" aria-live="polite"><p>{reviewResult.issues.length ? `${reviewResult.issues.length} ${en ? `writing suggestion${reviewResult.issues.length > 1 ? "s" : ""}` : "suggestion(s) de rédaction"}` : en ? "No editorial correction suggested." : "Aucune correction éditoriale suggérée."}</p>{reviewResult.issues.map((issue, index) => <div className="module-item" key={`${issue.field}-${index}`}><b>{reviewFieldLabels[issue.field] || issue.field} : {issue.reason}</b>{reviewResult.suggestions[issue.field] ? <><p><small>{en ? "Current copy" : "Texte actuel"}</small><br />{currentReviewText(issue.field)}</p><p><small>{en ? "Suggestion" : "Proposition"}</small><br />{reviewResult.suggestions[issue.field]}</p><button type="button" className="secondary" onClick={() => { update(issue.field, reviewResult.suggestions[issue.field] as never, true); setReviewResult((previous) => previous ? { ...previous, issues: previous.issues.filter((_, i) => i !== index) } : null); }}>{en ? "Use this correction" : "Utiliser cette correction"}</button></> : null}</div>)}</div> : null}
                 </div>
 
                 <div className="review-checklist">
