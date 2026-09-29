@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         {
           site_id: siteId,
           owner_id: user.id,
-          plan_key: "pro",
+          plan_key: "growth",
           status: "active",
           provider: "internal-e2e",
           provider_customer_id: null,
@@ -142,10 +142,10 @@ export async function POST(request: NextRequest) {
       : e2eEntitlements;
     if (
       e2eEntitlementError ||
-      e2eEntitlement?.plan_key !== "pro" ||
+      e2eEntitlement?.plan_key !== "growth" ||
       e2eEntitlement?.premium_architect !== true
     ) {
-      throw e2eEntitlementError || new Error("Temporary Pro entitlement verification failed.");
+      throw e2eEntitlementError || new Error("Temporary Growth entitlement verification failed.");
     }
 
     steps.push({
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       key: "entitlement",
       label: "Droit Pro temporaire",
       status: "pass",
-      detail: "Le site E2E reçoit uniquement pendant la recette un droit Pro interne, supprimé avec le site."
+      detail: "Le site E2E reçoit uniquement pendant la recette un droit Growth interne, supprimé avec le site."
     });
 
     let proposal: any = null;
