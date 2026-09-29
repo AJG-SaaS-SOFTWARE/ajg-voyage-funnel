@@ -188,6 +188,7 @@ jobs:
       - name: Deploy tested Builder directory with pinned Vercel CLI
         id: release
         shell: bash
+        working-directory: ${{ github.workspace }}
         run: |
           set +e
           npx --yes vercel@59.19.1 deploy \
@@ -239,7 +240,7 @@ jobs:
 
           echo "deployment_id=$DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
           echo "url=https://$DEPLOYMENT_HOST" >> "$GITHUB_OUTPUT"
-          echo "Pinned Vercel CLI 59.19.1 deployed the tested site-builder directory: $DEPLOYMENT_ID." >> "$GITHUB_STEP_SUMMARY"
+          echo "Pinned Vercel CLI 59.19.1 deployed from repository root with Vercel rootDirectory=site-builder: $DEPLOYMENT_ID." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify live production or rollback
         shell: bash
