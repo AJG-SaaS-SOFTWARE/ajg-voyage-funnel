@@ -1544,11 +1544,9 @@ export default function BuilderPage() {
                         </div>
                         {architectProposal.intelligence.missingInformation.length ? (
                           <div className="architect-missing architect-clarification">
-                            <b>L’Architecte a encore quelques questions</b>
+                            <b>{en ? "The Architect still has a few questions" : "L’Architecte a encore quelques questions"}</b>
                             <p>
-                              Ces réponses sont facultatives. Répondez uniquement à ce que vous
-                              connaissez : l’IA réutilisera vos réponses pour reconstruire et
-                              réauditer la proposition sans inventer le reste.
+                              {en ? "These answers are optional. Only answer what you know: AI will reuse your answers to rebuild and re-audit the proposal without inventing the rest." : "Ces réponses sont facultatives. Répondez uniquement à ce que vous connaissez : l’IA réutilisera vos réponses pour reconstruire et réauditer la proposition sans inventer le reste."}
                             </p>
                             <div className="architect-clarification-list">
                               {architectProposal.intelligence.missingInformation.map((question, index) => (
@@ -1564,7 +1562,7 @@ export default function BuilderPage() {
                                         [question]: event.target.value
                                       }))
                                     }
-                                    placeholder="Votre réponse, si vous la connaissez…"
+                                    placeholder={en ? "Your answer, if you know it…" : "Votre réponse, si vous la connaissez…"}
                                   />
                                 </label>
                               ))}
@@ -1578,12 +1576,12 @@ export default function BuilderPage() {
                               }
                               onClick={() => void improveArchitectWithClarifications()}
                             >
-                              {architectLoading ? "Nouvelle analyse en cours…" : "Améliorer avec mes réponses"}
+                              {architectLoading ? (en ? "Running a new analysis…" : "Nouvelle analyse en cours…") : (en ? "Improve with my answers" : "Améliorer avec mes réponses")}
                             </button>
                           </div>
                         ) : null}
-                        <div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>Appliquer cette proposition</button><button type="button" className="button secondary" onClick={() => void createSiteWithAi()}>Nouvelle proposition</button></div>
-                        <small>Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables.</small>
+                        <div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(architectProposal)}>{en ? "Apply this proposal" : "Appliquer cette proposition"}</button><button type="button" className="button secondary" onClick={() => void createSiteWithAi()}>{en ? "New proposal" : "Nouvelle proposition"}</button></div>
+                        <small>{en ? "Nothing is published automatically. After applying it, every piece of copy and every section remains editable." : "Rien n’est publié automatiquement. Après application, chaque texte et chaque rubrique restent modifiables."}</small>
                       </div>
                     ) : null}
                   </div>
