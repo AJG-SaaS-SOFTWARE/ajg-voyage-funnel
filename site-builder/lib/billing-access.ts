@@ -94,7 +94,7 @@ async function openStripeBillingPath(
       Authorization: `Bearer ${session.access_token}`,
       "X-AJG-Locale": locale
     },
-    body: JSON.stringify({ siteId, locale })
+    body: JSON.stringify({ siteId, locale, ...payload })
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || typeof result?.url !== "string") {
