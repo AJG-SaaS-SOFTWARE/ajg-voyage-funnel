@@ -621,7 +621,7 @@ function normalizeComparable(value: string) {
     .replace(/\s+/g, " ");
 }
 
-function deterministicQualityIssues(
+export function deterministicQualityIssues(
   proposal: PremiumArchitectCore,
   sourceEvidenceText = ""
 ): DeterministicQualityIssue[] {
@@ -977,7 +977,7 @@ function deterministicQualityIssues(
     (sourceEvidenceText.match(/\d+(?:[.,]\d+)?/g) || []).map(normalizeNumber)
   );
   const quantitativePattern =
-    /(?:[€£$]\s*\d+(?:[.,]\d+)?)|(?:\b\d+(?:[.,]\d+)?\s*(?:%|€|euros?|dollars?|usd|£|gbp|minutes?|mins?|heures?|hours?|hrs?|jours?|days?|semaines?|weeks?|mois|months?|ans?|années?|years?|clients?|customers?|projets?|projects?|pays|countries|destinations?|voyages?|trips?|réservations?|bookings?)\b)|(?:\b(?:19|20)\d{2}\b)|(?:\b24\s*\/\s*7\b)/giu;
+    /(?:[€£$]\s*\d+(?:[.,]\d+)?)|(?:\b\d+(?:[.,]\d+)?\s*(?:%|€|£|\$))|(?:\b\d+(?:[.,]\d+)?\s*(?:euros?|dollars?|usd|gbp|minutes?|mins?|heures?|hours?|hrs?|jours?|days?|semaines?|weeks?|mois|months?|ans?|années?|years?|clients?|customers?|projets?|projects?|pays|countries|destinations?|voyages?|trips?|réservations?|bookings?)\b)|(?:\b(?:19|20)\d{2}\b)|(?:\b24\s*\/\s*7\b)/giu;
 
   for (const [field, value] of visibleCopy) {
     const claims = value.match(quantitativePattern) || [];
