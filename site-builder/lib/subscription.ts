@@ -64,6 +64,26 @@ export async function getMySiteEntitlements(siteId: string): Promise<Subscriptio
   };
 }
 
+export type BetaAccess = {
+  active: boolean;
+  startsAt: string | null;
+  expiresAt: string | null;
+};
+
+export async function getMyBetaAccess(): Promise<BetaAccess> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return { active: false, startsAt: null, expiresAt: null };
+  const { data, error } = await supabase.rpc("get_my_beta_access");
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return { active: false, startsAt: null, expiresAt: null };
+  return {
+    active: row.active === true,
+    startsAt: row.starts_at || null,
+    expiresAt: row.expires_at || null
+  };
+}
+
 export type AiUsage = { today: number; month: number };
 
 export async function getMyAiUsage(): Promise<AiUsage> {
