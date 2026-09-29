@@ -141,7 +141,7 @@ export async function POST(request: Request) {
     if (
       !current ||
       !["essential", "growth"].includes(current.plan_key) ||
-      !["active", "trialing", "past_due"].includes(current.status)
+      !["active", "trialing"].includes(current.status)
     ) {
       return NextResponse.json(
         {
