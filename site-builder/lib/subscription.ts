@@ -1,7 +1,7 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
 export type SubscriptionEntitlements = {
-  planKey: "free" | "pro";
+  planKey: "free" | "essential" | "pro";
   planName: string;
   aiMinuteLimit: number;
   aiDailyLimit: number;
@@ -32,7 +32,7 @@ export async function getMyEntitlements(): Promise<SubscriptionEntitlements> {
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return freeEntitlements;
   return {
-    planKey: row.plan_key === "pro" ? "pro" : "free",
+    planKey: row.plan_key === "pro" ? "pro" : row.plan_key === "essential" ? "essential" : "free",
     planName: row.plan_name || "Gratuit",
     aiMinuteLimit: Number(row.ai_minute_limit) || 5,
     aiDailyLimit: Number(row.ai_daily_limit) || 20,
@@ -52,7 +52,7 @@ export async function getMySiteEntitlements(siteId: string): Promise<Subscriptio
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return freeEntitlements;
   return {
-    planKey: row.plan_key === "pro" ? "pro" : "free",
+    planKey: row.plan_key === "pro" ? "pro" : row.plan_key === "essential" ? "essential" : "free",
     planName: row.plan_name || "Gratuit",
     aiMinuteLimit: Number(row.ai_minute_limit) || 5,
     aiDailyLimit: Number(row.ai_daily_limit) || 20,
