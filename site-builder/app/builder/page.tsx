@@ -684,6 +684,87 @@ export default function BuilderPage() {
     guidedAudience: guidedAnswers.audience
   };
 
+  const revisionChangeSummary = useMemo(() => {
+    if (!revisionProposal) return [] as string[];
+
+    const changes: string[] = [];
+    const same = (left: unknown, right: unknown) =>
+      JSON.stringify(left) === JSON.stringify(right);
+
+    if (
+      revisionProposal.heroTagline !== config.heroTagline ||
+      revisionProposal.heroTitle !== config.heroTitle ||
+      revisionProposal.heroSubtitle !== config.heroSubtitle
+    ) {
+      changes.push("Accueil");
+    }
+
+    if (
+      revisionProposal.aboutHeading !== config.aboutHeading ||
+      revisionProposal.aboutText !== config.aboutText
+    ) {
+      changes.push("Présentation");
+    }
+
+    if (revisionProposal.bookingLabel !== config.bookingLabel) {
+      changes.push("Bouton de rendez-vous");
+    }
+
+    if (!same(revisionProposal.architecture, config.architecture)) {
+      changes.push("Architecture / pages");
+    }
+
+    if (
+      !same(
+        revisionProposal.design,
+        {
+          layout: config.design.layout,
+          heroLayout: config.design.heroLayout,
+          contentWidth: config.design.contentWidth,
+          accent: config.design.accent,
+          background: config.design.background,
+          pattern: config.design.pattern,
+          patternStrength: config.design.patternStrength
+        }
+      )
+    ) {
+      changes.push("Direction visuelle");
+    }
+
+    const currentEnabledModules = config.design.modules.order.filter(
+      (key) => config.design.modules[key]?.enabled
+    );
+    if (
+      !same(
+        [...revisionProposal.recommendedModules].sort(),
+        [...currentEnabledModules].sort()
+      ) ||
+      !same(revisionProposal.moduleOrder, config.design.modules.order)
+    ) {
+      changes.push("Rubriques");
+    }
+
+    if (
+      !same(revisionProposal.faq, {
+        title: config.design.modules.faq.title,
+        items: config.design.modules.faq.items
+      })
+    ) {
+      changes.push("FAQ");
+    }
+
+    if (
+      !same(revisionProposal.benefits, {
+        title: config.design.modules.benefits.title,
+        items: config.design.modules.benefits.items
+      })
+    ) {
+      changes.push("Avantages");
+    }
+
+    return changes;
+  }, [revisionProposal, config]);
+
   const bookingLinkStatus = (() => {
     const value = config.bookingUrl.trim();
     if (!value) return "empty";
@@ -1379,7 +1460,30 @@ export default function BuilderPage() {
                     <p className="guided-writing-intro">Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».</p>
                     <label className="guided-question"><span>Modification souhaitée</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} placeholder="Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible." /></label>
                     <button type="button" className="button primary premium-button" disabled={revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? "Préparation de la révision…" : "Préparer la révision"} <span aria-hidden="true">→</span></button>
-                    {revisionProposal ? <div className="ai-current-note" role="status"><b>Révision prête à comparer</b><p><strong>{revisionProposal.heroTitle}</strong><br />{revisionProposal.heroSubtitle}</p><p>Architecture proposée : {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : "site monopage"} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p><p>Structure : {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · largeur {revisionProposal.design.contentWidth}.</p><div className="ai-field-actions"><button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)}>Appliquer cette révision</button><button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>Conserver mon site actuel</button></div><small>Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition.</small></div> : null}
+                    {revisionProposal ? (
+                      <div className="ai-current-note revision-preview" role="status">
+                        <b>Révision prête à comparer</b>
+                        <p><strong>{revisionProposal.heroTitle}</strong><br />{revisionProposal.heroSubtitle}</p>
+                        <div className="revision-scope-summary">
+                          <span>Zones modifiées</span>
+                          {revisionChangeSummary.length ? (
+                            <div>{revisionChangeSummary.map((item) => <em key={item}>{item}</em>)}</div>
+                          ) : (
+                            <p>Aucune différence détectée avec votre version actuelle.</p>
+                          )}
+                          <small>
+                            Tout élément absent de cette liste est conservé. L’IA reçoit aussi cette règle comme contrainte de qualité pendant la révision.
+                          </small>
+                        </div>
+                        <p>Architecture proposée : {revisionProposal.architecture.mode === "multi" ? `${revisionProposal.architecture.pages.length} pages` : "site monopage"} · {revisionProposal.architecture.pages.map((page) => page.title).join(" → ")}.</p>
+                        <p>Structure : {revisionProposal.design.layout} · hero {revisionProposal.design.heroLayout} · largeur {revisionProposal.design.contentWidth}.</p>
+                        <div className="ai-field-actions">
+                          <button type="button" className="button primary premium-button" onClick={() => applyArchitectProposal(revisionProposal)} disabled={revisionChangeSummary.length === 0}>Appliquer cette révision</button>
+                          <button type="button" className="button secondary" onClick={() => setRevisionProposal(null)}>Conserver mon site actuel</button>
+                        </div>
+                        <small>Votre site actuel reste inchangé tant que vous n’appliquez pas cette proposition.</small>
+                      </div>
+                    ) : null}
                   </div>
                 </details>
                 <details className="guided-writing-card" open>

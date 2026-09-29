@@ -780,6 +780,18 @@ export async function generatePremiumSiteArchitect(
     contentLibrary: assets
   };
 
+  const revisionScopeRules =
+    input.mode === "revision"
+      ? [
+          "Revision mode: treat existingProposal as the baseline to preserve, not as raw material for a fresh redesign.",
+          "Change only the fields, pages, modules or visual choices explicitly requested by revisionRequest, plus the minimum dependent changes required for coherence.",
+          "Do not rewrite unrelated copy just to improve style. Do not change architecture, module order, colors, layout or CTA unless the request requires it.",
+          "Preserve existing rights-cleared asset assignments unless the request explicitly asks to move, add or remove them.",
+          "When the requested scope is ambiguous, choose the smallest reasonable change and preserve everything else.",
+          "Any unrelated change is scope creep and must be treated as a quality defect during review."
+        ]
+      : [];
+
   const strategy = compactStrategy(
     await structuredResponse({
       apiKey: input.apiKey,
@@ -798,6 +810,7 @@ export async function generatePremiumSiteArchitect(
         "When information is missing, identify it explicitly instead of guessing. Every missingInformation item must be a short, concrete question addressed directly to the user in the requested site language. Ask only questions whose answer could materially improve the website. Conservative assumptions are allowed only when they concern presentation or structure, never factual claims.",
         "Recommend the smallest useful site architecture, not the largest.",
         "The result must be practical enough for a second model to create the website.",
+        ...revisionScopeRules,
         input.affiliationRules
       ].join(" "),
       input: JSON.stringify(sourceContext)
@@ -834,6 +847,7 @@ export async function generatePremiumSiteArchitect(
         "Do not create testimonial copy, numeric figures, video URLs or contact details.",
         "Use the visual system as an intentional composition decision, not decoration.",
         "Output impeccable French or English according to the requested language.",
+        ...revisionScopeRules,
         input.affiliationRules
       ].join(" "),
       input: JSON.stringify(creationInput)
@@ -862,7 +876,8 @@ export async function generatePremiumSiteArchitect(
       "A score above 90 requires a genuinely strong, differentiated and coherent proposal with no unsupported factual claim.",
       "Mark refine when there is any major issue, unsupported claim, generic copy, weak visitor journey, unnecessary page, contradictory module choice or obvious design mismatch.",
       "Do not request invented information. Missing factual information should remain explicitly missing.",
-      input.affiliationRules
+      ...revisionScopeRules,
+        input.affiliationRules
     ].join(" "),
     input: JSON.stringify({ sourceContext, strategy, proposal: creation })
   });
@@ -896,7 +911,8 @@ export async function generatePremiumSiteArchitect(
           "Do not add unsupported claims to make the site sound stronger.",
           "Prefer deleting weak or unjustified material over filling gaps with generic copy.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
-          input.affiliationRules
+          ...revisionScopeRules,
+        input.affiliationRules
         ].join(" "),
         input: JSON.stringify({
           sourceContext,
@@ -932,6 +948,7 @@ export async function generatePremiumSiteArchitect(
         "Do not penalize facts that are explicitly marked as missing instead of invented.",
         "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
         "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
+        ...revisionScopeRules,
         input.affiliationRules
       ].join(" "),
       input: JSON.stringify({
