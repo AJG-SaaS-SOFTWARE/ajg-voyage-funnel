@@ -89,6 +89,62 @@ jobs:
 
           echo "Vercel project identity and rootDirectory validated: ajg-site-builder / site-builder." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Ensure production cron secret
+        shell: bash
+        run: |
+          RESPONSE="$(curl --fail-with-body --silent --show-error \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?decrypt=false&teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Accept: application/json")"
+
+          HAS_CRON_SECRET="$(printf '%s' "$RESPONSE" | node -e '
+            let s="";
+            process.stdin.on("data",d=>s+=d);
+            process.stdin.on("end",()=>{
+              const payload=JSON.parse(s);
+              const rows=Array.isArray(payload)?payload:(payload.envs||payload.data||[]);
+              const found=rows.some(item=>item?.key==="CRON_SECRET" && Array.isArray(item.target) && item.target.includes("production"));
+              process.stdout.write(found?"1":"0");
+            });
+          ')"
+
+          if [ "$HAS_CRON_SECRET" = "1" ]; then
+            echo "Production CRON_SECRET already exists; no rotation performed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          node <<'NODE' > /tmp/vercel-cron-secret.json
+          const crypto = require("node:crypto");
+          const payload = [{
+            key: "CRON_SECRET",
+            value: crypto.randomBytes(32).toString("base64url"),
+            type: "sensitive",
+            target: ["production"],
+            comment: "AJG Site Builder scheduled job authorization"
+          }];
+          process.stdout.write(JSON.stringify(payload));
+          NODE
+
+          HTTP_CODE="$(curl --silent --show-error \
+            --output /tmp/vercel-cron-secret-response.json \
+            --write-out "%{http_code}" \
+            --request POST \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/vercel-cron-secret.json)"
+
+          rm -f /tmp/vercel-cron-secret.json
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Unable to create CRON_SECRET (HTTP $HTTP_CODE)."
+            cat /tmp/vercel-cron-secret-response.json
+            exit 1
+          fi
+
+          rm -f /tmp/vercel-cron-secret-response.json
+          echo "Production CRON_SECRET created as a sensitive Vercel variable." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Validate Vercel production environment keys
         shell: bash
         run: |
@@ -345,3 +401,64 @@ jobs:
 
           curl --fail --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors             "https://$CANARY/" > /dev/null
           echo "Managed-domain HTTPS canary passed: https://$CANARY/" >> "$GITHUB_STEP_SUMMARY"
+
+
+      - name: Bootstrap first off-provider media backup when needed
+        continue-on-error: true
+        shell: bash
+        run: |
+          STATUS="$(curl --fail-with-body --silent --show-error \
+            "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
+
+          CONFIGURED="$(printf '%s' "$STATUS" | node -e '
+            let s="";
+            process.stdin.on("data",d=>s+=d);
+            process.stdin.on("end",()=>{const x=JSON.parse(s);process.stdout.write(x?.configured===true?"1":"0")});
+          ')"
+          LAST_COMPLETED="$(printf '%s' "$STATUS" | node -e '
+            let s="";
+            process.stdin.on("data",d=>s+=d);
+            process.stdin.on("end",()=>{const x=JSON.parse(s);process.stdout.write(typeof x?.lastCompletedAt==="string"?x.lastCompletedAt:"")});
+          ')"
+
+          if [ "$CONFIGURED" != "1" ]; then
+            echo "::warning::Off-provider media backup store is not configured; initial backup skipped."
+            exit 0
+          fi
+
+          if [ -n "$LAST_COMPLETED" ]; then
+            echo "Media backup already initialized at $LAST_COMPLETED; bootstrap skipped." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          set +e
+          npx --yes vercel@60.1.3 crons run /api/cron/storage-backup \
+            --token "$VERCEL_TOKEN" \
+            2>&1 | tee /tmp/storage-backup-cron.log
+          CRON_EXIT=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$CRON_EXIT" -ne 0 ]; then
+            echo "::error::Unable to trigger the first media backup through Vercel Cron."
+            exit "$CRON_EXIT"
+          fi
+
+          for attempt in $(seq 1 18); do
+            STATUS="$(curl --fail-with-body --silent --show-error \
+              "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
+            LAST_COMPLETED="$(printf '%s' "$STATUS" | node -e '
+              let s="";
+              process.stdin.on("data",d=>s+=d);
+              process.stdin.on("end",()=>{const x=JSON.parse(s);process.stdout.write(typeof x?.lastCompletedAt==="string"?x.lastCompletedAt:"")});
+            ')"
+            if [ -n "$LAST_COMPLETED" ]; then
+              echo "First off-provider media backup completed at $LAST_COMPLETED." >> "$GITHUB_STEP_SUMMARY"
+              printf '%s' "$STATUS" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Waiting for first media backup ($attempt/18)..."
+            sleep 5
+          done
+
+          echo "::error::Cron was triggered but no completed media backup became visible."
+          exit 1
