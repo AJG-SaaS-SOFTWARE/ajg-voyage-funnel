@@ -38,6 +38,12 @@ function aggregateProviderUsage(rows: any[]) {
     (sum, item) => sum + (Number(item.duration_ms) || 0),
     0
   );
+  const estimatedCostUsdMicros = rows.reduce(
+    (sum, item) => sum + (Number(item.estimated_cost_usd_micros) || 0),
+    0
+  );
+  const pricedCalls = rows.filter((item) => item.pricing_known === true).length;
+  const unpricedCalls = rows.length - pricedCalls;
 
   const modelMap = new Map<
     string,
@@ -48,9 +54,10 @@ function aggregateProviderUsage(rows: any[]) {
       cachedInputTokens: number;
       outputTokens: number;
       totalTokens: number;
+      estimatedCostUsdMicros: number;
     }
   >();
-  const operationMap = new Map<string, { operation: string; calls: number; totalTokens: number }>();
+  const operationMap = new Map<string, { operation: string; calls: number; totalTokens: number; estimatedCostUsdMicros: number }>();
 
   for (const row of rows) {
     const model = row.model || "unknown";
@@ -60,23 +67,27 @@ function aggregateProviderUsage(rows: any[]) {
       inputTokens: 0,
       cachedInputTokens: 0,
       outputTokens: 0,
-      totalTokens: 0
+      totalTokens: 0,
+      estimatedCostUsdMicros: 0
     };
     currentModel.calls += 1;
     currentModel.inputTokens += Number(row.input_tokens) || 0;
     currentModel.cachedInputTokens += Number(row.cached_input_tokens) || 0;
     currentModel.outputTokens += Number(row.output_tokens) || 0;
     currentModel.totalTokens += Number(row.total_tokens) || 0;
+    currentModel.estimatedCostUsdMicros += Number(row.estimated_cost_usd_micros) || 0;
     modelMap.set(model, currentModel);
 
     const operation = row.operation || "unknown";
     const currentOperation = operationMap.get(operation) || {
       operation,
       calls: 0,
-      totalTokens: 0
+      totalTokens: 0,
+      estimatedCostUsdMicros: 0
     };
     currentOperation.calls += 1;
     currentOperation.totalTokens += Number(row.total_tokens) || 0;
+    currentOperation.estimatedCostUsdMicros += Number(row.estimated_cost_usd_micros) || 0;
     operationMap.set(operation, currentOperation);
   }
 
@@ -88,6 +99,14 @@ function aggregateProviderUsage(rows: any[]) {
     reasoningTokens,
     totalTokens,
     durationMs,
+    estimatedCostUsdMicros,
+    estimatedCostUsd: Math.round((estimatedCostUsdMicros / 1_000_000) * 10000) / 10000,
+    pricedCalls,
+    unpricedCalls,
+    avgCostUsdPerCall:
+      rows.length > 0
+        ? Math.round((estimatedCostUsdMicros / 1_000_000 / rows.length) * 100000) / 100000
+        : 0,
     avgTokensPerCall: rows.length > 0 ? Math.round(totalTokens / rows.length) : 0,
     avgDurationMsPerCall: rows.length > 0 ? Math.round(durationMs / rows.length) : 0,
     byModel: [...modelMap.values()].sort((a, b) => b.calls - a.calls),
@@ -172,7 +191,7 @@ export async function GET(request: Request) {
       .select("id,slug,owner_id,status,created_at,published_at,updated_at"),
     service
       .from("ai_provider_usage")
-      .select("user_id,site_id,operation,model,input_tokens,cached_input_tokens,output_tokens,reasoning_tokens,total_tokens,duration_ms,created_at")
+      .select("user_id,site_id,operation,model,input_tokens,cached_input_tokens,output_tokens,reasoning_tokens,total_tokens,duration_ms,estimated_cost_usd_micros,pricing_version,pricing_known,plan_key,access_source,created_at")
       .gte("created_at", since),
     service
       .from("architect_quality_feedback")
@@ -447,6 +466,10 @@ export async function GET(request: Request) {
             outputTokens: premiumProvider.outputTokens,
             reasoningTokens: premiumProvider.reasoningTokens,
             totalTokens: premiumProvider.totalTokens,
+            estimatedCostUsd: premiumProvider.estimatedCostUsd,
+            avgCostUsdPerCall: premiumProvider.avgCostUsdPerCall,
+            pricedCalls: premiumProvider.pricedCalls,
+            unpricedCalls: premiumProvider.unpricedCalls,
             strategyCalls: premiumStrategyCalls,
             avgStrategyCallsPerRequest:
               architectRequestCount > 0
@@ -472,6 +495,10 @@ export async function GET(request: Request) {
             outputTokens: standardProvider.outputTokens,
             reasoningTokens: standardProvider.reasoningTokens,
             totalTokens: standardProvider.totalTokens,
+            estimatedCostUsd: standardProvider.estimatedCostUsd,
+            avgCostUsdPerCall: standardProvider.avgCostUsdPerCall,
+            pricedCalls: standardProvider.pricedCalls,
+            unpricedCalls: standardProvider.unpricedCalls,
             avgTokensPerCall: standardProvider.avgTokensPerCall,
             avgDurationMsPerCall: standardProvider.avgDurationMsPerCall,
             byOperation: standardProvider.byOperation,

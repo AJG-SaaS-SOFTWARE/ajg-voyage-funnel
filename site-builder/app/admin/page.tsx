@@ -801,6 +801,9 @@ export default function AdminPage() {
                     <span><b>{(betaMetrics.ai.architect.provider.avgDurationMsPerCall / 1000).toFixed(1)} s</b> / appel en moyenne</span>
                     <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.architect.provider.cachedInputTokens)}</b> tokens d’entrée mis en cache</span>
                     <span><b>{betaMetrics.ai.architect.provider.avgStrategyCallsPerRequest}</b> analyse stratégique / demande</span>
+                    <span><b>{betaMetrics.ai.architect.provider.estimatedCostUsd.toFixed(4)} $</b> coût fournisseur estimé / 30 j</span>
+                    <span><b>{betaMetrics.ai.architect.provider.avgCostUsdPerCall.toFixed(5)} $</b> coût moyen / appel</span>
+                    {betaMetrics.ai.architect.provider.unpricedCalls ? <span><b>{betaMetrics.ai.architect.provider.unpricedCalls}</b> appel(s) sans tarif connu</span> : null}
                   </div>
                   {betaMetrics.ai.architect.provider.byModel.length ? (
                     <div className="premium-ai-models">
@@ -827,6 +830,9 @@ export default function AdminPage() {
                     <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.standard.provider.avgTokensPerCall)}</b> tokens / appel</span>
                     <span><b>{(betaMetrics.ai.standard.provider.avgDurationMsPerCall / 1000).toFixed(1)} s</b> / appel en moyenne</span>
                     <span><b>{new Intl.NumberFormat("fr-FR").format(betaMetrics.ai.standard.provider.cachedInputTokens)}</b> tokens d’entrée mis en cache</span>
+                    <span><b>{betaMetrics.ai.standard.provider.estimatedCostUsd.toFixed(4)} $</b> coût fournisseur estimé / 30 j</span>
+                    <span><b>{betaMetrics.ai.standard.provider.avgCostUsdPerCall.toFixed(5)} $</b> coût moyen / appel</span>
+                    {betaMetrics.ai.standard.provider.unpricedCalls ? <span><b>{betaMetrics.ai.standard.provider.unpricedCalls}</b> appel(s) sans tarif connu</span> : null}
                   </div>
                   {betaMetrics.ai.standard.provider.byOperation.length ? (
                     <div className="premium-ai-models">

@@ -287,6 +287,10 @@ export type AdminBetaMetrics = {
         outputTokens: number;
         reasoningTokens: number;
         totalTokens: number;
+        estimatedCostUsd: number;
+        avgCostUsdPerCall: number;
+        pricedCalls: number;
+        unpricedCalls: number;
         strategyCalls: number;
         avgStrategyCallsPerRequest: number;
         avgCallsPerAttempt: number;
@@ -299,6 +303,7 @@ export type AdminBetaMetrics = {
           cachedInputTokens: number;
           outputTokens: number;
           totalTokens: number;
+          estimatedCostUsdMicros: number;
         }>;
       };
     };
@@ -310,12 +315,17 @@ export type AdminBetaMetrics = {
         outputTokens: number;
         reasoningTokens: number;
         totalTokens: number;
+        estimatedCostUsd: number;
+        avgCostUsdPerCall: number;
+        pricedCalls: number;
+        unpricedCalls: number;
         avgTokensPerCall: number;
         avgDurationMsPerCall: number;
         byOperation: Array<{
           operation: string;
           calls: number;
           totalTokens: number;
+          estimatedCostUsdMicros: number;
         }>;
         byModel: Array<{
           model: string;
@@ -324,6 +334,7 @@ export type AdminBetaMetrics = {
           cachedInputTokens: number;
           outputTokens: number;
           totalTokens: number;
+          estimatedCostUsdMicros: number;
         }>;
       };
     };
