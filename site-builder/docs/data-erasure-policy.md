@@ -29,7 +29,7 @@ Pour une demande de compte, tous les sites sont purgés selon la procédure ci-d
 
 Le Builder ne tente pas d'effacer automatiquement les écritures, factures ou autres pièces financières conservées chez Stripe lorsqu'elles relèvent d'une obligation légale ou d'un besoin de défense de droits. Il annule l'abonnement afin d'éviter de nouvelles échéances, puis dissocie la purge du contenu de la conservation financière.
 
-Les durées précises de conservation des pièces financières ne sont pas codées dans l'application. Elles doivent être fixées et documentées dans le registre de conservation juridique/comptable applicable avant lancement commercial.
+Le registre `docs/data-retention-register.md` fixe désormais les règles AJG de base applicables avant passage Stripe live : pièces justificatives comptables et factures 10 ans à compter de la clôture de l'exercice, documents commerciaux 5 ans lorsqu'ils sont nécessaires, et pièces TVA 6 ans sans raccourcir la conservation comptable plus longue applicable aux factures. Ces durées ne sont pas utilisées pour conserver les contenus du site, médias, brouillons ou autres données de service supprimables.
 
 ## Contrôles
 

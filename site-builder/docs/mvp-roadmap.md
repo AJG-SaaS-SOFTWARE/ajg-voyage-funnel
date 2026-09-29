@@ -404,7 +404,7 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] purge contrôlée administrateur : annulation Stripe, détachement Vercel, suppression des médias via l’API Storage par lots, suppression des traces site-scoped puis cascade DB ; reprise idempotente en cas d’échec partiel ;
 - [x] suppression du compte Auth après purge des dépendances : blocage préalable des nouvelles connexions puis `auth.admin.deleteUser`; les access tokens déjà émis peuvent vivre jusqu’à expiration mais n’ont plus de données propriétaires à atteindre ;
 - [x] séparation technique documentée entre contenus Builder à effacer et pièces financières externes à ne pas supprimer aveuglément ;
-- [ ] finaliser dans le registre juridique/comptable les finalités et durées précises de conservation des pièces financières avant passage Stripe live ;
+- [x] registre de conservation juridique/comptable créé : factures et pièces justificatives comptables 10 ans à compter de la clôture de l’exercice, documents commerciaux 5 ans lorsqu’ils sont nécessaires, pièces TVA 6 ans sans raccourcir la durée comptable plus longue applicable aux factures ; conservation séparée du contenu Builder ;
 - [x] journal d’exécution RGPD pseudonymisé : réception, portée, statut, systèmes traités et dates ; après purge les FK `user_id/site_id` passent à `null` et aucun contenu du site n’est copié dans le journal ;
 - [x] runner E2E RGPD admin isolé : compte/site/médias jetables → demande compte réelle → suspension → vraie route de purge → vérification Storage/DB/Auth + journal pseudonymisé ;
 - [ ] exécuter cette recette E2E en production sur le runner jetable et archiver le résultat avant lancement commercial.
