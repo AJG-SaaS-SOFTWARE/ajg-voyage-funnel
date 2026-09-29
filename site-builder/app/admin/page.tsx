@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AdminShell } from "../../components/AdminShell";
 import {
   adminBootstrapPrivateStorage,
   adminInviteBetaMember,
@@ -297,20 +298,17 @@ export default function AdminPage() {
     betaMemberCount < Math.min(betaCohort?.limit ?? 25, 10);
 
   return (
-    <main className="plans-page">
-      <section className="plans-hero">
-        <p className="eyebrow">AJG Administration</p>
-        <h1>Pilotage du parc de sites</h1>
-        <p>
-          Vue opérationnelle des sites, offres, domaines et prérequis de mise en production.
-          L’accès est contrôlé en base par un rôle administrateur dédié.
-        </p>
-        <div className="builder-actions">
-          <Link className="button secondary" href="/">← Tableau de bord</Link>
-          <Link className="button secondary" href="/admin/privacy">Demandes RGPD</Link>
-        </div>
-      </section>
-
+    <AdminShell
+      active="overview"
+      eyebrow="AJG Administration"
+      title="Pilotage du parc de sites"
+      description="Vue opérationnelle des sites, offres, domaines, bêta et prérequis de mise en production. L’accès reste contrôlé en base par un rôle administrateur dédié."
+      actions={
+        <Link className="button secondary admin-compact-action" href="/">
+          Tableau de bord
+        </Link>
+      }
+    >
       {state === "loading" ? <p>Chargement…</p> : null}
       {state === "denied" ? (
         <section className="panel">
@@ -1014,7 +1012,7 @@ export default function AdminPage() {
         </section>
       ) : null}
 
-      {message ? <p className="plans-note" role="status">{message}</p> : null}
-    </main>
+      {message ? <p className="admin-flash" role="status">{message}</p> : null}
+    </AdminShell>
   );
 }
