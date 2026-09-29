@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   });
   const { data: { user }, error: userError } = await userClient.auth.getUser(token);
   if (userError || !user) {
-    return NextResponse.json({ error: "Reconnectez-vous pour continuer." }, { status: 401 });
+    return NextResponse.json({ error: tr("Reconnectez-vous pour continuer.", "Sign in again to continue.") }, { status: 401 });
   }
 
   const body = await request.json().catch(() => ({}));
