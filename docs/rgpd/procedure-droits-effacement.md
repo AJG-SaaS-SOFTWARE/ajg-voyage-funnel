@@ -11,7 +11,8 @@ Identifier la demande : accès, rectification, effacement, limitation, oppositio
 ## 2. Recherche des données
 
 Rechercher la personne à partir de l’e-mail et, si nécessaire, du téléphone dans :
-- les soumissions de formulaires Netlify ;
+- la table `ajg_voyage_leads` dans Supabase, qui reçoit les demandes du formulaire AJG Voyage ;
+- les éventuelles données techniques liées à la notification de nouvelle demande dans Resend, dans la limite de leurs durées de conservation ;
 - les fichiers ou outils de suivi effectivement utilisés ;
 - Calendly lorsque la personne a elle-même réservé un rendez-vous ;
 - toute copie/export éventuel créé pour le suivi.
