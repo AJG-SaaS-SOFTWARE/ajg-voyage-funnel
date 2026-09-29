@@ -16,6 +16,7 @@ Landing page mobile-first pour qualifier des prospects intéressés par Travel A
 - questionnaire en 4 étapes
 - scoring léger des leads
 - capture automatique UTM + URL d’entrée + référent
+- mesure first-party du funnel (début/fin questionnaire, lead enregistré, clic Calendly) via API Vercel + Supabase, sans identifiants de contact dans la table analytics
 - formulaire envoyé côté serveur vers l’API Vercel, avec stockage Supabase
 - honeypot anti-spam + validation serveur de l’origine, du type de contenu et des valeurs de qualification
 - consentement marketing B2C séparé et facultatif
@@ -42,6 +43,7 @@ Méthode de référence : développer par sprint sur une branche dédiée, regro
 - `en/privacy.html` / `en/legal.html` : traductions anglaises
 - `robots.txt` / `sitemap.xml` : indexation
 - `api/travel-presentation.js` : validation serveur, stockage Supabase et notification Resend
+- `api/funnel-event.js` : collecte first-party minimale des événements de conversion
 - `vercel.json` : région d’exécution et headers de sécurité
 
 ## À mettre à jour lors de l’immatriculation
