@@ -182,3 +182,14 @@ test("standard quality guard rejects raw presentation markup in structured modul
   assert.ok(issues.some((item) => item.code === "presentation_markup"));
 });
 
+test("standard AI route repairs only after deterministic quality issues are found", () => {
+  const source = fs.readFileSync(
+    new URL("../app/api/ai/write/route.ts", import.meta.url),
+    "utf8"
+  );
+  assert.ok(source.includes("standardQualityIssues("));
+  assert.ok(source.includes('operation: "standard_repair"'));
+  assert.ok(source.includes("if (qualityIssues.length > 0)"));
+  assert.ok(source.includes("quality gate rejected repaired output"));
+});
+
