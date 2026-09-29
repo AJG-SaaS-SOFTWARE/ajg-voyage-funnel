@@ -190,8 +190,25 @@ jobs:
         shell: bash
         working-directory: ${{ github.workspace }}
         run: |
+          RELEASE_BUNDLE="$RUNNER_TEMP/ajg-site-builder-release"
+          rm -rf "$RELEASE_BUNDLE"
+          mkdir -p "$RELEASE_BUNDLE/site-builder"
+
+          rsync -a \
+            --exclude node_modules \
+            --exclude .next \
+            --exclude .vercel \
+            "$GITHUB_WORKSPACE/site-builder/" \
+            "$RELEASE_BUNDLE/site-builder/"
+
+          test -f "$RELEASE_BUNDLE/site-builder/package.json" || {
+            echo "::error::Isolated Builder release bundle is missing package.json."
+            exit 1
+          }
+
           set +e
           npx --yes vercel@59.19.1 deploy \
+            --cwd "$RELEASE_BUNDLE" \
             --prod \
             --yes \
             --token "$VERCEL_TOKEN" \
@@ -240,7 +257,7 @@ jobs:
 
           echo "deployment_id=$DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
           echo "url=https://$DEPLOYMENT_HOST" >> "$GITHUB_OUTPUT"
-          echo "Pinned Vercel CLI 59.19.1 deployed from repository root with Vercel rootDirectory=site-builder: $DEPLOYMENT_ID." >> "$GITHUB_STEP_SUMMARY"
+          echo "Pinned Vercel CLI 59.19.1 deployed an isolated bundle containing only site-builder/: $DEPLOYMENT_ID." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify live production or rollback
         shell: bash
