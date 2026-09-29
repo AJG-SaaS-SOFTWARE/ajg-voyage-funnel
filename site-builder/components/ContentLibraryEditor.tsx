@@ -14,7 +14,7 @@ export default function ContentLibraryEditor({ value, onChange, onUpload }: { va
       const url = await onUpload(asset, file);
       update(asset.id, { url, name: asset.name || file.name, notes: asset.notes });
     } catch (error) {
-      update(asset.id, { notes: `${asset.notes ? asset.notes + " · " : ""}Erreur : ${error instanceof Error ? error.message : tr("téléversement impossible", "upload failed")}` });
+      update(asset.id, { notes: `${asset.notes ? asset.notes + " · " : ""}${tr("Erreur", "Error")}: ${error instanceof Error ? error.message : tr("téléversement impossible", "upload failed")}` });
     }
   };
   const remove = (id: string) => onChange({ assets: value.assets.filter((asset) => asset.id !== id) });
@@ -22,7 +22,7 @@ export default function ContentLibraryEditor({ value, onChange, onUpload }: { va
   return <details className="guided-writing-card content-library-card">
     <summary><span className="guided-writing-icon">＋</span><span><b>{tr("Mes contenus pour l’IA", "My content for AI")}</b><small>{tr("Textes, photos, images, musique ou documents que l’IA peut prendre en compte.", "Text, photos, images, music or documents that AI can use as context.")}</small></span><span className="guided-writing-badge">{value.assets.length} {tr(value.assets.length > 1 ? "contenus" : "contenu", value.assets.length > 1 ? "items" : "item")}</span></summary>
     <div className="guided-writing-body">
-      <p className="guided-writing-intro">AJG distingue vos contenus des contenus générés. Un média dont les droits sont inconnus ne sera jamais marqué publiable automatiquement. Les fichiers importés dans cette bibliothèque sont privés par défaut et servent de sources de travail. Un contenu n’est destiné au site public qu’après validation explicite de ses droits et de son statut publiable.</p>
+      <p className="guided-writing-intro">{tr("AJG distingue vos contenus des contenus générés. Un média dont les droits sont inconnus ne sera jamais marqué publiable automatiquement. Les fichiers importés dans cette bibliothèque sont privés par défaut et servent de sources de travail. Un contenu n’est destiné au site public qu’après validation explicite de ses droits et de son statut publiable.", "AJG keeps your source content separate from generated content. Media with unknown rights is never marked publishable automatically. Files imported into this library are private by default and are used as working sources. Content is intended for the public website only after its rights and publishable status are explicitly validated.")}</p>
       <div className="content-library-actions">
         <button type="button" className="button secondary" onClick={() => add("text")}>+ {tr("Texte", "Text")}</button>
         <button type="button" className="button secondary" onClick={() => add("image")}>+ {tr("Image / photo", "Image / photo")}</button>
