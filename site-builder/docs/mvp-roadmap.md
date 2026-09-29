@@ -50,6 +50,8 @@ Dernière mise à jour : 29 septembre 2026.
 État : développement produit terminé ; observation bêta réelle à poursuivre après déploiement
 
 - [x] questionnaire guidé 3+1 pour préparer les textes ;
+- [x] questionnaire guidé généralisé à toute activité : offre, approche différenciante, objectif visiteur et audience optionnelle ;
+- [x] Structured Outputs pour l’IA standard : mode guidé, relecture et brouillons FAQ/avantages/chiffres fiabilisés sans JSON libre ;
 - [x] transformation de réponses courtes ou mots-clés en textes structurés ;
 - [x] assistant IA dans les champs éditoriaux ;
 - [x] actions rapides Améliorer / Plus naturel / Plus chaleureux / Plus professionnel / Plus court / Nouvelle proposition ;
