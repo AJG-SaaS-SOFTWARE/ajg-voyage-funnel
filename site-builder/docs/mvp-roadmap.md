@@ -386,10 +386,10 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 - [x] formulaire anonyme retesté : accès minimal au schéma privé corrigé, soumission active validée et rejet J14 validé ;
 - [x] événements de facturation désormais ciblables par site : un impayé sur le site A ne suspend pas le site B du même propriétaire ;
 - [x] entitlements de plan ciblés par site pour IA avancée et domaines ; quotas anti-abus IA restent volontairement agrégés au compte ;
-- [ ] validation production après réouverture du pipeline Vercel.
+- [x] validation production après réouverture du pipeline Vercel : releases contrôlées réussies avec vérification du live, rollback disponible et canari HTTPS vert.
 
 ### Itération 6F — Entitlements UX & droits RGPD
-État : démarré le 29 septembre 2026
+État : validé techniquement le 29 septembre 2026
 
 Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et fournir un parcours traçable d’export, d’effacement et de suppression sans confondre impayé et demande RGPD.
 
@@ -407,7 +407,8 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] registre de conservation juridique/comptable créé : factures et pièces justificatives comptables 10 ans à compter de la clôture de l’exercice, documents commerciaux 5 ans lorsqu’ils sont nécessaires, pièces TVA 6 ans sans raccourcir la durée comptable plus longue applicable aux factures ; conservation séparée du contenu Builder ;
 - [x] journal d’exécution RGPD pseudonymisé : réception, portée, statut, systèmes traités et dates ; après purge les FK `user_id/site_id` passent à `null` et aucun contenu du site n’est copié dans le journal ;
 - [x] runner E2E RGPD admin isolé : compte/site/médias jetables → demande compte réelle → suspension → vraie route de purge → vérification Storage/DB/Auth + journal pseudonymisé ;
-- [ ] exécuter cette recette E2E en production sur le runner jetable et archiver le résultat avant lancement commercial.
+- [x] back-office administration rationalisé : shell dédié, navigation admin persistante, en-têtes compacts, densité desktop améliorée, cartes/tables/statuts harmonisés et page RGPD alignée sur le cockpit ;
+- [x] recette E2E RGPD exécutée en production le 29 septembre 2026 : 6 contrôles passés, médias public/privé supprimés, traces site-scoped purgées, cascade DB terminée, identité Supabase Auth supprimée et journal RGPD pseudonymisé conservé ;
 
 ### Durcissement préproduction — 28 septembre 2026
 - [x] administration des offres alignée sur la facturation par site, sans mutation involontaire des autres sites du propriétaire ;
