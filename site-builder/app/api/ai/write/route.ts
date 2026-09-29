@@ -117,6 +117,28 @@ async function releasePremiumAiAllowance(
   if (error) throw error;
 }
 
+async function reserveHeavyAiOperation(
+  supabase: any,
+  siteId: string,
+  requestId: string,
+  operation: "site_create" | "site_revision"
+) {
+  const { data, error } = await supabase.rpc("reserve_my_site_heavy_ai", {
+    p_site_id: siteId,
+    p_request_id: requestId,
+    p_operation: operation
+  });
+  if (error) throw error;
+  return typeof data === "string" ? data : "unavailable";
+}
+
+async function releaseHeavyAiOperation(supabase: any, requestId: string) {
+  const { error } = await supabase.rpc("release_my_site_heavy_ai", {
+    p_request_id: requestId
+  });
+  if (error) throw error;
+}
+
 async function reserveLaunchOperation(
   supabase: any,
   siteId: string,
@@ -429,6 +451,7 @@ export async function POST(request: Request) {
   }
 
   let launchReservation = "";
+  let heavyAiReserved = false;
   if (premiumRequest) {
     try {
       launchReservation = await reserveLaunchOperation(
@@ -458,6 +481,41 @@ export async function POST(request: Request) {
         },
         { status: 403 }
       );
+    }
+
+    if (launchReservation === "unmetered_growth" || launchReservation === "unmetered_beta") {
+      let heavyAllowance = "unavailable";
+      try {
+        heavyAllowance = await reserveHeavyAiOperation(
+          auth.supabase,
+          siteId,
+          premiumRequestId,
+          field === "siteRevision" ? "site_revision" : "site_create"
+        );
+      } catch (error) {
+        console.error("Heavy AI reservation failed", error);
+        await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
+        return NextResponse.json(
+          { error: tr("Impossible de vérifier le budget des opérations IA avancées.", "Unable to verify the advanced AI operation budget.") },
+          { status: 503 }
+        );
+      }
+      if (heavyAllowance !== "ok") {
+        await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
+        return NextResponse.json(
+          {
+            error: heavyAllowance === "monthly_limit"
+              ? tr(
+                  "Votre quota mensuel d’opérations Growth lourdes est atteint. Les fonctions légères et votre site restent disponibles.",
+                  "Your monthly heavy Growth operation allowance has been reached. Light AI features and your website remain available."
+                )
+              : tr("Cette opération Growth n’est pas disponible actuellement.", "This Growth operation is not currently available."),
+            code: heavyAllowance
+          },
+          { status: heavyAllowance === "monthly_limit" ? 429 : 403 }
+        );
+      }
+      heavyAiReserved = true;
     }
   }
 
@@ -518,6 +576,13 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error("Premium Site Architect failed", error);
       if (premiumRequestId) {
+        if (heavyAiReserved) {
+          try {
+            await releaseHeavyAiOperation(auth.supabase, premiumRequestId);
+          } catch (releaseError) {
+            console.error("Heavy AI reservation release failed", releaseError);
+          }
+        }
         if (launchReservation === "ok") {
           try {
             await releaseLaunchOperation(auth.supabase, premiumRequestId);
