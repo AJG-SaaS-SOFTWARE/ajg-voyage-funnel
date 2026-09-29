@@ -115,6 +115,29 @@ async function releasePremiumAiAllowance(
   if (error) throw error;
 }
 
+async function recordPremiumArchitectFailure(
+  userId: string,
+  siteId: string
+) {
+  const serviceKey =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!serviceKey || !supabaseUrl) return;
+
+  const service = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  const { error } = await service.from("product_events").insert({
+    user_id: userId,
+    site_id: siteId,
+    event_name: "architect_failed"
+  });
+  if (error) {
+    console.warn("Premium Architect failure telemetry unavailable", error.message);
+  }
+}
+
 function extractText(data: any) {
   if (typeof data?.output_text === "string" && data.output_text.trim()) {
     return data.output_text.trim();
@@ -341,6 +364,7 @@ export async function POST(request: Request) {
           console.error("Premium AI quota reservation release failed", releaseError);
         }
       }
+      await recordPremiumArchitectFailure(auth.user.id, siteId);
       if (error instanceof PremiumArchitectError) {
         const unavailable =
           error.code === "credit_balance_exhausted" ||
