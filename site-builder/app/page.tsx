@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { loadDraft, resetDraft, type BuilderDraft } from "../lib/site-store";
 import { isSupabaseConfigured } from "../lib/supabase-browser";
 import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
+import { LanguageSwitch, useUiLanguage } from "../components/LanguageProvider";
 
 function LockIcon() {
   return (
@@ -45,6 +46,8 @@ function LayersIcon() {
 }
 
 export default function Home() {
+  const { locale } = useUiLanguage();
+  const en = locale === "en";
   const [draft, setDraft] = useState<BuilderDraft | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<"checking" | "guest" | "authenticated" | "local">("checking");
   const [email, setEmail] = useState("");
@@ -111,11 +114,10 @@ export default function Home() {
     <main className="shell premium-home">
       <section className="dashboard-hero">
         <div className="intro premium-intro">
-          <p className="eyebrow">AJG Site Builder · Prototype 0.10.2</p>
-          <h1>Votre site en quelques étapes</h1>
+          <div className="builder-heading-row"><p className="eyebrow">AJG Site Builder · Prototype 0.10.2</p><LanguageSwitch compact /></div>
+          <h1>{en ? "Your website in a few steps" : "Votre site en quelques étapes"}</h1>
           <p>
-            Un seul moteur pour créer et maintenir les sites des membres : identité, contenu,
-            rendez-vous, médias, aperçu et publication.
+            {en ? "One workspace to create and maintain your website: identity, content, appointments, media, preview and publishing." : "Un seul moteur pour créer et maintenir les sites des membres : identité, contenu, rendez-vous, médias, aperçu et publication."}
           </p>
         </div>
 
@@ -128,7 +130,7 @@ export default function Home() {
           <span className="hero-photo-wash" />
           <span className="hero-orbit" />
           <span className="hero-star">✦</span>
-          <span className="hero-photo-caption">Voyage · création · partage</span>
+          <span className="hero-photo-caption">{en ? "Create · publish · grow" : "Créer · publier · développer"}</span>
         </div>
       </section>
 
@@ -137,26 +139,26 @@ export default function Home() {
         <div>
           <b>
             {remoteStatus === "authenticated"
-              ? "Connecté au cloud"
+              ? (en ? "Connected to cloud" : "Connecté au cloud")
               : remoteStatus === "local"
-                ? "Mode prototype local"
+                ? (en ? "Local prototype mode" : "Mode prototype local")
                 : remoteStatus === "guest"
-                  ? "Connexion nécessaire"
-                  : "Vérification…"}
+                  ? (en ? "Sign-in required" : "Connexion nécessaire")
+                  : (en ? "Checking…" : "Vérification…")}
           </b>
           <p>
             {remoteStatus === "authenticated"
-              ? "Vos données peuvent être sauvegardées dans Supabase" + (email ? " · " + email : "") + "."
+              ? (en ? "Your data can be saved to Supabase" : "Vos données peuvent être sauvegardées dans Supabase") + (email ? " · " + email : "") + "."
               : remoteStatus === "guest"
-                ? "Connectez-vous pour sauvegarder un vrai site et envoyer des photos."
+                ? (en ? "Sign in to save a real website and upload photos." : "Connectez-vous pour sauvegarder un vrai site et envoyer des photos.")
                 : remoteStatus === "local"
-                  ? "Le builder fonctionne, mais les données restent sur cet appareil."
-                  : "Connexion au backend en cours."}
+                  ? (en ? "The builder works, but your data stays on this device." : "Le builder fonctionne, mais les données restent sur cet appareil.")
+                  : (en ? "Connecting to the backend." : "Connexion au backend en cours.")}
           </p>
         </div>
         {remoteStatus === "guest" ? (
           <Link className="button primary premium-button" href="/login">
-            Se connecter <span aria-hidden="true">→</span>
+            {en ? "Sign in" : "Se connecter"} <span aria-hidden="true">→</span>
           </Link>
         ) : null}
       </section>
@@ -165,14 +167,14 @@ export default function Home() {
         <article className="panel dashboard-card premium-card create-card">
           <div className="card-copy">
             <span className="card-icon teal"><PencilIcon /></span>
-            <p className="step">Créer</p>
-            <h2>{draft?.config.brandName || "Nouveau site"}</h2>
-            <p>Identité, textes, rendez-vous, langues, réseaux sociaux et options du site.</p>
+            <p className="step">{en ? "Create" : "Créer"}</p>
+            <h2>{draft?.config.brandName || (en ? "New website" : "Nouveau site")}</h2>
+            <p>{en ? "Identity, copy, appointments, language, social links and website options." : "Identité, textes, rendez-vous, langues, réseaux sociaux et options du site."}</p>
             <div className="actions">
               <Link className="button primary premium-button" href={remoteStatus === "guest" ? "/login" : "/builder"}>
-                {draft ? "Continuer la configuration" : "Commencer"} <span aria-hidden="true">→</span>
+                {draft ? (en ? "Continue setup" : "Continuer la configuration") : (en ? "Get started" : "Commencer")} <span aria-hidden="true">→</span>
               </Link>
-              <Link className="button secondary premium-secondary" href="/preview">Voir l&apos;aperçu</Link>
+              <Link className="button secondary premium-secondary" href="/preview">{en ? "Preview" : "Voir l’aperçu"}</Link>
             </div>
           </div>
           <div className="card-art browser-art" aria-hidden="true">
@@ -191,15 +193,15 @@ export default function Home() {
         <article className="panel dashboard-card premium-card state-card">
           <div className="card-copy">
             <span className="card-icon gold"><DocumentIcon /></span>
-            <p className="step">État</p>
-            <h2>{draft?.status === "published" ? "Site publié" : "Brouillon"}</h2>
+            <p className="step">{en ? "Status" : "État"}</p>
+            <h2>{draft?.status === "published" ? (en ? "Published" : "Site publié") : (en ? "Draft" : "Brouillon")}</h2>
             <p>
               {draft?.status === "published"
-                ? "Votre site est publié et accessible depuis son adresse publique."
-                : "Travaillez à votre rythme puis publiez quand les informations sont prêtes."}
+                ? (en ? "Your website is published and available at its public address." : "Votre site est publié et accessible depuis son adresse publique.")
+                : (en ? "Work at your own pace, then publish when everything is ready." : "Travaillez à votre rythme puis publiez quand les informations sont prêtes.")}
             </p>
             {draft?.status === "published" ? (
-              <Link className="text-link" href={"/site/" + draft.config.slug}>Ouvrir le site publié →</Link>
+              <Link className="text-link" href={"/site/" + draft.config.slug}>{en ? "Open published website →" : "Ouvrir le site publié →"}</Link>
             ) : null}
           </div>
           <div className="card-art status-art" aria-hidden="true">
@@ -218,10 +220,9 @@ export default function Home() {
           <div className="card-copy">
             <span className="card-icon sage"><LayersIcon /></span>
             <p className="step">Architecture</p>
-            <h2>Un moteur, plusieurs sites</h2>
+            <h2>{en ? "One engine, multiple websites" : "Un moteur, plusieurs sites"}</h2>
             <p>
-              Chaque membre possède sa configuration et ses médias. Les corrections du template
-              restent centralisées et peuvent bénéficier à tout le réseau.
+              {en ? "Each website keeps its own configuration and media while shared product improvements remain centralized." : "Chaque membre possède sa configuration et ses médias. Les corrections du template restent centralisées et peuvent bénéficier à tout le réseau."}
             </p>
           </div>
           <div className="card-art stack-art" aria-hidden="true">
@@ -233,7 +234,7 @@ export default function Home() {
       </section>
 
       <section className="danger-zone premium-danger-zone">
-        <button type="button" className="text-button" onClick={reset}>Réinitialiser le brouillon local</button>
+        <button type="button" className="text-button" onClick={reset}>{en ? "Reset local draft" : "Réinitialiser le brouillon local"}</button>
       </section>
     </main>
   );
