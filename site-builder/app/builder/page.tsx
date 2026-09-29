@@ -1482,12 +1482,12 @@ export default function BuilderPage() {
                         </div>
                         <div className="architect-human-eval">
                           <div>
-                            <b>Cette proposition correspond-elle vraiment à votre besoin ?</b>
-                            <small>Votre réponse aide à améliorer l’Architecte. Aucun texte de votre site n’est envoyé avec cette évaluation.</small>
+                            <b>{en ? "Does this proposal really match your needs?" : "Cette proposition correspond-elle vraiment à votre besoin ?"}</b>
+                            <small>{en ? "Your response helps improve the Architect. No website copy is sent with this evaluation." : "Votre réponse aide à améliorer l’Architecte. Aucun texte de votre site n’est envoyé avec cette évaluation."}</small>
                           </div>
                           {architectQualitySubmitted ? (
                             <p className="architect-human-eval-thanks">
-                              ✓ Merci. Votre évaluation est enregistrée.
+                              {en ? "✓ Thank you. Your feedback has been saved." : "✓ Merci. Votre évaluation est enregistrée."}
                             </p>
                           ) : (
                             <>
@@ -1498,7 +1498,7 @@ export default function BuilderPage() {
                                   disabled={architectQualityBusy}
                                   onClick={() => void submitArchitectRating("positive")}
                                 >
-                                  Oui, c’est pertinent
+                                  {en ? "Yes, it fits" : "Oui, c’est pertinent"}
                                 </button>
                                 <button
                                   type="button"
@@ -1506,19 +1506,19 @@ export default function BuilderPage() {
                                   disabled={architectQualityBusy}
                                   onClick={() => setArchitectQualityChoice("negative")}
                                 >
-                                  À améliorer
+                                  {en ? "Needs improvement" : "À améliorer"}
                                 </button>
                               </div>
                               {architectQualityChoice === "negative" ? (
                                 <div className="architect-human-eval-reasons">
-                                  <span>Qu’est-ce qui vous gêne surtout ?</span>
+                                  <span>{en ? "What is the main issue?" : "Qu’est-ce qui vous gêne surtout ?"}</span>
                                   {([
-                                    ["need_mismatch", "Compréhension du besoin"],
-                                    ["copy", "Textes"],
-                                    ["structure", "Structure / rubriques"],
-                                    ["design", "Direction visuelle"],
-                                    ["generic", "Trop générique"],
-                                    ["other", "Autre"]
+                                    ["need_mismatch", en ? "Understanding of the need" : "Compréhension du besoin"],
+                                    ["copy", en ? "Copy" : "Textes"],
+                                    ["structure", en ? "Structure / sections" : "Structure / rubriques"],
+                                    ["design", en ? "Visual direction" : "Direction visuelle"],
+                                    ["generic", en ? "Too generic" : "Trop générique"],
+                                    ["other", en ? "Other" : "Autre"]
                                   ] as Array<[ArchitectQualityReason, string]>).map(([reason, label]) => (
                                     <button
                                       key={reason}
@@ -1535,7 +1535,7 @@ export default function BuilderPage() {
                                     disabled={!architectQualityReason || architectQualityBusy}
                                     onClick={() => void submitArchitectRating("negative", architectQualityReason)}
                                   >
-                                    {architectQualityBusy ? "Enregistrement…" : "Envoyer mon évaluation"}
+                                    {architectQualityBusy ? (en ? "Saving…" : "Enregistrement…") : (en ? "Submit feedback" : "Envoyer mon évaluation")}
                                   </button>
                                 </div>
                               ) : null}
