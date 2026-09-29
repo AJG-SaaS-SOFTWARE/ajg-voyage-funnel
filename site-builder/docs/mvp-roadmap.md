@@ -84,6 +84,7 @@ Objectif de sortie : l’IA peut proposer une structure de site sensiblement dif
 - [x] upload direct multi-format depuis la bibliothèque : images, audio, PDF et TXT, avec taille/type bornés ;
 - [x] attribution automatique par l’IA des assets autorisés aux pages, validation des IDs et rendu public ;
 - [x] conversation de révision globale du site (« plus premium », « retire cette page », etc.) avec proposition séparée et validation avant application ;
+- [x] révision Premium à portée minimale : le site courant sert de baseline, les choix non visés doivent être préservés et l’aperçu liste les zones réellement modifiées avant application ;
 - [x] éditeur visuel de l’arborescence après génération : ordre, activation, suppression, ajout, type, URL, rôle et contenus affectés ;
 - [x] limite de 6 pages alignée entre IA, normalisation et éditeur ; accueil unique et non déplaçable ;
 - [x] IDs de contenus publiables transmis à l’AI Site Architect afin que l’affectation d’assets soit réellement exploitable.
