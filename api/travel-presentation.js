@@ -110,8 +110,7 @@ async function sendNotification(row) {
       from,
       to: [to],
       subject,
-      text: lines.join("
-")
+      text: lines.join("\\n")
     })
   });
 
