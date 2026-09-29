@@ -1,4 +1,11 @@
 const MAX_BODY_BYTES = 32_000;
+const ALLOWED_ORIGINS = new Set([
+  "https://voyage.ajgsolutionsgroup.com",
+  "https://www.voyage.ajgsolutionsgroup.com"
+]);
+const ALLOWED_INTERESTS = new Set(["Voyager plus avantageusement", "Découvrir l'activité", "Les deux", "Travel more advantageously", "Discover the activity", "Both"]);
+const ALLOWED_FREQUENCIES = new Set(["0-1 fois par an", "2-3 fois par an", "4 fois ou plus par an", "Variable", "0-1 times a year", "2-3 times a year", "4 or more times a year"]);
+const ALLOWED_GOALS = new Set(["Voyage uniquement pour le moment", "Comprendre le fonctionnement", "Développer une activité indépendante", "Travel only for now", "Understand how it works", "Build an independent activity"]);
 
 function text(value, max = 500) {
   if (typeof value !== "string") return "";
@@ -67,6 +74,17 @@ export default async function handler(req, res) {
     return json(res, 405, { error: "Method not allowed" });
   }
 
+  const origin = text(req.headers.origin, 500);
+  const isPreview = /^https:\/\/[-a-z0-9]+\.vercel\.app$/i.test(origin);
+  if (origin && !ALLOWED_ORIGINS.has(origin) && !isPreview) {
+    return json(res, 403, { error: "Origin not allowed" });
+  }
+
+  const contentType = String(req.headers["content-type"] || "").toLowerCase();
+  if (!contentType.startsWith("application/json")) {
+    return json(res, 415, { error: "Unsupported media type" });
+  }
+
   const declaredLength = Number(req.headers["content-length"] || 0);
   if (declaredLength > MAX_BODY_BYTES) {
     return json(res, 413, { error: "Payload too large" });
@@ -93,6 +111,9 @@ export default async function handler(req, res) {
   }
   if (!mainInterest || !travelFrequency || !activityGoal) {
     return json(res, 400, { error: "Incomplete qualification" });
+  }
+  if (!ALLOWED_INTERESTS.has(mainInterest) || !ALLOWED_FREQUENCIES.has(travelFrequency) || !ALLOWED_GOALS.has(activityGoal)) {
+    return json(res, 400, { error: "Invalid qualification values" });
   }
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
