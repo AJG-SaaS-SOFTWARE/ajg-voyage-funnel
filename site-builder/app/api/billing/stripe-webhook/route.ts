@@ -70,10 +70,21 @@ async function resolveSite(
   if (!site) return null;
 
   const priceId = stripePlanPriceId(subscription);
-  const configuredProPrice = process.env.STRIPE_PRO_PRICE_ID?.trim() || "";
-  const planKey =
-    existing?.plan_key ||
-    (priceId && configuredProPrice && priceId === configuredProPrice ? "pro" : "");
+  const pricePlanMap = new Map<string, "essential" | "pro">(
+    [
+      [process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID?.trim(), "essential"],
+      [process.env.STRIPE_ESSENTIAL_ANNUAL_PRICE_ID?.trim(), "essential"],
+      [process.env.STRIPE_PRO_MONTHLY_PRICE_ID?.trim(), "pro"],
+      [process.env.STRIPE_PRO_ANNUAL_PRICE_ID?.trim(), "pro"],
+      [process.env.STRIPE_PRO_PRICE_ID?.trim(), "pro"]
+    ].filter((entry): entry is [string, "essential" | "pro"] => Boolean(entry[0]))
+  );
+  const mappedPlan = priceId ? pricePlanMap.get(priceId) : undefined;
+  const existingPlan =
+    existing?.plan_key === "essential" || existing?.plan_key === "pro"
+      ? existing.plan_key
+      : "";
+  const planKey = mappedPlan || existingPlan;
 
   if (!planKey) return null;
   return { siteId, ownerId, planKey };
