@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import {
@@ -73,7 +74,7 @@ export default function PlansPage() {
       active="plans"
       eyebrow="Offre & usages"
       title="Mon offre"
-      description="AJG ne se positionne pas comme un constructeur de sites low-cost : l’offre Pro ajoute un véritable Architecte IA qui travaille la stratégie, l’architecture, le contenu et la direction visuelle du site, tout en vous laissant le contrôle."
+      description="AJG Site Builder ne se positionne pas comme un constructeur de sites low-cost : Essentiel vous aide à construire avec l’IA rédactionnelle, tandis que Pro IA ajoute un véritable Concepteur IA qui travaille la stratégie, l’architecture, le contenu et la direction visuelle du site."
     >
       {sites.length > 1 ? (
         <section className="panel">
@@ -100,9 +101,9 @@ export default function PlansPage() {
         <section className="usage-card beta-access-banner" role="status">
           <div>
             <p className="eyebrow">Beta Tester</p>
-            <h2>Accès Pro complet offert pendant la bêta</h2>
+            <h2>Accès Pro IA complet offert pendant la bêta</h2>
             <p>
-              Architecte IA Premium, domaine personnalisé, quotas Pro et toutes les
+              Concepteur IA, domaine personnalisé, quotas Pro et toutes les
               fonctions payantes sont ouverts sans abonnement Stripe
               {betaExpiryLabel ? " jusqu’au " + betaExpiryLabel : ""}.
               À l’expiration, le site revient automatiquement à son offre réelle.
@@ -172,14 +173,17 @@ export default function PlansPage() {
         <p className="eyebrow">Positionnement AJG</p>
         <h2>Deux niveaux d’aide IA, une même base de contrôle</h2>
         <p>
-          L’IA standard vous aide à rédiger, reformuler, structurer des rubriques et
-          avancer champ par champ. L’Architecte Premium va plus loin : il analyse le
-          projet, construit la stratégie et l’arborescence, produit une proposition
-          cohérente puis la contrôle et la raffine avant application.
+          Essentiel intègre l’IA rédactionnelle pour rédiger, reformuler et structurer
+          le contenu champ par champ. Pro IA va plus loin : le Concepteur IA analyse le
+          projet, construit une première architecture cohérente et aide à raffiner le site
+          avant application.
         </p>
         <blockquote>
           Votre site ne commence pas par un template. Il commence par votre activité.
         </blockquote>
+        <p>
+          <Link className="text-link" href="/tarifs">Voir la page Tarifs publique →</Link>
+        </p>
       </section>
 
       <section className="plans-grid plans-grid-three" aria-label="Offres AJG">
@@ -190,56 +194,62 @@ export default function PlansPage() {
           <ul>
             <li>1 site sur sous-domaine AJG</li>
             <li>IA standard : rédaction, reformulation, mode guidé et rubriques</li>
-            <li>80 générations IA / mois</li>
-            <li>250 Mo de stockage</li>
+            <li>80 générations IA / mois pendant la phase bêta</li>
+            <li>250 Mo de stockage pendant la phase bêta</li>
             <li>Édition et publication essentielles</li>
-            <li>Architecte IA Premium non inclus</li>
+            <li>Concepteur IA non inclus hors statut Beta Tester</li>
           </ul>
           <p className="plan-status">
             {loaded && !betaAccess.active && current.planKey === "free"
               ? "Votre offre actuelle"
-              : "Offre d’entrée"}
+              : "Accès de découverte / bêta"}
           </p>
         </article>
 
-        <article className="plan-card plan-card-roadmap">
-          <p className="eyebrow">Essential · trajectoire</p>
+        <article className="plan-card">
+          <p className="eyebrow">Essentiel</p>
           <h2>Construire avec l’aide de l’IA</h2>
-          <p className="plan-price">Tarif à tester après la bêta</p>
+          <p className="plan-price">
+            19 € <small>/ mois</small>
+          </p>
+          <p className="annual-price">ou 190 € / an · 1 site</p>
           <ul>
             <li>1 site professionnel</li>
-            <li>Domaine personnalisé prévu</li>
-            <li>IA standard avec quotas plus généreux</li>
+            <li>Domaine personnalisé</li>
+            <li>IA rédactionnelle et amélioration dans les champs utiles</li>
             <li>Éditeur, personnalisation et publication complets</li>
-            <li>Sans Architecte IA Premium</li>
+            <li>Hébergement inclus</li>
+            <li>Sans Concepteur IA complet</li>
           </ul>
           <p className="plan-status">
-            Offre conservée dans la gamme cible, mais volontairement non commercialisée
-            avant les retours des testeurs.
+            Offre commerciale retenue pour l’ouverture après la bêta. Stripe reste désactivé pendant les tests.
           </p>
+          <button type="button" className="button secondary" disabled>
+            Ouverture après la bêta
+          </button>
         </article>
 
         <article className={current.planKey === "pro" ? "plan-card current pro-offer-card" : "plan-card pro-offer-card"}>
-          <p className="eyebrow">Founding Pro</p>
-          <h2>L’IA conçoit le site avec vous</h2>
+          <p className="eyebrow">Pro IA</p>
+          <h2>Le Concepteur IA prépare votre première version</h2>
           <p className="plan-price">
-            24,90 € <small>/ mois</small>
+            39 € <small>/ mois</small>
           </p>
-          <p className="annual-price">ou 239 € / an · 1 site</p>
+          <p className="annual-price">ou 390 € / an · 1 site</p>
           <ul>
-            <li>Tout ce qui est prévu dans Essential</li>
-            <li>500 générations IA / mois</li>
-            <li>2 Go de stockage</li>
-            <li>Architecte Premium : stratégie → architecture → création → audit → raffinement</li>
-            <li>Architecture, textes, modules et direction visuelle cohérents</li>
-            <li>Domaine personnalisé</li>
+            <li>Tout Essentiel</li>
+            <li>Concepteur IA : brief → structure → contenu → raffinement</li>
+            <li>Premiers textes générés puis entièrement modifiables</li>
+            <li>Quotas IA supérieurs</li>
+            <li>Capacité média et stockage supérieure</li>
+            <li>Accès prioritaire aux nouveaux modules IA</li>
           </ul>
           <p className="plan-status">
             {betaAccess.active
               ? "Inclus gratuitement dans votre statut Beta Tester"
               : loaded && current.planKey === "pro"
                 ? "Votre offre actuelle"
-                : "Offre Founding prévue pour les 10 premiers clients payants"}
+                : "14 jours d’expérience Pro IA prévus au lancement commercial"}
           </p>
           {!betaAccess.active && current.planKey !== "pro" ? (
             <button type="button" className="button primary" disabled>
@@ -253,10 +263,11 @@ export default function PlansPage() {
         <p className="eyebrow">Bêta & lancement</p>
         <h2>Les testeurs ne sont pas des clients payants</h2>
         <p>
-          Les proches invités à la bêta reçoivent temporairement l’accès Pro complet
+          Les proches invités à la bêta reçoivent temporairement l’accès Pro IA complet
           pour évaluer le produit réel. Ils peuvent supprimer leur site ensuite et ne
-          sont pas engagés dans l’offre Founding. Le tarif Founding sera testé au
-          lancement commercial ; Essential sera décidé à partir des usages observés.
+          sont engagés dans aucune offre payante. La grille Essentiel 19 € / Pro IA 39 €
+          prépare le lancement commercial ; aucun paiement Stripe n’est activé pendant
+          cette phase de test.
         </p>
       </section>
     </AccountShell>
