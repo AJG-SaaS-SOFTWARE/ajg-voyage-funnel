@@ -622,7 +622,8 @@ function normalizeComparable(value: string) {
 }
 
 function deterministicQualityIssues(
-  proposal: PremiumArchitectCore
+  proposal: PremiumArchitectCore,
+  sourceEvidenceText = ""
 ): DeterministicQualityIssue[] {
   const issues: DeterministicQualityIssue[] = [];
   const placeholderPattern =
@@ -756,6 +757,27 @@ function deterministicQualityIssues(
     });
   }
 
+  const normalizeNumber = (value: string) =>
+    value.replace(",", ".").replace(/^0+(?=\d)/, "");
+  const supportedNumbers = new Set(
+    (sourceEvidenceText.match(/\d+(?:[.,]\d+)?/g) || []).map(normalizeNumber)
+  );
+  const quantitativePattern =
+    /(?:[€£$]\s*\d+(?:[.,]\d+)?)|(?:\b\d+(?:[.,]\d+)?\s*(?:%|€|euros?|dollars?|usd|£|gbp|minutes?|mins?|heures?|hours?|hrs?|jours?|days?|semaines?|weeks?|mois|months?|ans?|années?|years?|clients?|customers?|projets?|projects?|pays|countries|destinations?|voyages?|trips?|réservations?|bookings?)\b)|(?:\b(?:19|20)\d{2}\b)|(?:\b24\s*\/\s*7\b)/giu;
+
+  for (const [field, value] of visibleCopy) {
+    const claims = value.match(quantitativePattern) || [];
+    for (const claim of claims) {
+      const numeric = claim.match(/\d+(?:[.,]\d+)?/)?.[0];
+      if (!numeric || supportedNumbers.has(normalizeNumber(numeric))) continue;
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_quantitative_claim",
+        detail: `Le contenu ${field} introduit un chiffre non présent dans les informations fournies : « ${claim} ».`
+      });
+    }
+  }
+
   return issues.slice(0, 12);
 }
 
@@ -779,6 +801,7 @@ export async function generatePremiumSiteArchitect(
     existingProposal: input.mode === "revision" ? input.existingProposal || null : null,
     contentLibrary: assets
   };
+  const sourceEvidenceText = JSON.stringify(sourceContext);
 
   const revisionScopeRules =
     input.mode === "revision"
@@ -855,7 +878,10 @@ export async function generatePremiumSiteArchitect(
     assets
   );
 
-  const creationDeterministicIssues = deterministicQualityIssues(creation);
+  const creationDeterministicIssues = deterministicQualityIssues(
+    creation,
+    sourceEvidenceText
+  );
   const creationDeterministicBlocking = creationDeterministicIssues.filter(
     (item) => item.severity === "blocking"
   );
@@ -963,7 +989,10 @@ export async function generatePremiumSiteArchitect(
     });
   }
 
-  const finalDeterministicIssues = deterministicQualityIssues(finalProposal);
+  const finalDeterministicIssues = deterministicQualityIssues(
+    finalProposal,
+    sourceEvidenceText
+  );
   const finalDeterministicBlocking = finalDeterministicIssues.filter(
     (item) => item.severity === "blocking"
   );
