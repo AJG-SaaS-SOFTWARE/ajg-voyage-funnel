@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 import type { SiteLanguage } from "../lib/site-config";
+import { useUiLanguage } from "./LanguageProvider";
 
 export type AssistedModuleType = "faq" | "benefits" | "figures";
 
@@ -23,7 +24,7 @@ type Props = {
   onApply: (draft: ModuleDraft) => void;
 };
 
-const labels: Record<AssistedModuleType, { title: string; help: string; instruction: string }> = {
+const labelsFr: Record<AssistedModuleType, { title: string; help: string; instruction: string }> = {
   faq: {
     title: "Préparer la FAQ avec l’IA",
     help: "AJG propose des questions et réponses à partir de votre activité et de l’objectif du site. Vous gardez la main sur chaque ligne.",
@@ -41,6 +42,25 @@ const labels: Record<AssistedModuleType, { title: string; help: string; instruct
   }
 };
 
+
+const labelsEn: Record<AssistedModuleType, { title: string; help: string; instruction: string }> = {
+  faq: {
+    title: "Prepare the FAQ with AI",
+    help: "AJG suggests questions and answers from your activity and the website goal. You remain in control of every line.",
+    instruction: "Suggest a useful, natural and reassuring FAQ for a visitor discovering this activity. Avoid artificial or overly sales-driven questions."
+  },
+  benefits: {
+    title: "Prepare benefits with AI",
+    help: "AJG turns your description into concrete benefits without inventing promises, figures or results.",
+    instruction: "Suggest concrete, credible visitor benefits based only on the information provided."
+  },
+  figures: {
+    title: "Find ideas for key figures",
+    help: "AJG only suggests what could be relevant to measure. Values remain empty until you provide them.",
+    instruction: "Suggest relevant categories of key figures to complete, but provide no numerical value or statistic."
+  }
+};
+
 export default function ModuleDraftAssistant({
   moduleType,
   brief,
@@ -52,17 +72,20 @@ export default function ModuleDraftAssistant({
   siteContext,
   onApply
 }: Props) {
+  const { locale: uiLocale } = useUiLanguage();
+  const uiEnglish = uiLocale === "en";
   const [open, setOpen] = useState(false);
   const [precision, setPrecision] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<ModuleDraft | null>(null);
-  const copy = labels[moduleType];
+  const uiCopy = (uiEnglish ? labelsEn : labelsFr)[moduleType];
+  const instructionCopy = (language === "en" ? labelsEn : labelsFr)[moduleType];
 
   const generate = async () => {
     if (!brief.trim()) {
       setState("error");
-      setMessage("Décrivez d’abord votre activité, votre business ou l’objectif du site dans le champ situé au-dessus des rubriques.");
+      setMessage(uiEnglish ? "First describe your activity, business or website goal in the field above the sections." : "Décrivez d’abord votre activité, votre business ou l’objectif du site dans le champ situé au-dessus des rubriques.");
       return;
     }
 
@@ -86,7 +109,7 @@ export default function ModuleDraftAssistant({
         },
         body: JSON.stringify({
           field: "moduleDraft",
-          instruction: [copy.instruction, precision.trim()].filter(Boolean).join(" "),
+          instruction: [instructionCopy.instruction, precision.trim()].filter(Boolean).join(" "),
           currentText: JSON.stringify(currentValue),
           context: {
             language,
@@ -103,19 +126,19 @@ export default function ModuleDraftAssistant({
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result?.error || "Impossible de préparer cette rubrique pour le moment.");
+        throw new Error(result?.error || (uiEnglish ? "This section could not be prepared right now." : "Impossible de préparer cette rubrique pour le moment."));
       }
 
       if (!result?.draft || typeof result.draft !== "object") {
-        throw new Error("La proposition reçue n’est pas exploitable. Réessayez.");
+        throw new Error(uiEnglish ? "The received proposal cannot be used. Try again." : "La proposition reçue n’est pas exploitable. Réessayez.");
       }
 
       setDraft(result.draft as ModuleDraft);
       setState("done");
-      setMessage("Proposition prête. Vérifiez-la avant de l’insérer dans la rubrique.");
+      setMessage(uiEnglish ? "Proposal ready. Review it before inserting it into the section." : "Proposition prête. Vérifiez-la avant de l’insérer dans la rubrique.");
     } catch (error) {
       setState("error");
-      setMessage(error instanceof Error ? error.message : "Une erreur est survenue.");
+      setMessage(error instanceof Error ? error.message : (uiEnglish ? "An error occurred." : "Une erreur est survenue."));
     }
   };
 
@@ -138,7 +161,7 @@ export default function ModuleDraftAssistant({
         )) : items.map((item: any, index) => (
           <div className="module-ai-preview-item compact" key={index}>
             <strong>{item.label}</strong>
-            <p>Valeur à renseigner par vous</p>
+            <p>{uiEnglish ? "Value to be provided by you" : "Valeur à renseigner par vous"}</p>
           </div>
         ))}
       </div>
@@ -158,24 +181,24 @@ export default function ModuleDraftAssistant({
         }}
       >
         <span className="ai-field-spark">✦</span>
-        <span><b>{copy.title}</b><small>{copy.help}</small></span>
+        <span><b>{uiCopy.title}</b><small>{uiCopy.help}</small></span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
       </button>
 
       {open ? (
         <div className="module-ai-panel">
           <label>
-            <span>Une précision pour cette rubrique ? <em>facultatif</em></span>
+            <span>{uiEnglish ? "Any detail for this section?" : "Une précision pour cette rubrique ?"} <em>{uiEnglish ? "optional" : "facultatif"}</em></span>
             <textarea
               rows={2}
               maxLength={500}
               value={precision}
               onChange={(event) => setPrecision(event.target.value)}
               placeholder={moduleType === "faq"
-                ? "Ex. Je veux surtout répondre aux questions des personnes qui découvrent mon activité."
+                ? (uiEnglish ? "E.g. I mainly want to answer questions from people discovering my activity." : "Ex. Je veux surtout répondre aux questions des personnes qui découvrent mon activité.")
                 : moduleType === "benefits"
-                  ? "Ex. Mettre en avant la simplicité et l’accompagnement."
-                  : "Ex. Je veux montrer mon expérience et mon activité sans chiffres commerciaux."}
+                  ? (uiEnglish ? "E.g. Emphasize simplicity and personal support." : "Ex. Mettre en avant la simplicité et l’accompagnement.")
+                  : (uiEnglish ? "E.g. I want to show my experience and activity without commercial figures." : "Ex. Je veux montrer mon expérience et mon activité sans chiffres commerciaux.")}
             />
           </label>
 
@@ -183,7 +206,7 @@ export default function ModuleDraftAssistant({
 
           <div className="module-ai-actions">
             <button type="button" className="button secondary" disabled={state === "loading"} onClick={() => void generate()}>
-              {state === "loading" ? "Préparation…" : draft ? "Nouvelle proposition" : "Générer une proposition"}
+              {state === "loading" ? (uiEnglish ? "Preparing…" : "Préparation…") : draft ? (uiEnglish ? "New proposal" : "Nouvelle proposition") : (uiEnglish ? "Generate a proposal" : "Générer une proposition")}
             </button>
             {draft ? (
               <button
@@ -191,10 +214,10 @@ export default function ModuleDraftAssistant({
                 className="button primary"
                 onClick={() => {
                   onApply(draft);
-                  setMessage("✓ Proposition insérée. Vous pouvez maintenant modifier librement chaque champ.");
+                  setMessage(uiEnglish ? "✓ Proposal inserted. You can now freely edit every field." : "✓ Proposition insérée. Vous pouvez maintenant modifier librement chaque champ.");
                 }}
               >
-                Utiliser ces propositions
+                {uiEnglish ? "Use these suggestions" : "Utiliser ces propositions"}
               </button>
             ) : null}
           </div>
