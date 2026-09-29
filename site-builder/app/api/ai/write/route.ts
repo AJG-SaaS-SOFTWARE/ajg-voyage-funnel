@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 const writableFields = {
   heroTagline: {
@@ -303,9 +303,11 @@ export async function POST(request: Request) {
           {
             error: unavailable
               ? "L'Architecte Premium est momentanément indisponible. Votre demande n'a pas été générée."
-              : error.status === 429
-                ? "L'Architecte Premium reçoit trop de demandes. Réessayez dans quelques instants."
-                : "L'Architecte Premium n'a pas pu finaliser la proposition. Réessayez dans quelques instants."
+              : error.code === "quality_gate_failed"
+                ? "La proposition n’a pas passé le contrôle qualité final. Elle n’a donc pas été affichée. Complétez le brief si nécessaire puis relancez la génération."
+                : error.status === 429
+                  ? "L'Architecte Premium reçoit trop de demandes. Réessayez dans quelques instants."
+                  : "L'Architecte Premium n'a pas pu finaliser la proposition. Réessayez dans quelques instants."
           },
           { status: unavailable ? 503 : 502 }
         );
