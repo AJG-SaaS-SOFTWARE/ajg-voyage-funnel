@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export type ProductLocale = "fr" | "en";
 
-const STORAGE_KEY = "ajg_builder_language";
-const COOKIE_KEY = "ajg_builder_language";
-const LOCALE_EVENT = "ajg-builder-locale-change";
+export const STORAGE_KEY = "ajg_builder_language";
+export const COOKIE_KEY = "ajg_builder_language";
+export const LOCALE_EVENT = "ajg-builder-locale-change";
+
+type ProductLocaleContextValue = {
+  locale: ProductLocale;
+  setLocale: (locale: ProductLocale) => void;
+};
+
+export const ProductLocaleContext = createContext<ProductLocaleContextValue | null>(null);
 
 export function getProductLocale(): ProductLocale {
   if (typeof window === "undefined") return "fr";
@@ -15,50 +22,50 @@ export function getProductLocale(): ProductLocale {
   return window.navigator.language.toLowerCase().startsWith("en") ? "en" : "fr";
 }
 
-function applyDocumentLocale(locale: ProductLocale) {
+export function persistProductLocale(locale: ProductLocale) {
+  window.localStorage.setItem(STORAGE_KEY, locale);
+  document.cookie = `${COOKIE_KEY}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax`;
   document.documentElement.lang = locale;
+  window.dispatchEvent(new CustomEvent<ProductLocale>(LOCALE_EVENT, { detail: locale }));
 }
 
 export function useProductLocale() {
-  const [locale, setLocaleState] = useState<ProductLocale>("fr");
+  const context = useContext(ProductLocaleContext);
+  const [fallbackLocale, setFallbackLocale] = useState<ProductLocale>("fr");
 
   useEffect(() => {
+    if (context) return;
     const sync = () => {
       const next = getProductLocale();
-      setLocaleState(next);
-      applyDocumentLocale(next);
+      setFallbackLocale(next);
+      document.documentElement.lang = next;
     };
     const syncFromEvent = (event: Event) => {
       const next = (event as CustomEvent<ProductLocale>).detail;
       if (next === "fr" || next === "en") {
-        setLocaleState(next);
-        applyDocumentLocale(next);
-        return;
+        setFallbackLocale(next);
+        document.documentElement.lang = next;
+      } else {
+        sync();
       }
-      sync();
     };
-
     sync();
     window.addEventListener(LOCALE_EVENT, syncFromEvent);
     window.addEventListener("storage", sync);
-
     return () => {
       window.removeEventListener(LOCALE_EVENT, syncFromEvent);
       window.removeEventListener("storage", sync);
     };
+  }, [context]);
+
+  const fallbackSetLocale = useCallback((next: ProductLocale) => {
+    persistProductLocale(next);
+    setFallbackLocale(next);
   }, []);
 
-  const setLocale = useCallback((next: ProductLocale) => {
-    window.localStorage.setItem(STORAGE_KEY, next);
-    document.cookie = `${COOKIE_KEY}=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
-    applyDocumentLocale(next);
-    window.dispatchEvent(new CustomEvent<ProductLocale>(LOCALE_EVENT, { detail: next }));
-  }, []);
+  const locale = context?.locale ?? fallbackLocale;
+  const setLocale = context?.setLocale ?? fallbackSetLocale;
+  const tr = useCallback((fr: string, en: string) => (locale === "en" ? en : fr), [locale]);
 
-  const tr = useCallback(
-    (fr: string, en: string) => (locale === "en" ? en : fr),
-    [locale]
-  );
-
-  return { locale, setLocale, tr };
+  return useMemo(() => ({ locale, setLocale, tr }), [locale, setLocale, tr]);
 }
