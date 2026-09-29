@@ -698,6 +698,27 @@ function deterministicQualityIssues(
     });
   }
 
+  const normalizedCta = normalizeComparable(proposal.bookingLabel);
+  const vaguePrimaryCtas = new Set([
+    "cliquez ici",
+    "click here",
+    "envoyer",
+    "submit",
+    "valider",
+    "ok",
+    "continuer",
+    "continue",
+    "go"
+  ]);
+  if (normalizedCta && vaguePrimaryCtas.has(normalizedCta)) {
+    issues.push({
+      severity: "blocking",
+      code: "vague_primary_cta",
+      detail:
+        "Le CTA principal est trop vague : son libellé doit annoncer clairement l’action ou le résultat attendu."
+    });
+  }
+
   const bodyCandidates = [
     ["heroSubtitle", proposal.heroSubtitle],
     ["aboutText", proposal.aboutText],
@@ -931,6 +952,7 @@ export async function generatePremiumSiteArchitect(
         "Optimize the visitor journey in this order: immediate comprehension, credibility, relevance, useful detail, then one clear next action.",
         "Each field must have a distinct role and avoid repeated wording.",
         "Write for mobile-first scanning: keep the hero title compact, the hero subtitle concise, the main CTA short enough for a button, and FAQ/benefit headings easy to scan.",
+        "The main CTA must be specific enough that the visitor understands what happens next; avoid generic labels such as click here, submit, continue or validate, and never promise an action that the supplied context does not support.",
         "Prefer concrete, human writing over generic marketing language, clichés and exaggerated claims.",
         "Never invent facts, testimonials, figures, prices, savings, certifications, customer results, contact details or capabilities.",
         "If a useful fact is missing, write safely around it and leave the missing-information signal in the strategy rather than fabricating it.",
@@ -1008,6 +1030,7 @@ export async function generatePremiumSiteArchitect(
           "Prefer deleting weak or unjustified material over filling gaps with generic copy.",
           "When a deterministic issue mentions mobile copy density, shorten the affected field without removing essential meaning or adding unsupported claims.",
           "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
+          "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
           "Keep the same strict safety, compliance, rights and factual-grounding rules.",
           ...revisionScopeRules,
         input.affiliationRules
