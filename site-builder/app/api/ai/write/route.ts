@@ -92,6 +92,29 @@ async function consumeAiAllowance(supabase: any, siteId: string) {
   return typeof data === "string" ? data : "unavailable";
 }
 
+async function reservePremiumAiAllowance(
+  supabase: any,
+  siteId: string,
+  requestId: string
+) {
+  const { data, error } = await supabase.rpc("reserve_my_site_ai_generation", {
+    p_site_id: siteId,
+    p_request_id: requestId
+  });
+  if (error) throw error;
+  return typeof data === "string" ? data : "unavailable";
+}
+
+async function releasePremiumAiAllowance(
+  supabase: any,
+  requestId: string
+) {
+  const { error } = await supabase.rpc("release_my_site_ai_generation", {
+    p_request_id: requestId
+  });
+  if (error) throw error;
+}
+
 function extractText(data: any) {
   if (typeof data?.output_text === "string" && data.output_text.trim()) {
     return data.output_text.trim();
@@ -241,9 +264,15 @@ export async function POST(request: Request) {
     if (entitlement?.premium_architect !== true) return NextResponse.json({ error: "AI Site Architect est disponible avec l’offre Pro." }, { status: 403 });
   }
 
+  const premiumRequest =
+    field === "siteArchitect" || field === "siteRevision";
+  const premiumRequestId = premiumRequest ? crypto.randomUUID() : "";
+
   let allowance: string;
   try {
-    allowance = await consumeAiAllowance(auth.supabase, siteId);
+    allowance = premiumRequest
+      ? await reservePremiumAiAllowance(auth.supabase, siteId, premiumRequestId)
+      : await consumeAiAllowance(auth.supabase, siteId);
   } catch (error) {
     console.error("AI allowance check failed", error);
     return NextResponse.json({ error: "L'assistant IA est temporairement indisponible. Réessayez dans quelques instants." }, { status: 503 });
@@ -305,6 +334,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ proposal, premium: true });
     } catch (error) {
       console.error("Premium Site Architect failed", error);
+      if (premiumRequestId) {
+        try {
+          await releasePremiumAiAllowance(auth.supabase, premiumRequestId);
+        } catch (releaseError) {
+          console.error("Premium AI quota reservation release failed", releaseError);
+        }
+      }
       if (error instanceof PremiumArchitectError) {
         const unavailable =
           error.code === "credit_balance_exhausted" ||
