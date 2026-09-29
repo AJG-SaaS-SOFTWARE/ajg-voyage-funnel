@@ -92,12 +92,12 @@ export default async function handler(req, res) {
   }
 
   const origin = text(req.headers.origin, 500);
-  const isPreview = /^https:\/\/[-a-z0-9]+\.vercel\.app$/i.test(origin);
+  const isPreview = /^https:\/\/ajg-voyage-[a-z0-9-]+-ajg-saas-software\.vercel\.app$/i.test(origin);
   if (origin && !ALLOWED_ORIGINS.has(origin) && !isPreview) {
     return json(res, 403, { error: "Origin not allowed" });
   }
 
-  const contentType = String(req.headers["content-type"] || "").toLowerCase();
+  const fetchSite = String(req.headers["sec-fetch-site"] || "").toLowerCase();\n  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site") {\n    return json(res, 403, { error: "Cross-site request not allowed" });\n  }\n\n  const contentType = String(req.headers["content-type"] || "").toLowerCase();
   if (!contentType.startsWith("application/json")) {
     return json(res, 415, { error: "Unsupported media type" });
   }
