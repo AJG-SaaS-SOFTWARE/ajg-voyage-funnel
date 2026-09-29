@@ -185,7 +185,7 @@ Modules à étudier après validation bêta :
 - [x] checklist de recette bêta versionnée avec critères bloquants ;
 - [x] normalisation durcie : home unique, slugs uniques, IDs/assetIds dédupliqués ;
 - [x] correctif de la révision IA globale : application des modules depuis la bonne proposition ;
-- [x] notes internes de planification retirées du rendu public et des metadata ;
+- [x] notes internes de planification retirées du rendu public et des metadata ;\n- [x] métadonnées publiques généralisées : suppression du suffixe historique « Voyage », titres accueil/sous-pages cohérents avec l’activité et la marque, Open Graph homogène sur URL Builder et domaine personnalisé ;
 - [x] sitemap nettoyé : exclusion des pages légales noindex ;
 - [x] droits renforcés : source obligatoire avant publication d’un contenu sous licence/domaine public ;
 - [x] build et production du dernier `main` validés via la release contrôlée ;
