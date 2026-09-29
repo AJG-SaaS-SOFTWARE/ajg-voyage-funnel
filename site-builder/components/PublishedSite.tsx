@@ -17,6 +17,18 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
   const enabledPages = config.architecture.pages.filter((page) => page.enabled);
   const currentPage = enabledPages.find((page) => page.slug === pageSlug) || enabledPages.find((page) => page.kind === "home");
   const isHome = !currentPage || currentPage.kind === "home";
+  const pageHasEditorial = Boolean(
+    !isHome &&
+    currentPage &&
+    (currentPage.headline.trim() ||
+      currentPage.intro.trim() ||
+      currentPage.sections.some((section) => section.heading.trim() || section.text.trim()))
+  );
+  const pageHeadline = !isHome && currentPage ? currentPage.headline.trim() || currentPage.title : "";
+  const pageIntro =
+    !isHome && currentPage
+      ? currentPage.intro.trim() || (!pageHasEditorial ? config.heroSubtitle.trim() : "")
+      : "";
   const pageAssets = (currentPage?.assetIds || []).map((id) => config.contentLibrary.assets.find((asset) => asset.id === id)).filter((asset) => asset?.publishable && asset.rights !== "unknown" && (asset.kind === "text" || !asset.url.startsWith("private://")));
   const base = routeBase ?? `/site/${encodeURIComponent(config.slug)}`;
   const pageHref = (slug: string) => slug ? `${base}/p/${encodeURIComponent(slug)}` : (base || "/");
@@ -44,7 +56,7 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
       </header>
 
       <main>
-        {!isHome && currentPage ? <section className="public-page-intro"><p className="mini">{config.brandName}</p><h1>{currentPage.title}</h1>{config.heroSubtitle.trim() ? <p>{config.heroSubtitle}</p> : null}</section> : null}
+        {!isHome && currentPage ? <section className="public-page-intro"><p className="mini">{config.brandName}</p><h1>{pageHeadline}</h1>{pageIntro ? <p>{pageIntro}</p> : null}</section> : null}
         {isHome ? <section className="public-hero" data-portrait={config.design.showPortrait ? "visible" : "hidden"}>
           {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="public-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={backgroundImageStyle} /> : null}
           <div className="public-hero-copy">
@@ -66,7 +78,20 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
           </div> : null}
         </section> : null}
 
-        {(isHome || currentPage?.kind === "about") && config.aboutText.trim() ? <section className="public-about" id="presentation">
+        {isHome && config.aboutText.trim() ? <section className="public-about" id="presentation">
+          <p className="mini">{config.affiliation === "mwr" ? (english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?") : (english ? "About me" : "Qui suis-je ?")}</p>
+          <h2>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h2>
+          <p>{config.aboutText}</p>
+        </section> : null}
+
+        {!isHome && currentPage?.sections.length ? <section className="public-page-sections" aria-label={english ? "Page content" : "Contenu de la page"}>
+          {currentPage.sections.map((section, index) => section.heading.trim() || section.text.trim() ? <article key={`${currentPage.id}-section-${index}`}>
+            {section.heading.trim() ? <h2>{section.heading}</h2> : null}
+            {section.text.trim() ? <p>{section.text}</p> : null}
+          </article> : null)}
+        </section> : null}
+
+        {!isHome && currentPage?.kind === "about" && !pageHasEditorial && config.aboutText.trim() ? <section className="public-about" id="presentation">
           <p className="mini">{config.affiliation === "mwr" ? (english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?") : (english ? "About me" : "Qui suis-je ?")}</p>
           <h2>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h2>
           <p>{config.aboutText}</p>
