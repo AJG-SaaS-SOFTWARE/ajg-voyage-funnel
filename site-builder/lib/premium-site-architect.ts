@@ -610,6 +610,678 @@ export function reusablePremiumStrategy(
   raw: unknown
 ): PremiumArchitectProposal["intelligence"] | null {
   if (!raw || typeof raw !== "object") return null;
+  const strategy = compactStrategy(raw);
+  if (
+    !strategy.understoodNeed ||
+    !strategy.primaryGoal ||
+    !strategy.positioning ||
+    strategy.visitorJourney.length === 0 ||
+    strategy.contentPriorities.length === 0
+  ) {
+    return null;
+  }
+  return strategy;
+}
+
+function compactVariationReference(raw: unknown) {
+  const value = raw && typeof raw === "object" ? (raw as any) : {};
+  const design = value.design && typeof value.design === "object" ? value.design : {};
+  const pages = Array.isArray(value?.architecture?.pages)
+    ? value.architecture.pages
+        .filter((page: any) => page?.enabled !== false)
+        .slice(0, 6)
+        .map((page: any) => clean(page?.title, 80))
+        .filter(Boolean)
+    : [];
+
+  return {
+    heroTagline: clean(value.heroTagline, 90),
+    heroTitle: clean(value.heroTitle, 90),
+    heroSubtitle: clean(value.heroSubtitle, 420),
+    bookingLabel: clean(value.bookingLabel, 45),
+    recommendedModules: (Array.isArray(value.recommendedModules)
+      ? value.recommendedModules
+      : [])
+      .slice(0, 7)
+      .map((item: unknown) => clean(item, 30))
+      .filter(Boolean),
+    pageTitles: pages,
+    design: {
+      layout: clean(design.layout, 30),
+      heroLayout: clean(design.heroLayout, 30),
+      contentWidth: clean(design.contentWidth, 30),
+      accent: clean(design.accent, 20),
+      background: clean(design.background, 30),
+      pattern: clean(design.pattern, 30)
+    }
+  };
+}
+
+function clampScore(value: unknown) {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.max(0, Math.min(100, Math.round(numeric)));
+}
+
+type DeterministicQualityIssue = {
+  severity: "warning" | "blocking";
+  code: string;
+  detail: string;
+};
+
+function normalizeComparable(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export function deterministicQualityIssues(
+  proposal: PremiumArchitectCore,
+  sourceEvidenceText = ""
+): DeterministicQualityIssue[] {
+  const issues: DeterministicQualityIssue[] = [];
+  const placeholderPattern =
+    /\b(?:lorem ipsum|todo|tbd|placeholder)\b|\b(?:a|à)\s+completer\b|\[(?:[^\]]{0,40})(?:todo|tbd|a completer|à compléter)(?:[^\]]{0,40})\]/iu;
+
+  const visibleCopy = [
+    ["heroTagline", proposal.heroTagline],
+    ["heroTitle", proposal.heroTitle],
+    ["heroSubtitle", proposal.heroSubtitle],
+    ["aboutHeading", proposal.aboutHeading],
+    ["aboutText", proposal.aboutText],
+    ["bookingLabel", proposal.bookingLabel],
+    ...proposal.faq.items.map((item, index) => [
+      `faq-${index + 1}`,
+      `${item.question} ${item.answer}`
+    ] as const),
+    ...proposal.benefits.items.map((item, index) => [
+      `benefit-${index + 1}`,
+      `${item.title} ${item.text}`
+    ] as const)
+  ] as Array<readonly [string, string]>;
+
+  const templateResiduePattern =
+    /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|<(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^>]{0,30})>)/giu;
+  const markdownResiduePattern =
+    /(?:\*\*[^*\n]+\*\*|__[^_\n]+__|(?:^|\n)\s{0,3}#{1,6}\s+\S|```|!?\[[^\]\n]+\]\([^)\n]+\))/u;
+
+  for (const [field, value] of visibleCopy) {
+    if (placeholderPattern.test(value)) {
+      issues.push({
+        severity: "blocking",
+        code: "placeholder_copy",
+        detail: `Le contenu ${field} contient encore un placeholder ou une mention à compléter.`
+      });
+    }
+    if (templateResiduePattern.test(value)) {
+      issues.push({
+        severity: "blocking",
+        code: "template_residue",
+        detail:
+          `Le contenu ${field} contient encore une variable de template ou une donnée factice à remplacer.`
+      });
+    }
+    if (markdownResiduePattern.test(value)) {
+      issues.push({
+        severity: "blocking",
+        code: "markdown_residue",
+        detail:
+          `Le contenu ${field} contient encore du balisage Markdown brut qui serait visible sur le site.`
+      });
+    }
+  }
+
+  const requiredVisibleLabels = [
+    {
+      missing: !proposal.aboutHeading.trim(),
+      code: "missing_about_heading",
+      detail: "Le bloc À propos contient du texte mais aucun titre visible."
+    },
+    {
+      missing: !proposal.bookingLabel.trim(),
+      code: "missing_primary_cta_label",
+      detail: "Le CTA principal n’a aucun libellé."
+    },
+    {
+      missing:
+        proposal.faq.items.length > 0 && !proposal.faq.title.trim(),
+      code: "missing_faq_title",
+      detail: "La FAQ contient des questions mais aucun titre de section."
+    },
+    {
+      missing:
+        proposal.benefits.items.length > 0 &&
+        !proposal.benefits.title.trim(),
+      code: "missing_benefits_title",
+      detail: "La section avantages contient des cartes mais aucun titre."
+    }
+  ];
+
+  for (const item of requiredVisibleLabels) {
+    if (!item.missing) continue;
+    issues.push({
+      severity: "blocking",
+      code: item.code,
+      detail: item.detail
+    });
+  }
+
+  const mobileCopyLimits: Array<{
+    value: string;
+    blockingAt: number;
+    label: string;
+  }> = [
+    {
+      value: proposal.heroTitle,
+      blockingAt: 82,
+      label: "titre principal"
+    },
+    {
+      value: proposal.heroSubtitle,
+      blockingAt: 360,
+      label: "sous-titre du hero"
+    },
+    {
+      value: proposal.bookingLabel,
+      blockingAt: 36,
+      label: "libellé du CTA principal"
+    },
+    ...proposal.faq.items.map((item, index) => ({
+      value: item.question,
+      blockingAt: 170,
+      label: `question FAQ ${index + 1}`
+    })),
+    ...proposal.benefits.items.map((item, index) => ({
+      value: item.title,
+      blockingAt: 84,
+      label: `titre d’avantage ${index + 1}`
+    }))
+  ];
+
+  for (const item of mobileCopyLimits) {
+    if (item.value.trim().length <= item.blockingAt) continue;
+    issues.push({
+      severity: "blocking",
+      code: "mobile_copy_density",
+      detail:
+        `Le ${item.label} est trop long pour rester lisible sur mobile (${item.value.trim().length} caractères, cible ≤ ${item.blockingAt}).`
+    });
+  }
+
+  const normalizedCta = normalizeComparable(proposal.bookingLabel);
+  const vaguePrimaryCtas = new Set([
+    "cliquez ici",
+    "click here",
+    "envoyer",
+    "submit",
+    "valider",
+    "ok",
+    "continuer",
+    "continue",
+    "go"
+  ]);
+  if (normalizedCta && vaguePrimaryCtas.has(normalizedCta)) {
+    issues.push({
+      severity: "blocking",
+      code: "vague_primary_cta",
+      detail:
+        "Le CTA principal est trop vague : son libellé doit annoncer clairement l’action ou le résultat attendu."
+    });
+  }
+
+  const bodyCopyLimits: Array<{
+    value: string;
+    blockingAt: number;
+    label: string;
+  }> = [
+    {
+      value: proposal.aboutText,
+      blockingAt: 1500,
+      label: "texte À propos"
+    },
+    ...proposal.faq.items.map((item, index) => ({
+      value: item.answer,
+      blockingAt: 900,
+      label: `réponse FAQ ${index + 1}`
+    })),
+    ...proposal.benefits.items.map((item, index) => ({
+      value: item.text,
+      blockingAt: 420,
+      label: `texte d’avantage ${index + 1}`
+    }))
+  ];
+
+  for (const item of bodyCopyLimits) {
+    if (item.value.trim().length <= item.blockingAt) continue;
+    issues.push({
+      severity: "blocking",
+      code: "body_copy_density",
+      detail:
+        `Le ${item.label} est trop long pour une lecture web fluide (${item.value.trim().length} caractères, cible ≤ ${item.blockingAt}).`
+    });
+  }
+
+  const bodyCandidates = [
+    ["heroSubtitle", proposal.heroSubtitle],
+    ["aboutText", proposal.aboutText],
+    ...proposal.faq.items.map((item, index) => [
+      `faq-answer-${index + 1}`,
+      item.answer
+    ] as const),
+    ...proposal.benefits.items.map((item, index) => [
+      `benefit-text-${index + 1}`,
+      item.text
+    ] as const)
+  ] as Array<readonly [string, string]>;
+
+  const seenBodies = new Map<string, string>();
+  const comparableBodies: Array<{ field: string; tokens: Set<string> }> = [];
+
+  for (const [field, value] of bodyCandidates) {
+    const normalized = normalizeComparable(value);
+    if (normalized.length < 60) continue;
+    const previous = seenBodies.get(normalized);
+    if (previous) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_copy",
+        detail: `Les contenus ${previous} et ${field} répètent exactement le même texte.`
+      });
+    } else {
+      seenBodies.set(normalized, field);
+    }
+
+    const tokens = new Set(
+      normalized.split(" ").filter((token) => token.length >= 4)
+    );
+    if (tokens.size >= 10) comparableBodies.push({ field, tokens });
+  }
+
+  for (let left = 0; left < comparableBodies.length; left += 1) {
+    for (let right = left + 1; right < comparableBodies.length; right += 1) {
+      const a = comparableBodies[left];
+      const b = comparableBodies[right];
+      const intersection = [...a.tokens].filter((token) => b.tokens.has(token)).length;
+      const union = new Set([...a.tokens, ...b.tokens]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+
+      if (intersection >= 8 && similarity >= 0.82) {
+        issues.push({
+          severity: "blocking",
+          code: "near_duplicate_copy",
+          detail:
+            `Les contenus ${a.field} et ${b.field} reformulent presque la même idée ` +
+            `(${Math.round(similarity * 100)} % de vocabulaire significatif partagé).`
+        });
+      }
+    }
+  }
+
+  const faqQuestions = new Set<string>();
+  const faqQuestionTokens: Array<{ question: string; tokens: Set<string> }> = [];
+  const genericFaqQuestionPattern = /^(?:question|question\s+\d+|faq|faq\s+\d+)$/u;
+  for (const item of proposal.faq.items) {
+    const normalized = normalizeComparable(item.question);
+    if (!normalized) continue;
+    if (genericFaqQuestionPattern.test(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "generic_faq_question",
+        detail:
+          `La FAQ contient un libellé générique (« ${item.question} ») au lieu d’une vraie question utilisateur.`
+      });
+    }
+    if (faqQuestions.has(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_faq",
+        detail: "La FAQ contient deux questions identiques."
+      });
+      break;
+    }
+    faqQuestions.add(normalized);
+
+    const tokens = new Set(
+      normalized.split(" ").filter((token) => token.length >= 4)
+    );
+    if (tokens.size >= 3) {
+      faqQuestionTokens.push({ question: item.question, tokens });
+    }
+  }
+
+  for (let left = 0; left < faqQuestionTokens.length; left += 1) {
+    for (let right = left + 1; right < faqQuestionTokens.length; right += 1) {
+      const a = faqQuestionTokens[left];
+      const b = faqQuestionTokens[right];
+      const intersection = [...a.tokens].filter((token) => b.tokens.has(token)).length;
+      const union = new Set([...a.tokens, ...b.tokens]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+
+      if (intersection >= 4 && similarity >= 0.5) {
+        issues.push({
+          severity: "blocking",
+          code: "near_duplicate_faq",
+          detail:
+            `Les questions FAQ « ${a.question} » et « ${b.question} » sont trop proches ; elles doivent être fusionnées ou traiter des besoins réellement distincts.`
+        });
+        break;
+      }
+    }
+    if (issues.some((item) => item.code === "near_duplicate_faq")) break;
+  }
+
+  const benefitTitles = new Set<string>();
+  const benefitTitleTokens: Array<{ title: string; tokens: Set<string> }> = [];
+  const genericBenefitTitlePattern =
+    /^(?:avantage|avantage\s+\d+|benefice|benefice\s+\d+|benefit|benefit\s+\d+|feature|feature\s+\d+|point\s+fort|point\s+fort\s+\d+)$/u;
+  for (const item of proposal.benefits.items) {
+    const normalized = normalizeComparable(item.title);
+    if (!normalized) continue;
+    if (genericBenefitTitlePattern.test(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "generic_benefit_title",
+        detail:
+          `La carte avantage « ${item.title} » utilise un titre générique ; son bénéfice doit être compréhensible sans texte de remplissage.`
+      });
+    }
+    if (benefitTitles.has(normalized)) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_benefit_title",
+        detail:
+          "Deux avantages utilisent le même titre ; chaque carte doit exprimer une valeur distincte."
+      });
+      break;
+    }
+    benefitTitles.add(normalized);
+
+    const tokens = new Set(
+      normalized.split(" ").filter((token) => token.length >= 4)
+    );
+    if (tokens.size >= 2) {
+      benefitTitleTokens.push({ title: item.title, tokens });
+    }
+  }
+
+  for (let left = 0; left < benefitTitleTokens.length; left += 1) {
+    for (let right = left + 1; right < benefitTitleTokens.length; right += 1) {
+      const a = benefitTitleTokens[left];
+      const b = benefitTitleTokens[right];
+      const intersection = [...a.tokens].filter((token) => b.tokens.has(token)).length;
+      const union = new Set([...a.tokens, ...b.tokens]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+
+      if (intersection >= 2 && similarity >= 0.66) {
+        issues.push({
+          severity: "blocking",
+          code: "near_duplicate_benefit_title",
+          detail:
+            `Les avantages « ${a.title} » et « ${b.title} » sont trop proches ; chaque carte doit porter une promesse réellement distincte.`
+        });
+        break;
+      }
+    }
+    if (issues.some((item) => item.code === "near_duplicate_benefit_title")) break;
+  }
+
+  const enabledPages = proposal.architecture.pages.filter((page) => page.enabled);
+  if (proposal.architecture.mode === "single" && enabledPages.length > 1) {
+    issues.push({
+      severity: "blocking",
+      code: "single_mode_multiple_pages",
+      detail:
+        `L’architecture est déclarée monopage mais contient ${enabledPages.length} pages actives.`
+    });
+  }
+
+  const pageTitles = new Set<string>();
+  const pagePurposes = new Map<string, string>();
+  const genericPageTitles = new Set([
+    "page",
+    "page 1",
+    "page 2",
+    "untitled",
+    "sans titre",
+    "more",
+    "plus",
+    "misc",
+    "divers"
+  ]);
+  for (const page of enabledPages) {
+    const title = normalizeComparable(page.title);
+    if (title && genericPageTitles.has(title)) {
+      issues.push({
+        severity: "blocking",
+        code: "generic_page_title",
+        detail: `La page « ${page.title} » utilise un titre de navigation trop générique.`
+      });
+    }
+    if (page.title.trim().length > 48) {
+      issues.push({
+        severity: "blocking",
+        code: "long_page_title",
+        detail:
+          `Le titre de navigation « ${page.title} » est trop long (${page.title.trim().length} caractères, cible ≤ 48).`
+      });
+    }
+    if (title && pageTitles.has(title)) {
+      issues.push({
+        severity: "blocking",
+        code: "duplicate_page_title",
+        detail: `Deux pages actives utilisent le même titre : ${page.title}.`
+      });
+    }
+    if (title) pageTitles.add(title);
+
+    const purpose = normalizeComparable(page.purpose);
+    if (!purpose) {
+      issues.push({
+        severity: "blocking",
+        code: "missing_page_purpose",
+        detail: `La page ${page.title} n’a aucun rôle éditorial explicite.`
+      });
+    } else if (purpose.length < 12) {
+      issues.push({
+        severity: "warning",
+        code: "weak_page_purpose",
+        detail: `Le rôle de la page ${page.title} est trop peu précis.`
+      });
+    } else {
+      const previous = pagePurposes.get(purpose);
+      if (previous) {
+        issues.push({
+          severity: "blocking",
+          code: "duplicate_page_purpose",
+          detail: `Les pages ${previous} et ${page.title} ont le même rôle éditorial ; elles doivent être fusionnées ou clairement différenciées.`
+        });
+      } else {
+        pagePurposes.set(purpose, page.title);
+      }
+    }
+  }
+
+  if (
+    proposal.recommendedModules.includes("faq") &&
+    proposal.faq.items.length === 0
+  ) {
+    issues.push({
+      severity: "blocking",
+      code: "empty_recommended_faq",
+      detail: "La FAQ est recommandée mais ne contient aucune question exploitable."
+    });
+  }
+
+  if (
+    proposal.recommendedModules.includes("benefits") &&
+    proposal.benefits.items.length === 0
+  ) {
+    issues.push({
+      severity: "blocking",
+      code: "empty_recommended_benefits",
+      detail: "Le module avantages est recommandé mais ne contient aucun avantage exploitable."
+    });
+  }
+
+  const normalizeNumber = (value: string) =>
+    value.replace(",", ".").replace(/^0+(?=\d)/, "");
+  const supportedNumbers = new Set(
+    (sourceEvidenceText.match(/\d+(?:[.,]\d+)?/g) || []).map(normalizeNumber)
+  );
+  const quantitativePattern =
+    /(?:[€£$]\s*\d+(?:[.,]\d+)?)|(?:\b\d+(?:[.,]\d+)?\s*(?:%|€|£|\$))|(?:\b\d+(?:[.,]\d+)?\s*(?:euros?|dollars?|usd|gbp|minutes?|mins?|heures?|hours?|hrs?|jours?|days?|semaines?|weeks?|mois|months?|ans?|années?|years?|clients?|customers?|projets?|projects?|pays|countries|destinations?|voyages?|trips?|réservations?|bookings?)\b)|(?:\b(?:19|20)\d{2}\b)|(?:\b24\s*\/\s*7\b)/giu;
+
+  for (const [field, value] of visibleCopy) {
+    const claims = value.match(quantitativePattern) || [];
+    for (const claim of claims) {
+      const numeric = claim.match(/\d+(?:[.,]\d+)?/)?.[0];
+      if (!numeric || supportedNumbers.has(normalizeNumber(numeric))) continue;
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_quantitative_claim",
+        detail: `Le contenu ${field} introduit un chiffre non présent dans les informations fournies : « ${claim} ».`
+      });
+    }
+  }
+
+  const normalizedEvidence = normalizeComparable(sourceEvidenceText);
+  const credibilityClaims = [
+    { pattern: /\b(?:meilleur(?:e|s)?|best)\b/giu, label: "meilleur / best" },
+    { pattern: /\b(?:leader|leading)\b/giu, label: "leader" },
+    { pattern: /\b(?:certifiee?s?|certified)\b/giu, label: "certifié" },
+    { pattern: /\b(?:primee?s?|award[- ]winning|awarded)\b/giu, label: "primé" },
+    { pattern: /\b(?:garantie?s?|guaranteed)\b/giu, label: "garanti" },
+    { pattern: /\b(?:numero\s*1|number\s*one|n\s*[°ºo]?\s*1)\b/giu, label: "numéro 1" }
+  ];
+
+  for (const [field, value] of visibleCopy) {
+    const normalizedValue = normalizeComparable(value);
+    for (const claim of credibilityClaims) {
+      const matches = normalizedValue.match(claim.pattern) || [];
+      if (!matches.length) continue;
+
+      const supported = (normalizedEvidence.match(claim.pattern) || []).length > 0;
+      if (supported) continue;
+
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_credibility_claim",
+        detail:
+          `Le contenu ${field} utilise une affirmation de crédibilité non fournie par le client (${claim.label}).`
+      });
+      break;
+    }
+  }
+
+  const urgencyClaims = [
+    {
+      pattern: /\b(?:derniere chance|last chance)\b/giu,
+      label: "dernière chance / last chance"
+    },
+    {
+      pattern:
+        /\b(?:offres?|places?|disponibilites?|slots?|spots?)\s+(?:sont\s+|are\s+)?(?:tres\s+|very\s+)?(?:limitees?|limited)\b/giu,
+      label: "offre, places ou disponibilités limitées"
+    },
+    {
+      pattern:
+        /\b(?:temps limite|limited time|aujourd hui seulement|today only)\b/giu,
+      label: "échéance commerciale urgente"
+    }
+  ];
+
+  for (const [field, value] of visibleCopy) {
+    const normalizedValue = normalizeComparable(value);
+    for (const claim of urgencyClaims) {
+      const matches = normalizedValue.match(claim.pattern) || [];
+      if (!matches.length) continue;
+
+      const supported = (normalizedEvidence.match(claim.pattern) || []).length > 0;
+      if (supported) continue;
+
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_urgency_claim",
+        detail:
+          `Le contenu ${field} introduit une urgence ou une rareté non fournie par le client (${claim.label}).`
+      });
+      break;
+    }
+  }
+
+  const modelMetaClaims = [
+    {
+      pattern:
+        /\b(?:en tant qu ia|en tant que modele(?: de langage)?|as an ai(?: language model)?)\b/giu,
+      label: "auto-référence au modèle"
+    },
+    {
+      pattern:
+        /\b(?:system prompt|prompt systeme|instructions? systeme|developer message|json schema|source context|contexte source)\b/giu,
+      label: "métadonnée interne du pipeline IA"
+    }
+  ];
+
+  for (const [field, value] of visibleCopy) {
+    const normalizedValue = normalizeComparable(value);
+    for (const claim of modelMetaClaims) {
+      const matches = normalizedValue.match(claim.pattern) || [];
+      if (!matches.length) continue;
+
+      const supported = (normalizedEvidence.match(claim.pattern) || []).length > 0;
+      if (supported) continue;
+
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_model_meta_copy",
+        detail:
+          `Le contenu ${field} expose une formulation interne au modèle ou au pipeline IA non demandée par le client (${claim.label}).`
+      });
+      break;
+    }
+  }
+
+  return issues.slice(0, 12);
+}
+
+export async function generatePremiumSiteArchitect(
+  input: PremiumArchitectInput
+): Promise<PremiumArchitectProposal> {
+  const premiumModel = process.env.OPENAI_ARCHITECT_MODEL || "gpt-5.6";
+  const auxiliaryModel = process.env.OPENAI_ARCHITECT_AUX_MODEL || "gpt-5.6-terra";
+  const assets = safeAssets(input.contentLibrary || []);
+
+  const sourceContext = {
+    mode: input.mode,
+    language: input.language,
+    firstName: input.firstName,
+    brandName: input.brandName,
+    brief: input.architectBrief,
+    revisionRequest: input.revisionRequest || "",
+    instruction: input.instruction,
+    editorialContext: input.editorialContext || "",
+    currentText: input.currentText || "",
+    existingProposal: input.mode === "revision" ? input.existingProposal || null : null,
+    contentLibrary: assets
+  };
+  const sourceEvidenceText = JSON.stringify(sourceContext);
+
+  const revisionScopeRules =
+    input.mode === "revision"
+      ? [
+          "Revision mode: treat existingProposal as the baseline to preserve, not as raw material for a fresh redesign.",
+          "Change only the fields, pages, modules or visual choices explicitly requested by revisionRequest, plus the minimum dependent changes required for coherence.",
+          "Do not rewrite unrelated copy just to improve style. Do not change architecture, module order, colors, layout or CTA unless the request requires it.",
+          "Preserve existing rights-cleared asset assignments unless the request explicitly asks to move, add or remove them.",
+          "When the requested scope is ambiguous, choose the smallest reasonable change and preserve everything else.",
+          "Any unrelated change is scope creep and must be treated as a quality defect during review."
+        ]
+      : [];
+
   const reusableStrategy =
     input.mode === "create" && input.reuseStrategy === true
       ? reusablePremiumStrategy(input.existingStrategy)
