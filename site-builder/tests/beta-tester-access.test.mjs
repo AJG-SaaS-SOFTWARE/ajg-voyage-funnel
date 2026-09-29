@@ -44,10 +44,12 @@ test("account pricing reflects Essential and Pro AI commercial grid", () => {
   assert.ok(plans.includes("Essentiel"));
   assert.ok(plans.includes("Pro IA"));
   assert.ok(plans.includes("19 €"));
-  assert.ok(plans.includes("190 € / an"));
+  assert.ok(plans.includes("190 €"));
   assert.ok(plans.includes("39 €"));
-  assert.ok(plans.includes("390 € / an"));
+  assert.ok(plans.includes("390 €"));
   assert.ok(plans.includes("Beta Tester"));
   assert.ok(plans.includes("Accès Pro IA complet offert pendant la bêta"));
-  assert.ok(plans.includes('href="/tarifs"'));
+  assert.ok(plans.includes('locale === "en" ? "/pricing" : "/tarifs"'));
+  assert.ok(plans.includes('"month"'));
+  assert.ok(plans.includes('"year"'));
 });
