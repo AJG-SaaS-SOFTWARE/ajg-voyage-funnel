@@ -323,3 +323,19 @@ test("plain text with a normal URL is not treated as Markdown", () => {
   });
   assert.ok(!codes(value).includes("markdown_residue"));
 });
+
+test("unsupported urgency and scarcity claims are blocked unless grounded in client evidence", () => {
+  const value = proposal({
+    heroSubtitle:
+      "Les places sont limitées : c’est votre dernière chance pour réserver."
+  });
+  const unsupported = codes(value);
+  assert.ok(unsupported.includes("unsupported_urgency_claim"));
+
+  const evidence =
+    "Le client précise que les places sont limitées pour cette édition et parle de dernière chance avant clôture.";
+  assert.ok(
+    !codes(value, evidence).includes("unsupported_urgency_claim")
+  );
+});
+

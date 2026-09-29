@@ -1119,6 +1119,42 @@ export function deterministicQualityIssues(
     }
   }
 
+  const urgencyClaims = [
+    {
+      pattern: /\b(?:derniere chance|last chance)\b/giu,
+      label: "dernière chance / last chance"
+    },
+    {
+      pattern:
+        /\b(?:offres?|places?|disponibilites?|slots?|spots?)\s+(?:sont\s+|are\s+)?(?:tres\s+|very\s+)?(?:limitees?|limited)\b/giu,
+      label: "offre, places ou disponibilités limitées"
+    },
+    {
+      pattern:
+        /\b(?:temps limite|limited time|aujourd hui seulement|today only)\b/giu,
+      label: "échéance commerciale urgente"
+    }
+  ];
+
+  for (const [field, value] of visibleCopy) {
+    const normalizedValue = normalizeComparable(value);
+    for (const claim of urgencyClaims) {
+      const matches = normalizedValue.match(claim.pattern) || [];
+      if (!matches.length) continue;
+
+      const supported = (normalizedEvidence.match(claim.pattern) || []).length > 0;
+      if (supported) continue;
+
+      issues.push({
+        severity: "blocking",
+        code: "unsupported_urgency_claim",
+        detail:
+          `Le contenu ${field} introduit une urgence ou une rareté non fournie par le client (${claim.label}).`
+      });
+      break;
+    }
+  }
+
   return issues.slice(0, 12);
 }
 
@@ -1209,6 +1245,7 @@ export async function generatePremiumSiteArchitect(
         "The main CTA must be specific enough that the visitor understands what happens next; avoid generic labels such as click here, submit, continue or validate, and never promise an action that the supplied context does not support.",
         "Prefer concrete, human writing over generic marketing language, clichés and exaggerated claims.",
         "Never invent facts, testimonials, figures, prices, savings, certifications, customer results, contact details or capabilities.",
+        "Never invent urgency, scarcity, deadlines or limited availability. Use claims such as limited places, last chance, today only or limited time only when that constraint is explicitly present in the supplied source context.",
         "If a useful fact is missing, write safely around it and leave the missing-information signal in the strategy rather than fabricating it.",
         "Architecture must stay between one and six pages and include exactly one home page.",
         "Keep architecture.mode consistent with the enabled pages: single means exactly one enabled home page; multi means more than one enabled page.",
@@ -1292,6 +1329,7 @@ export async function generatePremiumSiteArchitect(
           "When deterministic checks detect near-duplicate copy, give each affected section a clearly different editorial job instead of merely swapping synonyms.",
           "When benefit cards overlap, consolidate them or rewrite them so each one communicates a distinct supported value.",
           "When the main CTA is flagged as vague, rewrite it as a short, concrete next action grounded in the user context.",
+          "When urgency or scarcity is flagged as unsupported, remove the pressure claim entirely unless the same constraint is explicitly grounded in the source context.",
           "When a page title is generic or too long, replace it with a short navigation label that clearly reflects that page’s purpose.",
           "When two pages have the same editorial purpose, merge them or rewrite the architecture so each remaining page has a genuinely distinct visitor job.",
           "When an enabled page lacks a purpose, either define a concrete visitor job for it or remove the page if it adds no value.",
@@ -1330,6 +1368,7 @@ export async function generatePremiumSiteArchitect(
       "Treat the previous review as context, not as a verdict to copy. Make an independent assessment of the final candidate.",
       "If refinement occurred, verify that the previous review problems are resolved without introducing unsupported facts.",
       "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
+      "Treat invented urgency, scarcity, deadlines or limited availability as unsupported factual pressure and a major issue.",
       "Do not penalize facts that are explicitly marked as missing instead of invented.",
       "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
       "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
