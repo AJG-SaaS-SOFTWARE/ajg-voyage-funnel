@@ -21,3 +21,13 @@ test("production release still keeps rollback verification after promotion", () 
   assert.ok(verify > promote);
   assert.ok(rollback > verify);
 });
+
+
+test("HTTP 409 is accepted only through alias verification", () => {
+  assert.ok(workflow.includes('if [ "$PROMOTE_CODE" -eq 409 ]; then'));
+  const conflict = workflow.indexOf('if [ "$PROMOTE_CODE" -eq 409 ]; then');
+  const aliasCheck = workflow.indexOf('if [ "$ALIAS_DEPLOYMENT_ID" = "$DEPLOYMENT_ID" ]');
+  const finalFailure = workflow.indexOf('Production alias did not move to $DEPLOYMENT_ID');
+  assert.ok(aliasCheck > conflict);
+  assert.ok(finalFailure > aliasCheck);
+});
