@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AdminShell } from "../../../components/AdminShell";
 import { isCurrentUserAdmin } from "../../../lib/admin";
 import { getSupabaseBrowserClient } from "../../../lib/supabase-browser";
 
@@ -150,44 +150,37 @@ export default function AdminPrivacyPage() {
 
   if (state === "loading") {
     return (
-      <main className="plans-page">
-        <p className="plans-note">Chargement des demandes RGPD…</p>
-      </main>
+      <AdminShell
+        active="privacy"
+        eyebrow="Administration · RGPD"
+        title="Demandes d’effacement"
+        description="Chargement du registre et des contrôles de purge."
+      >
+        <p className="admin-empty-state">Chargement des demandes RGPD…</p>
+      </AdminShell>
     );
   }
 
   if (state === "denied") {
     return (
-      <main className="plans-page">
-        <section className="plans-hero">
-          <p className="eyebrow">Administration</p>
-          <h1>Accès refusé</h1>
-          <Link className="button secondary" href="/builder">
-            Retour au Builder
-          </Link>
-        </section>
-        {message ? <p className="plans-note">{message}</p> : null}
-      </main>
+      <AdminShell
+        active="privacy"
+        eyebrow="Administration"
+        title="Accès refusé"
+        description="Cette zone est réservée aux comptes disposant du rôle administrateur."
+      >
+        {message ? <p className="admin-flash" role="alert">{message}</p> : null}
+      </AdminShell>
     );
   }
 
   return (
-    <main className="plans-page">
-      <section className="plans-hero">
-        <p className="eyebrow">Administration · RGPD</p>
-        <h1>Demandes d’effacement</h1>
-        <p>
-          Une demande suspend déjà les sites concernés. La purge ci-dessous
-          annule les abonnements applicables, détache les domaines, supprime
-          les médias via Storage, purge les données du Builder puis supprime
-          l’identité Auth pour une demande de compte.
-        </p>
-        <div className="builder-actions">
-          <Link className="button secondary" href="/admin">← Administration</Link>
-          <Link className="button secondary" href="/builder">Builder</Link>
-        </div>
-      </section>
-
+    <AdminShell
+      active="privacy"
+      eyebrow="Administration · RGPD"
+      title="Demandes d’effacement"
+      description="Une demande suspend déjà les sites concernés. La purge annule les abonnements applicables, détache les domaines, supprime les médias et données du Builder puis l’identité Auth pour une demande de compte."
+    >
       <div className="privacy-admin-warning">
         <b>Action irréversible.</b>
         <p>
@@ -218,7 +211,7 @@ export default function AdminPrivacyPage() {
         </button>
       </section>
 
-      {message ? <p className="plans-note" role="status">{message}</p> : null}
+      {message ? <p className="admin-flash" role="status">{message}</p> : null}
 
       <section className="privacy-admin-list">
         {requests.map((request) => (
@@ -287,6 +280,6 @@ export default function AdminPrivacyPage() {
           </section>
         ) : null}
       </section>
-    </main>
+    </AdminShell>
   );
 }
