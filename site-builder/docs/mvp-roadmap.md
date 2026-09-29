@@ -515,7 +515,10 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] gate juridique renforcé : `AJG_COMMERCIAL_LEGAL_READY=true` ne suffit pas si l’identité vendeur obligatoire reste incomplète ;
 - [x] vente aux consommateurs désactivée par défaut tant que rétractation, médiateur de la consommation et informations précontractuelles B2C ne sont pas finalisés ;
 - [ ] identité juridique vendeur : renseigner dénomination/forme/adresse/email/téléphone/SIREN/immatriculation/directeur de publication/contact vie privée, puis effectuer la revue finale ;
-- [ ] fiscalité : confirmer régime TVA et stratégie Stripe Tax avant encaissement ;
+- [x] profil fiscal sandbox : produits Stripe classés `txcd_10103001` (SaaS - Business Use), lancement initial B2B et collecte adresse/identifiant TVA préparées ;
+- [x] Stripe Tax rendu conditionnel côté serveur : jamais activé automatiquement sans régime TVA confirmé ;
+- [x] gate fiscal distingue `franchise_base` (pas de collecte Stripe Tax) et `vat_registered` (TVA intracommunautaire + Stripe Tax requis) ;
+- [ ] fiscalité : confirmer le régime réel `franchise_base` ou `vat_registered`, puis seulement activer `AJG_COMMERCIAL_TAX_READY` ;
 - [ ] paiement réel : volontairement non activé avant configuration des Price IDs live, secret webhook live, validation juridique/fiscale et bascule explicite `AJG_BILLING_CHECKOUT_ENABLED=true` ;
 - [ ] Supabase Auth leaked-password protection : disponible uniquement avec Supabase Pro selon la documentation actuelle.
 
