@@ -138,3 +138,22 @@ test("English Builder core has no known French-only residuals in customer paths"
   assert.doesNotMatch(data, /: "Impossible d'enregistrer la demande\."/);
   assert.match(data, /Unable to record the request/);
 });
+
+
+test("authentication and beta invitation preserve the chosen locale across email redirects", () => {
+  const login = read("app/login/page.tsx");
+  const provider = read("components/ProductLocaleProvider.tsx");
+  const betaRoute = read("app/api/admin/beta-cohort/route.ts");
+  const adminClient = read("lib/admin.ts");
+  const adminPage = read("app/admin/page.tsx");
+
+  assert.match(login, /builder\?lang=\$\{locale\}/);
+  assert.match(login, /The sign-in link could not be sent/);
+  assert.match(provider, /URLSearchParams\(window\.location\.search\)/);
+  assert.match(provider, /explicitLocale/);
+  assert.match(betaRoute, /ajg_builder_locale: locale/);
+  assert.match(betaRoute, /builder\?lang=\$\{locale\}/);
+  assert.match(adminClient, /durationDays = 30, locale: "fr" \| "en" = "fr"/);
+  assert.match(adminPage, /Langue du testeur/);
+  assert.match(adminPage, /English/);
+});
