@@ -121,7 +121,7 @@ async function sendNotification(row) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return json(res, 405, { error: "Method not allowed" });
