@@ -448,6 +448,16 @@ Objectif : rendre les droits Gratuit/Pro compréhensibles avant toute action, et
 - [x] recette réelle Storage validée : le contrôle admin a exécuté plusieurs fois `site-private-media` → `/api/media/promote` → URL publique avec HTTP 200, puis nettoyage complet sans résidu.
 - [x] runner E2E complet admin validé en production après correctif du droit Pro temporaire ; toutes les étapes sont passées et le nettoyage final est confirmé sans résidu.
 
+### Sauvegarde externe des médias — continuité
+- [x] moteur de sauvegarde incrémentale préparé pour `site-media` et `site-private-media` vers un Vercel Blob privé hors Supabase ;
+- [x] versionnage immuable par SHA-256, état courant et manifests privés ; anciennes versions et suppressions conservées 35 jours par défaut ;
+- [x] cron quotidien sécurisé ajouté à 02:40 UTC et endpoint de santé non sensible `/api/health/storage-backup` ;
+- [x] release-readiness commercial enrichi avec présence du store et fraîcheur de la dernière sauvegarde (<36 h sain, >72 h blocker) ;
+- [x] runbook de restauration contrôlée documenté ; aucune restauration automatique/destructive ;
+- [ ] créer et connecter le store Vercel Blob privé `ajg-site-builder-backups` au projet Production ;
+- [ ] exécuter la première sauvegarde réelle et vérifier la présence du manifest, des objets et l’état de santé ;
+- [ ] connecter ensuite la fraîcheur de cette sauvegarde au Cockpit Infrastructure AJG.
+
 ### Domaines personnalisés — automatisation
 - [x] demande de domaine limitée au site propriétaire et à l’entitlement Pro ; la création force toujours `pending / non-primary` ;
 - [x] auto-vérification directe par le propriétaire bloquée en RLS et par révocation du privilège UPDATE ;
