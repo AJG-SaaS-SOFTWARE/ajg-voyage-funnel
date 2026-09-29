@@ -33,7 +33,7 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
   } as CSSProperties;
 
   return (
-    <div className="public-site" data-layout={config.design.layout} data-hero-layout={config.design.heroLayout} data-content-width={config.design.contentWidth} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
+    <div className="public-site" lang={english ? "en" : "fr"} data-layout={config.design.layout} data-hero-layout={config.design.heroLayout} data-content-width={config.design.contentWidth} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
@@ -93,8 +93,8 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
           {config.design.showTravelAdvantageLogo ? <img src="/logos/travel-advantage-independent.svg" alt={english ? "Travel Advantage — independent distributor" : "Travel Advantage — distributeur indépendant"} /> : null}
         </div> : null}
         {(config.design.heroImage || config.design.audio) ? <div className="public-credits">
-          {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">Image : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}
-          {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">Son : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}
+          {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">{english ? "Image" : "Image"} : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}
+          {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">{english ? "Audio" : "Son"} : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}
         </div> : null}
         {legalReady ? <nav className="public-legal-links" aria-label={english ? "Legal information" : "Informations légales"}>
           <Link href={`${base}/mentions-legales` || "/mentions-legales"}>{english ? "Legal notice" : "Mentions légales"}</Link>
