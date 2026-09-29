@@ -243,6 +243,12 @@ export default function Home() {
       <section className="danger-zone premium-danger-zone">
         <button type="button" className="text-button" onClick={reset}>{tr("Réinitialiser le brouillon local", "Reset local draft")}</button>
       </section>
+      <footer className="builder-public-legal-footer">
+        <Link href={locale === "en" ? "/legal" : "/mentions-legales"}>{tr("Mentions légales", "Legal notice")}</Link>
+        <Link href={locale === "en" ? "/privacy" : "/confidentialite"}>{tr("Confidentialité", "Privacy")}</Link>
+        <Link href={locale === "en" ? "/terms" : "/cgv"}>{tr("Conditions", "Terms")}</Link>
+        <Link href={locale === "en" ? "/cancel" : "/resilier"}>{tr("Résiliation", "Cancellation")}</Link>
+      </footer>
     </main>
   );
 }
