@@ -70,24 +70,66 @@ async function resolveSite(
   if (!site) return null;
 
   const priceId = stripePlanPriceId(subscription);
-  const pricePlanMap = new Map<string, "essential" | "pro">(
+  const pricePlanMap = new Map<string, "essential" | "growth">(
     [
       [process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID?.trim(), "essential"],
       [process.env.STRIPE_ESSENTIAL_ANNUAL_PRICE_ID?.trim(), "essential"],
-      [process.env.STRIPE_PRO_MONTHLY_PRICE_ID?.trim(), "pro"],
-      [process.env.STRIPE_PRO_ANNUAL_PRICE_ID?.trim(), "pro"],
-      [process.env.STRIPE_PRO_PRICE_ID?.trim(), "pro"]
-    ].filter((entry): entry is [string, "essential" | "pro"] => Boolean(entry[0]))
+      [process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID?.trim(), "growth"],
+      [process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID?.trim(), "growth"]
+    ].filter((entry): entry is [string, "essential" | "growth"] => Boolean(entry[0]))
   );
   const mappedPlan = priceId ? pricePlanMap.get(priceId) : undefined;
   const existingPlan =
-    existing?.plan_key === "essential" || existing?.plan_key === "pro"
+    existing?.plan_key === "essential" || existing?.plan_key === "growth"
       ? existing.plan_key
       : "";
   const planKey = mappedPlan || existingPlan;
 
   if (!planKey) return null;
   return { siteId, ownerId, planKey };
+}
+
+function aiLaunchOperations() {
+  const raw = Number(process.env.AJG_AI_LAUNCH_OPERATIONS || "4");
+  if (!Number.isFinite(raw)) return 4;
+  return Math.max(1, Math.min(20, Math.floor(raw)));
+}
+
+async function grantAiLaunch(
+  service: any,
+  input: {
+    siteId: string;
+    ownerId: string;
+    source: "stripe_purchase" | "growth_annual";
+    externalReference: string;
+  }
+) {
+  const { data: site, error: siteError } = await service
+    .from("sites")
+    .select("id,owner_id")
+    .eq("id", input.siteId)
+    .eq("owner_id", input.ownerId)
+    .maybeSingle();
+  if (siteError) throw siteError;
+  if (!site) return "ignored";
+
+  const { error } = await service
+    .from("site_ai_launch_entitlements")
+    .upsert(
+      {
+        site_id: input.siteId,
+        owner_id: input.ownerId,
+        source: input.source,
+        status: "active",
+        operations_total: aiLaunchOperations(),
+        operations_used: 0,
+        external_reference: input.externalReference,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "external_reference", ignoreDuplicates: true }
+    );
+  if (error) throw error;
+  return "granted";
 }
 
 async function bindAndApply(
@@ -162,6 +204,21 @@ async function bindAndApply(
     }
   );
   if (error) throw error;
+
+  if (
+    resolved.planKey === "growth" &&
+    priceId &&
+    priceId === process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID?.trim() &&
+    rawStatus === "active"
+  ) {
+    await grantAiLaunch(service, {
+      siteId: resolved.siteId,
+      ownerId: resolved.ownerId,
+      source: "growth_annual",
+      externalReference: `growth_annual:${resolved.siteId}`
+    });
+  }
+
   return typeof data === "string" ? data : "processed";
 }
 
@@ -201,6 +258,31 @@ export async function POST(request: Request) {
       const session = event.data.object;
       const subscriptionId = stripeObjectId(session.subscription);
       if (!subscriptionId) {
+        const siteId =
+          typeof session.client_reference_id === "string"
+            ? session.client_reference_id
+            : typeof session?.metadata?.site_id === "string"
+              ? session.metadata.site_id
+              : "";
+        const ownerId =
+          typeof session?.metadata?.owner_id === "string"
+            ? session.metadata.owner_id
+            : "";
+        const isAiLaunch =
+          session?.metadata?.purchase_type === "ai_launch";
+        const paid =
+          session?.payment_status === "paid" ||
+          event.type === "checkout.session.async_payment_succeeded";
+
+        if (isAiLaunch && paid && siteId && ownerId) {
+          const result = await grantAiLaunch(service, {
+            siteId,
+            ownerId,
+            source: "stripe_purchase",
+            externalReference: `stripe_checkout:${session.id}`
+          });
+          return NextResponse.json({ received: true, result });
+        }
         return NextResponse.json({ received: true, result: "ignored" });
       }
       const subscription = await retrieveStripeSubscription(subscriptionId);
