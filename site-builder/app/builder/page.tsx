@@ -309,7 +309,7 @@ export default function BuilderPage() {
       ? "/billing"
       : "/plans";
   const premiumAccessLabel =
-    premiumAccessHref === "/billing" ? tr("Régulariser mon accès", "Restore my access") : tr("Voir l’offre Pro", "View Pro plan");
+    premiumAccessHref === "/billing" ? tr("Régulariser mon accès", "Restore my access") : tr("Voir Growth / Création IA", "View Growth / AI Launch");
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
