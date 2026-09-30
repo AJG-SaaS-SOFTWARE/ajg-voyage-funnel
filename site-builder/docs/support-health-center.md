@@ -11,7 +11,11 @@ Le premier socle couvre :
 - disponibilité du backend pendant la demande ;
 - statut de publication et suspension publique ;
 - état connu des domaines ;
-- état de facturation ;\n- rendu HTTP réel du site publié sur l’origine Builder autorisée ;\n- fraîcheur de la sauvegarde externe ;\n- état des circuit breakers IA globaux ;
+- état de facturation ;\n- rendu HTTP réel du site publié sur l’origine Builder autorisée ;
+- latence du rendu public avec un seuil de diagnostic de 3,5 s ;
+- présence d’une canonical HTTPS ;
+- disponibilité et structure XML minimale du sitemap ;
+- fraîcheur de la sauvegarde externe ;\n- état des circuit breakers IA globaux ;
 - ticket structuré avec diagnostic figé au moment de la demande ;
 - action client proposée lorsque le problème est identifiable ;
 - file d'administration séparant action client, incident et résolution.
@@ -31,7 +35,7 @@ Les clients ne peuvent pas insérer ou modifier directement la table de tickets 
 
 ## Limites de ce bloc
 
-Le Health Center vérifie désormais le rendu public réel via l’origine Builder contrôlée, sans utiliser de hostname fourni par le client, ainsi que la fraîcheur de la sauvegarde externe et les circuit breakers IA. Il ne vérifie pas encore directement les domaines personnalisés par requête réseau, les formulaires, liens cassés, sitemap, latence détaillée ou erreurs runtime Vercel par site. Il ne déclenche aucune réparation automatique. Ces contrôles doivent être ajoutés progressivement et chaque auto-remédiation devra être sûre, idempotente, journalisée et réversible.
+Le Health Center vérifie désormais le rendu public réel via l’origine Builder contrôlée, sans utiliser de hostname fourni par le client, ainsi que la fraîcheur de la sauvegarde externe et les circuit breakers IA. Il ne contacte toujours pas directement les domaines personnalisés fournis par les clients : les sondes HTTP restent limitées à l’origine Builder contrôlée afin d’éviter un vecteur SSRF. Le Health Center vérifie désormais le sitemap, la canonical et une latence de rendu indicative. Il ne vérifie pas encore les formulaires, les liens cassés de chaque page ni les erreurs runtime Vercel attribuées à un site précis. Il ne déclenche aucune réparation automatique. Ces contrôles doivent être ajoutés progressivement et chaque auto-remédiation devra être sûre, idempotente, journalisée et réversible.
 
 
 ## Réconciliation autonome des demandes self-service

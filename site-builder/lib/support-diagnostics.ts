@@ -1,7 +1,7 @@
 export type SupportCheckStatus = "healthy" | "action" | "incident";
 
 export type SupportCheck = {
-  key: "backend" | "publication" | "public_render" | "domain" | "billing" | "backup" | "ai";
+  key: "backend" | "publication" | "public_render" | "latency" | "seo" | "sitemap" | "domain" | "billing" | "backup" | "ai";
   label: string;
   status: SupportCheckStatus;
   detail: string;
@@ -33,6 +33,15 @@ export type SupportDiagnosticInput = {
     checked: boolean;
     ok: boolean;
     status: number | null;
+    durationMs?: number | null;
+    canonicalPresent?: boolean;
+    canonicalHttps?: boolean;
+  };
+  sitemap?: {
+    checked: boolean;
+    ok: boolean;
+    status: number | null;
+    validXml: boolean;
   };
   backup?: {
     configured: boolean;
@@ -206,12 +215,69 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         status: "healthy",
         detail: "Le rendu public répond correctement en HTTPS."
       });
+
+      if (typeof render.durationMs === "number") {
+        checks.push(
+          render.durationMs <= 3500
+            ? {
+                key: "latency",
+                label: "Temps de réponse",
+                status: "healthy",
+                detail: `Le rendu public répond en environ ${Math.round(render.durationMs)} ms.`
+              }
+            : {
+                key: "latency",
+                label: "Temps de réponse",
+                status: "action",
+                detail: `Le rendu public a répondu en environ ${Math.round(render.durationMs)} ms, au-dessus du seuil de diagnostic de 3,5 s.`
+              }
+        );
+      }
+
+      if (render.canonicalPresent !== undefined) {
+        checks.push(
+          render.canonicalPresent && render.canonicalHttps
+            ? {
+                key: "seo",
+                label: "Canonical",
+                status: "healthy",
+                detail: "La page publique expose une URL canonical HTTPS."
+              }
+            : {
+                key: "seo",
+                label: "Canonical",
+                status: "action",
+                detail: "La page publique ne fournit pas de canonical HTTPS exploitable."
+              }
+        );
+      }
     } else {
       checks.push({
         key: "public_render",
         label: "Site public",
         status: "incident",
         detail: `Le rendu public ne répond pas normalement${render.status ? ` (HTTP ${render.status})` : ""}.`
+      });
+    }
+  }
+
+  if (input.site?.status === "published" && input.sitemap) {
+    const sitemap = input.sitemap;
+    if (sitemap.checked && sitemap.ok && sitemap.validXml) {
+      checks.push({
+        key: "sitemap",
+        label: "Sitemap",
+        status: "healthy",
+        detail: "Le sitemap public répond et contient une structure XML exploitable."
+      });
+    } else if (sitemap.checked) {
+      checks.push({
+        key: "sitemap",
+        label: "Sitemap",
+        status: sitemap.status !== null && sitemap.status >= 500 ? "incident" : "action",
+        detail: sitemap.status
+          ? `Le sitemap ne répond pas correctement (HTTP ${sitemap.status}) ou son XML est invalide.`
+          : "Le sitemap public n'a pas pu être vérifié."
       });
     }
   }
