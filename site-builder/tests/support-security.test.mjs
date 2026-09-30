@@ -39,3 +39,11 @@ test("public rendering probe uses the configured Builder origin rather than a cl
   assert.doesNotMatch(healthServer, /new URL\(request\.url\)\.origin/);
   assert.match(healthServer, /AbortController/);
 });
+
+
+test("customer recheck is limited to the authenticated user's waiting ticket", () => {
+  assert.match(clientRoute, /export async function PATCH/);
+  assert.match(clientRoute, /\.eq\("user_id", auth\.user\.id\)/);
+  assert.match(clientRoute, /\.eq\("status", "waiting_customer"\)/);
+  assert.match(clientRoute, /supportReconcileDecision/);
+});
