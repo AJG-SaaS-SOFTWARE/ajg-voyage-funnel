@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { buildSupportDiagnosis, type SupportDiagnosis } from "../../../../lib/support-diagnostics";
-import { appBaseUrl } from "../../../../lib/app-url";
-import { getStorageBackupStatus } from "../../../../lib/storage-backup";
+import { createClient } from "@supabase/supabase-js";
+import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,125 +30,6 @@ async function context(request: Request) {
   return { user, service };
 }
 
-async function publicSiteProbe(slug: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-  try {
-    const response = await fetch(`${appBaseUrl()}/site/${encodeURIComponent(slug)}`, {
-      method: "GET",
-      cache: "no-store",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: { "User-Agent": "AJG-Site-Builder-Health/1.0" }
-    });
-    return { checked: true, ok: response.ok, status: response.status };
-  } catch {
-    return { checked: true, ok: false, status: null };
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function safeBackupStatus() {
-  try {
-    return await getStorageBackupStatus();
-  } catch {
-    return { configured: false, status: "unknown" as const, ageHours: null };
-  }
-}
-
-async function diagnose(service: SupabaseClient, userId: string, preferredSiteId?: string | null): Promise<{ siteId: string | null; diagnosis: SupportDiagnosis }> {
-  let siteQuery = service
-    .from("sites")
-    .select("id,slug,status,public_access_state,owner_id,created_at")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1);
-
-  if (preferredSiteId) {
-    siteQuery = service
-      .from("sites")
-      .select("id,slug,status,public_access_state,owner_id,created_at")
-      .eq("owner_id", userId)
-      .eq("id", preferredSiteId)
-      .limit(1);
-  }
-
-  const { data: siteRows, error: siteError } = await siteQuery;
-  if (siteError) {
-    return {
-      siteId: null,
-      diagnosis: buildSupportDiagnosis({ backendOk: false, site: null, domains: [], billingState: null })
-    };
-  }
-
-  const site = siteRows?.[0] || null;
-  if (!site) {
-    return {
-      siteId: null,
-      diagnosis: buildSupportDiagnosis({ backendOk: true, site: null, domains: [], billingState: null })
-    };
-  }
-
-  const [
-    { data: domains, error: domainError },
-    { data: billing, error: billingError },
-    { data: aiPolicy, error: aiPolicyError },
-    backup,
-    publicRender
-  ] = await Promise.all([
-    service
-      .from("domains")
-      .select("hostname,verification_status,is_primary")
-      .eq("site_id", site.id),
-    service
-      .from("site_billing_states")
-      .select("state")
-      .eq("site_id", site.id)
-      .maybeSingle(),
-    service
-      .from("ai_cost_policy")
-      .select("ai_enabled,heavy_enabled")
-      .eq("singleton", true)
-      .maybeSingle(),
-    safeBackupStatus(),
-    site.status === "published" && site.public_access_state !== "suspended"
-      ? publicSiteProbe(site.slug)
-      : Promise.resolve({ checked: false, ok: false, status: null })
-  ]);
-
-  return {
-    siteId: site.id,
-    diagnosis: buildSupportDiagnosis({
-      backendOk: !domainError && !billingError,
-      site: {
-        id: site.id,
-        slug: site.slug,
-        status: site.status,
-        publicAccessState: site.public_access_state
-      },
-      domains: (domains || []).map((domain) => ({
-        hostname: domain.hostname,
-        verificationStatus: domain.verification_status,
-        isPrimary: domain.is_primary
-      })),
-      billingState: billing?.state || null,
-      publicRender,
-      backup: {
-        configured: backup.configured,
-        status: backup.status,
-        ageHours: backup.ageHours
-      },
-      ai: !aiPolicyError && aiPolicy
-        ? {
-            enabled: aiPolicy.ai_enabled === true,
-            heavyEnabled: aiPolicy.heavy_enabled === true
-          }
-        : undefined
-    })
-  };
-}
-
 export async function GET(request: Request) {
   const auth = await context(request);
   if ("response" in auth) return auth.response;
@@ -162,7 +41,7 @@ export async function GET(request: Request) {
       .eq("user_id", auth.user.id)
       .order("created_at", { ascending: false })
       .limit(50),
-    diagnose(auth.service, auth.user.id)
+    diagnoseSupportHealth(auth.service, auth.user.id)
   ]);
 
   if (ticketError) return NextResponse.json({ error: "Tickets indisponibles." }, { status: 503 });
@@ -207,7 +86,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Trop de demandes sont déjà ouvertes sur ce compte." }, { status: 429 });
   }
 
-  const health = await diagnose(auth.service, auth.user.id, preferredSiteId);
+  const health = await diagnoseSupportHealth(auth.service, auth.user.id, preferredSiteId);
   const incident = health.diagnosis.overall === "incident";
   const waitingCustomer = !incident && Boolean(health.diagnosis.clientAction);
   const status = waitingCustomer ? "waiting_customer" : "diagnosed";
