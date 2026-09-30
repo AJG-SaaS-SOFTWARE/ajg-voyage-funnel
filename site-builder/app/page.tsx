@@ -248,6 +248,7 @@ export default function Home() {
         <Link href={locale === "en" ? "/privacy" : "/confidentialite"}>{tr("Confidentialité", "Privacy")}</Link>
         <Link href={locale === "en" ? "/terms" : "/cgv"}>{tr("Conditions", "Terms")}</Link>
         <Link href={locale === "en" ? "/cancel" : "/resilier"}>{tr("Résiliation", "Cancellation")}</Link>
+        <Link href="/support">{tr("Support & diagnostic", "Support & diagnostics")}</Link>
       </footer>
     </main>
   );

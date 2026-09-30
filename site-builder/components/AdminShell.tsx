@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type AdminSection = "overview" | "privacy" | "finops";
+type AdminSection = "overview" | "privacy" | "finops" | "support";
 
 export function AdminShell({
   active,
@@ -43,6 +43,7 @@ export function AdminShell({
             RGPD & effacement
           </Link>
           <Link href="/admin/finops" className={active === "finops" ? "active" : ""}>Coûts IA</Link>
+          <Link href="/admin/support" className={active === "support" ? "active" : ""}>Support</Link>
           <Link href="/builder">Builder ↗</Link>
         </nav>
       </header>
