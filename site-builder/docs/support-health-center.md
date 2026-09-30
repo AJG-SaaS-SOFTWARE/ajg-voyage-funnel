@@ -32,3 +32,18 @@ Les clients ne peuvent pas insérer ou modifier directement la table de tickets 
 ## Limites de ce bloc
 
 Le Health Center vérifie désormais le rendu public réel via l’origine Builder contrôlée, sans utiliser de hostname fourni par le client, ainsi que la fraîcheur de la sauvegarde externe et les circuit breakers IA. Il ne vérifie pas encore directement les domaines personnalisés par requête réseau, les formulaires, liens cassés, sitemap, latence détaillée ou erreurs runtime Vercel par site. Il ne déclenche aucune réparation automatique. Ces contrôles doivent être ajoutés progressivement et chaque auto-remédiation devra être sûre, idempotente, journalisée et réversible.
+
+
+## Réconciliation autonome des demandes self-service
+
+Les tickets au statut `waiting_customer` sont réévalués par la tâche quotidienne de sauvegarde déjà existante. Aucun cron supplémentaire n'est créé.
+
+Règles :
+
+- diagnostic redevenu sain : résolution automatique avec `auto_health_recovered` ;
+- apparition d'un incident : escalade immédiate vers `diagnosed` avec sévérité haute ;
+- action client toujours pertinente : maintien en self-service ;
+- action client non résolue après 72 h : escalade AJG pour éviter un ticket bloqué indéfiniment ;
+- état `action` sans action réellement exécutable par le client : escalade AJG.
+
+La réconciliation ne lit ni le sujet ni le corps du ticket. Elle ne modifie que les tickets encore en `waiting_customer` au moment de l'UPDATE, afin qu'une intervention humaine concurrente ne puisse pas être écrasée.
