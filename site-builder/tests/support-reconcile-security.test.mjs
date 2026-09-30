@@ -12,16 +12,16 @@ const cron = fs.readFileSync(
 );
 
 test("automatic reconciliation only scans self-service waiting tickets", () => {
-  assert.match(reconciler, /\\.eq\\("status", "waiting_customer"\\)/);
-  assert.match(reconciler, /\\.limit\\(50\\)/);
-  assert.doesNotMatch(reconciler, /\\.select\\([^)]*message/);
-  assert.doesNotMatch(reconciler, /\\.select\\([^)]*subject/);
+  assert.match(reconciler, /\.eq\("status", "waiting_customer"\)/);
+  assert.match(reconciler, /\.limit\(50\)/);
+  assert.doesNotMatch(reconciler, /\.select\([^)]*message/);
+  assert.doesNotMatch(reconciler, /\.select\([^)]*subject/);
 });
 
 test("ticket update is compare-and-set so manual support work cannot be overwritten", () => {
-  const updates = reconciler.match(/\\.eq\\("status", "waiting_customer"\\)/g) || [];
+  const updates = reconciler.match(/\.eq\("status", "waiting_customer"\)/g) || [];
   assert.ok(updates.length >= 2);
-  assert.match(reconciler, /\\.eq\\("id", ticket\\.id\\)/);
+  assert.match(reconciler, /\.eq\("id", ticket\.id\)/);
 });
 
 test("existing authenticated storage cron reuses the reconciliation without a new schedule", () => {
@@ -29,5 +29,5 @@ test("existing authenticated storage cron reuses the reconciliation without a ne
   const support = cron.indexOf("runSupportReconciliationSafely()");
   assert.ok(auth >= 0);
   assert.ok(support > auth);
-  assert.match(cron, /support\\.ok/);
+  assert.match(cron, /support\.ok/);
 });
