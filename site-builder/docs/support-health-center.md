@@ -54,3 +54,18 @@ La réconciliation ne lit ni le sujet ni le corps du ticket. Elle ne modifie que
 
 
 Le client peut également relancer immédiatement le diagnostic d'un ticket `waiting_customer` après avoir appliqué l'action proposée. Le serveur revérifie l'identité, la propriété du ticket et son statut avant toute mise à jour. Le même moteur de décision que la réconciliation planifiée est utilisé : résolution si la cause a disparu, maintien self-service si l'action reste nécessaire, ou escalade AJG si un incident est désormais détecté.
+
+
+## Journal d'audit support
+
+Le cycle de vie des demandes est journalisé dans `support_ticket_events` sans recopier le sujet ni le corps du ticket.
+
+Événements couverts :
+
+- création client ;
+- nouveau diagnostic demandé par le client ;
+- réconciliation automatique planifiée ;
+- escalade ou résolution automatique ;
+- changement de statut et résolution par l'administration.
+
+Les métadonnées sont bornées à des primitives techniques courtes (statuts, catégorie, sévérité, diagnostic, code de résolution, âge du ticket). Les rôles navigateur restent en lecture seule ; seules les routes serveur privilégiées peuvent ajouter un événement. Une indisponibilité du journal ne provoque pas la répétition d'une action métier déjà réussie : elle est signalée côté serveur pour éviter la création de tickets ou de résolutions en double.
