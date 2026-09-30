@@ -34,12 +34,16 @@ export async function GET(request: Request) {
 
     // No service-role query is made until the user's server-side role is verified.
     const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-    const { data, error } = await service.rpc("ai_finops_monthly_report", { p_month: month + "-01" });
+    const [{ data, error }, status] = await Promise.all([
+      service.rpc("ai_finops_monthly_report", { p_month: month + "-01" }),
+      service.rpc("get_ai_finops_monitor_status")
+    ]);
     if (error || !data?.policy || data.currency !== "USD" || data.month !== month) {
       return response({ error: "Rapport FinOps indisponible. Réessayez après vérification de la base." }, 503);
     }
     const report = data as AiFinopsReport;
-    return response({ report, alerts: finopsAlerts(report), generatedAt: new Date().toISOString() });
+    const monitor = !status.error && Array.isArray(status.data?.items) ? status.data : null;
+    return response({ report, alerts: finopsAlerts(report), monitor, generatedAt: new Date().toISOString() });
   } catch {
     return response({ error: "Rapport FinOps indisponible. Réessayez dans quelques instants." }, 503);
   }

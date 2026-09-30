@@ -36,6 +36,19 @@ export type FinopsAlert = {
   message: string;
 };
 
+export type FinopsMonitorStatus = {
+  lastRunAt: string | null;
+  activeAlerts: number;
+  items: Array<{
+    id: number; scope: string; subject_key: string; kind: string; threshold: number;
+    level: "info" | "warning" | "critical"; used_micros: number; cap_micros: number; last_seen_at: string;
+  }>;
+};
+
+export function finopsMonitorLabel(kind: string): string {
+  return ({ daily: "Budget global quotidien", monthly: "Budget global mensuel", aggregate_monthly: "Budget total du compte", run_monthly: "Budget RUN mensuel", launch_lifetime: "Budget cumulé BUILD", stale_provision: "Provision fournisseur à rapprocher", ai_paused: "IA suspendue", heavy_paused: "Opérations lourdes suspendues" } as Record<string, string>)[kind] || "Coût à vérifier";
+}
+
 export function finopsMonth(value: string | null, now = new Date()): string {
   const current = now.toISOString().slice(0, 7);
   const month = value ?? current;

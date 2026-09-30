@@ -1,6 +1,6 @@
 # AJG Site Builder — Roadmap BUILD / RUN / GROW
 
-Dernière mise à jour : 29 septembre 2026.
+Dernière mise à jour : 30 septembre 2026.
 
 ## 1. Vision produit
 
@@ -253,9 +253,9 @@ Objectif : connaître et maîtriser le coût de chaque utilisateur avant de dép
 
 ### À faire
 
-- [ ] compléter la télémétrie AI Provider déjà présente ;
+- [x] compléter la télémétrie AI Provider : coûts USD versionnés, modèle demandé, requête complète, plan et source ;
 - [ ] calculer le coût estimé en euros par appel ;
-- [ ] dashboard coût par :
+- [x] dashboard coût par :
   - site ;
   - utilisateur ;
   - plan ;
@@ -265,16 +265,22 @@ Objectif : connaître et maîtriser le coût de chaque utilisateur avant de dép
 - [ ] coût réel moyen d'une Création IA ;
 - [ ] coût réel moyen d'un client Essentiel ;
 - [ ] coût réel moyen d'un client Growth ;
-- [ ] budgets serveur par opération ;
+- [x] budgets serveur par opération ;
 - [ ] quotas distincts léger / moyen / lourd ;
-- [ ] alerte à 50 / 75 / 90 / 100 % du budget ;
-- [ ] circuit breaker individuel ;
-- [ ] circuit breaker global AJG ;
+- [x] alerte à 50 / 75 / 90 / 100 % du budget : vue admin + registre planifié, sans notifications externes ;
+- [x] circuit breaker individuel : plafonds atomiques compte/site/BUILD ;
+- [x] circuit breaker global AJG ;
 - [ ] détection d'usage anormal ;
 - [ ] optimisation cache / réutilisation de stratégie ;
-- [ ] modèle Premium uniquement lorsque nécessaire ;
-- [ ] limitation des retries et régénérations intégrales ;
-- [ ] fallback gracieux vers fonctions non IA si budget atteint.
+- [x] modèle Premium uniquement lorsque nécessaire : champs simples refusent un modèle Premium ;
+- [x] limitation des retries et régénérations intégrales : admission, idempotence, déduplication et cooldown ;
+- [x] fallback gracieux vers l’édition manuelle si budget atteint, sans couper le site.
+
+### État vérifié au 30 septembre 2026
+
+Les PR #159 à #165 couvrent la télémétrie, les budgets monétaires, les remboursements de capacité sans effacement du coût fournisseur, la déduplication, le rapport mensuel, la conservation des résumés financiers et la surveillance planifiée. La vue est `/admin/finops`. Les valeurs sont des estimations USD ; les statistiques BUILD regroupent tous les appels d’une génération et suivent aussi le coût cumulé du droit acheté. Les garde-fous couvrent chaque appel, y compris réparations et revues internes.
+
+Il n’y a encore aucun appel fournisseur dans la télémétrie réelle : les moyennes/médianes/P95 de sortie ne sont **pas validées** par les fixtures techniques. Conversion EUR datée, rapprochement des revenus/factures, alertes de marge et optimisation empirique restent à terminer. La gratuité BUILD de Growth annuel reste désactivée par défaut, en attente de données bêta.
 
 ### KPI de sortie
 

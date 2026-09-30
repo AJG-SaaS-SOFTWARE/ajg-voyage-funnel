@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "../../../components/AdminShell";
 import { getAdminAiFinops } from "../../../lib/admin";
-import { usdCost, type AiFinopsReport, type FinopsAlert } from "../../../lib/ai-finops-report";
+import { usdCost, finopsMonitorLabel, type AiFinopsReport, type FinopsAlert, type FinopsMonitorStatus } from "../../../lib/ai-finops-report";
 
-type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; generatedAt: string };
+type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; generatedAt: string };
 const dimensions = { plan: "Par offre", user: "Par compte", site: "Par site", operation: "Par opération demandée", model: "Par modèle demandé", day: "Par jour (UTC)" };
 
 export default function FinopsPage() {
@@ -29,6 +29,8 @@ export default function FinopsPage() {
   }, [month, refresh]);
 
   const report = result?.report;
+  const monitor = result?.monitor;
+  const monitorStale = !monitor?.lastRunAt || Date.parse(result?.generatedAt || "") - Date.parse(monitor.lastRunAt) > 24 * 60 * 60 * 1000;
   return (
     <AdminShell active="finops" eyebrow="FinOps IA" title="Coûts et budgets IA" description="Coûts fournisseur estimés en USD, provisions incluses. Les montants ne sont pas encore rapprochés des factures fournisseur." actions={<button className="button secondary" onClick={() => setRefresh(value => value + 1)} disabled={loading}>Actualiser</button>}>
       <section className="panel">
@@ -51,6 +53,12 @@ export default function FinopsPage() {
           <p>IA : {report.policy.ai_enabled ? "active" : "suspendue"} · Opérations lourdes : {report.policy.heavy_enabled ? "actives" : "suspendues"}.</p>
           {result!.alerts.length ? <ul>{result!.alerts.map(alert => <li key={alert.key}><strong>{alert.level === "critical" ? "Critique" : alert.level === "warning" ? "À vérifier" : "Information"}</strong> : {alert.message}</li>)}</ul> : <p>Aucun seuil d’alerte global atteint.</p>}
           <p>Les alertes de marge en euros restent indisponibles tant que le taux de change daté et les revenus du compte ne sont pas rapprochés.</p>
+        </section>
+        <section className="panel">
+          <h2>Surveillance planifiée et exceptions</h2>
+          <p>Contrôle réutilisant les tâches existantes à 02:40 et 08:15 UTC, sans appel IA. Les plafonds restent appliqués à chaque demande, indépendamment de ces contrôles.</p>
+          <p>Dernier contrôle : {monitor?.lastRunAt ? new Date(monitor.lastRunAt).toLocaleString("fr-FR") : "Indisponible"}. {monitorStale ? "Action requise : vérifier l’exécution des tâches planifiées." : "Surveillance récente."}</p>
+          {monitor ? <><p>{monitor.activeAlerts} exception(s) active(s), {monitor.items.length} affichée(s). Les budgets RUN d’alerte utilisent le dernier plan observé ; les droits effectifs sont contrôlés séparément à chaque demande.</p><ul>{monitor.items.map(item => <li key={item.id}><strong>{finopsMonitorLabel(item.kind)}</strong> · {item.scope} / {item.subject_key} · {item.threshold ? `seuil ${item.threshold} % · ${usdCost(item.used_micros)} / ${usdCost(item.cap_micros)}` : usdCost(item.used_micros)}. {item.kind === "stale_provision" ? "Rapprocher le coût fournisseur avant toute libération." : "Vérifier l’usage et les limites ; aucune hausse de budget automatique."}</li>)}</ul></> : <p>État de surveillance indisponible. Les totaux financiers ci-dessus restent indépendants.</p>}
         </section>
         {report.calls === 0 ? <section className="panel"><h2>Aucune donnée IA pour ce mois</h2><p>Le coût moyen et le P95 ne peuvent pas encore être évalués. Aucun coût bêta réel n’est déduit d’une absence d’appels.</p></section> : null}
         <section className="panel">
