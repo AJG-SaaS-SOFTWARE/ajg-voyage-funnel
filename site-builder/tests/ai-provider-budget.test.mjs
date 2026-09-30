@@ -66,13 +66,14 @@ test('writer refunds standard quota only when no usable result is returned', asy
   const oldEnv = { ...process.env };
   Object.assign(process.env, { NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable-test', SUPABASE_SECRET_KEY: 'secret-test', OPENAI_API_KEY: 'provider-test' });
   try {
-    for (const scenario of ['success', 'empty', 'network', 'budget']) {
+    for (const scenario of ['success', 'empty', 'network', 'budget', 'duplicate']) {
       const calls = [];
       const client = {
         auth: { async getUser() { return { data: { user: { id: 'user' } }, error: null }; } },
         async rpc(name, args) {
           calls.push(name);
           if (name === 'get_my_site_capabilities') return { data: { can_generate_ai: true } };
+          if (name === 'admit_ai_request' && scenario === 'duplicate') return { data: 'duplicate_request' };
           if (name === 'get_my_site_entitlements') return { data: { plan_key: 'essential' } };
           if (name === 'reserve_ai_provider_budget' && scenario === 'budget') return { data: 'monthly_budget_limit' };
           return { data: name === 'settle_ai_provider_budget' ? true : 'ok', error: null };
@@ -87,6 +88,7 @@ test('writer refunds standard quota only when no usable result is returned', asy
         'next/server': { NextResponse: { json: (data, init) => Response.json(data, init) } },
         '@supabase/supabase-js': { createClient: () => client },
         '../../../../lib/ai-cost': cost,
+        '../../../../lib/ai-request-admission': load('../lib/ai-request-admission.ts'),
         '../../../../lib/ai-provider-budget': { AiBudgetError, createBudgetedProviderFetch: ctx => createBudgetedProviderFetch(ctx, provider) },
         '../../../../lib/premium-site-architect': { PremiumArchitectError: class extends Error {} },
         '../../../../lib/server-locale': { requestProductLocale: () => 'en', localize: (_, fr, en) => en },
@@ -98,9 +100,9 @@ test('writer refunds standard quota only when no usable result is returned', asy
         }
       });
       const response = await route.POST(new Request('http://localhost/api/ai/write', { method: 'POST', headers: { authorization: 'Bearer test', 'content-type': 'application/json' }, body: JSON.stringify({ siteId: 'site', field: 'heroTitle', instruction: 'Write a title' }) }));
-      assert.equal(response.status, scenario === 'success' ? 200 : scenario === 'empty' ? 502 : scenario === 'network' ? 503 : 429);
-      assert.equal(calls.includes('release_my_site_ai_generation'), scenario !== 'success', scenario);
-      assert.equal(calls.includes('reserve_ai_provider_budget'), true);
+      assert.equal(response.status, scenario === 'success' ? 200 : scenario === 'empty' ? 502 : scenario === 'network' ? 503 : scenario === 'duplicate' ? 409 : 429);
+      assert.equal(calls.includes('release_my_site_ai_generation'), scenario !== 'success' && scenario !== 'duplicate', scenario);
+      assert.equal(calls.includes('reserve_ai_provider_budget'), scenario !== 'duplicate');
     }
   } finally {
     for (const key of Object.keys(process.env)) if (!(key in oldEnv)) delete process.env[key];

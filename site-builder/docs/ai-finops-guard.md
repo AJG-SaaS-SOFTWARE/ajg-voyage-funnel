@@ -32,6 +32,12 @@ The customer quota, BUILD reservation and heavy-operation quota are released whe
 - security advisors after migration: no new findings;
 - typecheck, full tests, production build and smoke before release.
 
+## Root-request admission
+
+Service-only admission now serializes attempts per account. A semantic HMAC fingerprint ignores object-key order; no brief or prompt is stored. Identical requests within two minutes and overlapping active requests are denied before quota reservation. The optional `Idempotency-Key` binds user, site, operation and payload and is retained for 30 days; conflicting reuse is denied. Completed results are not replayed or persisted by this guard.
+
+Cooldowns: two seconds for fields, ten for medium operations, two minutes for heavy operations. At most six admissions per minute and 150 per rolling day, including failed calls, supplement existing plan-specific quotas. A crashed worker's admission lease expires after five minutes, while monetary uncertainty remains counted. Root admission cleanup is opportunistic per account. Deleting a site no longer removes incurred spend or account admission counters; closing an account anonymizes spend references while preserving AJG's global budget.
+
 ## Next blocks
 
-Root-request deduplication/cooldown and caller idempotency; automatic reconciliation of stale quota reservations; monthly reporting by user/site/plan/operation and request-level BUILD mean/P95; FX snapshots and margin alerts; diagnostic client explanations. Historical provider rows lack a root request and must not enter request-level P95 as if complete.
+Automatic reconciliation of stale quota reservations; monthly reporting by user/site/plan/operation and request-level BUILD mean/P95; FX snapshots and margin alerts; diagnostic client explanations. Historical provider rows lack a root request and must not enter request-level P95 as if complete.

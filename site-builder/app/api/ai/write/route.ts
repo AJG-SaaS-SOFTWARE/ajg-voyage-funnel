@@ -1,3 +1,4 @@
+import { aiRequestHashes } from "../../../../lib/ai-request-admission";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
@@ -289,7 +290,11 @@ export async function POST(request: Request) {
 
   let body: any;
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (Buffer.byteLength(rawBody, "utf8") > 160_000) {
+      return NextResponse.json({ error: tr("La demande est trop volumineuse. Réduisez le contexte ou le nombre de médias.", "The request is too large. Reduce the context or number of assets.") }, { status: 413 });
+    }
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: tr("Demande invalide.", "Invalid request.") }, { status: 400 });
   }
@@ -450,6 +455,38 @@ export async function POST(request: Request) {
     field === "siteArchitect" || field === "siteRevision";
   const premiumRequestId = crypto.randomUUID();
 
+  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return NextResponse.json({ error: tr("L’IA est temporairement indisponible. Utilisez l’éditeur manuel.", "AI is temporarily unavailable. Use the manual editor.") }, { status: 503 });
+  }
+  const requestService = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  try {
+    const hashes = aiRequestHashes(body, auth.user.id, siteId, request.headers.get("idempotency-key"), serviceKey);
+    const { data: admission, error } = await requestService.rpc("admit_ai_request", {
+      p_request_id: premiumRequestId, p_user_id: auth.user.id, p_site_id: siteId,
+      p_operation: field, p_fingerprint: hashes.fingerprint, p_key_hash: hashes.keyHash
+    });
+    if (error) throw new Error("request_admission_unavailable");
+    if (admission !== "ok") {
+      return NextResponse.json({ code: admission, error: tr(
+        admission === "request_daily_limit"
+          ? "Votre limite quotidienne de demandes IA est atteinte. Réessayez demain ou continuez avec l’éditeur manuel ; votre site reste disponible."
+          : "Une demande similaire est déjà en cours ou vient d’être traitée. Attendez deux minutes avant de relancer ; aucun nouveau quota n’a été consommé.",
+        admission === "request_daily_limit"
+          ? "Your daily AI request limit has been reached. Try again tomorrow or continue with the manual editor; your website remains available."
+          : "A similar request is running or was recently processed. Wait two minutes before trying again; no additional allowance was used."
+      ) }, { status: ["duplicate_request", "idempotency_conflict", "request_in_progress"].includes(admission) ? 409 : 429, headers: { "Retry-After": "120" } });
+    }
+  } catch {
+    return NextResponse.json({ error: tr("Impossible de sécuriser cette demande IA. Réessayez plus tard.", "Unable to secure this AI request. Try again later.") }, { status: 503 });
+  }
+  let usableResult = false;
+  let quotaReserved = false;
+  let launchReservation = "";
+  let heavyAiReserved = false;
+  try {
   let allowance: string;
   try {
     allowance = await reservePremiumAiAllowance(auth.supabase, siteId, premiumRequestId);
@@ -468,8 +505,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 429 });
   }
 
-  let launchReservation = "";
-  let heavyAiReserved = false;
+  quotaReserved = true;
   if (premiumRequest) {
     try {
       launchReservation = await reserveLaunchOperation(
@@ -537,14 +573,8 @@ export async function POST(request: Request) {
     }
   }
 
-  let usableResult = false;
-  try {
-    const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) throw new AiBudgetError("budget_unavailable");
     const providerFetch = createBudgetedProviderFetch({
-      service: createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey, {
-        auth: { persistSession: false, autoRefreshToken: false }
-      }),
+      service: requestService,
       userId: auth.user.id, siteId, requestId: premiumRequestId,
       planKey: requestPlanKey,
       pool: launchReservation === "ok" ? "launch" : premiumAccessSource === "beta" ? "beta" : "run",
@@ -918,10 +948,15 @@ export async function POST(request: Request) {
       )
     }, { status: error instanceof AiBudgetError ? 429 : 503 });
   } finally {
-    if (!usableResult) {
+    if (!usableResult && quotaReserved) {
       await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
       if (heavyAiReserved) await releaseHeavyAiOperation(auth.supabase, premiumRequestId).catch(() => undefined);
       if (launchReservation === "ok") await releaseLaunchOperation(auth.supabase, premiumRequestId).catch(() => undefined);
     }
+    const { error: finishError } = await Promise.resolve(requestService.rpc("finish_ai_request", {
+      p_request_id: premiumRequestId, p_user_id: auth.user.id,
+      p_state: usableResult ? "completed" : "failed"
+    })).catch(() => ({ error: true }));
+    if (finishError) console.warn("AI admission completion deferred", { requestId: premiumRequestId });
   }
 }
