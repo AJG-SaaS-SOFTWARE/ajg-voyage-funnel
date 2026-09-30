@@ -30,3 +30,10 @@ test("support ticket creation is rate limited server-side", () => {
   assert.match(clientRoute, /openCount/);
   assert.match(clientRoute, /status: 429/);
 });
+
+
+test("public rendering probe uses the configured Builder origin rather than a client supplied host", () => {
+  assert.match(clientRoute, /appBaseUrl\(\)/);
+  assert.doesNotMatch(clientRoute, /new URL\(request\.url\)\.origin/);
+  assert.match(clientRoute, /AbortController/);
+});
