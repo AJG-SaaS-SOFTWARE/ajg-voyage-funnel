@@ -127,6 +127,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Demande invalide." }, { status: 400 });
   }
 
+  const since = new Date(Date.now() - 60_000).toISOString();
+  const [{ count: recentCount, error: recentError }, { count: openCount, error: openError }] = await Promise.all([
+    auth.service
+      .from("support_tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", auth.user.id)
+      .gte("created_at", since),
+    auth.service
+      .from("support_tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", auth.user.id)
+      .not("status", "in", '("resolved","closed")')
+  ]);
+
+  if (recentError || openError) {
+    return NextResponse.json({ error: "Contrôle du support indisponible." }, { status: 503 });
+  }
+  if ((recentCount || 0) >= 3) {
+    return NextResponse.json({ error: "Trop de demandes rapprochées. Réessayez dans une minute." }, { status: 429 });
+  }
+  if ((openCount || 0) >= 25) {
+    return NextResponse.json({ error: "Trop de demandes sont déjà ouvertes sur ce compte." }, { status: 429 });
+  }
+
   const health = await diagnose(auth.service, auth.user.id, preferredSiteId);
   const incident = health.diagnosis.overall === "incident";
   const waitingCustomer = !incident && health.diagnosis.overall === "action";
