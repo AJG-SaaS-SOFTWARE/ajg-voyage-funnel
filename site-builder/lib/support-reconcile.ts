@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "./support-health-server";
 import { supportReconcileDecision } from "./support-reconcile-policy";
+import { recordSupportEvent } from "./support-events";
 
 export type SupportReconcileResult = {
   ok: boolean;
@@ -89,6 +90,19 @@ async function reconcileWithClient(
       if (!updated) {
         continue;
       }
+
+      await recordSupportEvent(service, {
+        ticketId: ticket.id,
+        actor: "system",
+        type: decision.resolved ? "resolution" : "diagnostic",
+        metadata: {
+          previous_status: "waiting_customer",
+          status: decision.status,
+          diagnosis: health.diagnosis.overall,
+          resolution_code: decision.resolutionCode,
+          age_hours: Math.round(ageHours)
+        }
+      });
 
       if (decision.status === "resolved") resolved++;
       else if (decision.status === "diagnosed") escalated++;
