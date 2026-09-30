@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
 import { supportReconcileDecision } from "../../../../lib/support-reconcile-policy";
+import { recordSupportEvent } from "../../../../lib/support-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,6 +111,19 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !ticket) return NextResponse.json({ error: "Création du ticket impossible." }, { status: 503 });
+
+  await recordSupportEvent(auth.service, {
+    ticketId: ticket.id,
+    actor: "client",
+    type: "created",
+    metadata: {
+      category: ticket.category,
+      status: ticket.status,
+      severity: ticket.severity,
+      diagnosis: health.diagnosis.overall
+    }
+  });
+
   return NextResponse.json({ ticket, health }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
 }
 
@@ -188,6 +202,18 @@ export async function PATCH(request: Request) {
       { status: 409 }
     );
   }
+
+  await recordSupportEvent(auth.service, {
+    ticketId: ticket.id,
+    actor: "client",
+    type: decision.resolved ? "resolution" : "diagnostic",
+    metadata: {
+      previous_status: current.status,
+      status: ticket.status,
+      diagnosis: health.diagnosis.overall,
+      resolution_code: ticket.resolution_code
+    }
+  });
 
   return NextResponse.json(
     { ticket, health },
