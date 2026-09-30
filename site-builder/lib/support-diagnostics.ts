@@ -1,7 +1,7 @@
 export type SupportCheckStatus = "healthy" | "action" | "incident";
 
 export type SupportCheck = {
-  key: "backend" | "publication" | "domain" | "billing";
+  key: "backend" | "publication" | "public_render" | "domain" | "billing" | "backup" | "ai";
   label: string;
   status: SupportCheckStatus;
   detail: string;
@@ -29,6 +29,20 @@ export type SupportDiagnosticInput = {
     isPrimary: boolean;
   }>;
   billingState?: string | null;
+  publicRender?: {
+    checked: boolean;
+    ok: boolean;
+    status: number | null;
+  };
+  backup?: {
+    configured: boolean;
+    status: "healthy" | "warning" | "critical" | "unknown";
+    ageHours: number | null;
+  };
+  ai?: {
+    enabled: boolean;
+    heavyEnabled: boolean;
+  };
 };
 
 const priority: Record<SupportCheckStatus, number> = {
@@ -172,6 +186,86 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         label: "Facturation",
         status: "healthy",
         detail: "Aucun blocage de facturation n'est détecté pour ce site."
+      });
+    }
+  }
+
+  if (input.site?.status === "published" && (input.site.publicAccessState || "live") !== "suspended") {
+    const render = input.publicRender;
+    if (!render?.checked) {
+      checks.push({
+        key: "public_render",
+        label: "Site public",
+        status: "action",
+        detail: "Le contrôle HTTP du site public n'a pas pu être exécuté."
+      });
+    } else if (render.ok) {
+      checks.push({
+        key: "public_render",
+        label: "Site public",
+        status: "healthy",
+        detail: "Le rendu public répond correctement en HTTPS."
+      });
+    } else {
+      checks.push({
+        key: "public_render",
+        label: "Site public",
+        status: "incident",
+        detail: `Le rendu public ne répond pas normalement${render.status ? ` (HTTP ${render.status})` : ""}.`
+      });
+    }
+  }
+
+  if (input.backup) {
+    if (input.backup.configured && input.backup.status === "healthy") {
+      checks.push({
+        key: "backup",
+        label: "Sauvegarde",
+        status: "healthy",
+        detail: input.backup.ageHours === null
+          ? "La sauvegarde externe est configurée."
+          : `La dernière sauvegarde externe date d'environ ${Math.round(input.backup.ageHours)} h.`
+      });
+    } else if (input.backup.status === "critical") {
+      checks.push({
+        key: "backup",
+        label: "Sauvegarde",
+        status: "incident",
+        detail: "La sauvegarde externe est trop ancienne et nécessite une intervention AJG."
+      });
+    } else {
+      checks.push({
+        key: "backup",
+        label: "Sauvegarde",
+        status: "action",
+        detail: input.backup.configured
+          ? "La fraîcheur de la sauvegarde externe est à surveiller."
+          : "La sauvegarde externe n'est pas vérifiable actuellement."
+      });
+    }
+  }
+
+  if (input.ai) {
+    if (!input.ai.enabled) {
+      checks.push({
+        key: "ai",
+        label: "Service IA",
+        status: "incident",
+        detail: "Les fonctions IA sont suspendues globalement par le garde-fou AJG."
+      });
+    } else if (!input.ai.heavyEnabled) {
+      checks.push({
+        key: "ai",
+        label: "Service IA",
+        status: "action",
+        detail: "L'IA légère reste disponible mais les opérations lourdes sont temporairement suspendues."
+      });
+    } else {
+      checks.push({
+        key: "ai",
+        label: "Service IA",
+        status: "healthy",
+        detail: "Les garde-fous globaux autorisent les fonctions IA."
       });
     }
   }
