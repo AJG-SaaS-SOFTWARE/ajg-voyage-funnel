@@ -49,3 +49,58 @@ test("backend failure is surfaced even when no site can be inspected", () => {
   const result = buildSupportDiagnosis({ backendOk: false, site: null, domains: [], billingState: null });
   assert.equal(result.overall, "incident");
 });
+
+
+test("failed public render escalates a published live site", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [],
+    billingState: "active",
+    publicRender: { checked: true, ok: false, status: 500 },
+    backup: { configured: true, status: "healthy", ageHours: 4 },
+    ai: { enabled: true, heavyEnabled: true }
+  });
+  assert.equal(result.overall, "incident");
+  assert.ok(result.checks.some((check) => check.key === "public_render" && check.status === "incident"));
+});
+
+test("stale backup is an infrastructure incident but warning backup is not a customer action", () => {
+  const critical = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    backup: { configured: true, status: "critical", ageHours: 80 },
+    ai: { enabled: true, heavyEnabled: true }
+  });
+  assert.equal(critical.overall, "incident");
+  assert.equal(critical.clientAction, null);
+
+  const warning = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    backup: { configured: true, status: "warning", ageHours: 48 },
+    ai: { enabled: true, heavyEnabled: true }
+  });
+  assert.equal(warning.overall, "action");
+  assert.equal(warning.clientAction, null);
+});
+
+test("global AI circuit breaker is visible without claiming the site is down", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    backup: { configured: true, status: "healthy", ageHours: 1 },
+    ai: { enabled: false, heavyEnabled: false }
+  });
+  assert.equal(result.overall, "incident");
+  assert.ok(result.checks.some((check) => check.key === "ai" && check.status === "incident"));
+});
