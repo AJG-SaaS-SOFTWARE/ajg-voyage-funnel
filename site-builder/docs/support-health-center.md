@@ -47,3 +47,6 @@ Règles :
 - état `action` sans action réellement exécutable par le client : escalade AJG.
 
 La réconciliation ne lit ni le sujet ni le corps du ticket. Elle ne modifie que les tickets encore en `waiting_customer` au moment de l'UPDATE, afin qu'une intervention humaine concurrente ne puisse pas être écrasée.
+
+
+Le client peut également relancer immédiatement le diagnostic d'un ticket `waiting_customer` après avoir appliqué l'action proposée. Le serveur revérifie l'identité, la propriété du ticket et son statut avant toute mise à jour. Le même moteur de décision que la réconciliation planifiée est utilisé : résolution si la cause a disparu, maintien self-service si l'action reste nécessaire, ou escalade AJG si un incident est désormais détecté.
