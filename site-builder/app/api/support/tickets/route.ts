@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { buildSupportDiagnosis, type SupportDiagnosis } from "../../../../lib/support-diagnostics";
+import { appBaseUrl } from "../../../../lib/app-url";
+import { getStorageBackupStatus } from "../../../../lib/storage-backup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +30,33 @@ async function context(request: Request) {
 
   const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   return { user, service };
+}
+
+async function publicSiteProbe(slug: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(`${appBaseUrl()}/site/${encodeURIComponent(slug)}`, {
+      method: "GET",
+      cache: "no-store",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "User-Agent": "AJG-Site-Builder-Health/1.0" }
+    });
+    return { checked: true, ok: response.ok, status: response.status };
+  } catch {
+    return { checked: true, ok: false, status: null };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function safeBackupStatus() {
+  try {
+    return await getStorageBackupStatus();
+  } catch {
+    return { configured: false, status: "unknown" as const, ageHours: null };
+  }
 }
 
 async function diagnose(service: SupabaseClient, userId: string, preferredSiteId?: string | null): Promise<{ siteId: string | null; diagnosis: SupportDiagnosis }> {
@@ -63,7 +92,13 @@ async function diagnose(service: SupabaseClient, userId: string, preferredSiteId
     };
   }
 
-  const [{ data: domains, error: domainError }, { data: billing, error: billingError }] = await Promise.all([
+  const [
+    { data: domains, error: domainError },
+    { data: billing, error: billingError },
+    { data: aiPolicy, error: aiPolicyError },
+    backup,
+    publicRender
+  ] = await Promise.all([
     service
       .from("domains")
       .select("hostname,verification_status,is_primary")
@@ -72,7 +107,16 @@ async function diagnose(service: SupabaseClient, userId: string, preferredSiteId
       .from("site_billing_states")
       .select("state")
       .eq("site_id", site.id)
-      .maybeSingle()
+      .maybeSingle(),
+    service
+      .from("ai_cost_policy")
+      .select("ai_enabled,heavy_enabled")
+      .eq("singleton", true)
+      .maybeSingle(),
+    safeBackupStatus(),
+    site.status === "published" && site.public_access_state !== "suspended"
+      ? publicSiteProbe(site.slug)
+      : Promise.resolve({ checked: false, ok: false, status: null })
   ]);
 
   return {
@@ -90,7 +134,19 @@ async function diagnose(service: SupabaseClient, userId: string, preferredSiteId
         verificationStatus: domain.verification_status,
         isPrimary: domain.is_primary
       })),
-      billingState: billing?.state || null
+      billingState: billing?.state || null,
+      publicRender,
+      backup: {
+        configured: backup.configured,
+        status: backup.status,
+        ageHours: backup.ageHours
+      },
+      ai: !aiPolicyError && aiPolicy
+        ? {
+            enabled: aiPolicy.ai_enabled === true,
+            heavyEnabled: aiPolicy.heavy_enabled === true
+          }
+        : undefined
     })
   };
 }
@@ -153,7 +209,7 @@ export async function POST(request: Request) {
 
   const health = await diagnose(auth.service, auth.user.id, preferredSiteId);
   const incident = health.diagnosis.overall === "incident";
-  const waitingCustomer = !incident && health.diagnosis.overall === "action";
+  const waitingCustomer = !incident && Boolean(health.diagnosis.clientAction);
   const status = waitingCustomer ? "waiting_customer" : "diagnosed";
   const severity = incident ? "high" : "normal";
 
