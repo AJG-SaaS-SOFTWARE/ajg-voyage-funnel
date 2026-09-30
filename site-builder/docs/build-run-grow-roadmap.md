@@ -107,7 +107,7 @@ Hypothèse commerciale retenue :
 - Création IA : +49 € en Growth mensuel ;
 - Création IA offerte avec Growth annuel à 290 €.
 
-Cette gratuité annuelle ne doit être activée qu'une fois le coût réel moyen du Concepteur IA mesuré sur la bêta.
+Cette gratuité annuelle ne doit être activée qu’une fois le coût réel moyen du Concepteur IA mesuré sur la bêta. Le gate serveur `AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH` est désactivé par défaut ; tant qu’il reste désactivé, Growth annuel n’accorde pas de droit BUILD gratuit.
 
 ---
 
@@ -233,7 +233,7 @@ Un compte peut être :
 - Essentiel sans Création IA ;
 - Essentiel + Création IA achetée ;
 - Growth mensuel ;
-- Growth annuel avec Création IA offerte ;
+- Growth annuel avec Création IA offerte uniquement lorsque le gate de rentabilité est activé ;
 - Beta Tester.
 
 Aucun droit n'est déduit uniquement du front-end.

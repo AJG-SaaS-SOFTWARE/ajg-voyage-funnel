@@ -32,6 +32,7 @@ export default function PlansPage() {
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
   const [aiAccess, setAiAccess] = useState<SiteAiAccess>(emptyAiAccess);
   const [betaAccess, setBetaAccess] = useState<BetaAccess>({ active: false, startsAt: null, expiresAt: null });
+  const [annualIncludesLaunch, setAnnualIncludesLaunch] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
   const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
@@ -61,6 +62,10 @@ export default function PlansPage() {
   };
 
   useEffect(() => {
+    void fetch("/api/billing/offer", { cache: "no-store" })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => setAnnualIncludesLaunch(data?.annualIncludesLaunch === true))
+      .catch(() => setAnnualIncludesLaunch(false));
     void load().catch(() => {
       setCurrent(freeEntitlements);
       setAiAccess(emptyAiAccess);
@@ -187,8 +192,8 @@ export default function PlansPage() {
         <p className="eyebrow">BUILD → RUN → GROW</p>
         <h2>{tr("Payez la création une fois, puis le service dont votre site a réellement besoin.", "Pay for creation once, then for the ongoing service your website actually needs.")}</h2>
         <p>{tr(
-          "Essentiel maintient et fait fonctionner votre site. Growth analyse, conseille et aide à le faire progresser. Le Concepteur IA complet reste un droit BUILD distinct, sauf lorsqu'il est inclus avec Growth annuel.",
-          "Essential keeps your website running. Growth analyzes, advises and helps improve it. Full AI Site Architect creation remains a separate BUILD entitlement unless included with annual Growth."
+          "Essentiel maintient et fait fonctionner votre site. Growth analyse, conseille et aide à le faire progresser. Le Concepteur IA complet est un droit BUILD distinct ; son inclusion éventuelle dans Growth annuel dépend de l’offre activée.",
+          "Essential keeps your website running. Growth analyzes, advises and helps improve it. Full AI Site Architect creation is a separate BUILD entitlement; any annual Growth inclusion depends on the activated offer."
         )}</p>
         <p><Link className="text-link" href={locale === "en" ? "/pricing" : "/tarifs"}>{tr("Voir la page Tarifs publique", "View the public pricing page")} →</Link></p>
       </section>
@@ -243,7 +248,7 @@ export default function PlansPage() {
             <li>{tr("Diagnostics et recommandations continues", "Continuous diagnostics and recommendations")}</li>
             <li>{tr("SEO / AEO et conversion", "SEO / AEO and conversion")}</li>
             <li>{tr("Révisions globales du site par IA", "AI-powered global website revisions")}</li>
-            <li>{tr("Création IA initiale incluse avec Growth annuel", "Initial AI Launch included with annual Growth")}</li>
+            <li>{annualIncludesLaunch ? tr("Création IA initiale incluse avec Growth annuel", "Initial AI Launch included with annual Growth") : tr("Création IA disponible séparément : 49 € une fois", "AI Launch available separately: €49 once")}</li>
           </ul>
           <p className="plan-status">
             {betaAccess.active
@@ -258,7 +263,7 @@ export default function PlansPage() {
                 {checkoutBusy === "growth:monthly" ? tr("Ouverture…", "Opening…") : tr("29 €/mois", "€29/month")}
               </button>
               <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("growth", "annual")}>
-                {checkoutBusy === "growth:annual" ? tr("Ouverture…", "Opening…") : tr("290 €/an · Création IA incluse", "€290/year · AI Launch included")}
+                {checkoutBusy === "growth:annual" ? tr("Ouverture…", "Opening…") : annualIncludesLaunch ? tr("290 €/an · Création IA incluse", "€290/year · AI Launch included") : tr("290 €/an", "€290/year")}
               </button>
             </div>
           ) : null}
