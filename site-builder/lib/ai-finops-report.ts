@@ -13,7 +13,7 @@ export type AiFinopsReport = {
   dimensions: Record<string, CostDimension>;
   requests: Array<{
     operation: string; attempts: number; measuredSuccesses: number;
-    meanMicros: number | null; p95Micros: number | null; failedCostMicros: number;
+    meanMicros: number | null; p95Micros: number | null; failedCostMicros: number; unknownOutcomes?: number;
   }>;
   planAccounts: Array<{
     plan: string; accountsWithAi: number;

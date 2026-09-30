@@ -44,12 +44,12 @@ export function createBudgetedProviderFetch(context: BudgetContext, providerFetc
     const heavy = context.operation === "siteArchitect" || context.operation === "siteRevision";
     const ceiling = providerCostCeiling(init.body, heavy);
     const callId = crypto.randomUUID();
-    const { data: admission, error } = await context.service.rpc("reserve_ai_provider_budget", {
+    const { data: admission, error } = await context.service.rpc("reserve_ai_provider_budget_with_model", {
       p_call_id: callId, p_request_id: context.requestId,
       p_user_id: context.userId, p_site_id: context.siteId,
       p_plan: context.planKey, p_pool: context.pool,
       p_operation: context.operation, p_sequence: ++sequence,
-      p_reserved_micros: ceiling.micros
+      p_reserved_micros: ceiling.micros, p_model: ceiling.model
     });
     if (error || admission !== "ok") throw new AiBudgetError(error ? "budget_unavailable" : String(admission));
     let settled = false;

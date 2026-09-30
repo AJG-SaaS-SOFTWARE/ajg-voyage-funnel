@@ -31,6 +31,8 @@ test('admission failure prevents provider invocation', async () => {
   const fetcher = createBudgetedProviderFetch(context(h.service), async () => { spent++; });
   await assert.rejects(fetcher('https://api.openai.com/v1/responses', { body }), /global_monthly_budget_limit/);
   assert.equal(spent, 0); assert.equal(h.calls.length, 1);
+  assert.equal(h.calls[0].name, 'reserve_ai_provider_budget_with_model');
+  assert.equal(h.calls[0].args.p_model, 'gpt-5.6-luna');
 });
 test('success settles actual tokens and preserves response for the writer', async () => {
   const h = harness();
@@ -75,7 +77,7 @@ test('writer refunds standard quota only when no usable result is returned', asy
           if (name === 'get_my_site_capabilities') return { data: { can_generate_ai: true } };
           if (name === 'admit_ai_request' && scenario === 'duplicate') return { data: 'duplicate_request' };
           if (name === 'get_my_site_entitlements') return { data: { plan_key: 'essential' } };
-          if (name === 'reserve_ai_provider_budget' && scenario === 'budget') return { data: 'monthly_budget_limit' };
+          if (name === 'reserve_ai_provider_budget_with_model' && scenario === 'budget') return { data: 'monthly_budget_limit' };
           return { data: name === 'settle_ai_provider_budget' ? true : 'ok', error: null };
         },
         from() { return { async insert() { return { error: null }; } }; }
@@ -102,7 +104,7 @@ test('writer refunds standard quota only when no usable result is returned', asy
       const response = await route.POST(new Request('http://localhost/api/ai/write', { method: 'POST', headers: { authorization: 'Bearer test', 'content-type': 'application/json' }, body: JSON.stringify({ siteId: 'site', field: 'heroTitle', instruction: 'Write a title' }) }));
       assert.equal(response.status, scenario === 'success' ? 200 : scenario === 'empty' ? 502 : scenario === 'network' ? 503 : scenario === 'duplicate' ? 409 : 429);
       assert.equal(calls.includes('release_my_site_ai_generation'), scenario !== 'success' && scenario !== 'duplicate', scenario);
-      assert.equal(calls.includes('reserve_ai_provider_budget'), scenario !== 'duplicate');
+      assert.equal(calls.includes('reserve_ai_provider_budget_with_model'), scenario !== 'duplicate');
     }
   } finally {
     for (const key of Object.keys(process.env)) if (!(key in oldEnv)) delete process.env[key];

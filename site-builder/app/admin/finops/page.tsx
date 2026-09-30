@@ -6,7 +6,7 @@ import { getAdminAiFinops } from "../../../lib/admin";
 import { usdCost, type AiFinopsReport, type FinopsAlert } from "../../../lib/ai-finops-report";
 
 type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; generatedAt: string };
-const dimensions = { plan: "Par offre", user: "Par compte", site: "Par site", operation: "Par opération fournisseur", day: "Par jour (UTC)" };
+const dimensions = { plan: "Par offre", user: "Par compte", site: "Par site", operation: "Par opération demandée", model: "Par modèle demandé", day: "Par jour (UTC)" };
 
 export default function FinopsPage() {
   const [month, setMonth] = useState("");
@@ -55,7 +55,7 @@ export default function FinopsPage() {
         {report.calls === 0 ? <section className="panel"><h2>Aucune donnée IA pour ce mois</h2><p>Le coût moyen et le P95 ne peuvent pas encore être évalués. Aucun coût bêta réel n’est déduit d’une absence d’appels.</p></section> : null}
         <section className="panel">
           <h2>Générations complètes</h2>
-          <p>Chaque demande regroupe tous ses appels internes. Moyenne et P95 portent sur les succès au coût connu ; les échecs et appels historiques sans rattachement restent comptés dans les coûts globaux.</p>
+          <p>Chaque demande regroupe tous ses appels internes. Moyenne et P95 portent sur les succès au coût connu ; les échecs et appels historiques sans rattachement restent comptés dans les coûts globaux. Résultats inconnus : {report.requests.reduce((sum, row) => sum + (row.unknownOutcomes || 0), 0)} demande(s), exclues des succès mesurés.</p>
           <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th scope="col">Opération</th><th scope="col">Tentatives</th><th scope="col">Succès mesurés</th><th scope="col">Moyenne</th><th scope="col">P95</th><th scope="col">Coût des non-succès</th></tr></thead><tbody>
             {report.requests.map(row => <tr key={row.operation}><td>{row.operation}</td><td>{row.attempts}</td><td>{row.measuredSuccesses}</td><td>{usdCost(row.meanMicros)}</td><td>{usdCost(row.p95Micros)}</td><td>{usdCost(row.failedCostMicros)}</td></tr>)}
           </tbody></table></div>
