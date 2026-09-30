@@ -5,6 +5,7 @@ import fs from "node:fs";
 const migration = fs.readFileSync(new URL("../supabase/migrations/20260930211500_support_health_center.sql", import.meta.url), "utf8");
 const clientRoute = fs.readFileSync(new URL("../app/api/support/tickets/route.ts", import.meta.url), "utf8");
 const adminRoute = fs.readFileSync(new URL("../app/api/admin/support/route.ts", import.meta.url), "utf8");
+const healthServer = fs.readFileSync(new URL("../lib/support-health-server.ts", import.meta.url), "utf8");
 
 test("support tickets cannot be written directly by browser roles", () => {
   assert.match(migration, /revoke insert, update, delete on public\.support_tickets from authenticated/i);
@@ -14,7 +15,8 @@ test("support tickets cannot be written directly by browser roles", () => {
 
 test("ticket creation authenticates first and scopes diagnostics to the authenticated owner", () => {
   assert.match(clientRoute, /auth\.getUser\(token\)/);
-  assert.match(clientRoute, /\.eq\("owner_id", userId\)/);
+  assert.match(clientRoute, /diagnoseSupportHealth\(auth\.service, auth\.user\.id/);
+  assert.match(healthServer, /\.eq\("owner_id", userId\)/);
   assert.match(clientRoute, /\.from\("support_tickets"\)\s*\.insert/);
 });
 
@@ -33,7 +35,15 @@ test("support ticket creation is rate limited server-side", () => {
 
 
 test("public rendering probe uses the configured Builder origin rather than a client supplied host", () => {
-  assert.match(clientRoute, /appBaseUrl\(\)/);
-  assert.doesNotMatch(clientRoute, /new URL\(request\.url\)\.origin/);
-  assert.match(clientRoute, /AbortController/);
+  assert.match(healthServer, /appBaseUrl\(\)/);
+  assert.doesNotMatch(healthServer, /new URL\(request\.url\)\.origin/);
+  assert.match(healthServer, /AbortController/);
+});
+
+
+test("customer recheck is limited to the authenticated user's waiting ticket", () => {
+  assert.match(clientRoute, /export async function PATCH/);
+  assert.match(clientRoute, /\.eq\("user_id", auth\.user\.id\)/);
+  assert.match(clientRoute, /\.eq\("status", "waiting_customer"\)/);
+  assert.match(clientRoute, /supportReconcileDecision/);
 });

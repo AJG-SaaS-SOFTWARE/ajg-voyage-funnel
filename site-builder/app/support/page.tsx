@@ -33,6 +33,7 @@ export default function SupportPage() {
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [recheckingId, setRecheckingId] = useState<string | null>(null);
 
   async function token() {
     const supabase = getSupabaseBrowserClient();
@@ -94,6 +95,45 @@ export default function SupportPage() {
       setNotice(error instanceof Error ? error.message : tr("Création impossible.", "Unable to create the ticket."));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function recheck(ticketId: string) {
+    const accessToken = await token();
+    if (!accessToken) {
+      setState("guest");
+      return;
+    }
+    setRecheckingId(ticketId);
+    setNotice("");
+    try {
+      const response = await fetch("/api/support/tickets", {
+        method: "PATCH",
+        headers: {
+          Authorization: "Bearer " + accessToken,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ id: ticketId }),
+        cache: "no-store"
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(body?.error || tr("Nouveau diagnostic impossible.", "Unable to run a new diagnosis."));
+      }
+
+      const nextStatus = body?.ticket?.status;
+      setNotice(
+        nextStatus === "resolved"
+          ? tr("Le problème diagnostiqué n’est plus détecté : la demande a été résolue automatiquement.", "The diagnosed issue is no longer detected: the request was resolved automatically.")
+          : nextStatus === "diagnosed"
+            ? tr("Le problème nécessite maintenant une vérification AJG. Votre demande a été escaladée.", "The issue now requires AJG review. Your request has been escalated.")
+            : tr("L’action recommandée reste nécessaire. Le diagnostic a été actualisé.", "The recommended action is still required. The diagnosis has been refreshed.")
+      );
+      await load();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : tr("Nouveau diagnostic impossible.", "Unable to run a new diagnosis."));
+    } finally {
+      setRecheckingId(null);
     }
   }
 
@@ -193,6 +233,20 @@ export default function SupportPage() {
                     <br />
                     <span>{ticket.message}</span>
                     {ticket.client_action ? <><br /><b>{tr("Action proposée :", "Suggested action:")}</b> {ticket.client_action}</> : null}
+                    {ticket.status === "waiting_customer" ? (
+                      <>
+                        <br />
+                        <button
+                          className="button secondary"
+                          onClick={() => void recheck(ticket.id)}
+                          disabled={recheckingId === ticket.id}
+                        >
+                          {recheckingId === ticket.id
+                            ? tr("Nouveau diagnostic…", "Running diagnosis…")
+                            : tr("J’ai corrigé — relancer le diagnostic", "I fixed it — run diagnosis again")}
+                        </button>
+                      </>
+                    ) : null}
                   </li>
                 ))}
               </ul>

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { buildSupportDiagnosis, type SupportDiagnosis } from "../../../../lib/support-diagnostics";
-import { appBaseUrl } from "../../../../lib/app-url";
-import { getStorageBackupStatus } from "../../../../lib/storage-backup";
+import { createClient } from "@supabase/supabase-js";
+import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
+import { supportReconcileDecision } from "../../../../lib/support-reconcile-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,125 +31,6 @@ async function context(request: Request) {
   return { user, service };
 }
 
-async function publicSiteProbe(slug: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-  try {
-    const response = await fetch(`${appBaseUrl()}/site/${encodeURIComponent(slug)}`, {
-      method: "GET",
-      cache: "no-store",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: { "User-Agent": "AJG-Site-Builder-Health/1.0" }
-    });
-    return { checked: true, ok: response.ok, status: response.status };
-  } catch {
-    return { checked: true, ok: false, status: null };
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function safeBackupStatus() {
-  try {
-    return await getStorageBackupStatus();
-  } catch {
-    return { configured: false, status: "unknown" as const, ageHours: null };
-  }
-}
-
-async function diagnose(service: SupabaseClient, userId: string, preferredSiteId?: string | null): Promise<{ siteId: string | null; diagnosis: SupportDiagnosis }> {
-  let siteQuery = service
-    .from("sites")
-    .select("id,slug,status,public_access_state,owner_id,created_at")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1);
-
-  if (preferredSiteId) {
-    siteQuery = service
-      .from("sites")
-      .select("id,slug,status,public_access_state,owner_id,created_at")
-      .eq("owner_id", userId)
-      .eq("id", preferredSiteId)
-      .limit(1);
-  }
-
-  const { data: siteRows, error: siteError } = await siteQuery;
-  if (siteError) {
-    return {
-      siteId: null,
-      diagnosis: buildSupportDiagnosis({ backendOk: false, site: null, domains: [], billingState: null })
-    };
-  }
-
-  const site = siteRows?.[0] || null;
-  if (!site) {
-    return {
-      siteId: null,
-      diagnosis: buildSupportDiagnosis({ backendOk: true, site: null, domains: [], billingState: null })
-    };
-  }
-
-  const [
-    { data: domains, error: domainError },
-    { data: billing, error: billingError },
-    { data: aiPolicy, error: aiPolicyError },
-    backup,
-    publicRender
-  ] = await Promise.all([
-    service
-      .from("domains")
-      .select("hostname,verification_status,is_primary")
-      .eq("site_id", site.id),
-    service
-      .from("site_billing_states")
-      .select("state")
-      .eq("site_id", site.id)
-      .maybeSingle(),
-    service
-      .from("ai_cost_policy")
-      .select("ai_enabled,heavy_enabled")
-      .eq("singleton", true)
-      .maybeSingle(),
-    safeBackupStatus(),
-    site.status === "published" && site.public_access_state !== "suspended"
-      ? publicSiteProbe(site.slug)
-      : Promise.resolve({ checked: false, ok: false, status: null })
-  ]);
-
-  return {
-    siteId: site.id,
-    diagnosis: buildSupportDiagnosis({
-      backendOk: !domainError && !billingError,
-      site: {
-        id: site.id,
-        slug: site.slug,
-        status: site.status,
-        publicAccessState: site.public_access_state
-      },
-      domains: (domains || []).map((domain) => ({
-        hostname: domain.hostname,
-        verificationStatus: domain.verification_status,
-        isPrimary: domain.is_primary
-      })),
-      billingState: billing?.state || null,
-      publicRender,
-      backup: {
-        configured: backup.configured,
-        status: backup.status,
-        ageHours: backup.ageHours
-      },
-      ai: !aiPolicyError && aiPolicy
-        ? {
-            enabled: aiPolicy.ai_enabled === true,
-            heavyEnabled: aiPolicy.heavy_enabled === true
-          }
-        : undefined
-    })
-  };
-}
-
 export async function GET(request: Request) {
   const auth = await context(request);
   if ("response" in auth) return auth.response;
@@ -162,7 +42,7 @@ export async function GET(request: Request) {
       .eq("user_id", auth.user.id)
       .order("created_at", { ascending: false })
       .limit(50),
-    diagnose(auth.service, auth.user.id)
+    diagnoseSupportHealth(auth.service, auth.user.id)
   ]);
 
   if (ticketError) return NextResponse.json({ error: "Tickets indisponibles." }, { status: 503 });
@@ -207,7 +87,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Trop de demandes sont déjà ouvertes sur ce compte." }, { status: 429 });
   }
 
-  const health = await diagnose(auth.service, auth.user.id, preferredSiteId);
+  const health = await diagnoseSupportHealth(auth.service, auth.user.id, preferredSiteId);
   const incident = health.diagnosis.overall === "incident";
   const waitingCustomer = !incident && Boolean(health.diagnosis.clientAction);
   const status = waitingCustomer ? "waiting_customer" : "diagnosed";
@@ -231,4 +111,86 @@ export async function POST(request: Request) {
 
   if (error || !ticket) return NextResponse.json({ error: "Création du ticket impossible." }, { status: 503 });
   return NextResponse.json({ ticket, health }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
+}
+
+
+export async function PATCH(request: Request) {
+  const auth = await context(request);
+  if ("response" in auth) return auth.response;
+
+  const body = await request.json().catch(() => null);
+  const id = typeof body?.id === "string" ? body.id : "";
+  if (!id) {
+    return NextResponse.json({ error: "Ticket invalide." }, { status: 400 });
+  }
+
+  const { data: current, error: currentError } = await auth.service
+    .from("support_tickets")
+    .select("id,user_id,site_id,status,created_at")
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
+
+  if (currentError) {
+    return NextResponse.json({ error: "Ticket indisponible." }, { status: 503 });
+  }
+  if (!current) {
+    return NextResponse.json({ error: "Ticket introuvable." }, { status: 404 });
+  }
+  if (current.status !== "waiting_customer") {
+    return NextResponse.json(
+      { error: "Ce ticket n’attend plus une action de votre part." },
+      { status: 409 }
+    );
+  }
+
+  const health = await diagnoseSupportHealth(
+    auth.service,
+    auth.user.id,
+    current.site_id
+  );
+  const createdAt = Date.parse(current.created_at);
+  const ageHours = Number.isFinite(createdAt)
+    ? Math.max(0, (Date.now() - createdAt) / (60 * 60 * 1000))
+    : 72;
+  const decision = supportReconcileDecision({
+    overall: health.diagnosis.overall,
+    clientAction: health.diagnosis.clientAction,
+    ageHours
+  });
+  const now = new Date().toISOString();
+
+  const patch: Record<string, unknown> = {
+    status: decision.status,
+    diagnosis: health.diagnosis,
+    client_action: health.diagnosis.clientAction,
+    resolution_code: decision.resolutionCode,
+    resolved_at: decision.resolved ? now : null,
+    updated_at: now
+  };
+  if (decision.severity) patch.severity = decision.severity;
+
+  const { data: ticket, error: updateError } = await auth.service
+    .from("support_tickets")
+    .update(patch)
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .eq("status", "waiting_customer")
+    .select("id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at")
+    .maybeSingle();
+
+  if (updateError) {
+    return NextResponse.json({ error: "Nouveau diagnostic impossible." }, { status: 503 });
+  }
+  if (!ticket) {
+    return NextResponse.json(
+      { error: "Le ticket a été modifié pendant le diagnostic. Actualisez la page." },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json(
+    { ticket, health },
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }
