@@ -23,3 +23,10 @@ test("admin support changes require a database admin role", () => {
   assert.match(adminRoute, /role\?\.role !== "admin"/);
   assert.match(adminRoute, /export async function PATCH/);
 });
+
+
+test("support ticket creation is rate limited server-side", () => {
+  assert.match(clientRoute, /recentCount/);
+  assert.match(clientRoute, /openCount/);
+  assert.match(clientRoute, /status: 429/);
+});
