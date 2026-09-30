@@ -7,7 +7,7 @@ let stderr = "";
 
 const child = spawn(
   process.execPath,
-  ["node_modules/next/dist/bin/next", "start", "-p", String(port)],
+  ["node_modules/next/dist/bin/next", "start", "-p", String(port), "--hostname", "127.0.0.1"],
   {
     env: { ...process.env, NODE_ENV: "production" },
     stdio: ["ignore", "pipe", "pipe"]
@@ -58,6 +58,7 @@ try {
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   await expectStatus("/api/admin/release-readiness", 401);
   await expectStatus("/api/admin/beta-metrics", 401);
+  await expectStatus("/api/admin/ai-finops", 401);
   await expectStatus("/api/admin/beta-cohort", 401);
   await expectStatus("/api/admin/beta-cohort", 401, { method: "POST" });
   await expectStatus("/api/admin/managed-domains", 401);

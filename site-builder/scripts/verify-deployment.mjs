@@ -43,6 +43,7 @@ await get("/ci-route-that-does-not-exist", [404]);
 await get("/api/export/site?siteId=ci&format=archive", [401]);
 await get("/api/admin/release-readiness", [401]);
 await get("/api/admin/beta-metrics", [401]);
+await get("/api/admin/ai-finops", [401]);
 await get("/api/admin/beta-cohort", [401]);
 await get("/api/admin/managed-domains", [401]);
 
