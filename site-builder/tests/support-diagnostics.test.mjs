@@ -16,7 +16,8 @@ test("healthy published site does not create a false support incident", () => {
     backendOk: true,
     site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
     domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
-    billingState: "active"
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 }
   });
   assert.equal(result.overall, "healthy");
   assert.equal(result.clientAction, null);
