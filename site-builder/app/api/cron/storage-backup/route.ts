@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runStorageBackup } from "../../../../lib/storage-backup";
+import { runAiFinopsMonitorSafely } from "../../../../lib/ai-finops-monitor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,12 +15,13 @@ export async function GET(request: Request) {
   }
 
   try {
+    const finops = await runAiFinopsMonitorSafely();
     const result = await runStorageBackup();
 
     return NextResponse.json(
-      result,
+      { ...result, finops },
       {
-        status: result.ok || !result.configured ? 200 : 503,
+        status: finops.ok && (result.ok || !result.configured) ? 200 : 503,
         headers: {
           "Cache-Control": "private, no-store",
           "X-Content-Type-Options": "nosniff"
