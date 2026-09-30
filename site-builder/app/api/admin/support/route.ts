@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { recordSupportEvent } from "../../../../lib/support-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +54,15 @@ export async function PATCH(request: Request) {
   const resolutionCode = typeof body?.resolutionCode === "string" ? body.resolutionCode.trim().slice(0,120) : null;
   if (!id || !statuses.has(status)) return NextResponse.json({ error: "Mise à jour invalide." }, { status: 400 });
 
+  const { data: current, error: currentError } = await auth.service
+    .from("support_tickets")
+    .select("id,status")
+    .eq("id", id)
+    .maybeSingle();
+  if (currentError || !current) {
+    return NextResponse.json({ error: "Ticket introuvable." }, { status: 404 });
+  }
+
   const resolved = status === "resolved" || status === "closed";
   const { data, error } = await auth.service
     .from("support_tickets")
@@ -67,5 +77,17 @@ export async function PATCH(request: Request) {
     .maybeSingle();
 
   if (error || !data) return NextResponse.json({ error: "Ticket introuvable." }, { status: 404 });
+
+  await recordSupportEvent(auth.service, {
+    ticketId: data.id,
+    actor: "admin",
+    type: resolved ? "resolution" : "status",
+    metadata: {
+      previous_status: current.status,
+      status: data.status,
+      resolution_code: data.resolution_code
+    }
+  });
+
   return NextResponse.json({ ticket: data }, { headers: { "Cache-Control": "private, no-store" } });
 }
