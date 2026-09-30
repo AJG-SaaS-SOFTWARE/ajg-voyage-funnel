@@ -9,6 +9,7 @@ import {
 async function publicSiteProbe(slug: string) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
+  const startedAt = Date.now();
   try {
     const response = await fetch(
       `${appBaseUrl()}/site/${encodeURIComponent(slug)}`,
@@ -20,9 +21,61 @@ async function publicSiteProbe(slug: string) {
         headers: { "User-Agent": "AJG-Site-Builder-Health/1.0" }
       }
     );
-    return { checked: true, ok: response.ok, status: response.status };
+    const durationMs = Date.now() - startedAt;
+    const html = response.ok ? (await response.text()).slice(0, 150000) : "";
+    const canonicalTag =
+      html.match(/<link[^>]*rel=["']canonical["'][^>]*>/i)?.[0]
+      || html.match(/<link[^>]*href=["'][^"']+["'][^>]*rel=["']canonical["'][^>]*>/i)?.[0]
+      || "";
+    return {
+      checked: true,
+      ok: response.ok,
+      status: response.status,
+      durationMs,
+      canonicalPresent: Boolean(canonicalTag),
+      canonicalHttps: /href=["']https:\/\//i.test(canonicalTag)
+    };
   } catch {
-    return { checked: true, ok: false, status: null };
+    return {
+      checked: true,
+      ok: false,
+      status: null,
+      durationMs: Date.now() - startedAt,
+      canonicalPresent: false,
+      canonicalHttps: false
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function sitemapProbe(slug: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(
+      `${appBaseUrl()}/site/${encodeURIComponent(slug)}/sitemap.xml`,
+      {
+        method: "GET",
+        cache: "no-store",
+        redirect: "follow",
+        signal: controller.signal,
+        headers: { "User-Agent": "AJG-Site-Builder-Health/1.0" }
+      }
+    );
+    const body = response.ok ? (await response.text()).slice(0, 150000) : "";
+    const contentType = response.headers.get("content-type") || "";
+    return {
+      checked: true,
+      ok: response.ok,
+      status: response.status,
+      validXml:
+        /xml/i.test(contentType)
+        && /<urlset\b/i.test(body)
+        && /<loc>https?:\/\//i.test(body)
+    };
+  } catch {
+    return { checked: true, ok: false, status: null, validXml: false };
   } finally {
     clearTimeout(timeout);
   }
@@ -92,7 +145,8 @@ export async function diagnoseSupportHealth(
     { data: billing, error: billingError },
     { data: aiPolicy, error: aiPolicyError },
     backup,
-    publicRender
+    publicRender,
+    sitemap
   ] = await Promise.all([
     service
       .from("domains")
@@ -111,7 +165,10 @@ export async function diagnoseSupportHealth(
     safeBackupStatus(),
     site.status === "published" && site.public_access_state !== "suspended"
       ? publicSiteProbe(site.slug)
-      : Promise.resolve({ checked: false, ok: false, status: null })
+      : Promise.resolve({ checked: false, ok: false, status: null }),
+    site.status === "published" && site.public_access_state !== "suspended"
+      ? sitemapProbe(site.slug)
+      : Promise.resolve({ checked: false, ok: false, status: null, validXml: false })
   ]);
 
   return {
@@ -131,6 +188,7 @@ export async function diagnoseSupportHealth(
       })),
       billingState: billing?.state || null,
       publicRender,
+      sitemap,
       backup: {
         configured: backup.configured,
         status: backup.status,
