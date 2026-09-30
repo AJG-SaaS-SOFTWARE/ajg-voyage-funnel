@@ -33,7 +33,8 @@ test("pricing routes expose reciprocal language alternates", () => {
 
 test("middleware returns HTTP content language for public pricing routes", () => {
   assert.ok(middleware.includes('pathname==="/pricing"'));
-  assert.ok(middleware.includes('set("Content-Language","en")'));
   assert.ok(middleware.includes('pathname==="/tarifs"'));
-  assert.ok(middleware.includes('set("Content-Language","fr")'));
+  assert.ok(middleware.includes('const routeLocale='));
+  assert.ok(middleware.includes('set("Content-Language",routeLocale)'));
+  assert.ok(middleware.includes('set("x-ajg-route-locale",routeLocale)'));
 });

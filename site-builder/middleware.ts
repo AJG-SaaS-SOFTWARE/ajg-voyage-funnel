@@ -23,9 +23,11 @@ export function middleware(request:NextRequest){
  }
  const isAppHost=hostname===appHostname||hostname===rootDomain||hostname==="localhost"||hostname.endsWith(".vercel.app");
  if(isAppHost){
-   const response=NextResponse.next();
-   if(request.nextUrl.pathname==="/pricing")response.headers.set("Content-Language","en");
-   if(request.nextUrl.pathname==="/tarifs")response.headers.set("Content-Language","fr");
+   const requestHeaders=new Headers(request.headers);
+   const routeLocale=request.nextUrl.pathname==="/pricing"?"en":request.nextUrl.pathname==="/tarifs"?"fr":null;
+   if(routeLocale)requestHeaders.set("x-ajg-route-locale",routeLocale);
+   const response=NextResponse.next({request:{headers:requestHeaders}});
+   if(routeLocale)response.headers.set("Content-Language",routeLocale);
    return response;
  }
  const url=request.nextUrl.clone();

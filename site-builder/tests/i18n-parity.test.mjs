@@ -188,3 +188,20 @@ test("billing notification catalogue covers every customer state in both languag
   assert.match(source, /Accéder à votre espace/);
   assert.match(source, /ajg_builder_locale/);
 });
+
+
+test("public pricing routes declare their explicit language at SSR", () => {
+  const middleware = read("middleware.ts");
+  const layout = read("app/layout.tsx");
+  assert.match(middleware, /x-ajg-route-locale/);
+  assert.match(middleware, /pathname==="\/pricing"/);
+  assert.match(layout, /headerStore\.get\("x-ajg-route-locale"\)/);
+  assert.match(layout, /routeLocale === "en" \|\| routeLocale === "fr"/);
+});
+
+
+test("generated public site declares its own content language", () => {
+  const source = read("components/PublishedSite.tsx");
+  assert.match(source, /lang=\{english \? "en" : "fr"\}/);
+  assert.match(source, /english \? "Audio" : "Son"/);
+});
