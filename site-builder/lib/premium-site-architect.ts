@@ -44,6 +44,7 @@ export type PremiumArchitectInput = {
   editorialContext?: string;
   currentText?: string;
   contentLibrary?: PremiumArchitectAsset[];
+  providerFetch?: typeof fetch;
   onUsage?: (usage: PremiumArchitectUsage) => Promise<void> | void;
 };
 
@@ -335,9 +336,10 @@ async function structuredResponse(args: {
   effort: "low" | "medium";
   operation: PremiumArchitectUsage["operation"];
   onUsage?: PremiumArchitectInput["onUsage"];
+  providerFetch?: typeof fetch;
 }) {
   const startedAt = Date.now();
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await (args.providerFetch || fetch)("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${args.apiKey}`,
@@ -1297,6 +1299,7 @@ export async function generatePremiumSiteArchitect(
       effort: "medium",
       operation: "premium_strategy",
       onUsage: input.onUsage,
+      providerFetch: input.providerFetch,
       instructions: [
         "You are the strategy layer of AJG Premium Site Architect.",
         sourceDataBoundaryRule,
@@ -1343,6 +1346,7 @@ export async function generatePremiumSiteArchitect(
       effort: "medium",
       operation: "premium_creation",
       onUsage: input.onUsage,
+      providerFetch: input.providerFetch,
       instructions: [
         "You are AJG Premium Site Architect, an expert website creator for non-expert customers.",
         sourceDataBoundaryRule,
@@ -1394,6 +1398,7 @@ export async function generatePremiumSiteArchitect(
     effort: "low",
     operation: "premium_review",
     onUsage: input.onUsage,
+      providerFetch: input.providerFetch,
     instructions: [
       "You are the independent QA critic for AJG Premium Site Architect.",
       sourceDataBoundaryRule,
@@ -1432,6 +1437,7 @@ export async function generatePremiumSiteArchitect(
         effort: "medium",
         operation: "premium_refinement",
         onUsage: input.onUsage,
+      providerFetch: input.providerFetch,
         instructions: [
           "You are the final refinement layer of AJG Premium Site Architect.",
         sourceDataBoundaryRule,
@@ -1479,6 +1485,7 @@ export async function generatePremiumSiteArchitect(
     effort: "low",
     operation: "premium_final_review",
     onUsage: input.onUsage,
+      providerFetch: input.providerFetch,
     instructions: [
       "You are the final independent quality gate for AJG Premium Site Architect.",
       sourceDataBoundaryRule,

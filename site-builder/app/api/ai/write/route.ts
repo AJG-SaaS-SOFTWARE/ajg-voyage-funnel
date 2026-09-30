@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
 import { normalizeStandardStructuredOutput, sanitizeStandardText, selectStandardContextEntries, standardQualityIssues, standardStructuredFormat } from "../../../../lib/standard-ai-writer";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
+import { AiBudgetError, createBudgetedProviderFetch } from "../../../../lib/ai-provider-budget";
 import { estimateAiCostUsdMicros } from "../../../../lib/ai-cost";
 
 export const runtime = "nodejs";
@@ -87,12 +88,6 @@ async function authenticatedContext(request: Request) {
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) return null;
   return { user: data.user, supabase };
-}
-
-async function consumeAiAllowance(supabase: any, siteId: string) {
-  const { data, error } = await supabase.rpc("consume_my_site_ai_generation", { p_site_id: siteId });
-  if (error) throw error;
-  return typeof data === "string" ? data : "unavailable";
 }
 
 async function reservePremiumAiAllowance(
@@ -203,6 +198,8 @@ async function recordStandardProviderUsage(args: {
   userId: string;
   siteId: string;
   operation: StandardProviderOperation;
+  requestId: string;
+  requestOperation: string;
   data: any;
   durationMs: number;
   planKey: string;
@@ -227,6 +224,8 @@ async function recordStandardProviderUsage(args: {
   const { error } = await service.from("ai_provider_usage").insert({
     user_id: args.userId,
     site_id: args.siteId,
+    request_id: args.requestId,
+    request_operation: args.requestOperation,
     operation: args.operation,
     model,
     input_tokens: Math.max(0, Number(usage?.input_tokens) || 0),
@@ -449,13 +448,11 @@ export async function POST(request: Request) {
 
   const premiumRequest =
     field === "siteArchitect" || field === "siteRevision";
-  const premiumRequestId = premiumRequest ? crypto.randomUUID() : "";
+  const premiumRequestId = crypto.randomUUID();
 
   let allowance: string;
   try {
-    allowance = premiumRequest
-      ? await reservePremiumAiAllowance(auth.supabase, siteId, premiumRequestId)
-      : await consumeAiAllowance(auth.supabase, siteId);
+    allowance = await reservePremiumAiAllowance(auth.supabase, siteId, premiumRequestId);
   } catch (error) {
     console.error("AI allowance check failed", error);
     return NextResponse.json({ error: tr("L’assistant IA est temporairement indisponible. Réessayez dans quelques instants.", "The AI assistant is temporarily unavailable. Try again in a few moments.") }, { status: 503 });
@@ -540,10 +537,24 @@ export async function POST(request: Request) {
     }
   }
 
+  let usableResult = false;
+  try {
+    const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) throw new AiBudgetError("budget_unavailable");
+    const providerFetch = createBudgetedProviderFetch({
+      service: createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      }),
+      userId: auth.user.id, siteId, requestId: premiumRequestId,
+      planKey: requestPlanKey,
+      pool: launchReservation === "ok" ? "launch" : premiumAccessSource === "beta" ? "beta" : "run",
+      operation: field
+    });
   if (field === "siteArchitect" || field === "siteRevision") {
     try {
       const proposal = await generatePremiumSiteArchitect({
         apiKey,
+        providerFetch,
         mode: field === "siteRevision" ? "revision" : "create",
         language: language as "French" | "English",
         affiliationRules: complianceRules,
@@ -578,6 +589,8 @@ export async function POST(request: Request) {
             user_id: auth.user.id,
             site_id: siteId,
             operation: usage.operation,
+            request_id: premiumRequestId,
+            request_operation: field,
             model: usage.model,
             input_tokens: usage.inputTokens,
             cached_input_tokens: usage.cachedInputTokens,
@@ -599,12 +612,14 @@ export async function POST(request: Request) {
       if (launchReservation === "ok") {
         await commitLaunchOperation(auth.supabase, premiumRequestId);
       }
+      usableResult = true;
       return NextResponse.json({
         proposal,
         premium: true,
         premiumAccessSource
       });
     } catch (error) {
+      if (error instanceof AiBudgetError) throw error;
       console.error("Premium Site Architect failed", error);
       if (premiumRequestId) {
         if (heavyAiReserved) {
@@ -682,7 +697,7 @@ export async function POST(request: Request) {
           : "standard_field";
   const providerStartedAt = Date.now();
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await providerFetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -732,6 +747,8 @@ export async function POST(request: Request) {
     userId: auth.user.id,
     siteId,
     operation: standardOperation,
+    requestId: premiumRequestId,
+    requestOperation: field,
     data,
     durationMs: Date.now() - providerStartedAt,
     planKey: requestPlanKey,
@@ -783,7 +800,7 @@ export async function POST(request: Request) {
 
   if (qualityIssues.length > 0) {
     const repairStartedAt = Date.now();
-    const repairResponse = await fetch("https://api.openai.com/v1/responses", {
+    const repairResponse = await providerFetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -845,6 +862,8 @@ export async function POST(request: Request) {
       userId: auth.user.id,
       siteId,
       operation: "standard_repair",
+      requestId: premiumRequestId,
+      requestOperation: field,
       data: repairData,
       durationMs: Date.now() - repairStartedAt,
       planKey: requestPlanKey,
@@ -886,5 +905,23 @@ export async function POST(request: Request) {
     }
   }
 
+  usableResult = true;
   return NextResponse.json(resultPayload);
+  } catch (error) {
+    const code = error instanceof AiBudgetError ? error.code : "provider_unavailable";
+    console.warn("AI request stopped", { code });
+    return NextResponse.json({
+      code,
+      error: tr(
+        "Cette demande IA est temporairement suspendue pour protéger votre capacité. Réessayez plus tard ou utilisez l’éditeur manuel ; votre site reste disponible.",
+        "This AI request is temporarily paused to protect your allowance. Try again later or use the manual editor; your website remains available."
+      )
+    }, { status: error instanceof AiBudgetError ? 429 : 503 });
+  } finally {
+    if (!usableResult) {
+      await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
+      if (heavyAiReserved) await releaseHeavyAiOperation(auth.supabase, premiumRequestId).catch(() => undefined);
+      if (launchReservation === "ok") await releaseLaunchOperation(auth.supabase, premiumRequestId).catch(() => undefined);
+    }
+  }
 }
