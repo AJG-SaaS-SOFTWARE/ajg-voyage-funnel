@@ -7,7 +7,7 @@ import styles from "./PricingPage.module.css";
 type Locale = "fr" | "en";
 type BillingCycle = "monthly" | "annual";
 
-type PricingPageProps = { locale: Locale };
+type PricingPageProps = { locale: Locale; annualIncludesLaunch?: boolean };
 
 const copy = {
   fr: {
@@ -162,7 +162,7 @@ const copy = {
   }
 } as const;
 
-export function PricingPage({ locale }: PricingPageProps) {
+export function PricingPage({ locale, annualIncludesLaunch = false }: PricingPageProps) {
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const t = copy[locale];
   const price = (plan: typeof t.essential | typeof t.growth) =>
@@ -198,7 +198,7 @@ export function PricingPage({ locale }: PricingPageProps) {
           <p className={styles.planBadge}>{t.launch.badge}</p>
           <h2>{t.launch.name}</h2>
           <p className={styles.description}>{t.launch.description}</p>
-          <p className={styles.launchNote}>{t.launch.note}</p>
+          <p className={styles.launchNote}>{annualIncludesLaunch ? t.launch.note : locale === "fr" ? "Création IA disponible séparément avec Essentiel ou Growth : 49 € une fois." : "AI Launch is available separately with Essential or Growth: €49 once."}</p>
         </div>
         <p className={styles.price}>{t.launch.price} <small>{t.launch.suffix}</small></p>
       </article>
@@ -223,7 +223,7 @@ export function PricingPage({ locale }: PricingPageProps) {
           <h2>{t.growth.name}</h2>
           <p className={styles.price}>{growthPrice.price} <small>{growthPrice.suffix}</small></p>
           <p className={styles.description}>{t.growth.description}</p>
-          <ul>{t.growth.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+          <ul>{t.growth.features.map((feature, index) => <li key={feature}>{index === t.growth.features.length - 1 && !annualIncludesLaunch ? locale === "fr" ? "Création IA disponible séparément : 49 € une fois" : "AI Launch available separately: €49 once" : feature}</li>)}</ul>
           <Link className={styles.primaryCta} href="/login">{t.growth.cta}</Link>
         </article>
       </section>

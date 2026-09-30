@@ -1,3 +1,4 @@
+import { growthAnnualIncludesLaunch } from "../../../../lib/growth-launch-offer";
 import { NextResponse } from "next/server";
 import { billingServiceClient } from "../../../../lib/server-billing";
 import {
@@ -206,6 +207,7 @@ async function bindAndApply(
   if (error) throw error;
 
   if (
+    growthAnnualIncludesLaunch() &&
     resolved.planKey === "growth" &&
     priceId &&
     priceId === process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID?.trim() &&

@@ -1,3 +1,4 @@
+import { growthAnnualIncludesLaunch } from "../../lib/growth-launch-offer";
 import type { Metadata } from "next";
 import { PricingPage } from "../../components/PricingPage";
 
@@ -15,5 +16,5 @@ export const metadata: Metadata = {
 };
 
 export default function TarifsPage() {
-  return <PricingPage locale="fr" />;
+  return <PricingPage locale="fr" annualIncludesLaunch={growthAnnualIncludesLaunch()} />;
 }
