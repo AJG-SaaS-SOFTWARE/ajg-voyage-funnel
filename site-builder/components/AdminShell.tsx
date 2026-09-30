@@ -42,7 +42,8 @@ export function AdminShell({
           >
             RGPD & effacement
           </Link>
-          <Link href="/admin/finops" className={active === "finops" ? "active" : ""}>Coûts IA</Link>\n          <Link href="/admin/support" className={active === "support" ? "active" : ""}>Support</Link>
+          <Link href="/admin/finops" className={active === "finops" ? "active" : ""}>Coûts IA</Link>
+          <Link href="/admin/support" className={active === "support" ? "active" : ""}>Support</Link>
           <Link href="/builder">Builder ↗</Link>
         </nav>
       </header>
