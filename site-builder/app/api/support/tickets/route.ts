@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
+import { supportReconcileDecision } from "../../../../lib/support-reconcile-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,4 +111,86 @@ export async function POST(request: Request) {
 
   if (error || !ticket) return NextResponse.json({ error: "Création du ticket impossible." }, { status: 503 });
   return NextResponse.json({ ticket, health }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
+}
+
+
+export async function PATCH(request: Request) {
+  const auth = await context(request);
+  if ("response" in auth) return auth.response;
+
+  const body = await request.json().catch(() => null);
+  const id = typeof body?.id === "string" ? body.id : "";
+  if (!id) {
+    return NextResponse.json({ error: "Ticket invalide." }, { status: 400 });
+  }
+
+  const { data: current, error: currentError } = await auth.service
+    .from("support_tickets")
+    .select("id,user_id,site_id,status,created_at")
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
+
+  if (currentError) {
+    return NextResponse.json({ error: "Ticket indisponible." }, { status: 503 });
+  }
+  if (!current) {
+    return NextResponse.json({ error: "Ticket introuvable." }, { status: 404 });
+  }
+  if (current.status !== "waiting_customer") {
+    return NextResponse.json(
+      { error: "Ce ticket n’attend plus une action de votre part." },
+      { status: 409 }
+    );
+  }
+
+  const health = await diagnoseSupportHealth(
+    auth.service,
+    auth.user.id,
+    current.site_id
+  );
+  const createdAt = Date.parse(current.created_at);
+  const ageHours = Number.isFinite(createdAt)
+    ? Math.max(0, (Date.now() - createdAt) / (60 * 60 * 1000))
+    : 72;
+  const decision = supportReconcileDecision({
+    overall: health.diagnosis.overall,
+    clientAction: health.diagnosis.clientAction,
+    ageHours
+  });
+  const now = new Date().toISOString();
+
+  const patch: Record<string, unknown> = {
+    status: decision.status,
+    diagnosis: health.diagnosis,
+    client_action: health.diagnosis.clientAction,
+    resolution_code: decision.resolutionCode,
+    resolved_at: decision.resolved ? now : null,
+    updated_at: now
+  };
+  if (decision.severity) patch.severity = decision.severity;
+
+  const { data: ticket, error: updateError } = await auth.service
+    .from("support_tickets")
+    .update(patch)
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .eq("status", "waiting_customer")
+    .select("id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at")
+    .maybeSingle();
+
+  if (updateError) {
+    return NextResponse.json({ error: "Nouveau diagnostic impossible." }, { status: 503 });
+  }
+  if (!ticket) {
+    return NextResponse.json(
+      { error: "Le ticket a été modifié pendant le diagnostic. Actualisez la page." },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json(
+    { ticket, health },
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }
