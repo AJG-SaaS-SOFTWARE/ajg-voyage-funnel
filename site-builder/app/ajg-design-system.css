@@ -529,6 +529,18 @@ body{
     radial-gradient(circle at 100% 0,rgba(197,138,44,.08),transparent 180px),
     linear-gradient(120deg,rgba(255,248,234,.72),rgba(255,255,255,.68));
 }
+.account-shell .pro-offer-card{
+  border-color:rgba(10,129,121,.20);
+  background:
+    radial-gradient(circle at 94% 0,rgba(10,129,121,.095),transparent 200px),
+    linear-gradient(145deg,rgba(255,255,255,.96),rgba(242,250,248,.92));
+}
+.account-shell .plan-card.current{
+  outline-color:rgba(10,129,121,.48);
+  background:
+    radial-gradient(circle at 94% 0,rgba(10,129,121,.075),transparent 180px),
+    rgba(255,255,255,.94);
+}
 .account-nav>a.active{
   box-shadow:inset 3px 0 0 var(--ajg-primary);
 }
