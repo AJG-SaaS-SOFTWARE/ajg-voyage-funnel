@@ -132,11 +132,11 @@ export default function AdminSupportPage() {
                     <span>résolution sans admin / tickets créés</span>
                   </article>
                   <article>
-                    <b>{metrics.escalatedPerActiveClient.toFixed(2)}</b>
+                    <b>{metrics.activeClients ? metrics.escalatedPerActiveClient.toFixed(2) : "—"}</b>
                     <span>escalades / client actif · cible &lt; 0,15</span>
                   </article>
                   <article>
-                    <b>{metrics.adminTouchedPerActiveClient.toFixed(2)}</b>
+                    <b>{metrics.activeClients ? metrics.adminTouchedPerActiveClient.toFixed(2) : "—"}</b>
                     <span>interventions admin / client actif</span>
                   </article>
                 </div>
