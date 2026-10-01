@@ -23,7 +23,7 @@ const localRequire = (id) => {
   return require(id);
 };
 new Function("require", "module", "exports", onboardingCode)(localRequire, onboardingModule, onboardingModule.exports);
-const { deriveOnboardingProgress } = onboardingModule.exports;
+const { deriveOnboardingProgress, deriveOnboardingCreationPath } = onboardingModule.exports;
 
 function baseConfig() {
   return {
@@ -138,4 +138,47 @@ test("published complete website finishes onboarding", () => {
   assert.equal(result.percent, 100);
   assert.equal(result.nextStep, null);
   assert.equal(result.done, true);
+});
+
+
+test("AI onboarding path appears only when BUILD creation is actually available", () => {
+  const progress = deriveOnboardingProgress(baseConfig(), "draft");
+  assert.deepEqual(
+    deriveOnboardingCreationPath({
+      progress,
+      canCreateWithAi: true,
+      entitlementActive: true
+    }),
+    { mode: "ai_available", showChoice: true }
+  );
+
+  assert.deepEqual(
+    deriveOnboardingCreationPath({
+      progress,
+      canCreateWithAi: true,
+      entitlementActive: false
+    }),
+    { mode: "manual", showChoice: true }
+  );
+});
+
+test("creation choice disappears once core content already exists", () => {
+  const config = {
+    ...baseConfig(),
+    firstName: "Alex",
+    lastName: "Martin",
+    brandName: "Alex Martin",
+    slug: "alex-martin",
+    heroTitle: "Un site professionnel",
+    heroSubtitle: "Une présentation claire de mon activité professionnelle.",
+    aboutText: "Je présente ici mon activité, mon approche et les services que je propose."
+  };
+  const progress = deriveOnboardingProgress(config, "draft");
+  const result = deriveOnboardingCreationPath({
+    progress,
+    canCreateWithAi: true,
+    entitlementActive: true
+  });
+  assert.equal(result.mode, "resume");
+  assert.equal(result.showChoice, false);
 });
