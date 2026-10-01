@@ -41,3 +41,17 @@ test("existing authenticated daily cron runs remediation without adding a schedu
   assert.ok(remediation > auth);
   assert.match(cron, /remediation\.ok/);
 });
+
+
+test("core repair engine rechecks custom-domain absence to close selection races", () => {
+  const remediation = fs.readFileSync(
+    new URL("../lib/support-remediation.ts", import.meta.url),
+    "utf8"
+  );
+  const domainRead = remediation.indexOf('.from("domains")');
+  const customGuard = remediation.indexOf('code: "custom_domain_configured"');
+  const managedInsert = remediation.indexOf('.insert({', customGuard);
+  assert.ok(domainRead >= 0);
+  assert.ok(customGuard > domainRead);
+  assert.ok(managedInsert > customGuard);
+});
