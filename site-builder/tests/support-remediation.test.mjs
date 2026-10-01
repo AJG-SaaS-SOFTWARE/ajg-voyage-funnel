@@ -45,3 +45,26 @@ test("repair endpoint authenticates, rate-limits and does not accept arbitrary a
   assert.match(route, /support_remediation_runs/);
   assert.match(route, /status: 429/);
 });
+
+
+const diagnostics = fs.readFileSync(
+  new URL("../lib/support-diagnostics.ts", import.meta.url),
+  "utf8"
+);
+const page = fs.readFileSync(
+  new URL("../app/support/page.tsx", import.meta.url),
+  "utf8"
+);
+
+test("Health Center only advertises the allowlisted managed-domain repair", () => {
+  assert.match(diagnostics, /repairActions: SupportRepairAction\[\]/);
+  assert.match(diagnostics, /repairActions\.push\("managed_domain_repair"\)/);
+  assert.match(page, /Corriger automatiquement/);
+  assert.match(page, /\/api\/support\/remediate/);
+});
+
+test("custom-domain DNS issues remain a customer action and are not auto-mutated", () => {
+  assert.match(diagnostics, /const custom = input\.domains\.find/);
+  assert.match(diagnostics, /contrôlez les enregistrements DNS demandés/);
+  assert.ok(!remediation.includes('kind: "custom_domain"'));
+});
