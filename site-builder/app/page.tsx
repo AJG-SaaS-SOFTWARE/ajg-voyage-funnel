@@ -7,7 +7,8 @@ import { isSupabaseConfigured } from "../lib/supabase-browser";
 import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
 import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "../components/LanguageSwitch";
-import { deriveOnboardingProgress } from "../lib/onboarding";
+import { deriveOnboardingCreationPath, deriveOnboardingProgress } from "../lib/onboarding";
+import { getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements } from "../lib/subscription";
 
 function LockIcon() {
   return (
@@ -52,6 +53,9 @@ export default function Home() {
   const [draft, setDraft] = useState<BuilderDraft | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<"checking" | "guest" | "authenticated" | "local">("checking");
   const [email, setEmail] = useState("");
+  const [planName, setPlanName] = useState("");
+  const [entitlementActive, setEntitlementActive] = useState(false);
+  const [canCreateWithAi, setCanCreateWithAi] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,9 +82,34 @@ export default function Home() {
         }
 
         const remote = await getMySite();
+        let resolvedPlanName = "";
+        let resolvedEntitlementActive = false;
+        let resolvedCanCreateWithAi = false;
+
+        try {
+          if (remote) {
+            const [entitlements, aiAccess] = await Promise.all([
+              getMySiteEntitlements(remote.id),
+              getMySiteAiAccess(remote.id)
+            ]);
+            resolvedPlanName = entitlements.planName;
+            resolvedEntitlementActive = ["active", "trialing"].includes(entitlements.status);
+            resolvedCanCreateWithAi = aiAccess.canCreateSite;
+          } else {
+            const entitlements = await getMyEntitlements();
+            resolvedPlanName = entitlements.planName;
+            resolvedEntitlementActive = ["active", "trialing"].includes(entitlements.status);
+          }
+        } catch {
+          // Onboarding remains usable even when entitlement details are temporarily unavailable.
+        }
+
         if (!cancelled) {
           setEmail(user.email || "");
           setRemoteStatus("authenticated");
+          setPlanName(resolvedPlanName);
+          setEntitlementActive(resolvedEntitlementActive);
+          setCanCreateWithAi(resolvedCanCreateWithAi);
           setDraft(
             remote
               ? {
@@ -123,6 +152,13 @@ export default function Home() {
       : onboarding?.nextStep
         ? `/builder?step=${onboarding.nextStep}`
         : "/builder";
+  const creationPath = onboarding
+    ? deriveOnboardingCreationPath({
+        progress: onboarding,
+        canCreateWithAi,
+        entitlementActive
+      })
+    : null;
 
   return (
     <main className="shell premium-home">
@@ -215,18 +251,51 @@ export default function Home() {
               </li>
             ))}
           </ol>
-          <div className="actions">
-            <Link className="button primary premium-button" href={onboardingHref}>
-              {onboarding.done
-                ? tr("Ouvrir le Builder", "Open Builder")
-                : tr("Continuer l’installation", "Continue setup")} <span aria-hidden="true">→</span>
-            </Link>
-            {!onboarding.done ? (
-              <small className="onboarding-autosave-note">
-                {tr("Votre brouillon est repris automatiquement et sauvegardé au fil des modifications.", "Your draft resumes automatically and is saved as you make changes.")}
-              </small>
-            ) : null}
-          </div>
+          {creationPath?.showChoice ? (
+            <div className="onboarding-path-choice">
+              <div>
+                <b>{tr("Choisissez votre façon d’avancer", "Choose how you want to continue")}</b>
+                <small>
+                  {creationPath.mode === "ai_available"
+                    ? tr(
+                        `Votre accès ${planName || "actuel"} permet une création BUILD complète par IA. Vous pouvez aussi tout construire manuellement.`,
+                        `Your ${planName || "current"} access includes full BUILD creation with AI. You can also build everything manually.`
+                      )
+                    : tr(
+                        `Votre accès ${planName || "actuel"} permet le parcours manuel. La création BUILD complète reste une option distincte si vous souhaitez accélérer la première version.`,
+                        `Your ${planName || "current"} access includes the manual path. Full BUILD creation remains a separate option if you want to accelerate the first version.`
+                      )}
+                </small>
+              </div>
+              <div className="actions">
+                <Link className="button primary premium-button" href={onboardingHref}>
+                  {tr("Créer moi-même", "Build it myself")}
+                </Link>
+                {creationPath.mode === "ai_available" ? (
+                  <Link className="button secondary premium-secondary" href="/builder?step=story&focus=architect">
+                    {tr("Créer avec l’IA", "Create with AI")} <span aria-hidden="true">✦</span>
+                  </Link>
+                ) : (
+                  <Link className="button secondary premium-secondary" href="/plans">
+                    {tr("Voir Création IA", "View AI Launch")}
+                  </Link>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="actions">
+              <Link className="button primary premium-button" href={onboardingHref}>
+                {onboarding.done
+                  ? tr("Ouvrir le Builder", "Open Builder")
+                  : tr("Continuer l’installation", "Continue setup")} <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          )}
+          {!onboarding.done ? (
+            <small className="onboarding-autosave-note">
+              {tr("Votre brouillon est repris automatiquement et sauvegardé au fil des modifications.", "Your draft resumes automatically and is saved as you make changes.")}
+            </small>
+          ) : null}
         </section>
       ) : null}
 

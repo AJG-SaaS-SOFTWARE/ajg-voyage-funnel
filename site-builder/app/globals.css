@@ -3608,3 +3608,9 @@ button.active .step-label small{color:#63817f}
 .onboarding-autosave-note{color:var(--premium-muted);font-size:.74rem;line-height:1.45}
 @media(max-width:900px){.onboarding-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.onboarding-progress-card{padding:22px}.onboarding-progress-head{align-items:center}.onboarding-progress-head>strong{font-size:1.7rem}.onboarding-checklist{grid-template-columns:1fr}}
+
+.onboarding-path-choice{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid rgba(12,159,150,.2);border-radius:16px;background:linear-gradient(135deg,rgba(223,247,244,.58),rgba(255,255,255,.82))}
+.onboarding-path-choice>div:first-child{max-width:760px}
+.onboarding-path-choice b{display:block;font-size:.86rem;margin-bottom:4px}
+.onboarding-path-choice small{display:block;color:var(--premium-muted);font-size:.75rem;line-height:1.5}
+@media(max-width:760px){.onboarding-path-choice{align-items:flex-start;flex-direction:column}}

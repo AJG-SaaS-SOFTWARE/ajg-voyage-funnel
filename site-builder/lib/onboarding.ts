@@ -108,3 +108,28 @@ export function deriveOnboardingProgress(
     steps
   };
 }
+
+
+export type OnboardingCreationPath = {
+  mode: "resume" | "ai_available" | "manual";
+  showChoice: boolean;
+};
+
+export function deriveOnboardingCreationPath(input: {
+  progress: OnboardingProgress;
+  canCreateWithAi: boolean;
+  entitlementActive: boolean;
+}): OnboardingCreationPath {
+  const storyComplete =
+    input.progress.steps.find((step) => step.key === "story")?.complete === true;
+
+  if (input.progress.done || storyComplete) {
+    return { mode: "resume", showChoice: false };
+  }
+
+  if (input.canCreateWithAi && input.entitlementActive) {
+    return { mode: "ai_available", showChoice: true };
+  }
+
+  return { mode: "manual", showChoice: true };
+}

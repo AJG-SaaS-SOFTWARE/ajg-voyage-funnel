@@ -432,6 +432,18 @@ export default function BuilderPage() {
     };
   }, [remoteMode, router]);
 
+  useEffect(() => {
+    if (!ready || step !== "story") return;
+    const focus = new URLSearchParams(window.location.search).get("focus");
+    if (focus !== "architect") return;
+    const timer = window.setTimeout(() => {
+      const node = document.getElementById("ai-site-architect");
+      if (node instanceof HTMLDetailsElement) node.open = true;
+      node?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [ready, step]);
+
   const publicPath = "/site/" + config.slug;
   const betaPublicUrl = verifiedPublicUrl || (origin ? origin + publicPath : publicPath);
 
@@ -1461,7 +1473,7 @@ export default function BuilderPage() {
                   return uploadContentAsset(file, site.id);
                 }} />
                 <ArchitectureEditor value={config.architecture} library={config.contentLibrary} onChange={(architecture) => update("architecture", architecture)} />
-                <details className={"guided-writing-card ai-architect-card " + (!siteArchitectCreateAvailable ? "premium-feature-locked" : "")}>
+                <details id="ai-site-architect" className={"guided-writing-card ai-architect-card " + (!siteArchitectCreateAvailable ? "premium-feature-locked" : "")}>
                   <summary>
                     <span className="guided-writing-icon">✦</span>
                     <span><b>{tr("Créer mon site avec l’IA", "Create my website with AI")}</b><small>{tr("BUILD · décrivez votre besoin et obtenez une proposition complète à valider.", "BUILD · describe what you need and get a complete proposal to review.")}</small></span>
