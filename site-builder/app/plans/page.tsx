@@ -104,6 +104,10 @@ export default function PlansPage() {
       : "";
 
   const paidPlan = current.planKey === "essential" || current.planKey === "growth";
+  const selectedSite = sites.find((site) => site.id === siteId) || sites[0];
+  const aiUsagePercent = current.aiMonthlyLimit > 0 ? Math.min(100, (usage.month / current.aiMonthlyLimit) * 100) : 0;
+  const storageLimitBytes = Math.max(1, storage.limitMb * 1024 * 1024);
+  const storageUsagePercent = Math.min(100, (storage.usedBytes / storageLimitBytes) * 100);
 
   return (
     <AccountShell
@@ -126,77 +130,142 @@ export default function PlansPage() {
         </section>
       ) : null}
 
-      {loaded && betaAccess.active ? (
-        <section className="usage-card beta-access-banner" role="status">
-          <div>
-            <p className="eyebrow">Beta Tester</p>
-            <h2>{tr("Accès BUILD + Growth complet offert pendant la bêta", "Full BUILD + Growth access included during beta")}</h2>
+      {loaded ? (
+        <section className={`account-plan-overview ${betaAccess.active ? "is-beta" : ""}`}>
+          <div className="account-plan-overview-copy">
+            <div className="account-plan-status-row">
+              <p className="eyebrow">{tr("Votre offre", "Your plan")}</p>
+              <span className="account-status-pill">
+                {betaAccess.active ? "Beta Tester" : tr("Accès actif", "Active access")}
+              </span>
+            </div>
+            <h2>{betaAccess.active ? "Growth" : current.planName}</h2>
             <p>
-              {tr("Concepteur IA, pilotage Growth, domaine personnalisé et fonctions payantes sont ouverts sans abonnement Stripe", "AI Site Architect, Growth management, custom domain and paid features are enabled without a Stripe subscription")}
-              {betaExpiryLabel ? " " + tr("jusqu’au", "until") + " " + betaExpiryLabel : ""}.{" "}
-              {tr("À l’expiration, le site revient automatiquement à son offre réelle.", "When beta access expires, the website automatically returns to its actual plan.")}
-            </p>
-          </div>
-        </section>
-      ) : null}
-
-      {loaded ? (
-        <section className="usage-card">
-          <div>
-            <p className="eyebrow">{tr("Droit BUILD", "BUILD entitlement")}</p>
-            <h2>
               {betaAccess.active
-                ? tr("Création IA disponible sans compteur pendant la bêta", "AI Launch available without a counter during beta")
+                ? tr(
+                    "Accès BUILD + Growth complet offert pendant la bêta, sans abonnement Stripe ni conversion payante automatique.",
+                    "Full BUILD + Growth access included during beta, with no Stripe subscription or automatic paid conversion."
+                  )
+                : tr(
+                    "Retrouvez ici les capacités actives de votre site, vos quotas et les options disponibles pour le faire évoluer.",
+                    "See your website’s active capabilities, quotas and available upgrade options here."
+                  )}
+            </p>
+            <div className="account-plan-meta">
+              {selectedSite ? <span>{tr("Site", "Website")} <b>{selectedSite.slug}</b></span> : null}
+              {betaExpiryLabel ? <span>{tr("Accès bêta jusqu’au", "Beta access until")} <b>{betaExpiryLabel}</b></span> : null}
+            </div>
+          </div>
+          <div className="account-plan-overview-actions">
+            <Link className="button primary" href="/builder">{tr("Ouvrir le Builder", "Open Builder")} <span aria-hidden="true">→</span></Link>
+            <Link className="text-link" href={locale === "en" ? "/pricing" : "/tarifs"}>{tr("Comparer les offres", "Compare plans")}</Link>
+          </div>
+        </section>
+      ) : null}
+
+      {loaded ? (
+        <section className="account-metrics-grid" aria-label={tr("Capacités et utilisation", "Capabilities and usage")}>
+          <article className="account-metric-card">
+            <div className="account-metric-heading">
+              <span className="account-metric-icon" aria-hidden="true">✦</span>
+              <div>
+                <p className="eyebrow">{tr("Création IA", "AI Launch")}</p>
+                <small>BUILD</small>
+              </div>
+            </div>
+            <h3>
+              {betaAccess.active
+                ? tr("Disponible", "Available")
                 : aiAccess.launchOperationsRemaining > 0
-                  ? `${aiAccess.launchOperationsRemaining} ${tr("opération(s) complète(s) restante(s)", "full operation(s) remaining")}`
-                  : tr("Aucune Création IA disponible", "No AI Launch available")}
-            </h2>
-            <p>{tr(
-              "Une opération BUILD réussie peut créer ou raffiner globalement la première version. Une génération qui échoue est automatiquement remboursée.",
-              "A successful BUILD operation can create or globally refine the first version. A failed generation is automatically refunded."
-            )}</p>
-          </div>
-          {!betaAccess.active && paidPlan && aiAccess.launchOperationsRemaining === 0 ? (
-            <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void buyAiLaunch()}>
-              {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter la Création IA · 49 €", "Add AI Launch · €49")}
-            </button>
-          ) : null}
-        </section>
-      ) : null}
+                  ? `${aiAccess.launchOperationsRemaining} ${tr("restante(s)", "remaining")}`
+                  : tr("Non incluse", "Not included")}
+            </h3>
+            <p>{tr("Création ou refonte globale d’une première version du site.", "Create or globally refine a first website version.")}</p>
+            {!betaAccess.active && paidPlan && aiAccess.launchOperationsRemaining === 0 ? (
+              <button type="button" className="button secondary account-metric-action" disabled={Boolean(checkoutBusy)} onClick={() => void buyAiLaunch()}>
+                {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter la Création IA · 49 €", "Add AI Launch · €49")}
+              </button>
+            ) : null}
+          </article>
 
-      {loaded ? (
-        <section className="usage-card" aria-label={tr("Utilisation IA", "AI usage")}>
-          <div>
-            <p className="eyebrow">{tr("IA standard", "Standard AI")}</p>
-            <h2>{usage.month} / {current.aiMonthlyLimit} {tr("générations ce mois-ci", "generations this month")}</h2>
-            <p>{usage.today} / {current.aiDailyLimit} {tr("aujourd’hui", "today")} · {current.aiMinuteLimit}/min</p>
-          </div>
-          <progress max={current.aiMonthlyLimit} value={Math.min(usage.month, current.aiMonthlyLimit)} />
-        </section>
-      ) : null}
+          <article className="account-metric-card">
+            <div className="account-metric-heading">
+              <span className="account-metric-icon" aria-hidden="true">AI</span>
+              <div>
+                <p className="eyebrow">{tr("Assistant IA", "AI assistant")}</p>
+                <small>{tr("Usage mensuel", "Monthly usage")}</small>
+              </div>
+            </div>
+            <h3>{usage.month} / {current.aiMonthlyLimit}</h3>
+            <p>{tr("générations utilisées ce mois-ci", "generations used this month")}</p>
+            <div
+              className="account-meter"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={current.aiMonthlyLimit}
+              aria-valuenow={Math.min(usage.month, current.aiMonthlyLimit)}
+              aria-label={tr("Utilisation IA mensuelle", "Monthly AI usage")}
+            >
+              <span style={{ width: `${aiUsagePercent}%` }} />
+            </div>
+            <div className="account-metric-meta">
+              <span>{usage.today} / {current.aiDailyLimit} {tr("aujourd’hui", "today")}</span>
+              <span>{current.aiMinuteLimit}/min</span>
+            </div>
+          </article>
 
-      {loaded ? (
-        <section className="usage-card" aria-label={tr("Utilisation stockage", "Storage usage")}>
-          <div>
-            <p className="eyebrow">{tr("Stockage", "Storage")}</p>
-            <h2>{(storage.usedBytes / 1024 / 1024).toFixed(storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} MB / {storage.limitMb} MB</h2>
-            <p>{tr("Photos, images, audio et documents importés dans AJG.", "Photos, images, audio and documents uploaded to AJG.")}</p>
-          </div>
-          <progress max={storage.limitMb * 1024 * 1024} value={Math.min(storage.usedBytes, storage.limitMb * 1024 * 1024)} />
+          <article className="account-metric-card">
+            <div className="account-metric-heading">
+              <span className="account-metric-icon" aria-hidden="true">▣</span>
+              <div>
+                <p className="eyebrow">{tr("Stockage", "Storage")}</p>
+                <small>{tr("Médias et documents", "Media and documents")}</small>
+              </div>
+            </div>
+            <h3>{(storage.usedBytes / 1024 / 1024).toFixed(storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} MB</h3>
+            <p>{tr("sur", "of")} {storage.limitMb} MB {tr("disponibles", "available")}</p>
+            <div
+              className="account-meter"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={storageLimitBytes}
+              aria-valuenow={Math.min(storage.usedBytes, storageLimitBytes)}
+              aria-label={tr("Utilisation du stockage", "Storage usage")}
+            >
+              <span style={{ width: `${storageUsagePercent}%` }} />
+            </div>
+            <div className="account-metric-meta">
+              <span>{tr("Photos, audio, documents", "Photos, audio, documents")}</span>
+              <span>{Math.round(storageUsagePercent)}%</span>
+            </div>
+          </article>
         </section>
       ) : null}
 
       {checkoutMessage ? <p className="account-note" role="status">{checkoutMessage}</p> : null}
 
-      <section className="pricing-positioning panel">
-        <p className="eyebrow">BUILD → RUN → GROW</p>
-        <h2>{tr("Payez la création une fois, puis le service dont votre site a réellement besoin.", "Pay for creation once, then for the ongoing service your website actually needs.")}</h2>
-        <p>{tr(
-          "Essentiel maintient et fait fonctionner votre site. Growth analyse, conseille et aide à le faire progresser. Le Concepteur IA complet est un droit BUILD distinct ; son inclusion éventuelle dans Growth annuel dépend de l’offre activée.",
-          "Essential keeps your website running. Growth analyzes, advises and helps improve it. Full AI Site Architect creation is a separate BUILD entitlement; any annual Growth inclusion depends on the activated offer."
-        )}</p>
-        <p><Link className="text-link" href={locale === "en" ? "/pricing" : "/tarifs"}>{tr("Voir la page Tarifs publique", "View the public pricing page")} →</Link></p>
+      <section className="account-offer-explainer">
+        <div>
+          <p className="eyebrow">BUILD → RUN → GROW</p>
+          <h2>{tr("Une logique simple pour faire vivre votre site.", "A simple model to keep your website moving.")}</h2>
+        </div>
+        <div className="account-offer-flow" aria-label={tr("Fonctionnement des offres", "How plans work")}>
+          <span><b>BUILD</b><small>{tr("Créer", "Create")}</small></span>
+          <i aria-hidden="true">→</i>
+          <span><b>RUN</b><small>{tr("Maintenir", "Maintain")}</small></span>
+          <i aria-hidden="true">→</i>
+          <span><b>GROW</b><small>{tr("Améliorer", "Improve")}</small></span>
+        </div>
+        <Link className="text-link" href={locale === "en" ? "/pricing" : "/tarifs"}>{tr("Découvrir les offres", "Explore plans")} →</Link>
       </section>
+
+      <div className="account-plan-comparison-head">
+        <div>
+          <p className="eyebrow">{tr("Comparer", "Compare")}</p>
+          <h2>{tr("Choisissez le niveau de service adapté à votre site", "Choose the service level that fits your website")}</h2>
+        </div>
+        <p>{tr("Votre offre actuelle reste clairement identifiée. Aucun changement n’est appliqué sans action de votre part.", "Your current plan stays clearly identified. No change is applied without your action.")}</p>
+      </div>
 
       <section className="plans-grid plans-grid-three" aria-label={tr("Offres AJG", "AJG plans")}>
         <article className={!betaAccess.active && current.planKey === "free" ? "plan-card current" : "plan-card"}>
