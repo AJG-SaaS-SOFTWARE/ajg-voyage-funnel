@@ -108,3 +108,25 @@ export function deriveOnboardingProgress(
     steps
   };
 }
+
+
+export type OnboardingCreationPath = {
+  mode: "resume" | "ai_available" | "manual";
+  showChoice: boolean;
+};
+
+export function deriveOnboardingCreationPath(input: {
+  progress: OnboardingProgress;
+  canCreateWithAi: boolean;
+  entitlementActive: boolean;
+}): OnboardingCreationPath {
+  if (input.progress.done || input.progress.completeCount >= 2) {
+    return { mode: "resume", showChoice: false };
+  }
+
+  if (input.canCreateWithAi && input.entitlementActive) {
+    return { mode: "ai_available", showChoice: true };
+  }
+
+  return { mode: "manual", showChoice: true };
+}
