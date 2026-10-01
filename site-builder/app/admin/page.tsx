@@ -717,6 +717,37 @@ export default function AdminPage() {
                 </article>
               </div>
 
+              <div className="onboarding-path-metrics">
+                <div className="premium-ai-metrics-heading">
+                  <div>
+                    <p className="eyebrow">Onboarding · choix de parcours</p>
+                    <h3>Le parcours IA accélère-t-il réellement la publication ?</h3>
+                    <p>Le premier choix explicite est attribué au parcours Manuel ou Création IA. Le délai est calculé jusqu’à la première publication observée après ce choix.</p>
+                  </div>
+                  <span>{betaMetrics.onboardingPaths.totalSelections} choix mesuré{betaMetrics.onboardingPaths.totalSelections > 1 ? "s" : ""}</span>
+                </div>
+                <div className="onboarding-path-kpis">
+                  <article>
+                    <span>Manuel</span>
+                    <b>{betaMetrics.onboardingPaths.manual.publishRate} %</b>
+                    <strong>publient après ce choix</strong>
+                    <small>{betaMetrics.onboardingPaths.manual.published} / {betaMetrics.onboardingPaths.manual.selected} · médiane {betaMetrics.onboardingPaths.manual.medianHoursToPublish ?? "—"} h</small>
+                  </article>
+                  <article>
+                    <span>Création IA</span>
+                    <b>{betaMetrics.onboardingPaths.ai.publishRate} %</b>
+                    <strong>publient après ce choix</strong>
+                    <small>{betaMetrics.onboardingPaths.ai.published} / {betaMetrics.onboardingPaths.ai.selected} · médiane {betaMetrics.onboardingPaths.ai.medianHoursToPublish ?? "—"} h</small>
+                  </article>
+                  <article>
+                    <span>Mix</span>
+                    <b>{betaMetrics.onboardingPaths.aiShare} %</b>
+                    <strong>choisissent l’IA</strong>
+                    <small>Sur les premiers choix explicites mesurés</small>
+                  </article>
+                </div>
+              </div>
+
               <div className="premium-ai-metrics">
                 <div className="premium-ai-metrics-heading">
                   <div>
