@@ -345,6 +345,12 @@ export default function AdminPage() {
     betaCohort?.members.filter((item) => item.lastSignInAt).length ?? 0;
   const betaFullAccessCount =
     betaCohort?.members.filter((item) => item.accessActive).length ?? 0;
+  const betaPublishedCount =
+    betaCohort?.members.filter((item) => ["published", "complete"].includes(item.betaStage)).length ?? 0;
+  const betaCompletedCount =
+    betaCohort?.members.filter((item) => item.betaStage === "complete").length ?? 0;
+  const betaFollowUpCount =
+    betaCohort?.members.filter((item) => item.needsFollowUp).length ?? 0;
   const betaTargetReached = betaMemberCount >= 5 && betaMemberCount <= 10;
   const betaInviteAllowed =
     betaTechnicalReady &&
@@ -509,8 +515,10 @@ export default function AdminPage() {
             <div className="beta-side-metrics">
               <span><b>{betaCohort?.members.length ?? 0}</b> comptes bêta</span>
               <span><b>{betaActivatedCount}</b> activés</span>
-              <span><b>{betaFullAccessCount}</b> accès Pro actifs</span>
-              <span><b>{betaCohort?.limit ?? 25}</b> limite sécurité</span>
+              <span><b>{betaFullAccessCount}</b> accès complets actifs</span>
+              <span><b>{betaPublishedCount}</b> publiés</span>
+              <span><b>{betaCompletedCount}</b> missions terminées</span>
+              <span><b>{betaFollowUpCount}</b> à relancer</span>
             </div>
           </div>
 
@@ -579,8 +587,9 @@ export default function AdminPage() {
                 <thead>
                   <tr>
                     <th>Testeur</th>
-                    <th>Compte</th>
-                    <th>Accès Beta Tester</th>
+                    <th>Progression</th>
+                    <th>Site / activité</th>
+                    <th>Accès</th>
                     <th>Expiration</th>
                     <th>Action</th>
                   </tr>
@@ -594,10 +603,57 @@ export default function AdminPage() {
                           invité le {new Date(item.invitedAt || item.createdAt).toLocaleDateString("fr-FR")}
                         </small>
                       </td>
-                      <td>{item.lastSignInAt ? "Activé" : "Invitation en attente"}</td>
+                      <td>
+                        <span className={
+                          "status-badge " +
+                          (item.betaStage === "complete"
+                            ? "success"
+                            : item.needsFollowUp
+                              ? "warning"
+                              : item.betaStage === "published"
+                                ? "success"
+                                : "muted")
+                        }>
+                          {item.betaStage === "complete"
+                            ? "Mission terminée"
+                            : item.betaStage === "published"
+                              ? "Publié · retour attendu"
+                              : item.betaStage === "building"
+                                ? "Création en cours"
+                                : item.betaStage === "activated"
+                                  ? "Compte activé"
+                                  : "Invitation en attente"}
+                        </span>
+                        {item.needsFollowUp && item.followUpReason ? (
+                          <small className="admin-cell-note beta-follow-up-note">
+                            À relancer · {item.followUpReason}
+                          </small>
+                        ) : null}
+                      </td>
+                      <td>
+                        <b>{item.siteSlug || "—"}</b>
+                        <small className="admin-cell-note">
+                          {item.siteStatus === "published"
+                            ? "Publié"
+                            : item.siteId
+                              ? "Brouillon"
+                              : "Aucun site"}
+                          {" · "}
+                          {item.productEventCount} événement{item.productEventCount > 1 ? "s" : ""}
+                          {" · "}
+                          {item.aiEventCount} IA
+                          {" · "}
+                          {item.feedbackCount} retour{item.feedbackCount > 1 ? "s" : ""}
+                        </small>
+                        {item.lastActivityAt ? (
+                          <small className="admin-cell-note">
+                            dernière activité {new Date(item.lastActivityAt).toLocaleDateString("fr-FR")}
+                          </small>
+                        ) : null}
+                      </td>
                       <td>
                         <span className={item.accessActive ? "status-badge success" : "status-badge muted"}>
-                          {item.accessActive ? "Pro complet actif" : "Expiré / retiré"}
+                          {item.accessActive ? "BUILD + Growth actif" : "Expiré / retiré"}
                         </span>
                       </td>
                       <td>
