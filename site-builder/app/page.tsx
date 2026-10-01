@@ -9,6 +9,7 @@ import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { deriveOnboardingCreationPath, deriveOnboardingProgress } from "../lib/onboarding";
 import { getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements } from "../lib/subscription";
+import { trackProductEvent } from "../lib/product-analytics";
 
 function LockIcon() {
   return (
@@ -56,6 +57,7 @@ export default function Home() {
   const [planName, setPlanName] = useState("");
   const [entitlementActive, setEntitlementActive] = useState(false);
   const [canCreateWithAi, setCanCreateWithAi] = useState(false);
+  const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,6 +112,7 @@ export default function Home() {
           setPlanName(resolvedPlanName);
           setEntitlementActive(resolvedEntitlementActive);
           setCanCreateWithAi(resolvedCanCreateWithAi);
+          setRemoteSiteId(remote?.id || null);
           setDraft(
             remote
               ? {
@@ -159,6 +162,14 @@ export default function Home() {
         entitlementActive
       })
     : null;
+
+  const trackOnboardingPath = (path: "manual" | "ai") => {
+    if (remoteStatus !== "authenticated") return;
+    void trackProductEvent(
+      path === "ai" ? "onboarding_ai_selected" : "onboarding_manual_selected",
+      remoteSiteId
+    );
+  };
 
   return (
     <main className="shell premium-home">
@@ -268,11 +279,11 @@ export default function Home() {
                 </small>
               </div>
               <div className="actions">
-                <Link className="button primary premium-button" href={onboardingHref}>
+                <Link className="button primary premium-button" href={onboardingHref} onClick={() => trackOnboardingPath("manual")}>
                   {tr("Créer moi-même", "Build it myself")}
                 </Link>
                 {creationPath.mode === "ai_available" ? (
-                  <Link className="button secondary premium-secondary" href="/builder?step=story&focus=architect">
+                  <Link className="button secondary premium-secondary" href="/builder?step=story&focus=architect" onClick={() => trackOnboardingPath("ai")}>
                     {tr("Créer avec l’IA", "Create with AI")} <span aria-hidden="true">✦</span>
                   </Link>
                 ) : (
