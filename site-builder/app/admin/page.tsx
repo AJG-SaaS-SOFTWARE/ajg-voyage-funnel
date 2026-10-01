@@ -688,6 +688,16 @@ export default function AdminPage() {
                 </article>
               </div>
 
+              <div className="beta-step-funnel-grid">
+                <article><span>1</span><b>{betaMetrics.funnel.steps.identity}</b><strong>Identité</strong><small>{Math.max(0, betaMetrics.funnel.opened - betaMetrics.funnel.steps.identity)} abandon(s) après ouverture</small></article>
+                <article><span>2</span><b>{betaMetrics.funnel.steps.story}</b><strong>Message</strong><small>{betaMetrics.funnel.dropOffs.identityToStory} abandon(s) depuis Identité</small></article>
+                <article><span>3</span><b>{betaMetrics.funnel.steps.design}</b><strong>Style</strong><small>{betaMetrics.funnel.dropOffs.storyToDesign} abandon(s) depuis Message</small></article>
+                <article><span>4</span><b>{betaMetrics.funnel.steps.booking}</b><strong>Rendez-vous</strong><small>{betaMetrics.funnel.dropOffs.designToBooking} abandon(s) depuis Style</small></article>
+                <article><span>5</span><b>{betaMetrics.funnel.steps.options}</b><strong>Options</strong><small>{betaMetrics.funnel.dropOffs.bookingToOptions} abandon(s) depuis Rendez-vous</small></article>
+                <article><span>6</span><b>{betaMetrics.funnel.steps.review}</b><strong>Revue</strong><small>{betaMetrics.funnel.dropOffs.optionsToReview} abandon(s) depuis Options</small></article>
+                <article><span>7</span><b>{betaMetrics.funnel.steps.published}</b><strong>Publié</strong><small>{betaMetrics.funnel.dropOffs.reviewToPublished} abandon(s) depuis Revue</small></article>
+              </div>
+
               <div className="beta-observation-grid">
                 <article>
                   <b>{betaMetrics.funnel.openedWithoutEngagement}</b>

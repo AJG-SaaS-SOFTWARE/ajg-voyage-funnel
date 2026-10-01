@@ -262,6 +262,23 @@ export type AdminBetaMetrics = {
     publishRate: number;
     openedWithoutEngagement: number;
     openedWithoutPublication: number;
+    steps: {
+      identity: number;
+      story: number;
+      design: number;
+      booking: number;
+      options: number;
+      review: number;
+      published: number;
+    };
+    dropOffs: {
+      identityToStory: number;
+      storyToDesign: number;
+      designToBooking: number;
+      bookingToOptions: number;
+      optionsToReview: number;
+      reviewToPublished: number;
+    };
   };
   ai: {
     generations: number;
