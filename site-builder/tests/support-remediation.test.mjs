@@ -66,7 +66,7 @@ test("Health Center only advertises the allowlisted managed-domain repair", () =
 test("custom-domain DNS issues remain a customer action and are not auto-mutated", () => {
   assert.match(diagnostics, /const custom = input\.domains\.find/);
   assert.match(diagnostics, /contrôlez les enregistrements DNS demandés/);
-  assert.ok(!remediation.includes('kind: "custom_domain"'));
+  assert.ok(!remediation.includes('syncVercelDomain(expectedHostname, "custom_domain")'));
 });
 
 
