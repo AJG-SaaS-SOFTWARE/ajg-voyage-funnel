@@ -29,6 +29,7 @@ import { freeEntitlements, getMySiteAiAccess, getMySiteEntitlements, type SiteAi
 import { optimizeBackgroundImage, optimizeImage } from "../../lib/optimize-image";
 import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import { legalMissingFields } from "../../lib/site-legal";
+import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import {
   getCurrentUser,
   getMyDomains,
@@ -202,6 +203,8 @@ export default function BuilderPage() {
   const [origin, setOrigin] = useState("");
   const [verifiedPublicUrl, setVerifiedPublicUrl] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const [postPublishHealth, setPostPublishHealth] = useState<SupportDiagnosis | null>(null);
+  const [postPublishHealthState, setPostPublishHealthState] = useState<"idle" | "checking" | "done" | "error">("idle");
   const [brandTouched, setBrandTouched] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
   const [guidedAnswers, setGuidedAnswers] = useState({
@@ -1100,6 +1103,28 @@ export default function BuilderPage() {
     return next;
   }, [config, bookingLinkStatus, tr]);
 
+  const runPostPublishHealth = async (siteId: string, accessToken: string) => {
+    setPostPublishHealthState("checking");
+    setPostPublishHealth(null);
+    try {
+      const response = await fetch(
+        `/api/support/health?siteId=${encodeURIComponent(siteId)}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          cache: "no-store"
+        }
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.health?.diagnosis) {
+        throw new Error(body?.error || "health_unavailable");
+      }
+      setPostPublishHealth(body.health.diagnosis as SupportDiagnosis);
+      setPostPublishHealthState("done");
+    } catch {
+      setPostPublishHealthState("error");
+    }
+  };
+
   const save = async () => {
     setBusy(true);
     setSyncError("");
@@ -1127,10 +1152,12 @@ export default function BuilderPage() {
       await saveQueue.current;
       let publishedSiteId = remoteSiteId;
       let publishConfig = config;
+      let publishAccessToken = "";
       if (remoteMode) {
         const supabase = getSupabaseBrowserClient();
         const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
         if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour publier.", "Sign in again to publish."));
+        publishAccessToken = data.session.access_token;
         const site = remoteSiteId ? { id: remoteSiteId } : await saveMySite(config, false, remoteSiteId || undefined);
         publishedSiteId = site.id;
         setRemoteSiteId(site.id);
@@ -1156,6 +1183,9 @@ export default function BuilderPage() {
       setSaved(true);
       setPublished(true);
       void trackProductEvent("publish_success", publishedSiteId);
+      if (remoteMode && publishedSiteId && publishAccessToken) {
+        void runPostPublishHealth(publishedSiteId, publishAccessToken);
+      }
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : tr("Erreur de publication.", "Publishing failed."));
     } finally {
@@ -2191,6 +2221,69 @@ export default function BuilderPage() {
                         {copyState === "copied" ? tr("✓ Lien copié", "✓ Link copied") : copyState === "error" ? tr("Copie impossible", "Unable to copy") : tr("Copier le lien", "Copy link")}
                       </button>
                     </div>
+                  </div>
+                ) : null}
+                {published && remoteMode ? (
+                  <div className={"post-publish-health " + (postPublishHealth?.overall || postPublishHealthState)} aria-live="polite">
+                    <div className="post-publish-health-head">
+                      <div>
+                        <span className="mini">{tr("DIAGNOSTIC APRÈS PUBLICATION", "POST-PUBLISH DIAGNOSTIC")}</span>
+                        <strong>
+                          {postPublishHealthState === "checking"
+                            ? tr("Vérification du site public…", "Checking the public website…")
+                            : postPublishHealthState === "error"
+                              ? tr("Diagnostic temporairement indisponible", "Diagnostic temporarily unavailable")
+                              : postPublishHealth?.overall === "healthy"
+                                ? tr("Site public sain", "Public website healthy")
+                                : postPublishHealth?.overall === "incident"
+                                  ? tr("Une intervention est nécessaire", "An intervention is required")
+                                  : postPublishHealth
+                                    ? tr("Une amélioration est recommandée", "An improvement is recommended")
+                                    : tr("Diagnostic prêt à être lancé", "Diagnostic ready")}
+                        </strong>
+                      </div>
+                      {postPublishHealth ? (
+                        <span className={"health-status-badge " + postPublishHealth.overall}>
+                          {postPublishHealth.overall === "healthy"
+                            ? tr("Sain", "Healthy")
+                            : postPublishHealth.overall === "incident"
+                              ? tr("Incident", "Incident")
+                              : tr("À corriger", "Action")}
+                        </span>
+                      ) : null}
+                    </div>
+                    {postPublishHealth ? (
+                      <>
+                        <ul className="post-publish-health-checks">
+                          {postPublishHealth.checks.map((check) => (
+                            <li key={check.key} className={check.status}>
+                              <span aria-hidden="true">{check.status === "healthy" ? "✓" : check.status === "incident" ? "×" : "!"}</span>
+                              <div><b>{check.label}</b><small>{check.detail}</small></div>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="actions">
+                          {postPublishHealth.clientAction ? (
+                            <Link className="button primary" href="/support">{tr("Corriger avec le Health Center", "Fix with Health Center")}</Link>
+                          ) : postPublishHealth.overall !== "healthy" ? (
+                            <Link className="button secondary" href="/support">{tr("Ouvrir le Health Center", "Open Health Center")}</Link>
+                          ) : null}
+                          <button type="button" className="button secondary" onClick={async () => {
+                            const supabase = getSupabaseBrowserClient();
+                            const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+                            if (data.session?.access_token && remoteSiteId) {
+                              void runPostPublishHealth(remoteSiteId, data.session.access_token);
+                            }
+                          }}>
+                            {tr("Relancer le diagnostic", "Run diagnostic again")}
+                          </button>
+                        </div>
+                      </>
+                    ) : postPublishHealthState === "error" ? (
+                      <div className="actions">
+                        <Link className="button secondary" href="/support">{tr("Ouvrir le Health Center", "Open Health Center")}</Link>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </>
