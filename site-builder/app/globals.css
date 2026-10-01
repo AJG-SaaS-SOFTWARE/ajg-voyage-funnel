@@ -3672,3 +3672,8 @@ button.active .step-label small{color:#63817f}
 .beta-feedback-guide{margin:0 0 18px;padding:20px 22px}
 .beta-feedback-guide h2{font-family:var(--display-serif);font-size:1.55rem;font-weight:500;margin:4px 0 7px}
 .beta-feedback-guide p:last-child{margin:0;color:var(--premium-muted);line-height:1.55}
+
+.status-badge.warning{background:#fff1cf;color:#8a6412}
+.beta-follow-up-note{color:#8a6412;font-weight:700}
+.admin-beta-cohort td{vertical-align:top}
+.admin-beta-cohort .admin-cell-note{display:block;margin-top:4px;line-height:1.35}
