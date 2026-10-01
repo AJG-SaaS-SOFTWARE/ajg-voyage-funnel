@@ -138,13 +138,14 @@ async function repairManagedDomain(
     .maybeSingle();
 
   if (siteError || !site) {
-    return finish(service, {
-      ...input,
+    return {
       action,
       status: "failed",
       code: "site_not_owned",
-      changed: false
-    });
+      siteId: input.siteId,
+      changed: false,
+      audited: false
+    };
   }
 
   if (site.privacy_state !== "active") {
