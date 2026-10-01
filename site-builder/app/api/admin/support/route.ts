@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { recordSupportEvent } from "../../../../lib/support-events";
+import { calculateSupportMetrics } from "../../../../lib/support-metrics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,14 +36,77 @@ export async function GET(request: Request) {
   const auth = await requireAdmin(request);
   if ("response" in auth) return auth.response;
 
-  const { data, error } = await auth.service
-    .from("support_tickets")
-    .select("id,user_id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const [
+    queue,
+    metricTickets,
+    events,
+    remediations,
+    activeSites
+  ] = await Promise.all([
+    auth.service
+      .from("support_tickets")
+      .select("id,user_id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    auth.service
+      .from("support_tickets")
+      .select("id,category,status,resolution_code,created_at")
+      .gte("created_at", since)
+      .limit(1000),
+    auth.service
+      .from("support_ticket_events")
+      .select("ticket_id,actor_type,event_type,metadata,created_at")
+      .gte("created_at", since)
+      .limit(5000),
+    auth.service
+      .from("support_remediation_runs")
+      .select("status,result_code,trigger_source,created_at")
+      .gte("created_at", since)
+      .limit(5000),
+    auth.service
+      .from("sites")
+      .select("owner_id")
+      .eq("status", "published")
+      .eq("privacy_state", "active")
+      .limit(5000)
+  ]);
 
-  if (error) return NextResponse.json({ error: "Tickets indisponibles." }, { status: 503 });
-  return NextResponse.json({ tickets: data || [] }, { headers: { "Cache-Control": "private, no-store" } });
+  if (queue.error) {
+    return NextResponse.json(
+      { error: "Tickets indisponibles." },
+      { status: 503 }
+    );
+  }
+
+  const metricError =
+    metricTickets.error ||
+    events.error ||
+    remediations.error ||
+    activeSites.error;
+
+  const metrics = metricError
+    ? null
+    : calculateSupportMetrics({
+        tickets: (metricTickets.data || []) as any[],
+        events: (events.data || []) as any[],
+        remediations: (remediations.data || []) as any[],
+        sites: (activeSites.data || []) as any[]
+      });
+
+  if (metricError) {
+    console.error("Support KPI aggregation unavailable", {
+      tickets: metricTickets.error?.code || null,
+      events: events.error?.code || null,
+      remediations: remediations.error?.code || null,
+      sites: activeSites.error?.code || null
+    });
+  }
+
+  return NextResponse.json(
+    { tickets: queue.data || [], metrics },
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }
 
 export async function PATCH(request: Request) {
