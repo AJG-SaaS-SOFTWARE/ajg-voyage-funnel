@@ -28,12 +28,14 @@ test('both scheduled jobs deny bad authentication before monitoring', async () =
   for (const path of ['../app/api/cron/storage-backup/route.ts', '../app/api/cron/billing-notifications/route.ts']) {
     let monitored = 0;
     let supportReconciled = 0;
+    let remediationSwept = 0;
     const route = load(path, {
       'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
       '../../../../lib/storage-backup': { runStorageBackup: async () => { throw Error('should not run'); } },
       '../../../../lib/app-url': { appBaseUrl: () => 'https://builder.example' },
       '../../../../lib/ai-finops-monitor': { runAiFinopsMonitorSafely: async () => { monitored++; return { ok: true }; } },
-      '../../../../lib/support-reconcile': { runSupportReconciliationSafely: async () => { supportReconciled++; return { ok: true }; } }
+      '../../../../lib/support-reconcile': { runSupportReconciliationSafely: async () => { supportReconciled++; return { ok: true }; } },
+      '../../../../lib/support-remediation-sweep': { runSupportRemediationSweepSafely: async () => { remediationSwept++; return { ok: true }; } }
     });
     for (const headers of [{}, { authorization: 'Bearer wrong' }]) {
       const response = await route.GET(new Request('https://builder.example/api/cron/job', { headers }));
@@ -41,6 +43,7 @@ test('both scheduled jobs deny bad authentication before monitoring', async () =
     }
     assert.equal(monitored, 0);
     assert.equal(supportReconciled, 0);
+    assert.equal(remediationSwept, 0);
   }
 });
 test('monitor failures do not skip the backup and cannot masquerade as cron success', async () => {
@@ -49,7 +52,8 @@ test('monitor failures do not skip the backup and cannot masquerade as cron succ
     'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
     '../../../../lib/storage-backup': { runStorageBackup: async () => { backups++; return { ok: true, configured: true }; } },
     '../../../../lib/ai-finops-monitor': { runAiFinopsMonitorSafely: async () => ({ ok: false }) },
-    '../../../../lib/support-reconcile': { runSupportReconciliationSafely: async () => ({ ok: true, scanned: 0 }) }
+    '../../../../lib/support-reconcile': { runSupportReconciliationSafely: async () => ({ ok: true, scanned: 0 }) },
+    '../../../../lib/support-remediation-sweep': { runSupportRemediationSweepSafely: async () => ({ ok: true, attempted: 0 }) }
   });
   const response = await route.GET(new Request('https://builder.example/api/cron/storage-backup', { headers: { authorization: 'Bearer cron-test' } }));
   assert.equal(backups, 1);
@@ -63,11 +67,29 @@ test('support reconciliation failures do not skip the backup and are visible to 
     'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
     '../../../../lib/storage-backup': { runStorageBackup: async () => { backups++; return { ok: true, configured: true }; } },
     '../../../../lib/ai-finops-monitor': { runAiFinopsMonitorSafely: async () => ({ ok: true }) },
-    '../../../../lib/support-reconcile': { runSupportReconciliationSafely: async () => ({ ok: false, scanned: 1, failed: 1 }) }
+    '../../../../lib/support-reconcile': { runSupportReconciliationSafely: async () => ({ ok: false, scanned: 1, failed: 1 }) },
+    '../../../../lib/support-remediation-sweep': { runSupportRemediationSweepSafely: async () => ({ ok: true, attempted: 0 }) }
   });
   const response = await route.GET(new Request('https://builder.example/api/cron/storage-backup', { headers: { authorization: 'Bearer cron-test' } }));
   const body = await response.json();
   assert.equal(backups, 1);
   assert.equal(response.status, 503);
   assert.equal(body.support.ok, false);
+});
+
+
+test('remediation orchestration failures do not skip backup and are visible to cron monitoring', async () => {
+  let backups = 0;
+  const route = load('../app/api/cron/storage-backup/route.ts', {
+    'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
+    '../../../../lib/storage-backup': { runStorageBackup: async () => { backups++; return { ok: true, configured: true }; } },
+    '../../../../lib/ai-finops-monitor': { runAiFinopsMonitorSafely: async () => ({ ok: true }) },
+    '../../../../lib/support-reconcile': { runSupportReconciliationSafely: async () => ({ ok: true, scanned: 0 }) },
+    '../../../../lib/support-remediation-sweep': { runSupportRemediationSweepSafely: async () => ({ ok: false, attempted: 0, error: 'query_failed' }) }
+  });
+  const response = await route.GET(new Request('https://builder.example/api/cron/storage-backup', { headers: { authorization: 'Bearer cron-test' } }));
+  const body = await response.json();
+  assert.equal(backups, 1);
+  assert.equal(response.status, 503);
+  assert.equal(body.remediation.ok, false);
 });
