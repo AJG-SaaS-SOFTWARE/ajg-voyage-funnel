@@ -34,6 +34,7 @@ export default function SupportPage() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
+  const [repairing, setRepairing] = useState(false);
 
   async function token() {
     const supabase = getSupabaseBrowserClient();
@@ -137,6 +138,38 @@ export default function SupportPage() {
     }
   }
 
+  async function repair() {
+    const accessToken = await token();
+    const siteId = payload?.health.siteId;
+    const action = payload?.health.diagnosis.repairActions?.[0];
+    if (!accessToken || !siteId || !action) return;
+    setRepairing(true);
+    setNotice("");
+    try {
+      const response = await fetch("/api/support/remediate", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + accessToken,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ siteId, action }),
+        cache: "no-store"
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error || tr("Correction automatique impossible.", "Automatic repair failed."));
+      setNotice(
+        body?.result?.status === "succeeded"
+          ? tr("Correction technique appliquée. Le diagnostic a été actualisé.", "Technical repair applied. The diagnosis has been refreshed.")
+          : tr("La correction automatique n’a pas suffi. Le diagnostic a été actualisé et peut être transmis à AJG.", "Automatic repair was not sufficient. The diagnosis has been refreshed and can be escalated to AJG.")
+      );
+      await load();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : tr("Correction automatique impossible.", "Automatic repair failed."));
+    } finally {
+      setRepairing(false);
+    }
+  }
+
   const health = payload?.health.diagnosis;
 
   return (
@@ -190,6 +223,13 @@ export default function SupportPage() {
                 </li>
               ))}
             </ul>
+            {health.repairActions?.length ? (
+              <button className="button primary" onClick={() => void repair()} disabled={repairing}>
+                {repairing
+                  ? tr("Correction automatique…", "Repairing automatically…")
+                  : tr("Corriger automatiquement", "Repair automatically")}
+              </button>
+            ) : null}
           </section>
 
           <section className="panel">
