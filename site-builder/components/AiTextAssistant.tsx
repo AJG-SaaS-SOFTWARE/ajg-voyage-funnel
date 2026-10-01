@@ -128,7 +128,9 @@ export default function AiTextAssistant({
       setState("error");
       setMessage(error instanceof Error
         ? error.message
-        : (uiLocale === "en" ? "An error occurred." : "Une erreur est survenue."));
+        : (uiLocale === "en"
+          ? "The AI suggestion could not be generated. Check your connection and try again; your current text is unchanged and you can keep editing it manually."
+          : "La proposition IA n’a pas pu être générée. Vérifiez votre connexion puis réessayez ; votre texte actuel reste inchangé et vous pouvez continuer à le modifier manuellement."));
     }
   };
 
