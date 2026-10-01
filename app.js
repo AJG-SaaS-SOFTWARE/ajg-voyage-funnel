@@ -237,7 +237,7 @@
       contact: 'Renseignez votre prénom et une adresse email valide.',
       step: (current, total) => `Étape ${current} sur ${total}`,
       sending: 'Envoi…',
-      submit: 'Recevoir la présentation →',
+      submit: 'Accéder aux créneaux de présentation →',
       submitError: 'L’envoi a échoué. Vérifiez votre connexion puis réessayez.'
     },
     en: {
@@ -245,7 +245,7 @@
       contact: 'Please enter your first name and a valid email address.',
       step: (current, total) => `Step ${current} of ${total}`,
       sending: 'Sending…',
-      submit: 'Get the presentation →',
+      submit: 'View presentation times →',
       submitError: 'Something went wrong. Please check your connection and try again.'
     }
   }[lang];
