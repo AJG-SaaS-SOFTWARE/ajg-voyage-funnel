@@ -3668,3 +3668,7 @@ button.active .step-label small{color:#63817f}
 .beta-mission-note{color:var(--premium-muted);font-size:.7rem;line-height:1.45}
 @media(max-width:900px){.beta-mission-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.beta-tester-mission{padding:21px}.beta-tester-mission-head{flex-direction:column}.beta-mission-steps{grid-template-columns:1fr}}
+
+.beta-feedback-guide{margin:0 0 18px;padding:20px 22px}
+.beta-feedback-guide h2{font-family:var(--display-serif);font-size:1.55rem;font-weight:500;margin:4px 0 7px}
+.beta-feedback-guide p:last-child{margin:0;color:var(--premium-muted);line-height:1.55}
