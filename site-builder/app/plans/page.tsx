@@ -143,8 +143,8 @@ export default function PlansPage() {
             <p>
               {betaAccess.active
                 ? tr(
-                    "BUILD + Growth complet sont ouverts pendant votre test, sans abonnement Stripe ni conversion payante automatique.",
-                    "Full BUILD + Growth are available during your test, with no Stripe subscription or automatic paid conversion."
+                    "Accès BUILD + Growth complet offert pendant la bêta, sans abonnement Stripe ni conversion payante automatique.",
+                    "Full BUILD + Growth access included during beta, with no Stripe subscription or automatic paid conversion."
                   )
                 : tr(
                     "Retrouvez ici les capacités actives de votre site, vos quotas et les options disponibles pour le faire évoluer.",
@@ -183,7 +183,7 @@ export default function PlansPage() {
             <p>{tr("Création ou refonte globale d’une première version du site.", "Create or globally refine a first website version.")}</p>
             {!betaAccess.active && paidPlan && aiAccess.launchOperationsRemaining === 0 ? (
               <button type="button" className="button secondary account-metric-action" disabled={Boolean(checkoutBusy)} onClick={() => void buyAiLaunch()}>
-                {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter · 49 €", "Add · €49")}
+                {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter la Création IA · 49 €", "Add AI Launch · €49")}
               </button>
             ) : null}
           </article>
