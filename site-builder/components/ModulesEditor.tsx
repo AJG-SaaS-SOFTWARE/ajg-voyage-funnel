@@ -15,6 +15,7 @@ type Props = {
   affiliation: "mwr" | "independent";
   firstName: string;
   brandName: string;
+  architectureMode: "single" | "multi";
   siteContext?: Record<string, string | undefined>;
 };
 
@@ -27,6 +28,7 @@ export default function ModulesEditor({
   affiliation,
   firstName,
   brandName,
+  architectureMode,
   siteContext
 }: Props) {
   const { tr } = useProductLocale();
@@ -117,7 +119,15 @@ export default function ModulesEditor({
       <section className="module-editor module-order-editor">
         <div>
           <b>{tr("Ordre des rubriques", "Section order")}</b>
-          <p>{tr("Organisez les sections dans l’ordre où elles apparaîtront dans l’aperçu et sur le site publié.", "Arrange sections in the order they will appear in the preview and published website.")}</p>
+          <p>{architectureMode === "multi"
+            ? tr(
+                "Cet ordre organise les rubriques de la page d’accueil. Les pages Galerie, FAQ, Contact et Services réutilisent ensuite les rubriques correspondantes définies ici.",
+                "This order organizes homepage sections. Gallery, FAQ, Contact and Services pages then reuse the corresponding sections defined here."
+              )
+            : tr(
+                "Sur votre site monopage, cet ordre devient l’ordre des rubriques dans l’aperçu et sur le site publié.",
+                "On your single-page website, this becomes the section order in the preview and published website."
+              )}</p>
         </div>
         <div className="module-order-list">
           {modules.order.map((key, index) => (
