@@ -30,6 +30,7 @@ import { optimizeBackgroundImage, optimizeImage } from "../../lib/optimize-image
 import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import { legalMissingFields } from "../../lib/site-legal";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
+import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 import {
   getCurrentUser,
   getMyDomains,
@@ -397,6 +398,13 @@ export default function BuilderPage() {
         const user = await getCurrentUser();
         if (!user) {
           router.replace("/login");
+          return;
+        }
+        if (cancelled) return;
+
+        const privateBetaAccess = await getPrivateBetaAccess();
+        if (!privateBetaAccess.allowed) {
+          router.replace("/beta-access");
           return;
         }
         if (cancelled) return;
