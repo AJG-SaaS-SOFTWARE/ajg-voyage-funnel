@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
 import { useProductLocale } from "../../lib/product-i18n";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 
 function MailIcon() {
   return (
@@ -35,8 +36,10 @@ export default function LoginPage() {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace("/builder");
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      const access = await getPrivateBetaAccess().catch(() => null);
+      router.replace(access?.allowed ? "/builder" : "/beta-access");
     });
   }, [router]);
 
@@ -54,13 +57,19 @@ export default function LoginPage() {
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin + `/builder?lang=${locale}`
+        emailRedirectTo: window.location.origin + `/builder?lang=${locale}`,
+        shouldCreateUser: false
       }
     });
 
     if (authError) {
       setState("idle");
-      setError(tr("Le lien de connexion n’a pas pu être envoyé. Réessayez dans quelques instants.", "The sign-in link could not be sent. Please try again in a moment."));
+      setError(
+        tr(
+          "La bêta privée est accessible sur invitation. Vérifiez que vous utilisez exactement l’adresse invitée.",
+          "The private beta is invitation-only. Make sure you are using the exact email address that was invited."
+        )
+      );
       return;
     }
     setState("sent");
@@ -90,9 +99,9 @@ export default function LoginPage() {
       <section className="auth-panel-wrap">
         <div className="auth-card premium-auth-card">
           <div className="auth-card-heading">
-            <p className="eyebrow">{tr("Espace membre", "Member area")}</p>
+            <p className="eyebrow">{tr("Bêta privée · sur invitation", "Private beta · invitation only")}</p>
             <h2>{tr("Connexion", "Sign in")}</h2>
-            <p>{tr("Recevez un lien sécurisé par email. Aucun mot de passe à retenir.", "Receive a secure sign-in link by email. No password to remember.")}</p>
+            <p>{tr("Utilisez l’adresse email invitée pour recevoir votre lien sécurisé. Aucun mot de passe à retenir.", "Use the invited email address to receive your secure sign-in link. No password to remember.")}</p>
           </div>
 
           {!isSupabaseConfigured() ? (
