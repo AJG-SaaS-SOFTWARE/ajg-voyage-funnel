@@ -66,8 +66,8 @@ export default function LoginPage() {
       setState("idle");
       setError(
         tr(
-          "La bêta privée est accessible sur invitation. Vérifiez que vous utilisez exactement l’adresse invitée.",
-          "The private beta is invitation-only. Make sure you are using the exact email address that was invited."
+          "Le lien de connexion n’a pas pu être envoyé. La bêta privée est accessible sur invitation : vérifiez que vous utilisez exactement l’adresse invitée.",
+          "The sign-in link could not be sent. The private beta is invitation-only: make sure you are using the exact email address that was invited."
         )
       );
       return;
