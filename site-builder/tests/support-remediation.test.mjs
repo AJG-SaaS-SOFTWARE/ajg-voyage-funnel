@@ -16,7 +16,7 @@ const route = fs.readFileSync(
 );
 
 test("remediation audit is server-write-only and owner-readable", () => {
-  assert.match(migration, /revoke insert, update, delete on public\.support_remediation_runs from authenticated/i);
+  assert.match(migration, /revoke all on public\.support_remediation_runs from authenticated/i);
   assert.match(migration, /grant select on public\.support_remediation_runs to authenticated/i);
   assert.match(migration, /user_id=\(select auth\.uid\(\)\)/i);
 });
