@@ -1153,7 +1153,7 @@ export default function BuilderPage() {
       setSaved(true);
       setPublished(false);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : tr("Erreur de sauvegarde.", "Save failed."));
+      setSyncError(error instanceof Error ? error.message : tr("La sauvegarde n’a pas abouti. Vérifiez votre connexion puis réessayez ; vos modifications restent affichées dans le Builder.", "Saving did not complete. Check your connection and try again; your changes remain visible in the Builder."));
     } finally {
       setBusy(false);
     }
@@ -1202,7 +1202,7 @@ export default function BuilderPage() {
         void runPostPublishHealth(publishedSiteId, publishAccessToken);
       }
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : tr("Erreur de publication.", "Publishing failed."));
+      setSyncError(error instanceof Error ? error.message : tr("La publication n’a pas abouti. Relancez la publication ; si le problème persiste, ouvrez le Health Center sans recréer le site.", "Publishing did not complete. Try publishing again; if the issue persists, open the Health Center without recreating the website."));
     } finally {
       setBusy(false);
     }

@@ -328,7 +328,7 @@ Objectif : un client doit pouvoir passer de zéro à site publié sans intervent
 - [x] self-service facturation ;
 - [x] self-service export ;
 - [x] self-service suppression ;
-- [ ] messages d'erreur exploitables, jamais "une erreur est survenue" sans prochaine action.
+- [x] messages d'erreur exploitables sur les parcours client critiques : IA, sauvegarde, publication, médias et domaines proposent désormais une prochaine action au lieu d’un fallback générique.
 
 ### État d’implémentation
 
