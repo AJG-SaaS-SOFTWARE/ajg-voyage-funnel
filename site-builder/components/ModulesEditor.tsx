@@ -179,7 +179,7 @@ export default function ModulesEditor({
                 <button type="button" onClick={() => change("faq", { ...modules.faq, items: modules.faq.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
-            <button type="button" className="secondary" disabled={modules.faq.items.length >= 12} onClick={() => change("faq", { ...modules.faq, items: [...modules.faq.items, { question: "", answer: "" }] })}>{tr("Ajouter une question manuellement", "Add a question manually")}</button>
+            <button type="button" className="button secondary" disabled={modules.faq.items.length >= 12} onClick={() => change("faq", { ...modules.faq, items: [...modules.faq.items, { question: "", answer: "" }] })}>{tr("Ajouter une question manuellement", "Add a question manually")}</button>
           </div>
         ) : null}
       </section>
@@ -197,7 +197,7 @@ export default function ModulesEditor({
                 <button type="button" onClick={() => change("testimonials", { ...modules.testimonials, items: modules.testimonials.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
-            <button type="button" className="secondary" disabled={modules.testimonials.items.length >= 12} onClick={() => change("testimonials", { ...modules.testimonials, items: [...modules.testimonials.items, { quote: "", author: "" }] })}>{tr("Ajouter un témoignage réel", "Add a real testimonial")}</button>
+            <button type="button" className="button secondary" disabled={modules.testimonials.items.length >= 12} onClick={() => change("testimonials", { ...modules.testimonials, items: [...modules.testimonials.items, { quote: "", author: "" }] })}>{tr("Ajouter un témoignage réel", "Add a real testimonial")}</button>
           </div>
         ) : null}
       </section>
@@ -242,7 +242,7 @@ export default function ModulesEditor({
                 <button type="button" onClick={() => change("figures", { ...modules.figures, items: modules.figures.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
-            <button type="button" className="secondary" disabled={modules.figures.items.length >= 12} onClick={() => change("figures", { ...modules.figures, items: [...modules.figures.items, { value: "", label: "" }] })}>{tr("Ajouter un chiffre manuellement", "Add a figure manually")}</button>
+            <button type="button" className="button secondary" disabled={modules.figures.items.length >= 12} onClick={() => change("figures", { ...modules.figures, items: [...modules.figures.items, { value: "", label: "" }] })}>{tr("Ajouter un chiffre manuellement", "Add a figure manually")}</button>
             <small>{tr("AJG peut suggérer quoi mesurer, mais ne remplira jamais une valeur à votre place. Utilisez uniquement des chiffres vérifiables et à jour.", "AJG can suggest what to measure but never fills in a value for you. Use only verifiable, up-to-date figures.")}</small>
           </div>
         ) : null}
@@ -266,7 +266,7 @@ export default function ModulesEditor({
                 <button type="button" onClick={() => change("benefits", { ...modules.benefits, items: modules.benefits.items.filter((_, i) => i !== index) })}>{tr("Retirer", "Remove")}</button>
               </div>
             ))}
-            <button type="button" className="secondary" disabled={modules.benefits.items.length >= 12} onClick={() => change("benefits", { ...modules.benefits, items: [...modules.benefits.items, { title: "", text: "" }] })}>{tr("Ajouter un avantage manuellement", "Add a benefit manually")}</button>
+            <button type="button" className="button secondary" disabled={modules.benefits.items.length >= 12} onClick={() => change("benefits", { ...modules.benefits, items: [...modules.benefits.items, { title: "", text: "" }] })}>{tr("Ajouter un avantage manuellement", "Add a benefit manually")}</button>
           </div>
         ) : null}
       </section>

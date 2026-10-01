@@ -24,6 +24,14 @@ test("add controls and optional-module spacing are compact", () => {
   assert.match(css, /\.content-library-actions \.button,[\s\S]*?min-height:34px/);
   assert.match(css, /\.modules-editor>\.module-toggle-card\{\s*margin:8px 0/);
   assert.match(css, /\.module-toggle-card>\.module-fields\{\s*padding:14px 16px 16px/);
+  assert.equal(
+    (modules.match(/className="button secondary" disabled=\{modules\.(?:faq|testimonials|figures|benefits)\./g) || []).length,
+    4
+  );
+  assert.doesNotMatch(
+    modules,
+    /className="secondary" disabled=\{modules\.(?:faq|testimonials|figures|benefits)\./
+  );
 });
 
 test("UI explains the relationship between site pages and homepage sections", () => {
