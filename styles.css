@@ -2177,3 +2177,32 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
   border-color: rgba(32,117,112,.30);
   background: linear-gradient(120deg, rgba(199,234,228,.96), rgba(220,240,236,.96));
 }
+
+
+/* Conversion reassurance */
+.cta-reassurance {
+  display: block;
+  margin-top: 9px;
+  color: var(--ink-soft);
+  font-size: .76rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.hero .cta-reassurance,
+.booking-cta-section .cta-reassurance { color: inherit; opacity: .76; }
+.trust-bridge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 18px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  color: var(--ink-soft);
+  font-size: .82rem;
+}
+.trust-bridge > span { font-weight: 700; }
+.trust-bridge a { color: var(--aqua-dark); font-weight: 850; text-decoration: none; }
+.trust-bridge a:hover { text-decoration: underline; }
+@media (max-width: 700px) {
+  .trust-bridge { align-items: flex-start; flex-direction: column; gap: 5px; }
+}
