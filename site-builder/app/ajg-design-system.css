@@ -20,6 +20,9 @@
   --ajg-ai-hover:#5945bd;
   --ajg-ai-soft:#f0edff;
   --ajg-ai-faint:rgba(111,91,213,.065);
+  --ajg-warm:#c58a2c;
+  --ajg-warm-soft:#fff4df;
+  --ajg-warm-faint:rgba(197,138,44,.075);
   --ajg-success:#2f7c5b;
   --ajg-success-soft:#eaf6ef;
   --ajg-warning:#a96c13;
@@ -303,5 +306,307 @@ body{
 @media(max-width:620px){
   .premium-card,.premium-step-nav,.premium-builder-panel,.premium-builder-preview,.account-metric-card,.feedback-form{
     box-shadow:0 8px 24px rgba(23,44,53,.035);
+  }
+}
+
+
+/* AJG Design System 1.2 — richer color balance
+   Keep the canvas calm, but let product states and structure carry more identity. */
+body{
+  background:
+    radial-gradient(circle at 88% 5%,rgba(10,129,121,.075),transparent 27rem),
+    radial-gradient(circle at 8% 78%,rgba(111,91,213,.045),transparent 26rem),
+    radial-gradient(circle at 48% 112%,rgba(197,138,44,.045),transparent 24rem),
+    var(--ajg-bg);
+}
+
+/* Builder: more visible AJG identity without touching the customer preview itself. */
+.premium-builder-shell{
+  background:
+    radial-gradient(circle at 92% 8%,rgba(10,129,121,.075),transparent 31rem),
+    radial-gradient(circle at 4% 92%,rgba(197,138,44,.05),transparent 26rem),
+    var(--ajg-bg);
+}
+.premium-builder-topbar{
+  position:sticky;
+  background:rgba(250,250,248,.95);
+  box-shadow:0 8px 28px rgba(23,44,53,.04);
+}
+.premium-builder-topbar::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-1px;
+  height:2px;
+  background:linear-gradient(90deg,transparent 0 7%,rgba(10,129,121,.72) 18%,rgba(10,129,121,.24) 48%,rgba(111,91,213,.18) 74%,transparent 94%);
+  pointer-events:none;
+}
+.premium-brand-link .brand-mark{
+  border-color:rgba(10,129,121,.28);
+  background:linear-gradient(145deg,#fff,var(--ajg-primary-soft));
+  color:var(--ajg-primary-hover);
+  box-shadow:0 5px 16px rgba(10,129,121,.07);
+}
+.premium-topbar-account .builder-header-action,
+.premium-topbar-account .account-button,
+.premium-topbar-account .builder-header-status,
+.premium-topbar-account .builder-header-utility{
+  border-color:rgba(23,44,53,.095);
+  background:rgba(255,255,255,.82);
+}
+.premium-topbar-account .builder-header-action:hover,
+.premium-topbar-account .account-button:hover,
+.premium-topbar-account .builder-header-utility:hover{
+  border-color:rgba(10,129,121,.22);
+  background:var(--ajg-primary-soft);
+  color:var(--ajg-primary-hover);
+}
+.premium-topbar-account .builder-header-status{
+  background:linear-gradient(135deg,rgba(229,245,242,.92),rgba(255,255,255,.92));
+}
+
+/* Workflow navigation: teal for the path, color only where it has meaning. */
+.premium-step-nav{
+  border-color:rgba(10,129,121,.12);
+  background:
+    radial-gradient(circle at 12% 0,rgba(10,129,121,.075),transparent 170px),
+    linear-gradient(180deg,rgba(255,255,255,.94),rgba(250,252,251,.88));
+}
+.premium-step-nav::before{
+  background:linear-gradient(180deg,rgba(10,129,121,.42),rgba(10,129,121,.14) 52%,rgba(23,44,53,.06));
+}
+.premium-step-nav button:hover{
+  background:rgba(10,129,121,.075);
+}
+.premium-step-nav button.active{
+  border:1px solid rgba(10,129,121,.15);
+  background:linear-gradient(90deg,rgba(213,242,238,.94),rgba(241,249,247,.68));
+  color:#173039;
+  box-shadow:inset 3px 0 0 var(--ajg-primary),0 8px 18px rgba(10,129,121,.045);
+}
+.premium-step-nav button.done{
+  color:#47635f;
+}
+.premium-step-nav button.active .step-number{
+  background:linear-gradient(135deg,#16a99e,var(--ajg-primary-hover));
+  color:#fff;
+  box-shadow:0 7px 17px rgba(10,129,121,.2);
+}
+.premium-step-nav button.done .step-number{
+  border-color:rgba(10,129,121,.18);
+  background:var(--ajg-primary-soft);
+  color:var(--ajg-primary-hover);
+}
+.step-nav-heading .eyebrow,
+.premium-panel-heading .step,
+.preview-panel-heading .step{
+  color:var(--ajg-primary);
+}
+
+/* Main editor: preserve white working space, add colored orientation cues. */
+.premium-builder-panel{
+  border-color:rgba(10,129,121,.11);
+  background:rgba(255,255,255,.94);
+}
+.premium-panel-heading{
+  border-color:rgba(10,129,121,.11);
+  background:
+    radial-gradient(circle at 92% -20%,rgba(10,129,121,.11),transparent 240px),
+    linear-gradient(120deg,rgba(239,249,247,.78),rgba(255,255,255,.88) 56%);
+}
+.step-guidance-card{
+  border-color:rgba(10,129,121,.20);
+  background:
+    linear-gradient(120deg,rgba(226,247,243,.96),rgba(247,252,251,.95));
+  box-shadow:inset 3px 0 0 rgba(10,129,121,.55);
+}
+.step-guidance-icon{
+  background:linear-gradient(145deg,#d8f4ef,#eaf8f6);
+  color:var(--ajg-primary-hover);
+  box-shadow:0 6px 14px rgba(10,129,121,.08);
+}
+.step-guidance-card span{color:var(--ajg-primary-hover)}
+.section-kicker>span{
+  border:1px solid rgba(10,129,121,.12);
+  background:var(--ajg-primary-soft);
+  color:var(--ajg-primary-hover);
+  box-shadow:0 4px 12px rgba(10,129,121,.045);
+}
+.section-kicker b{color:#203a42}
+.premium-builder-actions{
+  border-color:rgba(10,129,121,.09);
+  background:
+    linear-gradient(90deg,rgba(239,248,246,.78),rgba(250,250,248,.92) 32%,rgba(250,250,248,.92));
+}
+
+/* Preview chrome can carry AJG color; the rendered customer website remains isolated. */
+.premium-builder-preview{
+  border-color:rgba(10,129,121,.11);
+  background:rgba(255,255,255,.94);
+}
+.preview-panel-heading{
+  background:
+    radial-gradient(circle at 92% 20%,rgba(111,91,213,.055),transparent 150px),
+    linear-gradient(120deg,rgba(239,249,247,.72),rgba(255,255,255,.9) 58%);
+}
+.preview-device-frame{
+  border-color:rgba(23,44,53,.12);
+  background:#edf1ef;
+}
+.preview-panel-note{
+  border-color:rgba(10,129,121,.10);
+  background:var(--ajg-primary-soft);
+  color:#466a66;
+}
+
+/* Buttons: richer than flat teal while keeping strong white-text contrast. */
+.premium-home .button.primary,
+.premium-builder-shell .button.primary,
+.account-shell .button.primary,
+.plans-page .button.primary,
+.premium-auth-page .button.primary,
+.beta-access-card .button.primary{
+  background:linear-gradient(135deg,#0b8d84 0%,#076861 100%);
+  border-color:rgba(7,104,97,.22);
+  box-shadow:0 8px 20px rgba(7,104,97,.16);
+}
+.premium-home .button.primary:hover,
+.premium-builder-shell .button.primary:hover,
+.account-shell .button.primary:hover,
+.plans-page .button.primary:hover,
+.premium-auth-page .button.primary:hover,
+.beta-access-card .button.primary:hover{
+  background:linear-gradient(135deg,#087a72 0%,#055b55 100%);
+  box-shadow:0 10px 24px rgba(7,104,97,.20);
+}
+
+/* Dashboard: three accents, each with a role rather than random decoration. */
+.create-card{
+  border-color:rgba(10,129,121,.13);
+  background:
+    radial-gradient(circle at 92% 8%,rgba(10,129,121,.105),transparent 210px),
+    linear-gradient(145deg,#fff,rgba(244,251,249,.94));
+}
+.state-card{
+  border-color:rgba(197,138,44,.13);
+  background:
+    radial-gradient(circle at 92% 8%,rgba(197,138,44,.105),transparent 200px),
+    linear-gradient(145deg,#fff,rgba(255,250,241,.94));
+}
+.architecture-card{
+  border-color:rgba(111,91,213,.13);
+  background:
+    radial-gradient(circle at 92% 8%,rgba(111,91,213,.10),transparent 200px),
+    linear-gradient(145deg,#fff,rgba(248,246,255,.94));
+}
+.card-icon.gold{
+  color:var(--ajg-warm);
+  background:var(--ajg-warm-soft);
+}
+.card-icon.sage{
+  color:var(--ajg-ai);
+  background:var(--ajg-ai-soft);
+}
+
+/* Account: subtle color zones that make the metrics easier to scan. */
+.account-metric-card:nth-child(1),
+.account-metric-card:nth-child(2){
+  border-color:rgba(111,91,213,.12);
+  background:
+    radial-gradient(circle at 96% 0,rgba(111,91,213,.07),transparent 150px),
+    rgba(255,255,255,.92);
+}
+.account-metric-card:nth-child(3){
+  border-color:rgba(10,129,121,.13);
+  background:
+    radial-gradient(circle at 96% 0,rgba(10,129,121,.08),transparent 150px),
+    rgba(255,255,255,.92);
+}
+.account-offer-explainer{
+  border-color:rgba(197,138,44,.14);
+  background:
+    radial-gradient(circle at 100% 0,rgba(197,138,44,.08),transparent 180px),
+    linear-gradient(120deg,rgba(255,248,234,.72),rgba(255,255,255,.68));
+}
+.account-nav>a.active{
+  box-shadow:inset 3px 0 0 var(--ajg-primary);
+}
+
+/* AI should be unmistakable, but still secondary to the AJG brand color. */
+.ai-field-assistant,.module-ai-assistant{
+  border-color:rgba(111,91,213,.20);
+  background:
+    radial-gradient(circle at 92% 0,rgba(111,91,213,.10),transparent 180px),
+    linear-gradient(135deg,rgba(246,243,255,.96),rgba(255,255,255,.92));
+}
+.ai-field-spark,
+.architect-brief-guide .ai-field-spark{
+  background:linear-gradient(145deg,#e9e3ff,var(--ajg-ai-soft));
+  color:var(--ajg-ai-hover);
+  box-shadow:0 5px 14px rgba(111,91,213,.08);
+}
+.guided-writing-badge{
+  background:var(--ajg-warm-soft);
+  color:#8f6018;
+  border-color:rgba(197,138,44,.22);
+}
+
+/* Useful operational states get color rather than decoration. */
+.premium-status.saved{
+  border-color:rgba(10,129,121,.12);
+  background:var(--ajg-primary-soft);
+  color:var(--ajg-primary-hover);
+}
+.premium-status.published{
+  border-color:rgba(47,124,91,.14);
+  background:var(--ajg-success-soft);
+  color:var(--ajg-success);
+}
+.onboarding-progress-card{
+  background:
+    radial-gradient(circle at 96% 0,rgba(10,129,121,.07),transparent 200px),
+    rgba(255,255,255,.9);
+}
+.onboarding-checklist li.next{
+  border-color:rgba(10,129,121,.25);
+  background:var(--ajg-primary-soft);
+}
+.onboarding-checklist li.done{
+  background:rgba(234,246,239,.72);
+}
+
+/* Public AJG pricing is a marketing surface, so it may be a touch more expressive. */
+.plans-page{
+  background:
+    radial-gradient(circle at 86% 6%,rgba(10,129,121,.075),transparent 24rem),
+    radial-gradient(circle at 10% 74%,rgba(111,91,213,.045),transparent 24rem),
+    var(--ajg-bg);
+}
+.plans-page .pro-offer-card{
+  border-color:rgba(10,129,121,.22);
+  background:
+    radial-gradient(circle at 94% 0,rgba(10,129,121,.10),transparent 210px),
+    rgba(255,255,255,.95);
+}
+
+/* Small screens: reduce decorative saturation, not functional color. */
+@media(max-width:820px){
+  body{
+    background:
+      radial-gradient(circle at 95% 3%,rgba(10,129,121,.055),transparent 18rem),
+      radial-gradient(circle at 4% 92%,rgba(111,91,213,.03),transparent 18rem),
+      var(--ajg-bg);
+  }
+  .premium-builder-topbar::after{opacity:.72}
+}
+@media(max-width:620px){
+  .premium-step-nav,
+  .premium-builder-panel,
+  .premium-builder-preview{
+    background:rgba(255,255,255,.94);
+  }
+  .premium-step-nav button.active{
+    background:var(--ajg-primary-soft);
   }
 }
