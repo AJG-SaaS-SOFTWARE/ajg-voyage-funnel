@@ -21,7 +21,7 @@ create index if not exists support_remediation_runs_status_created_idx
 
 alter table public.support_remediation_runs enable row level security;
 revoke all on public.support_remediation_runs from anon;
-revoke insert, update, delete on public.support_remediation_runs from authenticated;
+revoke all on public.support_remediation_runs from authenticated;
 grant select on public.support_remediation_runs to authenticated;
 
 drop policy if exists "users read own support remediation runs" on public.support_remediation_runs;
