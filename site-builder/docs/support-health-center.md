@@ -105,3 +105,20 @@ Le sweep :
 - renvoie une erreur de cron uniquement si l'orchestration du sweep elle-même est indisponible.
 
 Aucun LLM ni scan Premium n'est déclenché par ce sweep.
+
+
+## KPI d'autonomie support
+
+La vue `/admin/support` calcule désormais une fenêtre glissante de 30 jours, sans LLM, à partir des tickets et journaux déjà collectés.
+
+Définitions :
+
+- **clients actifs** : propriétaires distincts d'au moins un site publié dont l'état privacy est actif ;
+- **tickets créés** : tickets ouverts pendant la fenêtre ;
+- **tickets escaladés AJG** : tickets ayant atteint `diagnosed` ou `in_progress` pendant la fenêtre ;
+- **tickets touchés par un admin** : tickets avec au moins un événement `actor_type=admin` pendant la fenêtre ;
+- **résolus sans admin** : tickets de la cohorte créée sur 30 jours terminés sans événement admin ;
+- **escalades / client actif** : indicateur suivi face à l'objectif initial inférieur à 0,15 par mois ;
+- **remédiations** : tentatives, succès, échecs et codes de résultat issus de `support_remediation_runs`.
+
+Les compteurs utilisent des identifiants dédupliqués : plusieurs diagnostics ou changements d'état d'un même ticket ne gonflent pas artificiellement le nombre de demandes humaines.
