@@ -344,7 +344,14 @@ export default function BuilderPage() {
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
-    const eventByStep: Partial<Record<StepKey, "step_identity"|"step_story"|"step_booking"|"step_review">> = { identity:"step_identity", story:"step_story", booking:"step_booking", review:"step_review" };
+    const eventByStep: Partial<Record<StepKey, "step_identity"|"step_story"|"step_design"|"step_booking"|"step_options"|"step_review">> = {
+      identity: "step_identity",
+      story: "step_story",
+      design: "step_design",
+      booking: "step_booking",
+      options: "step_options",
+      review: "step_review"
+    };
     const names = ["builder_open", eventByStep[step]].filter(Boolean) as string[];
     names.forEach((name) => {
       if (trackedProductEvents.current.has(name)) return;
