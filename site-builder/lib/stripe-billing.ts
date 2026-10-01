@@ -138,6 +138,7 @@ export async function createStripeSubscriptionCheckout(input: {
           ? { customer_email: input.ownerEmail }
           : {}),
       metadata: {
+        app: "ajg_site_builder",
         site_id: input.siteId,
         owner_id: input.ownerId,
         plan_key: input.planKey,
@@ -148,6 +149,7 @@ export async function createStripeSubscriptionCheckout(input: {
           ? { trial_period_days: input.trialDays }
           : {}),
         metadata: {
+          app: "ajg_site_builder",
           site_id: input.siteId,
           owner_id: input.ownerId,
           plan_key: input.planKey
@@ -190,6 +192,7 @@ export async function createStripeOneTimeCheckout(input: {
           ? { customer_email: input.ownerEmail }
           : {}),
       metadata: {
+        app: "ajg_site_builder",
         site_id: input.siteId,
         owner_id: input.ownerId,
         purchase_type: "ai_launch",
