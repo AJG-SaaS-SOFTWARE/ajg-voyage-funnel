@@ -87,3 +87,21 @@ Le client peut utiliser **Corriger automatiquement** lorsque le Health Center d�
 - limite les répétitions rapprochées.
 
 Cette première auto-remédiation est idempotente et ne touche à aucun texte, CTA, page ou choix graphique.
+
+
+## Sweep quotidien de remédiation
+
+La tâche quotidienne déjà utilisée pour la sauvegarde et la réconciliation support exécute aussi un sweep borné des sous-domaines AJG gérés. Aucun nouveau cron n'est ajouté.
+
+Le sweep :
+
+- analyse au maximum 50 sites publiés et actifs ;
+- exclut tout site ayant un domaine personnalisé configuré ;
+- ignore les états ambigus avec plusieurs sous-domaines AJG ;
+- applique un cooldown de 6 heures après toute tentative ;
+- répare au maximum 10 sites par exécution ;
+- réutilise exactement le même moteur `runSupportRepair` et son journal d'audit ;
+- traite les échecs d'une réparation individuelle comme un résultat observable, sans empêcher la sauvegarde quotidienne ;
+- renvoie une erreur de cron uniquement si l'orchestration du sweep elle-même est indisponible.
+
+Aucun LLM ni scan Premium n'est déclenché par ce sweep.

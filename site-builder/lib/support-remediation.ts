@@ -194,6 +194,19 @@ async function repairManagedDomain(
     });
   }
 
+  const customDomain = (domains || []).find(
+    (domain) => domain.kind === "custom_domain"
+  );
+  if (customDomain) {
+    return finish(service, {
+      ...input,
+      action,
+      status: "no_change",
+      code: "custom_domain_configured",
+      changed: false
+    });
+  }
+
   let managed = (domains || []).find((domain) => domain.kind === "managed_subdomain") || null;
   let created = false;
 
