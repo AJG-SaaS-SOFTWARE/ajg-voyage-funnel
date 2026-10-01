@@ -82,6 +82,22 @@ export async function POST(request: Request) {
     );
   }
 
+  if (ticketId) {
+    const { data: ticket, error: ticketError } = await auth.service
+      .from("support_tickets")
+      .select("id")
+      .eq("id", ticketId)
+      .eq("user_id", auth.user.id)
+      .eq("site_id", siteId)
+      .maybeSingle();
+    if (ticketError || !ticket) {
+      return NextResponse.json(
+        { error: "Ticket de support invalide pour cette correction." },
+        { status: 400 }
+      );
+    }
+  }
+
   const since = new Date(Date.now() - 60_000).toISOString();
   const { count, error: limitError } = await auth.service
     .from("support_remediation_runs")
