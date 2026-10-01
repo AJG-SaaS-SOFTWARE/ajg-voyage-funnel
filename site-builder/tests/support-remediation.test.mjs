@@ -68,3 +68,10 @@ test("custom-domain DNS issues remain a customer action and are not auto-mutated
   assert.match(diagnostics, /contrôlez les enregistrements DNS demandés/);
   assert.ok(!remediation.includes('kind: "custom_domain"'));
 });
+
+
+test("repair endpoint requires the current Health Center diagnosis to advertise the repair", () => {
+  assert.match(route, /diagnoseSupportHealth/);
+  assert.match(route, /repairActions\.includes\(action as SupportRepairAction\)/);
+  assert.match(route, /status: 409/);
+});
