@@ -137,7 +137,14 @@ export default function ModuleDraftAssistant({
       setMessage(tr("Proposition prête. Vérifiez-la avant de l’insérer dans la rubrique.", "Proposal ready. Review it before inserting it into the section."));
     } catch (error) {
       setState("error");
-      setMessage(error instanceof Error ? error.message : tr("Une erreur est survenue.", "An error occurred."));
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : tr(
+              "La rubrique n’a pas pu être préparée. Vérifiez votre connexion puis réessayez ; vous pouvez aussi remplir la rubrique manuellement sans perdre vos données.",
+              "The section could not be prepared. Check your connection and try again; you can also fill the section manually without losing your data."
+            )
+      );
     }
   };
 
