@@ -170,11 +170,27 @@ export type AdminBetaCohortMember = {
   accessStartsAt: string | null;
   accessExpiresAt: string | null;
   locale: "fr" | "en";
+  siteId: string | null;
+  siteSlug: string | null;
+  siteStatus: string | null;
+  publishedAt: string | null;
+  lastActivityAt: string | null;
+  feedbackCount: number;
+  productEventCount: number;
+  aiEventCount: number;
+  betaStage: "invited" | "activated" | "building" | "published" | "complete";
+  needsFollowUp: boolean;
+  followUpReason: string | null;
 };
 
 export type AdminBetaCohort = {
   limit: number;
+  operationalTarget: number;
   defaultAccessDays: number;
+  followUpRules: {
+    invitationHours: number;
+    inactivityHours: number;
+  };
   members: AdminBetaCohortMember[];
 };
 

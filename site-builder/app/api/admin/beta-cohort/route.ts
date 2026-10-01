@@ -18,7 +18,18 @@ type BetaGrant = {
   expires_at: string;
 };
 
-function member(user: User, grant?: BetaGrant | null) {
+type BetaActivity = {
+  siteId: string | null;
+  siteSlug: string | null;
+  siteStatus: string | null;
+  publishedAt: string | null;
+  lastActivityAt: string | null;
+  feedbackCount: number;
+  productEventCount: number;
+  aiEventCount: number;
+};
+
+function member(user: User, grant?: BetaGrant | null, activity?: BetaActivity) {
   const accessActive =
     Boolean(grant?.active) &&
     Boolean(grant?.starts_at && new Date(grant.starts_at).getTime() <= Date.now()) &&
@@ -36,7 +47,81 @@ function member(user: User, grant?: BetaGrant | null) {
     accessActive,
     accessStartsAt: grant?.starts_at || null,
     accessExpiresAt: grant?.expires_at || null,
-    locale: user.user_metadata?.ajg_builder_locale === "en" ? "en" : "fr"
+    locale: user.user_metadata?.ajg_builder_locale === "en" ? "en" : "fr",
+    siteId: activity?.siteId || null,
+    siteSlug: activity?.siteSlug || null,
+    siteStatus: activity?.siteStatus || null,
+    publishedAt: activity?.publishedAt || null,
+    lastActivityAt: activity?.lastActivityAt || null,
+    feedbackCount: activity?.feedbackCount || 0,
+    productEventCount: activity?.productEventCount || 0,
+    aiEventCount: activity?.aiEventCount || 0,
+    ...betaOperationalStatus(user, grant, activity)
+  };
+}
+
+function betaOperationalStatus(
+  user: User,
+  grant?: BetaGrant | null,
+  activity?: BetaActivity
+) {
+  const now = Date.now();
+  const invitedAt =
+    typeof user.app_metadata?.beta_invited_at === "string"
+      ? Date.parse(user.app_metadata.beta_invited_at)
+      : Date.parse(user.created_at);
+  const lastActivityAt = activity?.lastActivityAt
+    ? Date.parse(activity.lastActivityAt)
+    : user.last_sign_in_at
+      ? Date.parse(user.last_sign_in_at)
+      : NaN;
+  const inviteAgeHours = Number.isFinite(invitedAt) ? (now - invitedAt) / 3_600_000 : 0;
+  const inactivityHours = Number.isFinite(lastActivityAt) ? (now - lastActivityAt) / 3_600_000 : null;
+
+  if (!user.last_sign_in_at) {
+    return {
+      betaStage: "invited" as const,
+      needsFollowUp: inviteAgeHours >= 48,
+      followUpReason: inviteAgeHours >= 48 ? "Invitation non activée depuis plus de 48 h." : null
+    };
+  }
+
+  if (activity?.publishedAt || activity?.siteStatus === "published") {
+    if ((activity.feedbackCount || 0) > 0) {
+      return {
+        betaStage: "complete" as const,
+        needsFollowUp: false,
+        followUpReason: null
+      };
+    }
+    return {
+      betaStage: "published" as const,
+      needsFollowUp: inactivityHours !== null && inactivityHours >= 72,
+      followUpReason:
+        inactivityHours !== null && inactivityHours >= 72
+          ? "Site publié mais aucun retour reçu après 72 h."
+          : null
+    };
+  }
+
+  if (activity?.siteId || (activity?.productEventCount || 0) > 0) {
+    return {
+      betaStage: "building" as const,
+      needsFollowUp: inactivityHours !== null && inactivityHours >= 72,
+      followUpReason:
+        inactivityHours !== null && inactivityHours >= 72
+          ? "Création commencée mais inactive depuis plus de 72 h."
+          : null
+    };
+  }
+
+  return {
+    betaStage: "activated" as const,
+    needsFollowUp: inactivityHours !== null && inactivityHours >= 72,
+    followUpReason:
+      inactivityHours !== null && inactivityHours >= 72
+        ? "Compte activé mais aucune création détectée depuis plus de 72 h."
+        : null
   };
 }
 
@@ -117,13 +202,96 @@ export async function GET(request: Request) {
       (grants || []).map((grant) => [grant.user_id, grant as BetaGrant])
     );
 
+    const [siteResult, eventResult, feedbackResult] = userIds.length
+      ? await Promise.all([
+          auth.service
+            .from("sites")
+            .select("id,owner_id,slug,status,published_at,updated_at")
+            .in("owner_id", userIds)
+            .order("updated_at", { ascending: false }),
+          auth.service
+            .from("product_events")
+            .select("user_id,site_id,event_name,created_at")
+            .in("user_id", userIds)
+            .gte("created_at", new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString())
+            .order("created_at", { ascending: false }),
+          auth.service
+            .from("user_feedback")
+            .select("user_id,site_id,created_at")
+            .in("user_id", userIds)
+            .gte("created_at", new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString())
+        ])
+      : [
+          { data: [], error: null },
+          { data: [], error: null },
+          { data: [], error: null }
+        ];
+
+    if (siteResult.error || eventResult.error || feedbackResult.error) {
+      throw siteResult.error || eventResult.error || feedbackResult.error;
+    }
+
+    const activityByUser = new Map<string, BetaActivity>();
+    for (const user of users) {
+      const sites = (siteResult.data || []).filter((site) => site.owner_id === user.id);
+      const primarySite = sites[0] || null;
+      const events = (eventResult.data || []).filter((event) => event.user_id === user.id);
+      const feedback = (feedbackResult.data || []).filter((item) => item.user_id === user.id);
+      const timestamps = [
+        user.last_sign_in_at || null,
+        ...sites.map((site) => site.updated_at),
+        ...events.map((event) => event.created_at),
+        ...feedback.map((item) => item.created_at)
+      ].filter((value): value is string => Boolean(value));
+
+      activityByUser.set(user.id, {
+        siteId: primarySite?.id || null,
+        siteSlug: primarySite?.slug || null,
+        siteStatus: primarySite?.status || null,
+        publishedAt:
+          sites
+            .map((site) => site.published_at)
+            .filter((value): value is string => Boolean(value))
+            .sort()
+            .at(-1) || null,
+        lastActivityAt: timestamps.sort().at(-1) || null,
+        feedbackCount: feedback.length,
+        productEventCount: events.length,
+        aiEventCount: events.filter((event) =>
+          [
+            "architect_generated",
+            "architect_regenerated",
+            "architect_refined",
+            "architect_applied",
+            "revision_applied"
+          ].includes(event.event_name)
+        ).length
+      });
+    }
+
     return NextResponse.json(
       {
         limit: 25,
+        operationalTarget: 10,
         defaultAccessDays: 30,
+        followUpRules: {
+          invitationHours: 48,
+          inactivityHours: 72
+        },
         members: users
-          .map((user) => member(user, grantsByUser.get(user.id)))
-          .sort((a, b) => (b.invitedAt || b.createdAt).localeCompare(a.invitedAt || a.createdAt))
+          .map((user) =>
+            member(
+              user,
+              grantsByUser.get(user.id),
+              activityByUser.get(user.id)
+            )
+          )
+          .sort((a, b) => {
+            if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
+            return (b.lastActivityAt || b.invitedAt || b.createdAt).localeCompare(
+              a.lastActivityAt || a.invitedAt || a.createdAt
+            );
+          })
       },
       { headers: { "Cache-Control": "private, no-store" } }
     );
