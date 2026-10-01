@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runStorageBackup } from "../../../../lib/storage-backup";
 import { runAiFinopsMonitorSafely } from "../../../../lib/ai-finops-monitor";
 import { runSupportReconciliationSafely } from "../../../../lib/support-reconcile";
+import { runSupportRemediationSweepSafely } from "../../../../lib/support-remediation-sweep";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,16 +17,23 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [finops, support] = await Promise.all([
+    const [finops, support, remediation] = await Promise.all([
       runAiFinopsMonitorSafely(),
-      runSupportReconciliationSafely()
+      runSupportReconciliationSafely(),
+      runSupportRemediationSweepSafely()
     ]);
     const result = await runStorageBackup();
 
     return NextResponse.json(
-      { ...result, finops, support },
+      { ...result, finops, support, remediation },
       {
-        status: finops.ok && support.ok && (result.ok || !result.configured) ? 200 : 503,
+        status:
+          finops.ok &&
+          support.ok &&
+          remediation.ok &&
+          (result.ok || !result.configured)
+            ? 200
+            : 503,
         headers: {
           "Cache-Control": "private, no-store",
           "X-Content-Type-Options": "nosniff"
