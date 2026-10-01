@@ -111,7 +111,12 @@ test("published site exposes healthy canonical sitemap and latency signals", () 
   const result = buildSupportDiagnosis({
     backendOk: true,
     site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
-    domains: [],
+    domains: [{
+      hostname: "demo.voyage.ajgsolutionsgroup.com",
+      kind: "managed_subdomain",
+      verificationStatus: "verified",
+      isPrimary: true
+    }],
     billingState: "active",
     publicRender: {
       checked: true,
@@ -163,4 +168,18 @@ test("server-side sitemap failure is escalated as an incident", () => {
   });
   assert.equal(result.overall, "incident");
   assert.ok(result.checks.some((check) => check.key === "sitemap" && check.status === "incident"));
+});
+
+
+test("published site with no platform domain advertises deterministic repair", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 }
+  });
+  assert.equal(result.overall, "action");
+  assert.deepEqual(result.repairActions, ["managed_domain_repair"]);
+  assert.equal(result.clientAction, null);
 });

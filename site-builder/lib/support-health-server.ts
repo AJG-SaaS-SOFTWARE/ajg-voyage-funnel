@@ -150,7 +150,7 @@ export async function diagnoseSupportHealth(
   ] = await Promise.all([
     service
       .from("domains")
-      .select("hostname,verification_status,is_primary")
+      .select("hostname,kind,verification_status,is_primary")
       .eq("site_id", site.id),
     service
       .from("site_billing_states")
@@ -183,6 +183,7 @@ export async function diagnoseSupportHealth(
       },
       domains: (domains || []).map((domain) => ({
         hostname: domain.hostname,
+        kind: domain.kind,
         verificationStatus: domain.verification_status,
         isPrimary: domain.is_primary
       })),
