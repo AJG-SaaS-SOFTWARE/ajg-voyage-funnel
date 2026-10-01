@@ -1340,14 +1340,14 @@ export default function BuilderPage() {
             setRemoteSiteId(next.id);setConfig(next.config);setPublished(next.status==="published");setSaved(true);
             await refreshVerifiedPublicUrl(next.id);
           }}>{ownedSites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select>:null}
-          <Link className="preview-shortcut" href="/preview">{tr("Aperçu", "Preview")}</Link>
-          <span className={"cloud-pill " + (remoteMode ? "online" : "local")}>
+          <Link className="preview-shortcut builder-header-utility" href="/preview">{tr("Aperçu", "Preview")}</Link>
+          <span className={"cloud-pill builder-header-status " + (remoteMode ? "online" : "local")}>
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
-          {userEmail ? <Link href="/plans" className="button secondary">{tr("Mon offre", "My plan")}</Link> : null}
-          {userEmail ? <Link href="/domains" className="button secondary">{tr("Domaines", "Domains")}</Link> : null}
-          {userEmail ? <Link href="/data" className="button secondary">{tr("Mes données", "My data")}</Link> : null}
-          {userEmail ? <Link href="/feedback" className="button secondary">{tr("Donner mon avis", "Give feedback")}</Link> : null}
+          {userEmail ? <Link href="/plans" className="button secondary builder-header-action">{tr("Mon offre", "My plan")}</Link> : null}
+          {userEmail ? <Link href="/domains" className="button secondary builder-header-action">{tr("Domaines", "Domains")}</Link> : null}
+          {userEmail ? <Link href="/data" className="button secondary builder-header-action">{tr("Mes données", "My data")}</Link> : null}
+          {userEmail ? <Link href="/feedback" className="button secondary builder-header-action">{tr("Donner mon avis", "Give feedback")}</Link> : null}
           {userEmail ? (
             <button type="button" className="account-button" onClick={logout} title={userEmail}>
               <span>{userEmail.charAt(0).toUpperCase()}</span>
