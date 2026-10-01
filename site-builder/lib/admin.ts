@@ -280,6 +280,22 @@ export type AdminBetaMetrics = {
       reviewToPublished: number;
     };
   };
+  onboardingPaths: {
+    totalSelections: number;
+    aiShare: number;
+    manual: {
+      selected: number;
+      published: number;
+      publishRate: number;
+      medianHoursToPublish: number | null;
+    };
+    ai: {
+      selected: number;
+      published: number;
+      publishRate: number;
+      medianHoursToPublish: number | null;
+    };
+  };
   ai: {
     generations: number;
     users: number;
