@@ -120,7 +120,10 @@ export function deriveOnboardingCreationPath(input: {
   canCreateWithAi: boolean;
   entitlementActive: boolean;
 }): OnboardingCreationPath {
-  if (input.progress.done || input.progress.completeCount >= 2) {
+  const storyComplete =
+    input.progress.steps.find((step) => step.key === "story")?.complete === true;
+
+  if (input.progress.done || storyComplete) {
     return { mode: "resume", showChoice: false };
   }
 
