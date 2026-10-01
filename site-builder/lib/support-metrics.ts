@@ -73,7 +73,6 @@ export function calculateSupportMetrics(input: {
   remediations: SupportMetricsRemediation[];
   sites: SupportMetricsSite[];
 }): SupportMetrics {
-  const ticketIds = new Set(input.tickets.map((ticket) => ticket.id));
   const activeClients = new Set(
     input.sites.map((site) => site.owner_id).filter(Boolean)
   ).size;
@@ -83,8 +82,6 @@ export function calculateSupportMetrics(input: {
   const autoResolved = new Set<string>();
 
   for (const event of input.events) {
-    if (!ticketIds.has(event.ticket_id)) continue;
-
     if (event.actor_type === "admin") {
       adminTouched.add(event.ticket_id);
     }
