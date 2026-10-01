@@ -69,3 +69,21 @@ Le cycle de vie des demandes est journalisé dans `support_ticket_events` sans r
 - changement de statut et résolution par l'administration.
 
 Les métadonnées sont bornées à des primitives techniques courtes (statuts, catégorie, sévérité, diagnostic, code de résolution, âge du ticket). Les rôles navigateur restent en lecture seule ; seules les routes serveur privilégiées peuvent ajouter un événement. Une indisponibilité du journal ne provoque pas la répétition d'une action métier déjà réussie : elle est signalée côté serveur pour éviter la création de tickets ou de résolutions en double.
+
+
+## Auto-remédiation technique sûre
+
+Le premier mécanisme de correction automatique couvre uniquement le sous-domaine AJG géré par la plateforme.
+
+Le client peut utiliser **Corriger automatiquement** lorsque le Health Center détecte que ce sous-domaine manque ou n'est pas encore vérifié. Le serveur :
+
+- revérifie l'identité et la propriété du site ;
+- refuse toute réparation si le site n'est pas publié ou si une demande d'effacement est active ;
+- reconstruit uniquement le hostname AJG attendu à partir du slug et du domaine racine configuré ;
+- ne modifie jamais automatiquement un domaine personnalisé ;
+- ne remplace jamais un hostname géré incohérent : ce cas est escaladé ;
+- conserve un domaine personnalisé vérifié comme domaine primaire ;
+- journalise chaque tentative dans `support_remediation_runs` ;
+- limite les répétitions rapprochées.
+
+Cette première auto-remédiation est idempotente et ne touche à aucun texte, CTA, page ou choix graphique.
