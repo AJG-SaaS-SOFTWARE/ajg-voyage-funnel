@@ -236,6 +236,74 @@ async function repairManagedDomain(
     });
   }
 
+  const verifiedCustomInSnapshot = (domains || []).find(
+    (domain) =>
+      domain.kind === "custom_domain" &&
+      domain.verification_status === "verified"
+  );
+
+  if (managed.verification_status === "verified") {
+    if (verifiedCustomInSnapshot) {
+      return finish(service, {
+        ...input,
+        action,
+        status: "no_change",
+        code: "verified_custom_domain_is_primary_candidate",
+        changed: false,
+        verified: true
+      });
+    }
+    if (managed.is_primary) {
+      return finish(service, {
+        ...input,
+        action,
+        status: "no_change",
+        code: "managed_domain_already_healthy",
+        changed: false,
+        verified: true
+      });
+    }
+
+    const { error: clearPrimaryError } = await service
+      .from("domains")
+      .update({ is_primary: false })
+      .eq("site_id", site.id);
+    if (clearPrimaryError) {
+      return finish(service, {
+        ...input,
+        action,
+        status: "failed",
+        code: "primary_domain_reset_failed",
+        changed: false,
+        verified: true
+      });
+    }
+
+    const { error: promoteError } = await service
+      .from("domains")
+      .update({ is_primary: true })
+      .eq("id", managed.id);
+    if (promoteError) {
+      return finish(service, {
+        ...input,
+        action,
+        status: "failed",
+        code: "managed_domain_primary_repair_failed",
+        changed: false,
+        verified: true
+      });
+    }
+
+    return finish(service, {
+      ...input,
+      action,
+      status: "succeeded",
+      code: "managed_domain_primary_repaired",
+      changed: true,
+      verified: true
+    });
+  }
+
   try {
     const sync = await syncVercelDomain(expectedHostname, "managed_subdomain");
     if (!sync.verified) {
