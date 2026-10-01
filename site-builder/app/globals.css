@@ -3614,3 +3614,22 @@ button.active .step-label small{color:#63817f}
 .onboarding-path-choice b{display:block;font-size:.86rem;margin-bottom:4px}
 .onboarding-path-choice small{display:block;color:var(--premium-muted);font-size:.75rem;line-height:1.5}
 @media(max-width:760px){.onboarding-path-choice{align-items:flex-start;flex-direction:column}}
+
+.post-publish-health{margin-top:16px;padding:18px;border:1px solid var(--premium-line);border-radius:18px;background:rgba(255,255,255,.76);display:grid;gap:14px}
+.post-publish-health.healthy{border-color:rgba(12,159,150,.3);background:rgba(237,250,247,.82)}
+.post-publish-health.incident{border-color:rgba(171,73,58,.28);background:rgba(255,246,244,.86)}
+.post-publish-health-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.post-publish-health-head strong{display:block;margin-top:4px;font-family:var(--display-serif);font-size:1.35rem;font-weight:600}
+.health-status-badge{padding:6px 10px;border-radius:999px;font-size:.72rem;font-weight:800;background:#edf0ee;color:#536068}
+.health-status-badge.healthy{background:#dff7f4;color:#087d76}
+.health-status-badge.action{background:#fff1cf;color:#8a6412}
+.health-status-badge.incident{background:#fde5e1;color:#9d392e}
+.post-publish-health-checks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.post-publish-health-checks li{display:flex;gap:9px;padding:10px;border:1px solid var(--premium-line);border-radius:12px;background:#fff}
+.post-publish-health-checks li>span{font-weight:900}
+.post-publish-health-checks li.healthy>span{color:#087d76}
+.post-publish-health-checks li.action>span{color:#9a7115}
+.post-publish-health-checks li.incident>span{color:#a23f34}
+.post-publish-health-checks b{display:block;font-size:.78rem}
+.post-publish-health-checks small{display:block;color:var(--premium-muted);font-size:.7rem;line-height:1.4;margin-top:2px}
+@media(max-width:680px){.post-publish-health-checks{grid-template-columns:1fr}.post-publish-health-head{align-items:flex-start;flex-direction:column}}
