@@ -73,7 +73,7 @@ export function AccountShell({
 
           <Link className="account-pricing-link" href={locale === "en" ? "/pricing" : "/tarifs"}>
             <span>
-              <b>{tr("Comparer les offres", "Compare plans")}</b>
+              <b>{tr("Tarifs · comparer les offres", "Pricing · compare plans")}</b>
               <small>{tr("Essentiel, Growth et Création IA", "Essential, Growth and AI Launch")}</small>
             </span>
             <span aria-hidden="true">→</span>
