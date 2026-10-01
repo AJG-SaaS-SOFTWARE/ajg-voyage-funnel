@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { ProductLocaleProvider } from "../components/ProductLocaleProvider";
 import type { ProductLocale } from "../lib/product-i18n";
 import "./globals.css";
+import "./ajg-design-system.css";
 
 export const metadata: Metadata = {
   title: "AJG Site Builder",
