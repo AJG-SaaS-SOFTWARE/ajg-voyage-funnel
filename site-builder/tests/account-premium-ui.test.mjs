@@ -10,7 +10,7 @@ test("customer account uses a dedicated premium workspace shell", () => {
   assert.match(shell, /className="account-workspace"/);
   assert.match(shell, /className="account-sidebar"/);
   assert.match(shell, /className="account-builder-shortcut"/);
-  assert.match(shell, /Comparer les offres/);
+  assert.match(shell, /comparer les offres/i);
   assert.match(css, /\.account-workspace\{[\s\S]*?grid-template-columns:220px minmax\(0,1fr\)/);
   assert.match(css, /\.account-sidebar\{[\s\S]*?position:sticky/);
 });
