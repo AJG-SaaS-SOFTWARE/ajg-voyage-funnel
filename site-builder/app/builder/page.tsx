@@ -1838,6 +1838,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  architectureMode={config.architecture.mode}
                   siteContext={aiSiteContext}
                   onApply={(text) => update("heroTagline", text)}
                   placeholder={tr("Ex. Une phrase très courte qui résume mon univers sans slogan commercial générique", "e.g. A very short tagline that captures my identity without a generic sales slogan")}
