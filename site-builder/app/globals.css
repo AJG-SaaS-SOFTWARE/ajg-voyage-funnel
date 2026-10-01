@@ -3586,3 +3586,25 @@ button.active .step-label small{color:#63817f}
 }
 .builder-public-legal-footer a{color:inherit;text-decoration:none}
 .builder-public-legal-footer a:hover{color:#24434b;text-decoration:underline}
+
+
+/* Onboarding progress */
+.onboarding-progress-card{padding:28px 30px;margin:0 0 22px;display:grid;gap:18px}
+.onboarding-progress-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.onboarding-progress-head .eyebrow{margin:0 0 7px}
+.onboarding-progress-head h2{font-family:var(--display-serif);font-size:clamp(1.8rem,3vw,2.7rem);font-weight:500;letter-spacing:-.035em;margin:0 0 8px}
+.onboarding-progress-head p:last-child{margin:0;color:var(--premium-muted);font-size:.88rem}
+.onboarding-progress-head>strong{font-family:var(--display-serif);font-size:2.2rem;font-weight:500;color:var(--premium-teal-deep)}
+.onboarding-progress-track{height:8px;border-radius:999px;background:#e9ece9;overflow:hidden}
+.onboarding-progress-track>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--premium-teal),#67cfc5);transition:width .25s ease}
+.onboarding-checklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.onboarding-checklist li{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;border:1px solid var(--premium-line);border-radius:14px;background:rgba(250,250,248,.72)}
+.onboarding-checklist li>span{display:grid;place-items:center;flex:0 0 24px;height:24px;border-radius:50%;background:#eef0ee;color:#66747a;font-weight:900;font-size:.8rem}
+.onboarding-checklist li.done>span{background:#dff7f4;color:#087d76}
+.onboarding-checklist li.next{border-color:rgba(12,159,150,.35);background:#f2fbf9}
+.onboarding-checklist li.next>span{background:var(--premium-teal);color:#fff}
+.onboarding-checklist b{display:block;font-size:.82rem;margin:1px 0 3px}
+.onboarding-checklist small{display:block;color:var(--premium-muted);font-size:.72rem;line-height:1.4}
+.onboarding-autosave-note{color:var(--premium-muted);font-size:.74rem;line-height:1.45}
+@media(max-width:900px){.onboarding-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.onboarding-progress-card{padding:22px}.onboarding-progress-head{align-items:center}.onboarding-progress-head>strong{font-size:1.7rem}.onboarding-checklist{grid-template-columns:1fr}}
