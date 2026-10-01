@@ -7,7 +7,12 @@ const ALLOWED_EVENTS = new Set([
   "questionnaire_started",
   "questionnaire_completed",
   "lead_submitted",
-  "calendly_clicked"
+  "calendly_clicked",
+  "external_travel_advantage_official_clicked",
+  "external_mwr_life_official_clicked",
+  "external_trustpilot_clicked",
+  "external_m6_clicked",
+  "external_bfmtv_clicked"
 ]);
 
 function clean(value, max = 250) {
