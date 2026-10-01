@@ -334,7 +334,8 @@ Release production, Storage privé et recette E2E sont validés. Le sous-domaine
 - [x] gate bêta privé ajouté et doublé côté serveur : l’interface désactive les invitations si un prérequis critique n’est pas au vert et l’API refait les contrôles avant toute invitation ; warnings non bloquants et fonctions commerciales différées restent séparés ;
 - [x] cohorte opérationnelle volontairement plafonnée à 10 testeurs pour cette phase malgré la limite technique supérieure ;
 - [x] statut Beta Tester séparé de Stripe : accès Pro complet temporaire (Architecte Premium, domaine personnalisé, quotas Pro), expiration automatique, renouvellement/retrait admin et retour à l’offre réelle sans suppression du site ;
-- [x] page « Mon offre » et pages publiques /tarifs + /pricing alignées sur le positionnement commercial : Essentiel 19 €/mois ou 190 €/an, Pro IA 39 €/mois ou 390 €/an ; Beta Tester conservé hors grille publique et Stripe live désactivé pendant la bêta ;
+- [x] parcours Beta Tester guidé depuis le tableau de bord : mission création → publication → test visiteur → feedback, expiration visible, rappel explicite d’absence de facturation automatique et feedback automatiquement rattaché au site testé ;
+- [x] page « Mon offre » et pages publiques /tarifs + /pricing alignées sur le positionnement commercial BUILD / RUN / GROW : Essentiel 15 €/mois ou 150 €/an, Growth 29 €/mois ou 290 €/an, Création IA 49 € ponctuelle ; Beta Tester conservé hors grille publique et Stripe live désactivé pendant la bêta ;
 - [ ] inviter puis faire tester 5 à 10 comptes réels ;
 - [ ] mesurer activation, publication, usage IA, abandons et retours ;
 - [ ] corriger uniquement les frictions confirmées par ces observations.
