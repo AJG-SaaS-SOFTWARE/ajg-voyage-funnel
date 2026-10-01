@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "../lib/supabase-browser";
 import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
 import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "../components/LanguageSwitch";
+import { deriveOnboardingProgress } from "../lib/onboarding";
 
 function LockIcon() {
   return (
@@ -110,6 +111,19 @@ export default function Home() {
     setDraft(loadDraft());
   };
 
+  const onboarding = draft
+    ? deriveOnboardingProgress(
+        draft.config,
+        draft.status === "published" ? "published" : "draft"
+      )
+    : null;
+  const onboardingHref =
+    remoteStatus === "guest"
+      ? "/login"
+      : onboarding?.nextStep
+        ? `/builder?step=${onboarding.nextStep}`
+        : "/builder";
+
   return (
     <main className="shell premium-home">
       <section className="dashboard-hero">
@@ -169,6 +183,53 @@ export default function Home() {
         </div>
       </section>
 
+      {onboarding ? (
+        <section className="panel onboarding-progress-card" aria-label={tr("Progression de création", "Website setup progress")}>
+          <div className="onboarding-progress-head">
+            <div>
+              <p className="eyebrow">{tr("Votre progression", "Your progress")}</p>
+              <h2>
+                {onboarding.done
+                  ? tr("Votre site est prêt et publié", "Your website is ready and published")
+                  : tr("Reprenez exactement où vous en étiez", "Resume exactly where you left off")}
+              </h2>
+              <p>
+                {onboarding.done
+                  ? tr("Les étapes essentielles de mise en ligne sont terminées.", "The essential launch steps are complete.")
+                  : `${onboarding.completeCount}/${onboarding.totalCount} ${tr("étapes essentielles terminées", "essential steps complete")}`}
+              </p>
+            </div>
+            <strong>{onboarding.percent}%</strong>
+          </div>
+          <div className="onboarding-progress-track" aria-hidden="true">
+            <span style={{ width: `${onboarding.percent}%` }} />
+          </div>
+          <ol className="onboarding-checklist">
+            {onboarding.steps.map((item) => (
+              <li key={item.key} className={item.complete ? "done" : item.key === onboarding.nextStep ? "next" : ""}>
+                <span aria-hidden="true">{item.complete ? "✓" : item.key === onboarding.nextStep ? "→" : "○"}</span>
+                <div>
+                  <b>{locale === "en" ? item.labelEn : item.labelFr}</b>
+                  <small>{locale === "en" ? item.detailEn : item.detailFr}</small>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <div className="actions">
+            <Link className="button primary premium-button" href={onboardingHref}>
+              {onboarding.done
+                ? tr("Ouvrir le Builder", "Open Builder")
+                : tr("Continuer l’installation", "Continue setup")} <span aria-hidden="true">→</span>
+            </Link>
+            {!onboarding.done ? (
+              <small className="onboarding-autosave-note">
+                {tr("Votre brouillon est repris automatiquement et sauvegardé au fil des modifications.", "Your draft resumes automatically and is saved as you make changes.")}
+              </small>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       <section className="dashboard-grid premium-dashboard-grid">
         <article className="panel dashboard-card premium-card create-card">
           <div className="card-copy">
@@ -177,7 +238,7 @@ export default function Home() {
             <h2>{draft?.config.brandName || tr("Nouveau site", "New website")}</h2>
             <p>{tr("Identité, textes, rendez-vous, langues, réseaux sociaux et options du site.", "Identity, copy, bookings, languages, social networks and website options.")}</p>
             <div className="actions">
-              <Link className="button primary premium-button" href={remoteStatus === "guest" ? "/login" : "/builder"}>
+              <Link className="button primary premium-button" href={onboardingHref}>
                 {draft ? tr("Continuer la configuration", "Continue setup") : tr("Commencer", "Start")} <span aria-hidden="true">→</span>
               </Link>
               <Link className="button secondary premium-secondary" href="/preview">{tr("Voir l’aperçu", "Preview")}</Link>
