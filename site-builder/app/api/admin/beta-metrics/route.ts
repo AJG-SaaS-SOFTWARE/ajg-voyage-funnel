@@ -254,6 +254,11 @@ export async function GET(request: Request) {
     "architect_applied",
     "revision_applied"
   );
+  const identityUsers = usersFor("step_identity");
+  const storyUsers = usersFor("step_story");
+  const designUsers = usersFor("step_design");
+  const bookingUsers = usersFor("step_booking");
+  const optionsUsers = usersFor("step_options");
   const reviewUsers = usersFor("step_review");
   const publishedUsers = usersFor("publish_success");
   const aiUsers = new Set(aiRows.map((item) => item.user_id));
@@ -408,7 +413,24 @@ export async function GET(request: Request) {
         reviewRate: percent(reviewed, opened),
         publishRate: percent(published, opened),
         openedWithoutEngagement: Math.max(0, opened - engaged),
-        openedWithoutPublication: Math.max(0, opened - published)
+        openedWithoutPublication: Math.max(0, opened - published),
+        steps: {
+          identity: identityUsers.size,
+          story: storyUsers.size,
+          design: designUsers.size,
+          booking: bookingUsers.size,
+          options: optionsUsers.size,
+          review: reviewUsers.size,
+          published
+        },
+        dropOffs: {
+          identityToStory: Math.max(0, identityUsers.size - storyUsers.size),
+          storyToDesign: Math.max(0, storyUsers.size - designUsers.size),
+          designToBooking: Math.max(0, designUsers.size - bookingUsers.size),
+          bookingToOptions: Math.max(0, bookingUsers.size - optionsUsers.size),
+          optionsToReview: Math.max(0, optionsUsers.size - reviewUsers.size),
+          reviewToPublished: Math.max(0, reviewUsers.size - published)
+        }
       },
       ai: {
         generations: aiRows.length,
@@ -525,6 +547,7 @@ export async function GET(request: Request) {
           "Utilisateur distinct ayant atteint l’étape Message ou appliqué une proposition AI Site Architect/révision.",
         reviewed: "Utilisateur distinct ayant atteint l’étape Publication / revue.",
         published: "Utilisateur distinct ayant déclenché une publication réussie.",
+        onboardingSteps: "Utilisateurs distincts ayant atteint chaque étape du Builder. Les écarts entre étapes permettent de localiser une friction sans stocker le contenu saisi.",
         aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
         architectAttempts: "Propositions Premium effectivement rendues au client ; aucun brief ni contenu client n’est enregistré dans les événements.",
         architectFailureRate: "Part des demandes Premium lancées qui échouent après réservation du quota et ne renvoient aucune proposition exploitable.",
