@@ -2072,6 +2072,7 @@ export default function BuilderPage() {
                   affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
+                  architectureMode={config.architecture.mode}
                   siteContext={aiSiteContext}
                 />
 
