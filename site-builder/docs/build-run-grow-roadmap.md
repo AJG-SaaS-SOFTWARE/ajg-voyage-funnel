@@ -315,11 +315,11 @@ Objectif : un client doit pouvoir passer de zéro à site publié sans intervent
 
 ### À faire
 
-- [ ] onboarding adaptatif selon plan ;
-- [ ] progression visible ;
-- [ ] reprise automatique après interruption ;
-- [ ] autosave à chaque étape ;
-- [ ] détection des données manquantes ;
+- [x] onboarding adaptatif selon plan ;
+- [x] progression visible ;
+- [x] reprise automatique après interruption ;
+- [x] autosave à chaque étape ;
+- [x] détection des données manquantes ;
 - [ ] aide contextuelle ;
 - [ ] exemples uniquement lorsque nécessaires ;
 - [ ] diagnostic pré-publication ;
@@ -329,6 +329,10 @@ Objectif : un client doit pouvoir passer de zéro à site publié sans intervent
 - [ ] self-service export ;
 - [ ] self-service suppression ;
 - [ ] messages d'erreur exploitables, jamais "une erreur est survenue" sans prochaine action.
+
+### État d’implémentation
+
+Le tableau de bord calcule une progression déterministe sur les étapes essentielles (identité, message, informations légales, publication), renvoie directement vers la première étape incomplète et réutilise le brouillon distant/autosave existant. Tant que le contenu principal n’est pas engagé, le choix du parcours dépend des droits serveur : le bouton « Créer avec l’IA » n’est proposé que lorsque le droit BUILD du site est actif ; sinon le parcours manuel reste immédiatement disponible et l’offre Création IA est présentée séparément.
 
 ### KPI de sortie
 
