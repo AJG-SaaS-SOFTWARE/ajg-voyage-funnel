@@ -2161,3 +2161,19 @@ details p { color: var(--ink-soft); max-width: 760px; margin: 14px 0 0; }
 @media (max-width: 800px) {
   .external-proof-card { min-height: 205px; }
 }
+
+
+/* Stronger service-card separation */
+.travel-category {
+  border-color: rgba(32,117,112,.28);
+  background: linear-gradient(145deg, rgba(205,237,231,.90), rgba(222,240,236,.96));
+  box-shadow: 0 11px 28px rgba(7,44,47,.06);
+}
+.travel-category:hover {
+  border-color: rgba(32,117,112,.38);
+  box-shadow: 0 16px 34px rgba(7,44,47,.09);
+}
+.travel-category-ai {
+  border-color: rgba(32,117,112,.30);
+  background: linear-gradient(120deg, rgba(199,234,228,.96), rgba(220,240,236,.96));
+}
