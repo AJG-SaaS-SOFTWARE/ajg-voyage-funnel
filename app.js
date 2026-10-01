@@ -26,6 +26,13 @@
     link.addEventListener('click', () => trackFunnel('calendly_clicked'));
   });
 
+  document.querySelectorAll('[data-external-proof]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const source = link.dataset.externalProof;
+      if (source) trackFunnel(`external_${source}_clicked`);
+    });
+  });
+
   document.querySelectorAll('[data-lang-switch]').forEach((link) => {
     try {
       const url = new URL(link.getAttribute('href'), window.location.origin);
