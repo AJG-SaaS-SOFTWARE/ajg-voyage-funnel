@@ -13,6 +13,17 @@ function percent(value: number, total: number) {
   return total > 0 ? Math.round((value / total) * 100) : 0;
 }
 
+function median(values: number[]) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  const value =
+    sorted.length % 2
+      ? sorted[middle]
+      : (sorted[middle - 1] + sorted[middle]) / 2;
+  return Math.round(value * 10) / 10;
+}
+
 function aggregateProviderUsage(rows: any[]) {
   const inputTokens = rows.reduce(
     (sum, item) => sum + (Number(item.input_tokens) || 0),
@@ -264,6 +275,56 @@ export async function GET(request: Request) {
   const aiUsers = new Set(aiRows.map((item) => item.user_id));
   const feedbackUsers = new Set(feedbackRows.map((item) => item.user_id));
 
+  const pathEvents = eventRows
+    .filter((item) =>
+      ["onboarding_manual_selected", "onboarding_ai_selected"].includes(item.event_name)
+    )
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  const firstPathByUser = new Map<string, { path: "manual" | "ai"; createdAt: string }>();
+  for (const item of pathEvents) {
+    if (typeof item.user_id !== "string" || firstPathByUser.has(item.user_id)) continue;
+    firstPathByUser.set(item.user_id, {
+      path: item.event_name === "onboarding_ai_selected" ? "ai" : "manual",
+      createdAt: item.created_at
+    });
+  }
+
+  const firstPublishByUser = new Map<string, string>();
+  for (const item of eventRows
+    .filter((event) => event.event_name === "publish_success")
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))) {
+    if (typeof item.user_id === "string" && !firstPublishByUser.has(item.user_id)) {
+      firstPublishByUser.set(item.user_id, item.created_at);
+    }
+  }
+
+  const pathStats = (path: "manual" | "ai") => {
+    const selected = [...firstPathByUser.entries()].filter(([, value]) => value.path === path);
+    const hoursToPublish: number[] = [];
+    let publishedAfterSelection = 0;
+
+    for (const [userId, selection] of selected) {
+      const publishedAt = firstPublishByUser.get(userId);
+      if (!publishedAt) continue;
+      const start = Date.parse(selection.createdAt);
+      const end = Date.parse(publishedAt);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) continue;
+      publishedAfterSelection += 1;
+      hoursToPublish.push((end - start) / (60 * 60 * 1000));
+    }
+
+    return {
+      selected: selected.length,
+      published: publishedAfterSelection,
+      publishRate: percent(publishedAfterSelection, selected.length),
+      medianHoursToPublish: median(hoursToPublish)
+    };
+  };
+
+  const manualPath = pathStats("manual");
+  const aiPath = pathStats("ai");
+  const pathSelections = manualPath.selected + aiPath.selected;
+
   const architectFirstRows = eventRows.filter(
     (item) => item.event_name === "architect_generated"
   );
@@ -432,6 +493,12 @@ export async function GET(request: Request) {
           reviewToPublished: Math.max(0, reviewUsers.size - published)
         }
       },
+      onboardingPaths: {
+        totalSelections: pathSelections,
+        aiShare: percent(aiPath.selected, pathSelections),
+        manual: manualPath,
+        ai: aiPath
+      },
       ai: {
         generations: aiRows.length,
         users: aiUsers.size,
@@ -548,6 +615,7 @@ export async function GET(request: Request) {
         reviewed: "Utilisateur distinct ayant atteint l’étape Publication / revue.",
         published: "Utilisateur distinct ayant déclenché une publication réussie.",
         onboardingSteps: "Utilisateurs distincts ayant atteint chaque étape du Builder. Les écarts entre étapes permettent de localiser une friction sans stocker le contenu saisi.",
+        onboardingPaths: "Premier choix explicite entre parcours manuel et Création IA, puis publication ultérieure et délai médian jusqu’à cette publication. Aucun contenu saisi n’est stocké dans cet événement.",
         aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
         architectAttempts: "Propositions Premium effectivement rendues au client ; aucun brief ni contenu client n’est enregistré dans les événements.",
         architectFailureRate: "Part des demandes Premium lancées qui échouent après réservation du quota et ne renvoient aucune proposition exploitable.",
