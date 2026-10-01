@@ -3651,3 +3651,20 @@ button.active .step-label small{color:#63817f}
 .onboarding-path-kpis article>strong{font-size:.78rem}
 .onboarding-path-kpis article>small{font-size:.69rem;line-height:1.4;color:var(--premium-muted)}
 @media(max-width:760px){.onboarding-path-kpis{grid-template-columns:1fr}}
+
+.beta-tester-mission{margin:0 0 22px;padding:26px 28px;display:grid;gap:17px;border-color:rgba(12,159,150,.26);background:linear-gradient(135deg,rgba(238,250,248,.88),rgba(255,255,255,.94))}
+.beta-tester-mission-head{display:flex;align-items:flex-start;justify-content:space-between;gap:22px}
+.beta-tester-mission-head h2{font-family:var(--display-serif);font-size:clamp(1.7rem,2.8vw,2.45rem);font-weight:500;letter-spacing:-.03em;margin:4px 0 8px}
+.beta-tester-mission-head p:last-child{margin:0;max-width:780px;color:var(--premium-muted);line-height:1.55}
+.beta-access-expiry{flex:0 0 auto;padding:9px 12px;border:1px solid rgba(12,159,150,.24);border-radius:999px;background:#fff;font-size:.72rem;color:var(--premium-muted)}
+.beta-access-expiry b{color:var(--premium-teal-deep)}
+.beta-mission-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.beta-mission-steps li{display:flex;align-items:flex-start;gap:9px;padding:12px;border:1px solid var(--premium-line);border-radius:14px;background:rgba(255,255,255,.82)}
+.beta-mission-steps li>span{display:grid;place-items:center;flex:0 0 25px;height:25px;border-radius:50%;background:#eef0ee;color:#657178;font-size:.72rem;font-weight:900}
+.beta-mission-steps li.done>span{background:#dff7f4;color:#087d76}
+.beta-mission-steps b{display:block;font-size:.8rem;margin-bottom:3px}
+.beta-mission-steps small{display:block;font-size:.7rem;line-height:1.4;color:var(--premium-muted)}
+.beta-mission-actions{margin-top:0}
+.beta-mission-note{color:var(--premium-muted);font-size:.7rem;line-height:1.45}
+@media(max-width:900px){.beta-mission-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.beta-tester-mission{padding:21px}.beta-tester-mission-head{flex-direction:column}.beta-mission-steps{grid-template-columns:1fr}}
