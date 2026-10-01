@@ -357,21 +357,26 @@ Chaque site dispose d'un statut :
 
 ### Contrôles automatiques
 
-- [ ] publication ;
-- [ ] domaine / DNS ;
-- [ ] HTTPS ;
+- [x] publication ;
+- [x] domaine / DNS ;
+- [x] HTTPS ;
 - [ ] formulaire ;
-- [ ] liens cassés ;
-- [ ] images manquantes ;
-- [ ] erreurs de rendu ;
-- [ ] stockage ;
+- [x] liens configurés invalides (format HTTPS) ;
+- [ ] liens externes devenus inaccessibles après publication ;
+- [x] images manquantes dans les modules/médias explicitement activés ;
+- [x] erreurs de rendu ;
+- [x] stockage ;
 - [ ] quota IA ;
-- [ ] paiement ;
-- [ ] sauvegarde ;
-- [ ] SEO essentiel ;
-- [ ] sitemap / canonical ;
-- [ ] latence anormale ;
+- [x] paiement ;
+- [x] sauvegarde ;
+- [x] SEO essentiel ;
+- [x] sitemap / canonical ;
+- [x] latence anormale ;
 - [ ] erreurs runtime récentes.
+
+### État d’implémentation
+
+Le Health Center vérifie déjà le backend, l’état de publication, le rendu public HTTPS, le domaine/DNS, la facturation, les sauvegardes, les garde-fous IA, la canonical, le sitemap et la latence. Il contrôle désormais aussi de façon déterministe le module Contact, les galeries/médias publiables, le format des liens configurés et la disponibilité des buckets `site-media` / `site-private-media`. Ces contrôles n’envoient aucun contenu client à un LLM et ne suivent pas les liens externes arbitraires.
 
 ### Auto-remédiation
 

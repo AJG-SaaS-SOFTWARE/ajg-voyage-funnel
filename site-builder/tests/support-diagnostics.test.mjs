@@ -183,3 +183,71 @@ test("published site with no platform domain advertises deterministic repair", (
   assert.deepEqual(result.repairActions, ["managed_domain_repair"]);
   assert.equal(result.clientAction, null);
 });
+
+
+test("content health flags enabled contact, gallery and publishable-media gaps with client actions", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    content: {
+      contactEnabled: true,
+      contactEmailValid: false,
+      galleryEnabled: true,
+      galleryImageCount: 0,
+      invalidConfiguredLinks: 1,
+      checkedConfiguredLinks: 2,
+      missingPublishableMedia: 1
+    },
+    storage: { publicBucketAvailable: true, privateBucketAvailable: true }
+  });
+
+  assert.equal(result.overall, "action");
+  assert.ok(result.checks.some((check) => check.key === "contact" && check.status === "action" && check.clientAction));
+  assert.ok(result.checks.some((check) => check.key === "images" && check.status === "action" && check.clientAction));
+  assert.ok(result.checks.some((check) => check.key === "content_links" && check.status === "action" && check.clientAction));
+  assert.ok(result.checks.some((check) => check.key === "storage" && check.status === "healthy"));
+});
+
+test("missing required storage bucket is an infrastructure incident without customer blame", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    storage: { publicBucketAvailable: true, privateBucketAvailable: false }
+  });
+
+  assert.equal(result.overall, "incident");
+  const check = result.checks.find((item) => item.key === "storage");
+  assert.equal(check?.status, "incident");
+  assert.equal(check?.clientAction, undefined);
+});
+
+test("healthy configured content does not create a false customer action", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    content: {
+      contactEnabled: true,
+      contactEmailValid: true,
+      galleryEnabled: true,
+      galleryImageCount: 3,
+      invalidConfiguredLinks: 0,
+      checkedConfiguredLinks: 3,
+      missingPublishableMedia: 0
+    },
+    storage: { publicBucketAvailable: true, privateBucketAvailable: true }
+  });
+
+  assert.ok(result.checks.some((check) => check.key === "contact" && check.status === "healthy"));
+  assert.ok(result.checks.some((check) => check.key === "images" && check.status === "healthy"));
+  assert.ok(result.checks.some((check) => check.key === "content_links" && check.status === "healthy"));
+  assert.ok(result.checks.some((check) => check.key === "storage" && check.status === "healthy"));
+});
