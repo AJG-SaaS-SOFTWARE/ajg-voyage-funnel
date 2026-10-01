@@ -138,20 +138,35 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
       });
     }
 
-    const primary = input.domains.find((item) => item.isPrimary);
-    const verified = input.domains.find((item) => item.verificationStatus === "verified");
+    const custom = input.domains.find((item) => item.kind === "custom_domain");
     const managed = input.domains.find((item) => item.kind === "managed_subdomain");
-    const failed = input.domains.find((item) => item.verificationStatus === "failed");
-    const pending = input.domains.find((item) => item.verificationStatus === "pending");
+    const primary = input.domains.find((item) => item.isPrimary);
 
-    if (primary?.verificationStatus === "verified" || verified) {
-      const domain = primary?.verificationStatus === "verified" ? primary : verified!;
-      checks.push({
-        key: "domain",
-        label: "Domaine",
-        status: "healthy",
-        detail: `${domain.hostname} est vérifié.`
-      });
+    if (custom) {
+      if (custom.verificationStatus === "verified") {
+        checks.push({
+          key: "domain",
+          label: "Domaine",
+          status: "healthy",
+          detail: `${custom.hostname} est vérifié.`
+        });
+      } else if (custom.verificationStatus === "failed") {
+        checks.push({
+          key: "domain",
+          label: "Domaine",
+          status: "action",
+          detail: `${custom.hostname} n'a pas pu être vérifié.`,
+          clientAction: "Ouvrez la rubrique Domaine et contrôlez les enregistrements DNS demandés."
+        });
+      } else {
+        checks.push({
+          key: "domain",
+          label: "Domaine",
+          status: "action",
+          detail: `${custom.hostname} est encore en attente de vérification DNS.`,
+          clientAction: "Vérifiez les DNS indiqués dans la rubrique Domaine puis relancez la vérification."
+        });
+      }
     } else if (!managed && input.site.status === "published") {
       repairActions.push("managed_domain_repair");
       checks.push({
@@ -160,7 +175,14 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         status: "action",
         detail: "Le sous-domaine AJG géré par la plateforme est absent. Une correction automatique est disponible."
       });
-    } else if (managed && managed.verificationStatus !== "verified") {
+    } else if (managed?.verificationStatus === "verified") {
+      checks.push({
+        key: "domain",
+        label: "Domaine",
+        status: "healthy",
+        detail: `${managed.hostname} est vérifié.`
+      });
+    } else if (managed) {
       repairActions.push("managed_domain_repair");
       checks.push({
         key: "domain",
@@ -168,21 +190,12 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         status: "action",
         detail: `${managed.hostname} n'est pas encore opérationnel. AJG peut retenter automatiquement son rattachement technique.`
       });
-    } else if (failed) {
+    } else if (primary?.verificationStatus === "verified") {
       checks.push({
         key: "domain",
         label: "Domaine",
-        status: "action",
-        detail: `${failed.hostname} n'a pas pu être vérifié.`,
-        clientAction: "Ouvrez la rubrique Domaine et contrôlez les enregistrements DNS demandés."
-      });
-    } else if (pending) {
-      checks.push({
-        key: "domain",
-        label: "Domaine",
-        status: "action",
-        detail: `${pending.hostname} est encore en attente de vérification DNS.`,
-        clientAction: "Vérifiez les DNS indiqués dans la rubrique Domaine puis relancez la vérification."
+        status: "healthy",
+        detail: `${primary.hostname} est vérifié.`
       });
     } else {
       checks.push({
