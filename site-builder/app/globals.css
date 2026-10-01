@@ -3878,6 +3878,29 @@ button.active .step-label small{color:#63817f}
 }
 .account-shell .usage-card p{color:#68797f;font-size:.76rem;line-height:1.52}
 .account-shell .usage-card progress{accent-color:#13a397}
+.account-plan-comparison-head{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:28px;
+  padding:16px 2px 2px;
+}
+.account-plan-comparison-head .eyebrow{margin:0 0 5px}
+.account-plan-comparison-head h2{
+  margin:0;
+  color:#203940;
+  font-family:var(--display-serif);
+  font-size:1.5rem;
+  font-weight:580;
+  letter-spacing:-.025em;
+}
+.account-plan-comparison-head>p{
+  max-width:430px;
+  margin:0;
+  color:#7a888c;
+  font-size:.68rem;
+  line-height:1.5;
+}
 .account-shell .plans-grid{gap:12px}
 .account-shell .plan-card{
   padding:21px;
@@ -4006,6 +4029,7 @@ button.active .step-label small{color:#63817f}
 }
 @media(max-width:820px){
   .account-metrics-grid{grid-template-columns:1fr}
+  .account-plan-comparison-head{align-items:flex-start;flex-direction:column;gap:8px}
   .account-metric-card>p{min-height:0}
   .account-offer-explainer{grid-template-columns:1fr}
   .account-offer-flow{justify-content:flex-start}
@@ -4081,6 +4105,23 @@ button.active .step-label small{color:#63817f}
 .pro-offer-card{position:relative;background:linear-gradient(180deg,rgba(87,212,201,.09),rgba(255,255,255,.72))}
 .beta-access-banner{border-color:rgba(22,128,96,.28);background:rgba(22,128,96,.06)}
 .founding-note{margin-top:20px}
+.account-shell .founding-note{
+  padding:15px 18px;
+  border-color:rgba(12,159,150,.10);
+  background:linear-gradient(135deg,rgba(238,249,247,.64),rgba(255,255,255,.48));
+}
+.account-shell .founding-note h2{
+  margin:4px 0 6px;
+  font-family:var(--display-serif);
+  font-size:1.05rem;
+  font-weight:590;
+}
+.account-shell .founding-note>p:not(.eyebrow){
+  margin:0;
+  color:#708085;
+  font-size:.7rem;
+  line-height:1.5;
+}
 .beta-invite-form{grid-template-columns:minmax(260px,1fr) minmax(140px,180px) auto}
 .beta-duration-field select{min-height:46px}
 .admin-cell-note{display:block;margin-top:4px;color:var(--muted);font-size:.72rem;font-weight:500}
