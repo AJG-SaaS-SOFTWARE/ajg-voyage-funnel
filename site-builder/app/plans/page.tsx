@@ -259,6 +259,14 @@ export default function PlansPage() {
         <Link className="text-link" href={locale === "en" ? "/pricing" : "/tarifs"}>{tr("Découvrir les offres", "Explore plans")} →</Link>
       </section>
 
+      <div className="account-plan-comparison-head">
+        <div>
+          <p className="eyebrow">{tr("Comparer", "Compare")}</p>
+          <h2>{tr("Choisissez le niveau de service adapté à votre site", "Choose the service level that fits your website")}</h2>
+        </div>
+        <p>{tr("Votre offre actuelle reste clairement identifiée. Aucun changement n’est appliqué sans action de votre part.", "Your current plan stays clearly identified. No change is applied without your action.")}</p>
+      </div>
+
       <section className="plans-grid plans-grid-three" aria-label={tr("Offres AJG", "AJG plans")}>
         <article className={!betaAccess.active && current.planKey === "free" ? "plan-card current" : "plan-card"}>
           <p className="eyebrow">{tr("Bêta / découverte", "Beta / discovery")}</p>
