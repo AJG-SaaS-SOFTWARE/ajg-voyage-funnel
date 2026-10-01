@@ -5,6 +5,28 @@ import { AdminShell } from "../../../components/AdminShell";
 import { getSupabaseBrowserClient } from "../../../lib/supabase-browser";
 import type { SupportDiagnosis } from "../../../lib/support-diagnostics";
 
+type SupportMetrics = {
+  windowDays: 30;
+  activeClients: number;
+  ticketsCreated: number;
+  escalatedTickets: number;
+  adminTouchedTickets: number;
+  autoResolvedTickets: number;
+  selfServiceResolvedTickets: number;
+  escalatedPerActiveClient: number;
+  adminTouchedPerActiveClient: number;
+  selfServiceResolutionRate: number;
+  byCategory: Array<{ category: string; count: number }>;
+  remediation: {
+    attempted: number;
+    succeeded: number;
+    noChange: number;
+    failed: number;
+    successRate: number;
+    byCode: Array<{ code: string; count: number }>;
+  };
+};
+
 type AdminTicket = {
   id: string;
   category: string;
@@ -30,6 +52,7 @@ async function sessionToken() {
 
 export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<AdminTicket[]>([]);
+  const [metrics, setMetrics] = useState<SupportMetrics | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "denied">("loading");
   const [message, setMessage] = useState("");
 
@@ -42,6 +65,7 @@ export default function AdminSupportPage() {
     const body = await response.json().catch(() => null);
     if (!response.ok) throw new Error(body?.error || "Support indisponible.");
     setTickets(body.tickets || []);
+    setMetrics(body.metrics || null);
     setState("ready");
   }
 
@@ -91,6 +115,70 @@ export default function AdminSupportPage() {
             <article><b>{tickets.filter((ticket) => ticket.status === "waiting_customer").length}</b><span>actions côté client</span></article>
             <article><b>{tickets.filter((ticket) => ticket.status === "resolved").length}</b><span>résolus</span></article>
           </section>
+
+          {metrics ? (
+            <>
+              <section className="panel">
+                <p className="eyebrow">30 derniers jours</p>
+                <h2>Autonomie du support</h2>
+                <div className="admin-metrics">
+                  <article><b>{metrics.activeClients}</b><span>clients actifs publiés</span></article>
+                  <article><b>{metrics.ticketsCreated}</b><span>tickets créés</span></article>
+                  <article><b>{metrics.escalatedTickets}</b><span>tickets escaladés AJG</span></article>
+                  <article><b>{metrics.adminTouchedTickets}</b><span>tickets touchés par un admin</span></article>
+                  <article><b>{metrics.selfServiceResolvedTickets}</b><span>résolus sans admin</span></article>
+                  <article>
+                    <b>{(metrics.selfServiceResolutionRate * 100).toFixed(0)}%</b>
+                    <span>résolution sans admin / tickets créés</span>
+                  </article>
+                  <article>
+                    <b>{metrics.escalatedPerActiveClient.toFixed(2)}</b>
+                    <span>escalades / client actif · cible &lt; 0,15</span>
+                  </article>
+                  <article>
+                    <b>{metrics.adminTouchedPerActiveClient.toFixed(2)}</b>
+                    <span>interventions admin / client actif</span>
+                  </article>
+                </div>
+              </section>
+
+              <section className="panel">
+                <p className="eyebrow">Auto-remédiation</p>
+                <h2>Réparations techniques</h2>
+                <div className="admin-metrics">
+                  <article><b>{metrics.remediation.attempted}</b><span>tentatives</span></article>
+                  <article><b>{metrics.remediation.succeeded}</b><span>réussies</span></article>
+                  <article><b>{metrics.remediation.failed}</b><span>échouées</span></article>
+                  <article>
+                    <b>{(metrics.remediation.successRate * 100).toFixed(0)}%</b>
+                    <span>taux de réussite</span>
+                  </article>
+                </div>
+                {metrics.remediation.byCode.length ? (
+                  <p>
+                    <strong>Résultats fréquents :</strong>{" "}
+                    {metrics.remediation.byCode
+                      .slice(0, 5)
+                      .map((item) => `${item.code} (${item.count})`)
+                      .join(" · ")}
+                  </p>
+                ) : <p>Aucune remédiation enregistrée sur la période.</p>}
+                {metrics.byCategory.length ? (
+                  <p>
+                    <strong>Motifs de tickets :</strong>{" "}
+                    {metrics.byCategory
+                      .slice(0, 5)
+                      .map((item) => `${item.category} (${item.count})`)
+                      .join(" · ")}
+                  </p>
+                ) : null}
+              </section>
+            </>
+          ) : (
+            <section className="panel">
+              <p>Les KPI support sur 30 jours sont temporairement indisponibles. La file de tickets reste accessible.</p>
+            </section>
+          )}
           {message ? <p role="status">{message}</p> : null}
           <section className="panel">
             <h2>File de support</h2>
