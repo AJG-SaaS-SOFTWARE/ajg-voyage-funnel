@@ -3642,3 +3642,12 @@ button.active .step-label small{color:#63817f}
 .beta-step-funnel-grid article>small{font-size:.65rem;line-height:1.35;color:var(--premium-muted)}
 @media(max-width:1100px){.beta-step-funnel-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:650px){.beta-step-funnel-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.onboarding-path-metrics{margin:20px 0;padding:20px;border:1px solid var(--premium-line);border-radius:18px;background:rgba(255,255,255,.72)}
+.onboarding-path-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.onboarding-path-kpis article{padding:14px;border:1px solid var(--premium-line);border-radius:14px;background:#fff;display:grid;gap:4px}
+.onboarding-path-kpis article>span{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--premium-muted)}
+.onboarding-path-kpis article>b{font-family:var(--display-serif);font-size:1.8rem;font-weight:600}
+.onboarding-path-kpis article>strong{font-size:.78rem}
+.onboarding-path-kpis article>small{font-size:.69rem;line-height:1.4;color:var(--premium-muted)}
+@media(max-width:760px){.onboarding-path-kpis{grid-template-columns:1fr}}
