@@ -167,7 +167,14 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
           clientAction: "Vérifiez les DNS indiqués dans la rubrique Domaine puis relancez la vérification."
         });
       }
-    } else if (!managed && input.site.status === "published") {
+    } else if (!managed && primary?.verificationStatus === "verified") {
+      checks.push({
+        key: "domain",
+        label: "Domaine",
+        status: "healthy",
+        detail: `${primary.hostname} est vérifié.`
+      });
+    } else if (!managed && input.domains.length === 0 && input.site.status === "published") {
       repairActions.push("managed_domain_repair");
       checks.push({
         key: "domain",
@@ -190,20 +197,33 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         status: "action",
         detail: `${managed.hostname} n'est pas encore opérationnel. AJG peut retenter automatiquement son rattachement technique.`
       });
-    } else if (primary?.verificationStatus === "verified") {
-      checks.push({
-        key: "domain",
-        label: "Domaine",
-        status: "healthy",
-        detail: `${primary.hostname} est vérifié.`
-      });
     } else {
-      checks.push({
-        key: "domain",
-        label: "Domaine",
-        status: "healthy",
-        detail: "Aucun domaine en erreur n'a été détecté."
-      });
+      const failed = input.domains.find((item) => item.verificationStatus === "failed");
+      const pending = input.domains.find((item) => item.verificationStatus === "pending");
+      if (failed) {
+        checks.push({
+          key: "domain",
+          label: "Domaine",
+          status: "action",
+          detail: `${failed.hostname} n'a pas pu être vérifié.`,
+          clientAction: "Ouvrez la rubrique Domaine et contrôlez les enregistrements DNS demandés."
+        });
+      } else if (pending) {
+        checks.push({
+          key: "domain",
+          label: "Domaine",
+          status: "action",
+          detail: `${pending.hostname} est encore en attente de vérification DNS.`,
+          clientAction: "Vérifiez les DNS indiqués dans la rubrique Domaine puis relancez la vérification."
+        });
+      } else {
+        checks.push({
+          key: "domain",
+          label: "Domaine",
+          status: "healthy",
+          detail: "Aucun domaine en erreur n'a été détecté."
+        });
+      }
     }
 
     const billingState = input.billingState || "active";
