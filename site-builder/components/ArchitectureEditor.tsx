@@ -19,7 +19,7 @@ export default function ArchitectureEditor({ value, library, onChange }: { value
   const usableAssets = library.assets.filter((asset) => asset.publishable && asset.rights !== "unknown");
 
   return <details className="guided-writing-card architecture-editor-card">
-    <summary><span className="guided-writing-icon">☷</span><span><b>{tr("Arborescence du site", "Website structure")}</b><small>{tr("Réorganisez les pages proposées par l’IA et choisissez manuellement où utiliser vos contenus.", "Reorder AI-proposed pages and choose where your content should be used.")}</small></span><span className="guided-writing-badge">{pages.length} {tr(pages.length > 1 ? "pages" : "page", pages.length > 1 ? "pages" : "page")}</span></summary>
+    <summary><span className="guided-writing-icon">☷</span><span><b>{tr("Arborescence du site", "Website structure")}</b><small>{tr("Ici vous organisez les pages et la navigation. L’ordre des rubriques à l’intérieur de l’accueil se règle ensuite dans Options.", "Organize pages and navigation here. The order of sections inside the homepage is managed later in Options.")}</small></span><span className="guided-writing-badge">{pages.length} {tr(pages.length > 1 ? "pages" : "page", pages.length > 1 ? "pages" : "page")}</span></summary>
     <div className="guided-writing-body">
       <p className="guided-writing-intro">{tr("L’ordre ci-dessous devient l’ordre de navigation. La page d’accueil ne peut pas être supprimée. Les contenus dont les droits ne sont pas validés restent exclus.", "The order below becomes the navigation order. The home page cannot be deleted. Content without validated rights stays excluded.")}</p>
       <div className="architecture-list">
