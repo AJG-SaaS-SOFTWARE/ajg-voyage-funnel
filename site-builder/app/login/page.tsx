@@ -144,6 +144,7 @@ export default function LoginPage() {
 
           <div className="auth-card-footer">
             <Link className="text-link" href="/">← {tr("Retour à l’accueil", "Back to home")}</Link>
+            <Link className="text-link" href="/admin/login">{tr("Accès administrateur", "Administrator access")} →</Link>
             <span>{tr("Lien sécurisé · accès personnel", "Secure link · personal access")}</span>
           </div>
         </div>
