@@ -8,7 +8,7 @@ import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
 import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { deriveOnboardingCreationPath, deriveOnboardingProgress } from "../lib/onboarding";
-import { getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements } from "../lib/subscription";
+import { getMyBetaAccess, getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements, type BetaAccess } from "../lib/subscription";
 import { trackProductEvent } from "../lib/product-analytics";
 
 function LockIcon() {
@@ -58,6 +58,7 @@ export default function Home() {
   const [entitlementActive, setEntitlementActive] = useState(false);
   const [canCreateWithAi, setCanCreateWithAi] = useState(false);
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
+  const [betaAccess, setBetaAccess] = useState<BetaAccess>({ active: false, startsAt: null, expiresAt: null });
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +84,10 @@ export default function Home() {
           return;
         }
 
-        const remote = await getMySite();
+        const [remote, resolvedBetaAccess] = await Promise.all([
+          getMySite(),
+          getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
+        ]);
         let resolvedPlanName = "";
         let resolvedEntitlementActive = false;
         let resolvedCanCreateWithAi = false;
@@ -113,6 +117,7 @@ export default function Home() {
           setEntitlementActive(resolvedEntitlementActive);
           setCanCreateWithAi(resolvedCanCreateWithAi);
           setRemoteSiteId(remote?.id || null);
+          setBetaAccess(resolvedBetaAccess);
           setDraft(
             remote
               ? {
@@ -229,6 +234,61 @@ export default function Home() {
           ) : null}
         </div>
       </section>
+
+      {betaAccess.active ? (
+        <section className="panel beta-tester-mission" aria-label={tr("Mission bêta", "Beta mission")}>
+          <div className="beta-tester-mission-head">
+            <div>
+              <p className="eyebrow">AJG Beta Tester</p>
+              <h2>{tr("Testez le parcours comme un vrai client", "Test the journey like a real customer")}</h2>
+              <p>
+                {tr(
+                  "Votre accès BUILD + Growth complet est gratuit pendant la bêta. L’objectif est de créer, publier puis nous signaler ce qui vous ralentit ou vous semble inutile.",
+                  "Your full BUILD + Growth access is free during the beta. The goal is to create, publish, then tell us what slows you down or feels unnecessary."
+                )}
+              </p>
+            </div>
+            {betaAccess.expiresAt ? (
+              <span className="beta-access-expiry">
+                {tr("Accès jusqu’au", "Access until")}{" "}
+                <b>{new Date(betaAccess.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR")}</b>
+              </span>
+            ) : null}
+          </div>
+          <ol className="beta-mission-steps">
+            <li className={onboarding && onboarding.completeCount >= 2 ? "done" : ""}>
+              <span>{onboarding && onboarding.completeCount >= 2 ? "✓" : "1"}</span>
+              <div><b>{tr("Créer une première version", "Create a first version")}</b><small>{tr("Manuellement ou avec le Concepteur IA.", "Manually or with the AI Site Architect.")}</small></div>
+            </li>
+            <li className={draft?.status === "published" ? "done" : ""}>
+              <span>{draft?.status === "published" ? "✓" : "2"}</span>
+              <div><b>{tr("Publier réellement", "Publish for real")}</b><small>{tr("Passez le Quality Check et ouvrez le site public.", "Pass the Quality Check and open the public site.")}</small></div>
+            </li>
+            <li>
+              <span>3</span>
+              <div><b>{tr("Tester comme un visiteur", "Test as a visitor")}</b><small>{tr("Mobile, navigation, CTA, lisibilité et vitesse perçue.", "Mobile, navigation, CTA, readability and perceived speed.")}</small></div>
+            </li>
+            <li>
+              <span>4</span>
+              <div><b>{tr("Envoyer un retour", "Send feedback")}</b><small>{tr("Un blocage, une idée ou ce qui devrait être plus simple.", "A blocker, an idea, or anything that should be simpler.")}</small></div>
+            </li>
+          </ol>
+          <div className="actions beta-mission-actions">
+            <Link className="button secondary" href={onboardingHref}>
+              {draft?.status === "published" ? tr("Modifier le site", "Edit website") : tr("Continuer la mission", "Continue mission")}
+            </Link>
+            <Link className={draft?.status === "published" ? "button primary" : "button secondary"} href="/feedback">
+              {tr("Donner mon retour", "Give feedback")} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+          <small className="beta-mission-note">
+            {tr(
+              "La participation à la bêta n’active aucun abonnement Stripe et aucune conversion payante automatique.",
+              "Beta participation does not activate a Stripe subscription or any automatic paid conversion."
+            )}
+          </small>
+        </section>
+      ) : null}
 
       {onboarding ? (
         <section className="panel onboarding-progress-card" aria-label={tr("Progression de création", "Website setup progress")}>
