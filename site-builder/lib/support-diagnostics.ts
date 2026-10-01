@@ -182,6 +182,14 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         status: "action",
         detail: "Le sous-domaine AJG géré par la plateforme est absent. Une correction automatique est disponible."
       });
+    } else if (managed?.verificationStatus === "verified" && !managed.isPrimary) {
+      repairActions.push("managed_domain_repair");
+      checks.push({
+        key: "domain",
+        label: "Domaine",
+        status: "action",
+        detail: `${managed.hostname} est vérifié mais n'est pas défini comme domaine primaire. Une correction automatique est disponible.`
+      });
     } else if (managed?.verificationStatus === "verified") {
       checks.push({
         key: "domain",
