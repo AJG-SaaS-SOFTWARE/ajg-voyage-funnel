@@ -75,3 +75,10 @@ test("repair endpoint requires the current Health Center diagnosis to advertise 
   assert.match(route, /repairActions\.includes\(action as SupportRepairAction\)/);
   assert.match(route, /status: 409/);
 });
+
+
+test("verified managed domain can repair only the missing primary flag without Vercel", () => {
+  assert.match(diagnostics, /verified" && !managed\.isPrimary/);
+  assert.match(remediation, /managed_domain_primary_repaired/);
+  assert.match(remediation, /managed\.verification_status === "verified"/);
+});
