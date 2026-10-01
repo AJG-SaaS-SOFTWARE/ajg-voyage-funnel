@@ -320,19 +320,19 @@ Objectif : un client doit pouvoir passer de zéro à site publié sans intervent
 - [x] reprise automatique après interruption ;
 - [x] autosave à chaque étape ;
 - [x] détection des données manquantes ;
-- [ ] aide contextuelle ;
-- [ ] exemples uniquement lorsque nécessaires ;
-- [ ] diagnostic pré-publication ;
-- [ ] correction guidée en un clic ;
-- [ ] self-service domaine avec statut DNS clair ;
-- [ ] self-service facturation ;
-- [ ] self-service export ;
-- [ ] self-service suppression ;
+- [x] aide contextuelle ;
+- [x] exemples uniquement lorsque nécessaires ;
+- [x] diagnostic pré-publication ;
+- [x] correction guidée en un clic ;
+- [x] self-service domaine avec statut DNS clair ;
+- [x] self-service facturation ;
+- [x] self-service export ;
+- [x] self-service suppression ;
 - [ ] messages d'erreur exploitables, jamais "une erreur est survenue" sans prochaine action.
 
 ### État d’implémentation
 
-Le tableau de bord calcule une progression déterministe sur les étapes essentielles (identité, message, informations légales, publication), renvoie directement vers la première étape incomplète et réutilise le brouillon distant/autosave existant. Tant que le contenu principal n’est pas engagé, le choix du parcours dépend des droits serveur : le bouton « Créer avec l’IA » n’est proposé que lorsque le droit BUILD du site est actif ; sinon le parcours manuel reste immédiatement disponible et l’offre Création IA est présentée séparément.
+Le tableau de bord calcule une progression déterministe sur les étapes essentielles (identité, message, informations légales, publication), renvoie directement vers la première étape incomplète et réutilise le brouillon distant/autosave existant. Le Builder dispose déjà d’une aide contextuelle par étape, d’exemples ciblés, d’un Quality Check pré-publication et de liens « Corriger » vers les étapes concernées. Après publication cloud, un diagnostic final Health Center est désormais lancé sans bloquer la publication et peut être relancé manuellement. Tant que le contenu principal n’est pas engagé, le choix du parcours dépend des droits serveur : le bouton « Créer avec l’IA » n’est proposé que lorsque le droit BUILD du site est actif ; sinon le parcours manuel reste immédiatement disponible et l’offre Création IA est présentée séparément.
 
 ### KPI de sortie
 
