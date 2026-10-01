@@ -370,12 +370,28 @@ export default function AdminPage() {
     >
       {state === "loading" ? <p>Chargement…</p> : null}
       {state === "denied" ? (
-        <section className="panel">
+        <section className="panel admin-access-denied">
           <h2>Accès restreint</h2>
           <p>
-            Votre compte n’a pas le rôle administrateur. Aucun rôle n’est attribué
-            automatiquement depuis le navigateur.
+            Le compte actuellement connecté n’a pas le rôle administrateur. Le rôle admin est
+            enregistré dans Supabase et reste donc valable depuis n’importe quel ordinateur ou
+            navigateur.
           </p>
+          <p>
+            Si vous êtes sur un autre poste ou connecté avec un compte de test, utilisez le bouton
+            ci-dessous puis saisissez l’adresse de votre compte administrateur.
+          </p>
+          <div className="actions">
+            <Link className="button primary" href="/admin/login">
+              Se connecter / changer de compte administrateur
+            </Link>
+            <Link className="button secondary" href="/">
+              Retour au tableau de bord
+            </Link>
+          </div>
+          <small className="admin-access-security-note">
+            Aucun rôle administrateur n’est attribué automatiquement depuis le navigateur.
+          </small>
         </section>
       ) : null}
 

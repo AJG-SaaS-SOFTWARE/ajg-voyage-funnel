@@ -3677,3 +3677,7 @@ button.active .step-label small{color:#63817f}
 .beta-follow-up-note{color:#8a6412;font-weight:700}
 .admin-beta-cohort td{vertical-align:top}
 .admin-beta-cohort .admin-cell-note{display:block;margin-top:4px;line-height:1.35}
+
+.admin-access-denied{display:grid;gap:14px}
+.admin-access-denied p{margin:0;max-width:900px;line-height:1.6}
+.admin-access-security-note{color:var(--premium-muted);font-size:.72rem}
