@@ -2,8 +2,8 @@
   min-height:100vh;
   padding:0 28px 72px;
   background:
-    radial-gradient(circle at 84% 7%,rgba(11,143,133,.045),transparent 25rem),
-    radial-gradient(circle at 12% 76%,rgba(111,91,213,.025),transparent 24rem),
+    radial-gradient(circle at 84% 7%,rgba(10,129,121,.085),transparent 25rem),
+    radial-gradient(circle at 12% 76%,rgba(111,91,213,.05),transparent 24rem),
     var(--ajg-bg,#f6f6f3);
   color:var(--ajg-ink,#172c35);
 }
@@ -66,7 +66,7 @@
   padding:8px 12px;
   border:1px solid rgba(11,143,133,.12);
   border-radius:999px;
-  background:var(--ajg-primary-soft,#e5f5f2);
+  background:linear-gradient(135deg,var(--ajg-primary-soft,#e5f5f2),#f2faf8);
   color:var(--ajg-primary-hover,#076861);
   font-size:.74rem;
   font-weight:800;
@@ -79,10 +79,10 @@
   align-items:center;
   justify-content:space-between;
   gap:28px;
-  border:1px solid rgba(111,91,213,.16);
+  border:1px solid rgba(111,91,213,.22);
   border-radius:20px;
   background:
-    radial-gradient(circle at 92% 0,rgba(111,91,213,.07),transparent 220px),
+    radial-gradient(circle at 92% 0,rgba(111,91,213,.12),transparent 220px),
     rgba(255,255,255,.88);
   box-shadow:var(--ajg-shadow-sm,0 8px 24px rgba(23,44,53,.035));
 }
@@ -130,11 +130,11 @@
   box-shadow:var(--ajg-shadow-sm,0 8px 24px rgba(23,44,53,.035));
 }
 .proCard{
-  border-color:rgba(11,143,133,.25);
+  border-color:rgba(10,129,121,.30);
   background:
-    radial-gradient(circle at 90% 0,rgba(11,143,133,.07),transparent 220px),
+    radial-gradient(circle at 90% 0,rgba(10,129,121,.11),transparent 220px),
     rgba(255,255,255,.94);
-  box-shadow:0 18px 52px rgba(11,143,133,.07);
+  box-shadow:0 18px 52px rgba(10,129,121,.09);
 }
 .planBadge{
   width:max-content;
