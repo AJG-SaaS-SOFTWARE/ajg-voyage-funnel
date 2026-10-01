@@ -2,7 +2,7 @@ export type SupportCheckStatus = "healthy" | "action" | "incident";
 export type SupportRepairAction = "managed_domain_repair";
 
 export type SupportCheck = {
-  key: "backend" | "publication" | "public_render" | "latency" | "seo" | "sitemap" | "domain" | "billing" | "backup" | "ai";
+  key: "backend" | "publication" | "public_render" | "latency" | "seo" | "sitemap" | "domain" | "billing" | "backup" | "ai" | "contact" | "images" | "content_links" | "storage";
   label: string;
   status: SupportCheckStatus;
   detail: string;
@@ -54,6 +54,19 @@ export type SupportDiagnosticInput = {
   ai?: {
     enabled: boolean;
     heavyEnabled: boolean;
+  };
+  content?: {
+    contactEnabled: boolean;
+    contactEmailValid: boolean;
+    galleryEnabled: boolean;
+    galleryImageCount: number;
+    invalidConfiguredLinks: number;
+    checkedConfiguredLinks: number;
+    missingPublishableMedia: number;
+  };
+  storage?: {
+    publicBucketAvailable: boolean;
+    privateBucketAvailable: boolean;
   };
 };
 
@@ -371,6 +384,105 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
           : "La sauvegarde externe n'est pas vérifiable actuellement."
       });
     }
+  }
+
+  if (input.content) {
+    const content = input.content;
+
+    if (content.contactEnabled) {
+      checks.push(
+        content.contactEmailValid
+          ? {
+              key: "contact",
+              label: "Contact",
+              status: "healthy",
+              detail: "Le module de contact actif contient une adresse e-mail exploitable."
+            }
+          : {
+              key: "contact",
+              label: "Contact",
+              status: "action",
+              detail: "Le module de contact est actif mais son adresse e-mail n'est pas exploitable.",
+              clientAction: "Ouvrez l'étape Contenu, corrigez l'adresse e-mail du module Contact puis republiez."
+            }
+      );
+    } else {
+      checks.push({
+        key: "contact",
+        label: "Contact",
+        status: "healthy",
+        detail: "Le module de contact n'est pas activé ; aucun canal de contact intégré n'est attendu."
+      });
+    }
+
+    if (content.galleryEnabled && content.galleryImageCount === 0) {
+      checks.push({
+        key: "images",
+        label: "Images",
+        status: "action",
+        detail: "La galerie est activée mais aucune image exploitable n'est configurée.",
+        clientAction: "Ajoutez au moins une image valide à la galerie ou désactivez cette rubrique, puis republiez."
+      });
+    } else if (content.missingPublishableMedia > 0) {
+      checks.push({
+        key: "images",
+        label: "Médias publiables",
+        status: "action",
+        detail: `${content.missingPublishableMedia} média(s) marqué(s) publiable(s) n'ont pas encore de ressource exploitable.`,
+        clientAction: "Ouvrez la bibliothèque de contenus, réimportez les médias concernés ou retirez leur autorisation de publication."
+      });
+    } else {
+      checks.push({
+        key: "images",
+        label: "Images",
+        status: "healthy",
+        detail: content.galleryEnabled
+          ? `La galerie contient ${content.galleryImageCount} image(s) exploitable(s).`
+          : "Aucune galerie incomplète ni média publiable manquant n'a été détecté."
+      });
+    }
+
+    checks.push(
+      content.invalidConfiguredLinks > 0
+        ? {
+            key: "content_links",
+            label: "Liens configurés",
+            status: "action",
+            detail: `${content.invalidConfiguredLinks} lien(s) configuré(s) ne sont pas des URL HTTPS exploitables.`,
+            clientAction: "Corrigez les liens signalés dans le Builder puis republiez le site."
+          }
+        : {
+            key: "content_links",
+            label: "Liens configurés",
+            status: "healthy",
+            detail: content.checkedConfiguredLinks > 0
+              ? `${content.checkedConfiguredLinks} lien(s) configuré(s) ont un format HTTPS valide.`
+              : "Aucun lien externe configuré ne nécessite de contrôle."
+          }
+    );
+  }
+
+  if (input.storage) {
+    const missing = [
+      input.storage.publicBucketAvailable ? null : "site-media",
+      input.storage.privateBucketAvailable ? null : "site-private-media"
+    ].filter(Boolean);
+
+    checks.push(
+      missing.length === 0
+        ? {
+            key: "storage",
+            label: "Stockage",
+            status: "healthy",
+            detail: "Les espaces de stockage public et privé du Builder sont disponibles."
+          }
+        : {
+            key: "storage",
+            label: "Stockage",
+            status: "incident",
+            detail: `Stockage indisponible : ${missing.join(", ")}.`
+          }
+    );
   }
 
   if (input.ai) {
