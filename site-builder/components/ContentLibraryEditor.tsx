@@ -14,7 +14,7 @@ export default function ContentLibraryEditor({ value, onChange, onUpload }: { va
       const url = await onUpload(asset, file);
       update(asset.id, { url, name: asset.name || file.name, notes: asset.notes });
     } catch (error) {
-      update(asset.id, { notes: `${asset.notes ? asset.notes + " · " : ""}${tr("Erreur", "Error")}: ${error instanceof Error ? error.message : tr("téléversement impossible", "upload failed")}` });
+      update(asset.id, { notes: `${asset.notes ? asset.notes + " · " : ""}${tr("Erreur", "Error")}: ${error instanceof Error ? error.message : tr("téléversement impossible ; vérifiez le fichier et votre connexion puis réessayez", "upload failed; check the file and your connection, then try again")}` });
     }
   };
   const remove = (id: string) => onChange({ assets: value.assets.filter((asset) => asset.id !== id) });
