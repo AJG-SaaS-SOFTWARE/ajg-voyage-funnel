@@ -81,6 +81,103 @@ async function sitemapProbe(slug: string) {
   }
 }
 
+
+function httpsUrl(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function contentHealthFromConfig(value: unknown) {
+  const config =
+    value && typeof value === "object"
+      ? (value as Record<string, any>)
+      : {};
+  const design =
+    config.design && typeof config.design === "object"
+      ? config.design
+      : {};
+  const modules =
+    design.modules && typeof design.modules === "object"
+      ? design.modules
+      : {};
+  const contact =
+    modules.contact && typeof modules.contact === "object"
+      ? modules.contact
+      : {};
+  const gallery =
+    modules.gallery && typeof modules.gallery === "object"
+      ? modules.gallery
+      : {};
+  const video =
+    modules.video && typeof modules.video === "object"
+      ? modules.video
+      : {};
+
+  const configuredLinks: unknown[] = [
+    config.bookingUrl,
+    config.instagramUrl,
+    config.facebookUrl,
+    video.enabled === true ? video.url : ""
+  ];
+  const nonEmptyLinks = configuredLinks.filter(
+    (item) => typeof item === "string" && item.trim()
+  );
+  const invalidConfiguredLinks = nonEmptyLinks.filter(
+    (item) => !httpsUrl(item)
+  ).length;
+
+  const galleryImages = Array.isArray(gallery.images)
+    ? gallery.images.filter(
+        (item: any) => httpsUrl(item?.url)
+      )
+    : [];
+
+  const assets = Array.isArray(config.contentLibrary?.assets)
+    ? config.contentLibrary.assets
+    : [];
+  const missingPublishableMedia = assets.filter((asset: any) => {
+    if (asset?.publishable !== true || asset?.kind === "text") return false;
+    return !httpsUrl(asset?.url);
+  }).length;
+
+  const contactEmail =
+    typeof contact.email === "string" ? contact.email.trim() : "";
+
+  return {
+    contactEnabled: contact.enabled === true,
+    contactEmailValid:
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail),
+    galleryEnabled: gallery.enabled === true,
+    galleryImageCount: galleryImages.length,
+    invalidConfiguredLinks,
+    checkedConfiguredLinks: nonEmptyLinks.length,
+    missingPublishableMedia
+  };
+}
+
+async function safeStorageAvailability(service: SupabaseClient) {
+  try {
+    const [publicBucket, privateBucket] = await Promise.all([
+      service.storage.getBucket("site-media"),
+      service.storage.getBucket("site-private-media")
+    ]);
+    return {
+      publicBucketAvailable: Boolean(publicBucket.data) && !publicBucket.error,
+      privateBucketAvailable: Boolean(privateBucket.data) && !privateBucket.error
+    };
+  } catch {
+    return {
+      publicBucketAvailable: false,
+      privateBucketAvailable: false
+    };
+  }
+}
+
 async function safeBackupStatus() {
   try {
     return await getStorageBackupStatus();
@@ -100,7 +197,7 @@ export async function diagnoseSupportHealth(
 ): Promise<{ siteId: string | null; diagnosis: SupportDiagnosis }> {
   let siteQuery = service
     .from("sites")
-    .select("id,slug,status,public_access_state,owner_id,created_at")
+    .select("id,slug,status,public_access_state,owner_id,created_at,config")
     .eq("owner_id", userId)
     .order("created_at", { ascending: true })
     .limit(1);
@@ -108,7 +205,7 @@ export async function diagnoseSupportHealth(
   if (preferredSiteId) {
     siteQuery = service
       .from("sites")
-      .select("id,slug,status,public_access_state,owner_id,created_at")
+      .select("id,slug,status,public_access_state,owner_id,created_at,config")
       .eq("owner_id", userId)
       .eq("id", preferredSiteId)
       .limit(1);
@@ -145,6 +242,7 @@ export async function diagnoseSupportHealth(
     { data: billing, error: billingError },
     { data: aiPolicy, error: aiPolicyError },
     backup,
+    storage,
     publicRender,
     sitemap
   ] = await Promise.all([
@@ -163,6 +261,7 @@ export async function diagnoseSupportHealth(
       .eq("singleton", true)
       .maybeSingle(),
     safeBackupStatus(),
+    safeStorageAvailability(service),
     site.status === "published" && site.public_access_state !== "suspended"
       ? publicSiteProbe(site.slug)
       : Promise.resolve({ checked: false, ok: false, status: null }),
@@ -188,6 +287,8 @@ export async function diagnoseSupportHealth(
         isPrimary: domain.is_primary
       })),
       billingState: billing?.state || null,
+      content: contentHealthFromConfig(site.config),
+      storage,
       publicRender,
       sitemap,
       backup: {
