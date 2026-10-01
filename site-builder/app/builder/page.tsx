@@ -368,6 +368,10 @@ export default function BuilderPage() {
     let cancelled = false;
 
     const boot = async () => {
+      const requestedStep = new URLSearchParams(window.location.search).get("step");
+      if (steps.some((item) => item.key === requestedStep)) {
+        setStep(requestedStep as StepKey);
+      }
       const local = loadDraft();
 
       if (!remoteMode) {
