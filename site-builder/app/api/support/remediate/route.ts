@@ -82,6 +82,21 @@ export async function POST(request: Request) {
     );
   }
 
+  const before = await diagnoseSupportHealth(
+    auth.service,
+    auth.user.id,
+    siteId
+  );
+  if (
+    before.siteId !== siteId ||
+    !before.diagnosis.repairActions.includes(action as SupportRepairAction)
+  ) {
+    return NextResponse.json(
+      { error: "Aucune correction automatique sûre n’est actuellement proposée pour ce site." },
+      { status: 409 }
+    );
+  }
+
   if (ticketId) {
     const { data: ticket, error: ticketError } = await auth.service
       .from("support_tickets")
