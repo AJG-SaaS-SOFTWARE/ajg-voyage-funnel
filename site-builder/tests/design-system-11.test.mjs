@@ -17,7 +17,7 @@ test("design system exposes a neutral canvas, a single brand accent and semantic
   assert.match(design, /--ajg-bg:#f6f6f3/);
   assert.match(design, /--ajg-surface:#ffffff/);
   assert.match(design, /--ajg-ink:#172c35/);
-  assert.match(design, /--ajg-primary:#0b8f85/);
+  assert.match(design, /--ajg-primary:#0a8179/);
   assert.match(design, /--ajg-ai:#6f5bd5/);
   assert.match(design, /--ajg-success:#2f7c5b/);
   assert.match(design, /--ajg-warning:#a96c13/);
@@ -46,7 +46,7 @@ test("customer-created websites remain outside the AJG product color override", 
 
 test("public pricing uses the same neutral and semantic design tokens", () => {
   assert.match(pricing, /var\(--ajg-bg,#f6f6f3\)/);
-  assert.match(pricing, /var\(--ajg-primary,#0b8f85\)/);
+  assert.match(pricing, /var\(--ajg-primary,#0a8179\)/);
   assert.match(pricing, /var\(--ajg-ai-hover,#5945bd\)/);
   assert.match(pricing, /var\(--ajg-border/);
   assert.doesNotMatch(pricing, /#f5f1e9/);
