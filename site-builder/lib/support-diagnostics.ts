@@ -1,4 +1,5 @@
 export type SupportCheckStatus = "healthy" | "action" | "incident";
+export type SupportRepairAction = "managed_domain_repair";
 
 export type SupportCheck = {
   key: "backend" | "publication" | "public_render" | "latency" | "seo" | "sitemap" | "domain" | "billing" | "backup" | "ai";
@@ -12,6 +13,7 @@ export type SupportDiagnosis = {
   overall: SupportCheckStatus;
   checks: SupportCheck[];
   clientAction: string | null;
+  repairActions: SupportRepairAction[];
   generatedAt: string;
 };
 
@@ -25,6 +27,7 @@ export type SupportDiagnosticInput = {
   };
   domains: Array<{
     hostname: string;
+    kind?: "managed_subdomain" | "custom_domain" | string;
     verificationStatus: string;
     isPrimary: boolean;
   }>;
@@ -69,6 +72,7 @@ function strongest(checks: SupportCheck[]): SupportCheckStatus {
 
 export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDiagnosis {
   const checks: SupportCheck[] = [];
+  const repairActions: SupportRepairAction[] = [];
 
   checks.push(
     input.backendOk
@@ -136,6 +140,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
 
     const primary = input.domains.find((item) => item.isPrimary);
     const verified = input.domains.find((item) => item.verificationStatus === "verified");
+    const managed = input.domains.find((item) => item.kind === "managed_subdomain");
     const failed = input.domains.find((item) => item.verificationStatus === "failed");
     const pending = input.domains.find((item) => item.verificationStatus === "pending");
 
@@ -146,6 +151,22 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         label: "Domaine",
         status: "healthy",
         detail: `${domain.hostname} est vérifié.`
+      });
+    } else if (!managed && input.site.status === "published") {
+      repairActions.push("managed_domain_repair");
+      checks.push({
+        key: "domain",
+        label: "Domaine",
+        status: "action",
+        detail: "Le sous-domaine AJG géré par la plateforme est absent. Une correction automatique est disponible."
+      });
+    } else if (managed && managed.verificationStatus !== "verified") {
+      repairActions.push("managed_domain_repair");
+      checks.push({
+        key: "domain",
+        label: "Domaine",
+        status: "action",
+        detail: `${managed.hostname} n'est pas encore opérationnel. AJG peut retenter automatiquement son rattachement technique.`
       });
     } else if (failed) {
       checks.push({
@@ -168,7 +189,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         key: "domain",
         label: "Domaine",
         status: "healthy",
-        detail: "Aucun domaine personnalisé en erreur n'a été détecté."
+        detail: "Aucun domaine en erreur n'a été détecté."
       });
     }
 
@@ -344,6 +365,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
     overall,
     checks,
     clientAction: actionable?.clientAction || null,
+    repairActions: Array.from(new Set(repairActions)),
     generatedAt: new Date().toISOString()
   };
 }
