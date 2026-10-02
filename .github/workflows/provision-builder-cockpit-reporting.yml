@@ -1,0 +1,30 @@
+name: Provision private Builder Cockpit reporting
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/provision-builder-cockpit-reporting.yml]
+permissions:
+  contents: read
+concurrency:
+  group: ajg-private-builder-reporting
+  cancel-in-progress: false
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: site-builder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate provisioning without provider credentials
+        run: node --test tests/provision-cockpit-reporting.test.mjs
+      - name: Create and verify only the two private reporting variables
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/provision-cockpit-reporting.mjs
