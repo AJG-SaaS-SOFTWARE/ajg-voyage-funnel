@@ -1,4 +1,4 @@
-name: Provision private Builder Cockpit reporting v2
+name: Provision private Builder Cockpit reporting v3
 on:
   workflow_dispatch:
   push:
