@@ -28,7 +28,7 @@ export async function provisionReporting(accessToken, request = fetch) {
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
-    if (!response.ok) throw new Error("provider_access_failed");
+    if (!response.ok) throw new Error("provider_access_failed_" + response.status);
     return response.json();
   }
   async function read(target) {
@@ -64,7 +64,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   try {
     await provisionReporting(process.env.VERCEL_TOKEN);
     console.log("Builder/Cockpit private reporting credential configured and matched. Redeployment required.");
-  } catch {
+  } catch (error) {
+    const code = error instanceof Error && /^(provider_access_missing|provider_access_failed_[0-9]{3}|provider_metadata_invalid|reporting_token_conflict|reporting_existing_token_invalid|reporting_existing_token_unreadable|provider_create_failed|reporting_token_verification_failed)$/.test(error.message) ? error.message : "provider_transport_or_response_failed";
+    console.error("Private reporting provisioning failure category: " + code);
     console.error("Private reporting provisioning failed; no existing credential was rotated. Check provider access and configuration.");
     process.exitCode = 1;
   }
