@@ -622,3 +622,181 @@ body{
     background:var(--ajg-primary-soft);
   }
 }
+
+
+/* AJG Design System 1.3 — visible semantic palette
+   Make the previously defined teal / AI violet / warm amber legible at a glance,
+   while keeping the customer website preview palette untouched. */
+
+/* Shared expandable cards: neutral by default, then semantic by purpose. */
+.premium-builder-shell .guided-writing-card{
+  border-color:rgba(23,44,53,.10);
+  background:rgba(255,255,255,.92);
+  box-shadow:0 8px 22px rgba(23,44,53,.035);
+}
+
+/* Content supplied to AI = violet family. */
+.premium-builder-shell .content-library-card{
+  border-color:rgba(111,91,213,.24);
+  background:
+    radial-gradient(circle at 96% 0,rgba(111,91,213,.13),transparent 190px),
+    linear-gradient(120deg,#f7f4ff 0%,#fff 72%);
+  box-shadow:inset 4px 0 0 rgba(111,91,213,.62),0 10px 26px rgba(82,67,166,.055);
+}
+.premium-builder-shell .content-library-card .guided-writing-icon{
+  background:linear-gradient(145deg,#e7e0ff,#f2efff);
+  color:var(--ajg-ai-hover);
+  border:1px solid rgba(111,91,213,.12);
+}
+.premium-builder-shell .content-library-card .guided-writing-badge{
+  background:var(--ajg-ai-soft);
+  color:var(--ajg-ai-hover);
+  border-color:rgba(111,91,213,.20);
+}
+
+/* Site structure = AJG teal family. */
+.premium-builder-shell .architecture-editor-card{
+  border-color:rgba(10,129,121,.24);
+  background:
+    radial-gradient(circle at 96% 0,rgba(10,129,121,.13),transparent 190px),
+    linear-gradient(120deg,#eefaf7 0%,#fff 72%);
+  box-shadow:inset 4px 0 0 rgba(10,129,121,.68),0 10px 26px rgba(10,129,121,.05);
+}
+.premium-builder-shell .architecture-editor-card .guided-writing-icon{
+  background:linear-gradient(145deg,#d8f4ef,#ebf9f6);
+  color:var(--ajg-primary-hover);
+  border:1px solid rgba(10,129,121,.12);
+}
+.premium-builder-shell .architecture-editor-card .guided-writing-badge{
+  background:var(--ajg-primary-soft);
+  color:var(--ajg-primary-hover);
+  border-color:rgba(10,129,121,.20);
+}
+
+/* AI Site Architect = unmistakable violet, whether available or locked. */
+.premium-builder-shell .ai-architect-card,
+.premium-builder-shell .ai-architect-card.premium-feature-locked{
+  border-color:rgba(111,91,213,.28);
+  background:
+    radial-gradient(circle at 94% -5%,rgba(111,91,213,.16),transparent 210px),
+    linear-gradient(120deg,#f5f1ff 0%,#fff 74%);
+  box-shadow:inset 4px 0 0 rgba(111,91,213,.72),0 11px 28px rgba(82,67,166,.065);
+}
+.premium-builder-shell .ai-architect-card .guided-writing-icon,
+.premium-builder-shell .ai-architect-card.premium-feature-locked .guided-writing-icon{
+  background:linear-gradient(145deg,#dfd7ff,#f0edff);
+  color:var(--ajg-ai-hover);
+  border:1px solid rgba(111,91,213,.16);
+  box-shadow:0 5px 14px rgba(111,91,213,.09);
+}
+.premium-builder-shell .ai-architect-card .guided-writing-body{
+  border-top-color:rgba(111,91,213,.14);
+}
+.premium-builder-shell .ai-architect-card .architect-brief-guide{
+  border-color:rgba(111,91,213,.20);
+  background:linear-gradient(120deg,rgba(240,237,255,.96),rgba(250,248,255,.92));
+}
+.premium-builder-shell .ai-architect-card .button.primary{
+  border-color:rgba(72,55,159,.24);
+  background:linear-gradient(135deg,#7462d9 0%,#5541b8 100%);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(89,69,189,.18);
+}
+.premium-builder-shell .ai-architect-card .button.primary:hover{
+  background:linear-gradient(135deg,#6653cb 0%,#4935a8 100%);
+  box-shadow:0 10px 24px rgba(89,69,189,.22);
+}
+
+/* Premium/locked state = amber, applied to the status, not the whole AI card. */
+.premium-builder-shell .ai-architect-card.premium-feature-locked .guided-writing-badge{
+  background:var(--ajg-warm-soft);
+  color:#875713;
+  border-color:rgba(197,138,44,.30);
+}
+.premium-builder-shell .ai-architect-card .premium-feature-lock-note{
+  border-color:rgba(197,138,44,.24);
+  background:
+    radial-gradient(circle at 96% 0,rgba(197,138,44,.10),transparent 160px),
+    linear-gradient(120deg,#fff8ea,#fffdf8);
+}
+.premium-builder-shell .ai-architect-card .premium-feature-lock-note b{
+  color:#754d16;
+}
+
+/* Generic guided help remains teal, so AI purple is never confused with navigation. */
+.premium-builder-shell .guided-writing-card:not(.content-library-card):not(.architecture-editor-card):not(.ai-architect-card) .guided-writing-icon{
+  background:var(--ajg-primary-soft);
+  color:var(--ajg-primary-hover);
+}
+
+/* More visible page hierarchy in the current step. */
+.premium-builder-panel .section-kicker{
+  position:relative;
+  padding-left:2px;
+}
+.premium-builder-panel .section-kicker::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-11px;
+  height:1px;
+  background:linear-gradient(90deg,rgba(10,129,121,.28),rgba(10,129,121,.04) 58%,transparent);
+}
+.premium-builder-panel .section-kicker>span{
+  background:linear-gradient(145deg,#d7f4ef,#eaf9f6);
+  border-color:rgba(10,129,121,.18);
+}
+
+/* Preview chrome gets a violet cue; the rendered site itself does not. */
+.premium-builder-preview .preview-panel-heading{
+  border-bottom-color:rgba(111,91,213,.12);
+  background:
+    radial-gradient(circle at 92% 10%,rgba(111,91,213,.10),transparent 170px),
+    linear-gradient(120deg,rgba(235,248,245,.90),rgba(249,247,255,.90));
+}
+.premium-builder-preview .preview-panel-heading .step{
+  color:var(--ajg-primary);
+}
+.premium-builder-preview .preview-panel-note{
+  border:1px solid rgba(10,129,121,.14);
+  background:linear-gradient(120deg,var(--ajg-primary-soft),rgba(245,249,248,.92));
+}
+
+/* Dashboard and account: make the 3-color system visible before opening the Builder. */
+.premium-home .create-card{
+  box-shadow:inset 4px 0 0 rgba(10,129,121,.58),var(--ajg-shadow-sm);
+}
+.premium-home .state-card{
+  box-shadow:inset 4px 0 0 rgba(197,138,44,.58),var(--ajg-shadow-sm);
+}
+.premium-home .architecture-card{
+  box-shadow:inset 4px 0 0 rgba(111,91,213,.58),var(--ajg-shadow-sm);
+}
+.account-shell .account-metric-card:nth-child(1),
+.account-shell .account-metric-card:nth-child(2){
+  box-shadow:inset 3px 0 0 rgba(111,91,213,.50),var(--ajg-shadow-sm);
+}
+.account-shell .account-metric-card:nth-child(3){
+  box-shadow:inset 3px 0 0 rgba(10,129,121,.52),var(--ajg-shadow-sm);
+}
+.account-shell .account-offer-explainer{
+  box-shadow:inset 3px 0 0 rgba(197,138,44,.48);
+}
+
+/* Keep semantic colors present but restrained on small screens. */
+@media(max-width:700px){
+  .premium-builder-shell .content-library-card,
+  .premium-builder-shell .architecture-editor-card,
+  .premium-builder-shell .ai-architect-card,
+  .premium-builder-shell .ai-architect-card.premium-feature-locked{
+    box-shadow:inset 3px 0 0 currentColor,0 7px 18px rgba(23,44,53,.035);
+  }
+  .premium-builder-shell .content-library-card{color:var(--ajg-ai-hover)}
+  .premium-builder-shell .architecture-editor-card{color:var(--ajg-primary-hover)}
+  .premium-builder-shell .ai-architect-card{color:var(--ajg-ai-hover)}
+  .premium-builder-shell .guided-writing-card summary,
+  .premium-builder-shell .guided-writing-body{
+    color:var(--ajg-ink);
+  }
+}
