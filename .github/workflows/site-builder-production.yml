@@ -228,6 +228,20 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Validate private reporting token before publication
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+          CONFIG_FILE="$RUNNER_TEMP/builder-reporting-production.env"
+          trap 'rm -f "$CONFIG_FILE"' EXIT
+          if ! npx --yes vercel@59.19.1 env pull "$CONFIG_FILE" \
+            --environment=production --yes --token "$VERCEL_TOKEN" > /dev/null 2>&1; then
+            echo "::error::Unable to validate private reporting configuration; publication blocked."
+            exit 1
+          fi
+          node scripts/verify-reporting-config.mjs "$CONFIG_FILE" /tmp/vercel-production-envs.json
+
       - name: Capture current production rollback target
         id: previous
         shell: bash
