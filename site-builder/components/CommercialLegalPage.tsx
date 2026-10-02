@@ -157,13 +157,13 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
                   : "AJG Site Builder is an online service for website creation, customization, AI-assisted generation, hosting and publishing. These terms will govern paid use once commercial launch is enabled."}</p>
               </section>
               <section className={styles.section}>
-                <h2>{fr ? "2. Offres, prix et essai" : "2. Plans, pricing and trial"}</h2>
+                <h2>{fr ? "2. Offres, prix et aperçu" : "2. Plans, pricing and preview"}</h2>
                 <p>{fr
                   ? "La grille préparée comprend Essentiel à 15 € par mois ou 150 € par an, Growth à 29 € par mois ou 290 € par an, et la Création IA complète à 49 € en paiement unique. Growth annuel peut inclure la Création IA. Le traitement fiscal final et l’affichage TTC applicable seront validés avant encaissement."
                   : "The prepared pricing grid includes Essential at €15/month or €150/year, Growth at €29/month or €290/year, and Full AI Launch at €49 as a one-time purchase. Annual Growth may include AI Launch. Final tax treatment and any required tax-inclusive display will be validated before charging begins."}</p>
                 <p>{fr
-                  ? "La Création IA complète est un droit BUILD ponctuel distinct de l’abonnement. Toute éventuelle période d’essai sur Essentiel ou Growth sera affichée au moment de la souscription et ne donnera pas automatiquement accès à une Création IA gratuite."
-                  : "Full AI Launch is a one-time BUILD entitlement separate from the subscription. Any trial offered on Essential or Growth will be shown at checkout and will not automatically grant a free AI Launch."}</p>
+                  ? "La Création IA complète est un droit BUILD ponctuel distinct de l’abonnement. AJG Site Builder ne propose pas d’essai Stripe gratuit sur Essentiel ou Growth : le mode gratuit sert uniquement à produire un aperçu qualitatif, sans publication, hébergement, domaine personnalisé, export ni Création IA complète."
+                  : "Full AI Launch is a one-time BUILD entitlement separate from the subscription. AJG Site Builder does not offer a free Stripe trial on Essential or Growth: the free mode only provides a qualitative preview, without publishing, hosting, custom domains, export or Full AI Launch."}</p>
                 <p>{fr
                   ? "Les Beta Testers invités restent hors facturation Stripe et ne sont pas engagés dans une offre payante du seul fait de leur participation à la bêta."
                   : "Invited Beta Testers remain outside Stripe billing and do not enter a paid plan merely by participating in the beta."}</p>
