@@ -110,7 +110,6 @@ export async function createStripeSubscriptionCheckout(input: {
   customerId?: string | null;
   priceId: string;
   planKey: "essential" | "growth";
-  trialDays?: number;
   successUrl: string;
   cancelUrl: string;
 }) {
@@ -145,9 +144,6 @@ export async function createStripeSubscriptionCheckout(input: {
         commercial_market: "b2b"
       },
       subscription_data: {
-        ...(input.trialDays && input.trialDays > 0
-          ? { trial_period_days: input.trialDays }
-          : {}),
         metadata: {
           app: "ajg_site_builder",
           site_id: input.siteId,
