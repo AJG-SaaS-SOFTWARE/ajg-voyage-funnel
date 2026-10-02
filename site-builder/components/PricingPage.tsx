@@ -77,7 +77,7 @@ const copy = {
     beta:
       "Les Beta Testers disposent temporairement de l'accès complet pour tester BUILD, RUN et GROW sans abonnement Stripe.",
     billingNote:
-      "Le catalogue sandbox est préparé, mais aucun paiement commercial n'est ouvert tant que les gates juridiques, fiscaux et opérationnels ne sont pas validés.",
+      "Le catalogue sandbox est préparé. Le gratuit donne un aperçu représentatif ; la publication, l'hébergement, le domaine, l'export et la Création IA complète restent payants ou réservés aux Beta Testers.",
     account: "Mon offre",
     builder: "Ouvrir le Builder",
     legal: "Mentions légales",
@@ -152,7 +152,7 @@ const copy = {
     beta:
       "Beta Testers temporarily receive full access to BUILD, RUN and GROW without a Stripe subscription.",
     billingNote:
-      "The sandbox catalogue is prepared, but commercial charging stays closed until legal, tax and operational launch gates are approved.",
+      "The sandbox catalogue is prepared. Free access gives a representative preview; publishing, hosting, domains, export and Full AI Launch remain paid or reserved for Beta Testers.",
     account: "My plan",
     builder: "Open Builder",
     legal: "Legal notice",
