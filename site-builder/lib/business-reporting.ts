@@ -1,6 +1,6 @@
 import "server-only";
 
-import { timingSafeEqual } from "node:crypto";
+import { authorizedReportingRequest } from "./cockpit-reporting-auth";
 import { billingServiceClient } from "./server-billing";
 
 type BuilderSubscriptionRow = {
@@ -92,13 +92,7 @@ export function authorizedCockpitRequest(
   authorization: string | null,
   expectedToken = process.env.AJG_COCKPIT_REPORTING_TOKEN?.trim() || ""
 ) {
-  if (!expectedToken || expectedToken.length < 24) return false;
-  if (!authorization?.startsWith("Bearer ")) return false;
-  const supplied = authorization.slice("Bearer ".length).trim();
-  if (!supplied) return false;
-  const left = Buffer.from(supplied);
-  const right = Buffer.from(expectedToken);
-  return left.length === right.length && timingSafeEqual(left, right);
+  return authorizedReportingRequest(authorization, expectedToken);
 }
 
 function stripeMode() {
