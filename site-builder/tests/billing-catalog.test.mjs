@@ -20,7 +20,8 @@ test("billing catalogue supports BUILD RUN GROW", () => {
   ]) assert.ok(env.includes(key), key);
   assert.ok(subscription.includes('"free" | "essential" | "growth"'));
   assert.ok(env.includes("AJG_AI_LAUNCH_OPERATIONS=4"));
-  assert.ok(env.includes("AJG_SUBSCRIPTION_TRIAL_DAYS=0"));
+  assert.ok(env.includes("AJG Site Builder has no free Stripe trial"));
+  assert.ok(!env.includes("AJG_SUBSCRIPTION_TRIAL_DAYS"));
 });
 
 test("checkout keeps commercial charging closed by an explicit server gate", () => {
@@ -28,9 +29,8 @@ test("checkout keeps commercial charging closed by an explicit server gate", () 
   assert.ok(checkout.includes('body?.planKey === "growth"'));
   assert.ok(checkout.includes('body?.purchaseType === "ai_launch"'));
   assert.ok(checkout.includes("STRIPE_AI_LAUNCH_PRICE_ID"));
-  assert.ok(checkout.includes("AJG_SUBSCRIPTION_TRIAL_DAYS"));
-  assert.ok(checkout.includes('planKey === "growth" && billingCycle === "annual"'));
   assert.ok(checkout.includes("return 0"));
+  assert.ok(!stripe.includes("trial_period_days"));
   assert.ok(stripe.includes('mode: "payment"'));
   assert.ok(stripe.includes('purchase_type: "ai_launch"'));
 });

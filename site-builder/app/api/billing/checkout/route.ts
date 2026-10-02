@@ -1,4 +1,3 @@
-import { growthAnnualIncludesLaunch } from "../../../../lib/growth-launch-offer";
 import { NextResponse } from "next/server";
 import {
   billingAppUrl,
@@ -35,12 +34,9 @@ function configuredPriceId(planKey: PaidPlanKey, billingCycle: BillingCycle) {
 }
 
 function configuredTrialDays(planKey: PaidPlanKey, billingCycle: BillingCycle) {
-  // Growth annual includes BUILD once paid, so it never starts with a free
-  // subscription trial that could unlock the included AI Launch before payment.
-  if (growthAnnualIncludesLaunch() && planKey === "growth" && billingCycle === "annual") return 0;
-  const raw = Number(process.env.AJG_SUBSCRIPTION_TRIAL_DAYS || "0");
-  if (!Number.isFinite(raw)) return 0;
-  return Math.max(0, Math.min(30, Math.floor(raw)));
+  void planKey;
+  void billingCycle;
+  return 0;
 }
 
 export async function POST(request: Request) {
@@ -285,7 +281,6 @@ export async function POST(request: Request) {
         current?.provider === "stripe" ? current.provider_customer_id : null,
       priceId,
       planKey,
-      trialDays,
       successUrl: `${appUrl}/billing?checkout=success&siteId=${encodeURIComponent(site.id)}`,
       cancelUrl: `${appUrl}/plans?checkout=cancel&siteId=${encodeURIComponent(site.id)}`
     });
