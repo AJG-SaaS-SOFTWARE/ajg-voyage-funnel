@@ -25,13 +25,18 @@ test("configuration file is parsed without executing shell expressions", () => {
     assert.deepEqual(verifyReportingFile(file), { status: "ready" });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
-test("CLI blocks short credentials and redacts file secrets", () => {
+test("CLI blocks short credentials and redacts file secrets", (t) => {
   const dir = mkdtempSync(join(tmpdir(), "ajg-reporting-test-"));
   try {
     const file = join(dir, "config.env");
     const secret = "synthetic-short-secret";
     writeFileSync(file, "AJG_COCKPIT_REPORTING_TOKEN=" + secret + "\nOTHER=synthetic-other-secret\n");
     const result = spawnSync(process.execPath, [fileURLToPath(new URL("../scripts/verify-reporting-config.mjs", import.meta.url)), file], { encoding: "utf8" });
+    if (result.error?.code === "EPERM") {
+      t.skip("current runtime blocks child-process execution");
+      return;
+    }
+    assert.ifError(result.error);
     assert.equal(result.status, 1);
     assert.doesNotMatch(result.stdout + result.stderr, /synthetic-short-secret|synthetic-other-secret/);
     assert.match(result.stderr, /publication blocked/);
