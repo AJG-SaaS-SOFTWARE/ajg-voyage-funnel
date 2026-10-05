@@ -251,3 +251,96 @@ test("healthy configured content does not create a false customer action", () =>
   assert.ok(result.checks.some((check) => check.key === "content_links" && check.status === "healthy"));
   assert.ok(result.checks.some((check) => check.key === "storage" && check.status === "healthy"));
 });
+
+
+test("reached standard AI quota is a guided usage action, not a platform incident", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    ai: {
+      enabled: true,
+      heavyEnabled: true,
+      quota: {
+        planKey: "essential",
+        subscriptionStatus: "active",
+        betaActive: false,
+        todayUsed: 20,
+        dailyLimit: 20,
+        monthUsed: 35,
+        monthlyLimit: 80,
+        heavyMonthUsed: 0,
+        heavyMonthlyLimit: 0,
+        launchOperationsRemaining: 0
+      }
+    }
+  });
+  const check = result.checks.find((item) => item.key === "ai");
+  assert.equal(check?.status, "action");
+  assert.match(check?.detail || "", /quot.*quotidien/i);
+  assert.ok(check?.clientAction);
+  assert.notEqual(result.overall, "incident");
+});
+
+test("reached Growth heavy quota leaves standard AI available", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    ai: {
+      enabled: true,
+      heavyEnabled: true,
+      quota: {
+        planKey: "growth",
+        subscriptionStatus: "active",
+        betaActive: false,
+        todayUsed: 2,
+        dailyLimit: 100,
+        monthUsed: 10,
+        monthlyLimit: 500,
+        heavyMonthUsed: 12,
+        heavyMonthlyLimit: 12,
+        launchOperationsRemaining: 0
+      }
+    }
+  });
+  const check = result.checks.find((item) => item.key === "ai");
+  assert.equal(check?.status, "action");
+  assert.match(check?.detail || "", /IA standard/);
+  assert.match(check?.detail || "", /12\/12/);
+});
+
+test("healthy AI quota reports standard, heavy and AI Launch remaining capacity", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    ai: {
+      enabled: true,
+      heavyEnabled: true,
+      quota: {
+        planKey: "growth",
+        subscriptionStatus: "active",
+        betaActive: false,
+        todayUsed: 2,
+        dailyLimit: 100,
+        monthUsed: 10,
+        monthlyLimit: 500,
+        heavyMonthUsed: 3,
+        heavyMonthlyLimit: 12,
+        launchOperationsRemaining: 2
+      }
+    }
+  });
+  const check = result.checks.find((item) => item.key === "ai");
+  assert.equal(check?.status, "healthy");
+  assert.match(check?.detail || "", /10\/500/);
+  assert.match(check?.detail || "", /3\/12/);
+  assert.match(check?.detail || "", /2 opération/);
+});
