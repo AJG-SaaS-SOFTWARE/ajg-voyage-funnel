@@ -1,6 +1,6 @@
 # Test fermé — ELTARA
 
-Adresse : https://ajg-site-builder.vercel.app/login
+Adresse : https://eltara.ajgsolutionsgroup.com/login
 
 ## À transmettre aux premiers testeurs
 
@@ -8,7 +8,7 @@ Adresse : https://ajg-site-builder.vercel.app/login
 2. Créez votre site en parcourant les six étapes. Commencez en français ; la création bilingue n'est pas encore disponible.
 3. Ajoutez votre photo, personnalisez le message et vérifiez le lien de prise de rendez-vous si vous en avez un.
 4. Dans « Style », essayez une couleur, un motif, une image et éventuellement un son. Vérifiez la fiche source du média avant de le choisir.
-5. Publiez le site, ouvrez le lien `ajg-site-builder.vercel.app/site/...` sur un autre appareil, puis testez les boutons et le son.
+5. Publiez le site, ouvrez le lien `eltara.ajgsolutionsgroup.com/site/...` sur un autre appareil, puis testez les boutons et le son.
 6. Revenez modifier un élément, republiez et vérifiez le résultat.
 
 Merci de relever le type d'appareil et de navigateur, l'étape concernée, ce que vous attendiez et ce qui s'est produit. Une capture aide à reproduire le problème. Évitez de transmettre un lien de connexion ou une URL contenant des jetons.
