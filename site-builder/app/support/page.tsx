@@ -6,6 +6,7 @@ import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
+import { supportGuidanceForDiagnosis } from "../../lib/support-guidance";
 
 type Ticket = {
   id: string;
@@ -25,7 +26,7 @@ type SupportPayload = {
 };
 
 export default function SupportPage() {
-  const { tr } = useProductLocale();
+  const { locale, tr } = useProductLocale();
   const [payload, setPayload] = useState<SupportPayload | null>(null);
   const [state, setState] = useState<"loading" | "guest" | "ready" | "error">("loading");
   const [category, setCategory] = useState("bug");
@@ -192,6 +193,7 @@ export default function SupportPage() {
   }
 
   const health = payload?.health.diagnosis;
+  const guidance = health ? supportGuidanceForDiagnosis(health.checks, locale) : [];
 
   return (
     <main className="plans-page">
@@ -268,6 +270,27 @@ export default function SupportPage() {
             </div>
             {healthNotice ? <p role="status">{healthNotice}</p> : null}
           </section>
+
+          {guidance.length ? (
+            <section className="panel" aria-labelledby="support-context-title">
+              <p className="eyebrow">{tr("Aide contextuelle", "Contextual help")}</p>
+              <h2 id="support-context-title">{tr("Que faire maintenant ?", "What should I do now?")}</h2>
+              <p>{tr(
+                "Ces explications utilisent uniquement les résultats du diagnostic ci-dessus. Aucun contenu de votre site ou de votre demande n’est envoyé à une IA.",
+                "These explanations use only the diagnostic results above. No website or request content is sent to an AI."
+              )}</p>
+              <div className="support-guidance-grid">
+                {guidance.map((item) => (
+                  <article className="support-guidance-card" key={item.key}>
+                    <h3>{item.title}</h3>
+                    <p><strong>{tr("Pourquoi ?", "Why?")}</strong> {item.why}</p>
+                    <p><strong>{tr("Action", "Action")}</strong> {item.action}</p>
+                    {item.href && item.cta ? <Link className="button secondary" href={item.href}>{item.cta}</Link> : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="panel">
             <h2>{tr("Ouvrir une demande", "Open a request")}</h2>
