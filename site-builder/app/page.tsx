@@ -225,7 +225,7 @@ export default function Home() {
               : remoteStatus === "guest"
                 ? tr("Connectez-vous pour sauvegarder un vrai site et envoyer des photos.", "Sign in to save a real website and upload photos.")
                 : remoteStatus === "local"
-                  ? tr("Le builder fonctionne, mais les données restent sur cet appareil.", "The Builder works, but data stays on this device.")
+                  ? tr("ELTARA fonctionne, mais les données restent sur cet appareil.", "ELTARA works, but data stays on this device.")
                   : tr("Connexion au backend en cours.", "Connecting to backend.")}
           </p>
         </div>

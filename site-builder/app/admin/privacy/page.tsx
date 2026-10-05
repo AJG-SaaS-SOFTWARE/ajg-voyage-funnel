@@ -184,7 +184,7 @@ export default function AdminPrivacyPage() {
       <div className="privacy-admin-warning">
         <b>Action irréversible.</b>
         <p>
-          Les données de service du Builder sont supprimées. Les pièces ou
+          Les données de service d’ELTARA sont supprimées. Les pièces ou
           écritures financières qui doivent rester chez le prestataire de
           paiement ne sont pas effacées aveuglément par ce workflow.
         </p>
