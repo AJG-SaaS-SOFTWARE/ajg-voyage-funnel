@@ -63,7 +63,7 @@ export async function downloadMySiteExport(siteId?: string) {
   const blob = await response.blob();
   const disposition = response.headers.get("content-disposition") || "";
   const filename = disposition.match(/filename="([^"]+)"/i)?.[1]
-    || `ajg-builder-export-${site.slug || "site"}.tar.gz`;
+    || `eltara-export-${site.slug || "site"}.tar.gz`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

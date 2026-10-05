@@ -118,5 +118,5 @@ export function recoveryMediaArchivePath(bucket: string, index: number, original
 export function recoveryArchiveFilename(slug: string) {
   const safeSlug = asciiFilename(slug).slice(0, 48) || "site";
   const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  return "ajg-builder-export-" + safeSlug + "-" + day + ".tar.gz";
+  return "eltara-export-" + safeSlug + "-" + day + ".tar.gz";
 }
