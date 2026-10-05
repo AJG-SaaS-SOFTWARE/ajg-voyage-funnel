@@ -1,6 +1,6 @@
-# AJG Site Builder
+# ELTARA
 
-AJG Site Builder est le prototype SaaS multi-tenant destiné à permettre aux membres du réseau de créer, personnaliser et publier leur propre site à partir d'un moteur commun.
+ELTARA est le prototype SaaS multi-tenant destiné à permettre aux membres du réseau de créer, personnaliser et publier leur propre site à partir d'un moteur commun.
 
 ## État actuel — Prototype bêta
 
