@@ -11,7 +11,7 @@ const middleware = readFileSync("middleware.ts", "utf8");
 
 test("public contact endpoint uses the hardened anonymous RPC and a pseudonymous abuse fingerprint", () => {
   assert.match(route, /submit_contact_message/);
-  assert.match(route, /createHmac\\("sha256"\\)/);
+  assert.match(route, /createHmac\("sha256"/);
   assert.match(route, /x-forwarded-for/);
   assert.match(route, /rate_limited/);
   assert.match(route, /contact_disabled/);
