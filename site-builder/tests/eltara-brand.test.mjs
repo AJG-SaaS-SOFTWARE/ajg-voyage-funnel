@@ -1,0 +1,45 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+
+const read = (path) => fs.readFileSync(new URL("../" + path, import.meta.url), "utf8");
+
+test("ELTARA brand assets and metadata are wired into the product", () => {
+  const layout = read("app/layout.tsx");
+  const manifest = read("app/manifest.ts");
+  const brand = read("components/EltaraBrand.tsx");
+  const icon = read("app/icon.svg");
+
+  assert.match(layout, /applicationName:\s*"ELTARA"/);
+  assert.match(layout, /AJG Horizon/);
+  assert.match(manifest, /short_name:\s*"ELTARA"/);
+  assert.match(manifest, /#4E79D8/);
+  assert.match(brand, />ELTARA</);
+  assert.match(brand, /by AJG Horizon/);
+  assert.match(icon, /#4E79D8/);
+  assert.match(icon, /#62D8EF/);
+});
+
+test("core customer-facing product surfaces no longer expose the legacy product name", () => {
+  const paths = [
+    "app/page.tsx",
+    "app/login/page.tsx",
+    "app/beta-access/page.tsx",
+    "app/builder/page.tsx",
+    "components/PricingPage.tsx",
+    "components/AccountShell.tsx",
+    "components/AdminShell.tsx",
+    "components/CommercialLegalPage.tsx"
+  ];
+
+  for (const path of paths) {
+    assert.doesNotMatch(read(path), /AJG Site Builder|AJG Builder/);
+  }
+});
+
+test("legacy technical identifiers remain stable during the brand migration", () => {
+  const store = read("lib/site-store.ts");
+  const billing = read("lib/stripe-billing.ts");
+  assert.match(store, /ajg-site-builder:draft/);
+  assert.match(billing, /ajg_site_builder/);
+});
