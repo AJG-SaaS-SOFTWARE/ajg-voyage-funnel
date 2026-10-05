@@ -91,13 +91,13 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
     input.backendOk
       ? {
           key: "backend",
-          label: "Service Builder",
+          label: "Service ELTARA",
           status: "healthy",
           detail: "Le backend répond et la session a pu être vérifiée."
         }
       : {
           key: "backend",
-          label: "Service Builder",
+          label: "Service ELTARA",
           status: "incident",
           detail: "Le backend ou la base de données ne répond pas normalement.",
           clientAction: "Réessayez dans quelques minutes. Le ticket reste transmis à AJG si le service ne revient pas."
@@ -110,7 +110,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
       label: "Site",
       status: "action",
       detail: "Aucun site n'est encore rattaché à ce compte.",
-      clientAction: "Créez d'abord votre site depuis le Builder, puis relancez le diagnostic."
+      clientAction: "Créez d'abord votre site depuis ELTARA, puis relancez le diagnostic."
     });
     checks.push({
       key: "domain",
@@ -147,7 +147,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         label: "Publication",
         status: "action",
         detail: "Le site est encore en brouillon.",
-        clientAction: "Terminez le Quality Check puis publiez le site depuis le Builder."
+        clientAction: "Terminez le Quality Check puis publiez le site depuis ELTARA."
       });
     }
 
@@ -193,7 +193,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         key: "domain",
         label: "Domaine",
         status: "action",
-        detail: "Le sous-domaine AJG géré par la plateforme est absent. Une correction automatique est disponible."
+        detail: "Le sous-domaine ELTARA géré par la plateforme est absent. Une correction automatique est disponible."
       });
     } else if (managed?.verificationStatus === "verified" && !managed.isPrimary) {
       repairActions.push("managed_domain_repair");
@@ -449,7 +449,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
             label: "Liens configurés",
             status: "action",
             detail: `${content.invalidConfiguredLinks} lien(s) configuré(s) ne sont pas des URL HTTPS exploitables.`,
-            clientAction: "Corrigez les liens signalés dans le Builder puis republiez le site."
+            clientAction: "Corrigez les liens signalés dans ELTARA puis republiez le site."
           }
         : {
             key: "content_links",
@@ -474,7 +474,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
             key: "storage",
             label: "Stockage",
             status: "healthy",
-            detail: "Les espaces de stockage public et privé du Builder sont disponibles."
+            detail: "Les espaces de stockage public et privé d’ELTARA sont disponibles."
           }
         : {
             key: "storage",
