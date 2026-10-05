@@ -33,6 +33,10 @@ function normalized(value: unknown) {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
+export function effectiveHeavyAiMonthlyLimit(betaActive: boolean, planLimit: unknown) {
+  return betaActive ? 30 : normalized(planLimit);
+}
+
 export function deriveAiQuotaHealth(input: QuotaInput): AiQuotaHealth {
   const minute = { used: normalized(input.minuteUsed), limit: normalized(input.minuteLimit) };
   const daily = { used: normalized(input.dailyUsed), limit: normalized(input.dailyLimit) };
@@ -177,11 +181,13 @@ export async function getAiQuotaHealth(
   const daySince = startOfUtcDay(now);
   const monthSince = startOfUtcMonth(now);
 
+  const heavyMonthlyLimit = effectiveHeavyAiMonthlyLimit(Boolean(betaGrant), plan.heavy_ai_monthly_limit);
+
   const [minuteUsed, dailyUsed, monthlyUsed, heavyMonthlyUsed] = await Promise.all([
     countSince(service, "ai_usage_events", { user_id: userId }, minuteSince),
     countSince(service, "ai_usage_events", { user_id: userId }, daySince),
     countSince(service, "ai_usage_events", { user_id: userId }, monthSince),
-    Number(plan.heavy_ai_monthly_limit) > 0
+    heavyMonthlyLimit > 0
       ? countSince(service, "site_ai_heavy_usage", { owner_id: userId, site_id: siteId }, monthSince)
       : Promise.resolve(0)
   ]);
@@ -195,7 +201,7 @@ export async function getAiQuotaHealth(
     minuteUsed,
     dailyUsed,
     monthlyUsed,
-    heavyMonthlyLimit: Number(plan.heavy_ai_monthly_limit) || 0,
+    heavyMonthlyLimit,
     heavyMonthlyUsed
   });
 }
