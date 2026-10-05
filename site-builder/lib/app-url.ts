@@ -12,5 +12,5 @@ export function appBaseUrl() {
     return `https://${productionHost.trim().replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
   }
 
-  return "https://ajg-site-builder.vercel.app";
+  return "https://eltara.ajgsolutionsgroup.com";
 }
