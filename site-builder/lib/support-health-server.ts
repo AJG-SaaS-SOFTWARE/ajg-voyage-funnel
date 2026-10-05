@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "./app-url";
 import { getStorageBackupStatus } from "./storage-backup";
+import { recentRuntimeErrorHealth } from "./runtime-error-health";
 import {
   buildSupportDiagnosis,
   type SupportDiagnosis
@@ -244,7 +245,8 @@ export async function diagnoseSupportHealth(
     backup,
     storage,
     publicRender,
-    sitemap
+    sitemap,
+    runtimeErrors
   ] = await Promise.all([
     service
       .from("domains")
@@ -267,7 +269,8 @@ export async function diagnoseSupportHealth(
       : Promise.resolve({ checked: false, ok: false, status: null }),
     site.status === "published" && site.public_access_state !== "suspended"
       ? sitemapProbe(site.slug)
-      : Promise.resolve({ checked: false, ok: false, status: null, validXml: false })
+      : Promise.resolve({ checked: false, ok: false, status: null, validXml: false }),
+    recentRuntimeErrorHealth(service, site.id)
   ]);
 
   return {
@@ -291,6 +294,7 @@ export async function diagnoseSupportHealth(
       storage,
       publicRender,
       sitemap,
+      runtime: runtimeErrors || undefined,
       backup: {
         configured: backup.configured,
         status: backup.status,
