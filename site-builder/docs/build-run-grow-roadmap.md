@@ -1,10 +1,10 @@
-# AJG Site Builder — Roadmap BUILD / RUN / GROW
+# ELTARA — Roadmap BUILD / RUN / GROW
 
 Dernière mise à jour : 30 septembre 2026.
 
 ## 1. Vision produit
 
-AJG Site Builder ne doit pas devenir un SaaS nécessitant un support humain quotidien.
+ELTARA ne doit pas devenir un SaaS nécessitant un support humain quotidien.
 
 Le produit cible un fonctionnement **self-service, automatisé, observable et économiquement contrôlé** :
 
@@ -808,7 +808,7 @@ Ces seuils sont des garde-fous internes à affiner avec les données réelles.
 
 # 9. Critères de commercialisation
 
-AJG Site Builder n'est commercialisable à grande échelle que lorsque :
+ELTARA n'est commercialisable à grande échelle que lorsque :
 
 - [ ] un client peut s'inscrire sans aide ;
 - [ ] un client peut payer sans aide ;
