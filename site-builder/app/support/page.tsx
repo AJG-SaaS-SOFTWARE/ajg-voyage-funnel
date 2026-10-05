@@ -7,6 +7,7 @@ import { useProductLocale } from "../../lib/product-i18n";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import { supportGuidanceForDiagnosis } from "../../lib/support-guidance";
+import { supportArticlesForLocale } from "../../lib/support-knowledge";
 
 type Ticket = {
   id: string;
@@ -194,6 +195,7 @@ export default function SupportPage() {
 
   const health = payload?.health.diagnosis;
   const guidance = health ? supportGuidanceForDiagnosis(health.checks, locale) : [];
+  const knowledgeArticles = supportArticlesForLocale(locale);
 
   return (
     <main className="plans-page">
@@ -291,6 +293,28 @@ export default function SupportPage() {
               </div>
             </section>
           ) : null}
+
+          <section className="panel" aria-labelledby="support-knowledge-title">
+            <p className="eyebrow">{tr("Base de connaissances", "Knowledge base")}</p>
+            <h2 id="support-knowledge-title">{tr("Résoudre les cas les plus fréquents", "Resolve the most common cases")}</h2>
+            <p>{tr(
+              "Ces fiches décrivent les parcours ELTARA actuels et renvoient directement vers l’écran concerné.",
+              "These guides describe the current ELTARA flows and link directly to the relevant screen."
+            )}</p>
+            <div className="support-knowledge-grid">
+              {knowledgeArticles.map((article) => (
+                <article className="support-knowledge-card" key={article.key}>
+                  <span className="support-knowledge-category">{article.category}</span>
+                  <h3>{article.title}</h3>
+                  <p>{article.summary}</p>
+                  <ol>
+                    {article.steps.map((step) => <li key={step}>{step}</li>)}
+                  </ol>
+                  <Link className="text-link" href={article.href}>{tr("Ouvrir le parcours", "Open the flow")} →</Link>
+                </article>
+              ))}
+            </div>
+          </section>
 
           <section className="panel">
             <h2>{tr("Ouvrir une demande", "Open a request")}</h2>
