@@ -179,7 +179,7 @@ export default function AdminPrivacyPage() {
       active="privacy"
       eyebrow="Administration · RGPD"
       title="Demandes d’effacement"
-      description="Une demande suspend déjà les sites concernés. La purge annule les abonnements applicables, détache les domaines, supprime les médias et données du Builder puis l’identité Auth pour une demande de compte."
+      description="Une demande suspend déjà les sites concernés. La purge annule les abonnements applicables, détache les domaines, supprime les médias et données d’ELTARA puis l’identité Auth pour une demande de compte."
     >
       <div className="privacy-admin-warning">
         <b>Action irréversible.</b>
