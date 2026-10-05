@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { managedSlugFromHostname, publishedRootDomains } from "./lib/published-domain";
 
-const appHostname=(process.env.NEXT_PUBLIC_SITE_BUILDER_URL||"https://eltara.ajgsolutionsgroup.com").replace(/^https?:\/\//,"").replace(/\/.*$/,"").toLowerCase();
+const appHostname=(process.env.NEXT_PUBLIC_SITE_BUILDER_URL||process.env.NEXT_PUBLIC_APP_URL||"https://eltara.ajgsolutionsgroup.com").replace(/^https?:\/\//,"").replace(/\/.*$/,"").toLowerCase();
 const reservedSubdomains=new Set(["www","app","builder","admin"]);
 
 export function middleware(request:NextRequest){
