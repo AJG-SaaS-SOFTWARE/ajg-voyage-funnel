@@ -31,7 +31,7 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
   return (
     <main className={styles.page} lang={locale}>
       <header className={styles.topbar}>
-        <Link href="/" className={styles.brand}><span className={styles.mark}>A</span><span>AJG Site Builder</span></Link>
+        <Link href="/" className={styles.brand}><span className={styles.mark}>A</span><span>ELTARA</span></Link>
         <nav className={styles.nav} aria-label={fr ? "Informations contractuelles" : "Contract information"}>
           <Link href={routes.legal}>{fr ? "Mentions légales" : "Legal"}</Link>
           <Link href={routes.privacy}>{fr ? "Confidentialité" : "Privacy"}</Link>
@@ -42,12 +42,12 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
       </header>
 
       <div className={styles.main}>
-        <p className={styles.kicker}>AJG Site Builder · {fr ? "Cadre contractuel" : "Contract framework"}</p>
+        <p className={styles.kicker}>ELTARA · {fr ? "Cadre contractuel" : "Contract framework"}</p>
         <h1>{title}</h1>
         <p className={styles.lead}>
           {fr
-            ? "Informations préparées pour le lancement commercial d’AJG Site Builder. Les éléments dépendant de l’immatriculation finale du vendeur restent volontairement bloquants tant qu’ils ne sont pas renseignés."
-            : "Information prepared for the commercial launch of AJG Site Builder. Items that depend on the seller’s final registration deliberately remain launch blockers until completed."}
+            ? "Informations préparées pour le lancement commercial d’ELTARA. Les éléments dépendant de l’immatriculation finale du vendeur restent volontairement bloquants tant qu’ils ne sont pas renseignés."
+            : "Information prepared for the commercial launch of ELTARA. Items that depend on the seller’s final registration deliberately remain launch blockers until completed."}
         </p>
 
         {draft ? (
@@ -88,8 +88,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "Propriété intellectuelle" : "Intellectual property"}</h2>
                 <p>{fr
-                  ? "Le logiciel, l’interface, la documentation et les éléments de marque AJG Site Builder sont protégés par les droits applicables. Le client conserve ses droits sur les contenus, médias et signes distinctifs qu’il fournit, sous réserve des droits de tiers."
-                  : "The software, interface, documentation and AJG Site Builder brand assets are protected by applicable rights. Customers retain their rights in content, media and distinctive signs they provide, subject to third-party rights."}</p>
+                  ? "Le logiciel, l’interface, la documentation et les éléments de marque ELTARA sont protégés par les droits applicables. Le client conserve ses droits sur les contenus, médias et signes distinctifs qu’il fournit, sous réserve des droits de tiers."
+                  : "The software, interface, documentation and ELTARA brand assets are protected by applicable rights. Customers retain their rights in content, media and distinctive signs they provide, subject to third-party rights."}</p>
               </section>
             </>
           ) : null}
@@ -99,8 +99,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "Qui traite les données ?" : "Who processes the data?"}</h2>
                 <p>{fr
-                  ? "Pour les données de compte, de facturation, de support, de sécurité et de pilotage du produit, l’entité exploitant AJG Site Builder agit comme responsable du traitement. Pour certains contenus et données de visiteurs traités uniquement pour publier le site d’un client, AJG peut agir comme sous-traitant du client."
-                  : "For account, billing, support, security and product-operation data, the entity operating AJG Site Builder acts as controller. For some content and visitor data processed solely to publish a customer website, AJG may act as the customer’s processor."}</p>
+                  ? "Pour les données de compte, de facturation, de support, de sécurité et de pilotage du produit, l’entité exploitant ELTARA agit comme responsable du traitement. Pour certains contenus et données de visiteurs traités uniquement pour publier le site d’un client, AJG peut agir comme sous-traitant du client."
+                  : "For account, billing, support, security and product-operation data, the entity operating ELTARA acts as controller. For some content and visitor data processed solely to publish a customer website, AJG may act as the customer’s processor."}</p>
                 <p><strong>{fr ? "Responsable :" : "Controller:"}</strong> <span className={!profile.legalName ? styles.missing : ""}>{value(profile.legalName, locale)}</span><br />
                 <strong>{fr ? "Contact vie privée :" : "Privacy contact:"}</strong> <span className={!profile.privacyEmail ? styles.missing : ""}>{value(profile.privacyEmail, locale)}</span>
                 {profile.dpoContact ? <><br /><strong>DPO:</strong> {profile.dpoContact}</> : null}</p>
@@ -142,8 +142,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "Vos droits" : "Your rights"}</h2>
                 <p>{fr
-                  ? "Selon le traitement concerné, vous pouvez exercer vos droits d’accès, rectification, effacement, limitation, opposition et portabilité. Les utilisateurs disposent également d’un export et d’un parcours de demande d’effacement dans AJG Site Builder. Vous pouvez introduire une réclamation auprès de la CNIL."
-                  : "Depending on the processing involved, you may exercise rights of access, rectification, erasure, restriction, objection and portability. Users also have export and erasure-request tools in AJG Site Builder. You may lodge a complaint with the French data protection authority, the CNIL."}</p>
+                  ? "Selon le traitement concerné, vous pouvez exercer vos droits d’accès, rectification, effacement, limitation, opposition et portabilité. Les utilisateurs disposent également d’un export et d’un parcours de demande d’effacement dans ELTARA. Vous pouvez introduire une réclamation auprès de la CNIL."
+                  : "Depending on the processing involved, you may exercise rights of access, rectification, erasure, restriction, objection and portability. Users also have export and erasure-request tools in ELTARA. You may lodge a complaint with the French data protection authority, the CNIL."}</p>
               </section>
             </>
           ) : null}
@@ -153,8 +153,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "1. Objet" : "1. Purpose"}</h2>
                 <p>{fr
-                  ? "AJG Site Builder est un service en ligne de création, personnalisation, génération assistée par IA, hébergement et publication de sites web. Les présentes conditions encadreront l’utilisation payante du service une fois l’ouverture commerciale activée."
-                  : "AJG Site Builder is an online service for website creation, customization, AI-assisted generation, hosting and publishing. These terms will govern paid use once commercial launch is enabled."}</p>
+                  ? "ELTARA est un service en ligne de création, personnalisation, génération assistée par IA, hébergement et publication de sites web. Les présentes conditions encadreront l’utilisation payante du service une fois l’ouverture commerciale activée."
+                  : "ELTARA is an online service for website creation, customization, AI-assisted generation, hosting and publishing. These terms will govern paid use once commercial launch is enabled."}</p>
               </section>
               <section className={styles.section}>
                 <h2>{fr ? "2. Offres, prix et aperçu" : "2. Plans, pricing and preview"}</h2>
@@ -162,8 +162,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
                   ? "La grille préparée comprend Essentiel à 15 € par mois ou 150 € par an, Growth à 29 € par mois ou 290 € par an, et la Création IA complète à 49 € en paiement unique. Growth annuel peut inclure la Création IA. Le traitement fiscal final et l’affichage TTC applicable seront validés avant encaissement."
                   : "The prepared pricing grid includes Essential at €15/month or €150/year, Growth at €29/month or €290/year, and Full AI Launch at €49 as a one-time purchase. Annual Growth may include AI Launch. Final tax treatment and any required tax-inclusive display will be validated before charging begins."}</p>
                 <p>{fr
-                  ? "La Création IA complète est un droit BUILD ponctuel distinct de l’abonnement. AJG Site Builder ne propose pas d’essai Stripe gratuit sur Essentiel ou Growth : le mode gratuit sert uniquement à produire un aperçu qualitatif, sans publication, hébergement, domaine personnalisé, export ni Création IA complète."
-                  : "Full AI Launch is a one-time BUILD entitlement separate from the subscription. AJG Site Builder does not offer a free Stripe trial on Essential or Growth: the free mode only provides a qualitative preview, without publishing, hosting, custom domains, export or Full AI Launch."}</p>
+                  ? "La Création IA complète est un droit BUILD ponctuel distinct de l’abonnement. ELTARA ne propose pas d’essai Stripe gratuit sur Essentiel ou Growth : le mode gratuit sert uniquement à produire un aperçu qualitatif, sans publication, hébergement, domaine personnalisé, export ni Création IA complète."
+                  : "Full AI Launch is a one-time BUILD entitlement separate from the subscription. ELTARA does not offer a free Stripe trial on Essential or Growth: the free mode only provides a qualitative preview, without publishing, hosting, custom domains, export or Full AI Launch."}</p>
                 <p>{fr
                   ? "Les Beta Testers invités restent hors facturation Stripe et ne sont pas engagés dans une offre payante du seul fait de leur participation à la bêta."
                   : "Invited Beta Testers remain outside Stripe billing and do not enter a paid plan merely by participating in the beta."}</p>
@@ -228,8 +228,8 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "Abonnements commerciaux" : "Commercial subscriptions"}</h2>
                 <p>{fr
-                  ? "Les paiements sont actuellement fermés pendant la bêta : aucun Beta Tester n’a besoin de résilier un abonnement payant AJG Site Builder."
-                  : "Payments are currently closed during beta: Beta Testers do not need to cancel a paid AJG Site Builder subscription."}</p>
+                  ? "Les paiements sont actuellement fermés pendant la bêta : aucun Beta Tester n’a besoin de résilier un abonnement payant ELTARA."
+                  : "Payments are currently closed during beta: Beta Testers do not need to cancel a paid ELTARA subscription."}</p>
                 <p>{fr
                   ? "Lorsque les abonnements seront ouverts, cette page restera l’entrée publique de résiliation. Un client disposant déjà d’un compte pourra s’identifier puis ouvrir le Customer Portal Stripe pour confirmer sa résiliation sans devoir créer un nouveau compte."
                   : "When subscriptions open, this page will remain the public cancellation entry point. An existing customer will be able to sign in and open the Stripe Customer Portal to confirm cancellation without creating a new account."}</p>
@@ -246,7 +246,7 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
         </article>
 
         <footer className={styles.footer}>
-          <span>AJG Site Builder · {fr ? "Version de préparation commerciale" : "Commercial pre-launch version"}</span>
+          <span>ELTARA · {fr ? "Version de préparation commerciale" : "Commercial pre-launch version"}</span>
           <span><Link href={routes.privacy}>{fr ? "Confidentialité" : "Privacy"}</Link> · <Link href={routes.terms}>{fr ? "Conditions" : "Terms"}</Link> · <Link href={routes.cancel}>{fr ? "Résiliation" : "Cancellation"}</Link></span>
         </footer>
       </div>
