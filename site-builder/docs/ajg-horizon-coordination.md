@@ -1,6 +1,6 @@
 # Coordination AJG Horizon — périmètre actif
 
-Décision utilisateur du 02/10/2026 : concentrer le développement sur **Wellness CRM et AJG Site Builder**. ProspectFlow et le produit immobilier sont exclus du périmètre actif ; aucun chantier, migration, facturation ou reprise n'est engagé pour eux. Cette décision n'autorise aucune suppression de leurs données ou projets.
+Décision utilisateur du 02/10/2026 : concentrer le développement sur **Wellness CRM et ELTARA**. ProspectFlow et le produit immobilier sont exclus du périmètre actif ; aucun chantier, migration, facturation ou reprise n'est engagé pour eux. Cette décision n'autorise aucune suppression de leurs données ou projets.
 
 ## Priorités coordonnées
 
