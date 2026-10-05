@@ -11,7 +11,7 @@ export async function generateMetadata({params}:{params:Promise<{hostname:string
  const {hostname,path=[]}=await params;
  const decoded=decodeURIComponent(hostname);
  const site=await getPublicSiteByHostname(decoded);
- if(!site)return {title:"Website not found / Site introuvable | AJG Site Builder",robots:{index:false,follow:false}};
+ if(!site)return {title:"Website not found / Site introuvable | ELTARA",robots:{index:false,follow:false}};
 
  const suffix=path.map(encodeURIComponent).join("/");
  const canonical="https://"+decoded+(suffix?"/"+suffix:"");
@@ -28,11 +28,11 @@ export async function generateMetadata({params}:{params:Promise<{hostname:string
    const page=site.config.architecture.mode==="multi"
      ? site.config.architecture.pages.find((item)=>item.enabled&&item.slug===pageSlug)
      : undefined;
-   if(!page)return {title:`${site.config.language==="en"?"Page not found":"Page introuvable"} | AJG Site Builder`,robots:{index:false,follow:false}};
+   if(!page)return {title:`${site.config.language==="en"?"Page not found":"Page introuvable"} | ELTARA`,robots:{index:false,follow:false}};
    return buildPublicMetadata(site.config,{canonical,pageTitle:page.title});
  }
 
- if(path.length)return {title:`${site.config.language==="en"?"Page not found":"Page introuvable"} | AJG Site Builder`,robots:{index:false,follow:false}};
+ if(path.length)return {title:`${site.config.language==="en"?"Page not found":"Page introuvable"} | ELTARA`,robots:{index:false,follow:false}};
  return buildPublicMetadata(site.config,{canonical});
 }
 
