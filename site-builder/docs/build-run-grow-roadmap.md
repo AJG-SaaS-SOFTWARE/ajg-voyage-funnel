@@ -372,11 +372,13 @@ Chaque site dispose d'un statut :
 - [x] SEO essentiel ;
 - [x] sitemap / canonical ;
 - [x] latence anormale ;
-- [ ] erreurs runtime récentes.
+- [x] erreurs runtime récentes : hook serveur Next.js, télémétrie minimisée sans message/stack/contenu, rétention 30 jours et seuils de répétition par site.
 
 ### État d’implémentation
 
 Le Health Center vérifie déjà le backend, l’état de publication, le rendu public HTTPS, le domaine/DNS, la facturation, les sauvegardes, les garde-fous IA, la canonical, le sitemap et la latence. Il contrôle désormais aussi de façon déterministe le module Contact, les galeries/médias publiables, le format des liens configurés et la disponibilité des buckets `site-media` / `site-private-media`. Ces contrôles n’envoient aucun contenu client à un LLM et ne suivent pas les liens externes arbitraires.
+
+Les erreurs serveur capturées par l’instrumentation Next.js sont également intégrées au Health Center : aucun message brut, stack, corps de requête ou query string n’est conservé ; seuls le pattern de route, le type de runtime, un code non réversible, le site et l’horodatage sont enregistrés pendant 30 jours. Une erreur isolée reste informative, une répétition récente devient une alerte et un burst devient un incident plateforme.
 
 Le back-office Support expose également l’état de santé de l’infrastructure ELTARA : URL applicative de secours, domaine public et canari du wildcard de publication. Une panne DNS externe est distinguée d’une panne applicative afin de conserver l’accès administrateur et d’orienter immédiatement l’action vers le bon fournisseur.
 
