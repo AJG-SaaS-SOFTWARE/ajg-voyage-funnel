@@ -58,7 +58,7 @@ export default function FeedbackPage() {
     <main className="plans-page">
       <section className="plans-hero">
         <div className="builder-language-row">
-          <p className="eyebrow">AJG Beta</p>
+          <p className="eyebrow">ELTARA Beta</p>
           <LanguageSwitch compact />
         </div>
         <h1>{tr("Votre retour améliore le Builder", "Your feedback improves the Builder")}</h1>
