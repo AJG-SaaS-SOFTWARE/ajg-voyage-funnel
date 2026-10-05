@@ -15,7 +15,18 @@ export const metadata: Metadata = {
   keywords: ["ELTARA", "création de site", "site professionnel", "IA", "présence digitale", "website builder"],
   authors: [{ name: "AJG Horizon" }],
   creator: "AJG Horizon",
-  publisher: "AJG Horizon"
+  publisher: "AJG Horizon",
+  openGraph: {
+    type: "website",
+    siteName: "ELTARA",
+    title: "ELTARA — by AJG Horizon",
+    description: "Élevez votre présence digitale avec un espace guidé pour créer, publier et faire évoluer votre site professionnel."
+  },
+  twitter: {
+    card: "summary",
+    title: "ELTARA — by AJG Horizon",
+    description: "Élevez votre présence digitale."
+  }
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
