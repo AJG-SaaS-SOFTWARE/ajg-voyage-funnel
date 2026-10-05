@@ -41,7 +41,7 @@ export function AdminShell({
           </Link>
           <Link href="/admin/finops" className={active === "finops" ? "active" : ""}>Coûts IA</Link>
           <Link href="/admin/support" className={active === "support" ? "active" : ""}>Support</Link>
-          <Link href="/builder">Builder ↗</Link>
+          <Link href="/builder">ELTARA ↗</Link>
         </nav>
       </header>
 
