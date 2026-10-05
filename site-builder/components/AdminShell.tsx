@@ -24,7 +24,7 @@ export function AdminShell({
         <div className="admin-brand-block">
           <span className="admin-brand-mark" aria-hidden="true">A</span>
           <div>
-            <b>AJG Site Builder</b>
+            <b>ELTARA</b>
             <small>Back-office</small>
           </div>
         </div>
