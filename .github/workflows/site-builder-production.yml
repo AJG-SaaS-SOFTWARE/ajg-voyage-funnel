@@ -415,8 +415,8 @@ jobs:
             process.stdin.on("end",()=>{
               const x=JSON.parse(s);
               const aliases=Array.isArray(x.alias)?x.alias:[];
-              const preferred=aliases.find(v=>typeof v==="string" && v.endsWith(".eltara.ajgsolutionsgroup.com") && v!=="eltara.ajgsolutionsgroup.com");
-              const legacy=aliases.find(v=>typeof v==="string" && v.endsWith(".voyage.ajgsolutionsgroup.com") && v!=="voyage.ajgsolutionsgroup.com");
+              const preferred=aliases.find(v=>typeof v==="string" && !v.startsWith("*.") && v.endsWith(".eltara.ajgsolutionsgroup.com") && v!=="eltara.ajgsolutionsgroup.com");
+              const legacy=aliases.find(v=>typeof v==="string" && !v.startsWith("*.") && v.endsWith(".voyage.ajgsolutionsgroup.com") && v!=="voyage.ajgsolutionsgroup.com");
               const match=preferred||legacy;
               if(match) process.stdout.write(match);
             });
