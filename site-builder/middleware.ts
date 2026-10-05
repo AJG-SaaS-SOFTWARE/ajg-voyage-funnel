@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const rootDomain=process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN||"voyage.ajgsolutionsgroup.com";
-const appHostname=(process.env.NEXT_PUBLIC_SITE_BUILDER_URL||"https://ajg-site-builder.vercel.app").replace(/^https?:\/\//,"").replace(/\/.*$/,"").toLowerCase();
+const appHostname=(process.env.NEXT_PUBLIC_SITE_BUILDER_URL||"https://eltara.ajgsolutionsgroup.com").replace(/^https?:\/\//,"").replace(/\/.*$/,"").toLowerCase();
 const reservedSubdomains=new Set(["www","app","builder","admin"]);
 
 export function middleware(request:NextRequest){
