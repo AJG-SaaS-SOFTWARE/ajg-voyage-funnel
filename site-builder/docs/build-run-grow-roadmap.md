@@ -414,13 +414,13 @@ Objectif : le support humain devient l'exception.
 - [ ] base de connaissances FR/EN ;
 - [ ] aide liée à l'écran courant ;
 - [ ] explication automatique des erreurs ;
-- [ ] bouton "Diagnostiquer mon site" ;
-- [ ] bouton "Corriger automatiquement" lorsque sûr ;
+- [x] bouton "Diagnostiquer mon site" : relance explicite des contrôles Health Center sans créer de ticket ;
+- [x] bouton "Corriger automatiquement" lorsque sûr : remédiation allowlistée et auditée du sous-domaine géré ;
 - [ ] parcours guidé domaine ;
 - [ ] parcours guidé facturation ;
 - [ ] parcours guidé récupération de site ;
 - [ ] parcours guidé changement de formule ;
-- [ ] collecte structurée du motif avant toute demande humaine.
+- [x] collecte structurée du motif avant toute demande humaine : catégorie, sujet, contexte utilisateur et diagnostic technique sont attachés avant escalade.
 
 ### Escalade humaine uniquement pour
 

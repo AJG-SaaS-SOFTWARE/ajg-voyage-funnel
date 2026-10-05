@@ -82,3 +82,11 @@ test("verified managed domain can repair only the missing primary flag without V
   assert.match(remediation, /managed_domain_primary_repaired/);
   assert.match(remediation, /managed\.verification_status === "verified"/);
 });
+
+test("Health Center lets the customer rerun the diagnosis before opening a ticket", () => {
+  assert.match(page, /Diagnostiquer mon site/);
+  assert.match(page, /setDiagnosing\(true\)/);
+  assert.match(page, /await load\(\)/);
+  assert.match(page, /disabled=\{diagnosing \|\| repairing\}/);
+});
+

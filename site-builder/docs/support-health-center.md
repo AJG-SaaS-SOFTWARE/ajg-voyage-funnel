@@ -35,8 +35,12 @@ Les clients ne peuvent pas insérer ou modifier directement la table de tickets 
 
 ## Limites de ce bloc
 
-Le Health Center vérifie désormais le rendu public réel via l’origine Builder contrôlée, sans utiliser de hostname fourni par le client, ainsi que la fraîcheur de la sauvegarde externe et les circuit breakers IA. Il ne contacte toujours pas directement les domaines personnalisés fournis par les clients : les sondes HTTP restent limitées à l’origine Builder contrôlée afin d’éviter un vecteur SSRF. Le Health Center vérifie désormais le sitemap, la canonical et une latence de rendu indicative. Il ne vérifie pas encore les formulaires, les liens cassés de chaque page ni les erreurs runtime Vercel attribuées à un site précis. Il ne déclenche aucune réparation automatique. Ces contrôles doivent être ajoutés progressivement et chaque auto-remédiation devra être sûre, idempotente, journalisée et réversible.
+Le Health Center vérifie désormais le rendu public réel via l’origine Builder contrôlée, sans utiliser de hostname fourni par le client, ainsi que la fraîcheur de la sauvegarde externe et les circuit breakers IA. Il ne contacte toujours pas directement les domaines personnalisés fournis par les clients : les sondes HTTP restent limitées à l’origine Builder contrôlée afin d’éviter un vecteur SSRF. Le Health Center vérifie désormais le sitemap, la canonical et une latence de rendu indicative. Il ne vérifie pas encore les formulaires de bout en bout, les liens cassés de chaque page ni les erreurs runtime Vercel attribuées à un site précis. Les seules réparations automatiques autorisées restent explicitement allowlistées, sûres, idempotentes, journalisées et réversibles ; le sous-domaine géré ELTARA constitue le premier cas couvert. Les autres contrôles doivent être ajoutés progressivement.
 
+
+## Relance manuelle du diagnostic
+
+Depuis le Health Center, le client dispose de **Diagnostiquer mon site** pour relancer immédiatement les contrôles techniques sans ouvrir de ticket. La relance réutilise la même route authentifiée et le même moteur déterministe que le chargement initial ; elle ne déclenche ni LLM ni mutation de contenu. Le résultat affiché est remplacé par le diagnostic le plus récent.
 
 ## Réconciliation autonome des demandes self-service
 

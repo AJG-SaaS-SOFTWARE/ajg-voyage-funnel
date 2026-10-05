@@ -32,7 +32,9 @@ export default function SupportPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
+  const [healthNotice, setHealthNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [diagnosing, setDiagnosing] = useState(false);
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
   const [repairing, setRepairing] = useState(false);
 
@@ -99,6 +101,25 @@ export default function SupportPage() {
     }
   }
 
+  async function diagnose() {
+    setDiagnosing(true);
+    setHealthNotice("");
+    try {
+      await load();
+      setHealthNotice(tr(
+        "Diagnostic actualisé. Les contrôles techniques de votre site viennent d’être relancés.",
+        "Diagnosis refreshed. Your website technical checks have just been run again."
+      ));
+    } catch (error) {
+      setHealthNotice(error instanceof Error ? error.message : tr(
+        "Nouveau diagnostic impossible.",
+        "Unable to run a new diagnosis."
+      ));
+    } finally {
+      setDiagnosing(false);
+    }
+  }
+
   async function recheck(ticketId: string) {
     const accessToken = await token();
     if (!accessToken) {
@@ -144,7 +165,7 @@ export default function SupportPage() {
     const action = payload?.health.diagnosis.repairActions?.[0];
     if (!accessToken || !siteId || !action) return;
     setRepairing(true);
-    setNotice("");
+    setHealthNotice("");
     try {
       const response = await fetch("/api/support/remediate", {
         method: "POST",
@@ -157,14 +178,14 @@ export default function SupportPage() {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(body?.error || tr("Correction automatique impossible.", "Automatic repair failed."));
-      setNotice(
+      setHealthNotice(
         body?.result?.status === "succeeded"
           ? tr("Correction technique appliquée. Le diagnostic a été actualisé.", "Technical repair applied. The diagnosis has been refreshed.")
           : tr("La correction automatique n’a pas suffi. Le diagnostic a été actualisé et peut être transmis à l’équipe ELTARA.", "Automatic repair was not sufficient. The diagnosis has been refreshed and can be escalated to the ELTARA team.")
       );
       await load();
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : tr("Correction automatique impossible.", "Automatic repair failed."));
+      setHealthNotice(error instanceof Error ? error.message : tr("Correction automatique impossible.", "Automatic repair failed."));
     } finally {
       setRepairing(false);
     }
@@ -223,13 +244,29 @@ export default function SupportPage() {
                 </li>
               ))}
             </ul>
-            {health.repairActions?.length ? (
-              <button className="button primary" onClick={() => void repair()} disabled={repairing}>
-                {repairing
-                  ? tr("Correction automatique…", "Repairing automatically…")
-                  : tr("Corriger automatiquement", "Repair automatically")}
+            <div className="actions">
+              <button
+                className="button secondary"
+                onClick={() => void diagnose()}
+                disabled={diagnosing || repairing}
+              >
+                {diagnosing
+                  ? tr("Diagnostic en cours…", "Running diagnosis…")
+                  : tr("Diagnostiquer mon site", "Diagnose my website")}
               </button>
-            ) : null}
+              {health.repairActions?.length ? (
+                <button
+                  className="button primary"
+                  onClick={() => void repair()}
+                  disabled={repairing || diagnosing}
+                >
+                  {repairing
+                    ? tr("Correction automatique…", "Repairing automatically…")
+                    : tr("Corriger automatiquement", "Repair automatically")}
+                </button>
+              ) : null}
+            </div>
+            {healthNotice ? <p role="status">{healthNotice}</p> : null}
           </section>
 
           <section className="panel">
