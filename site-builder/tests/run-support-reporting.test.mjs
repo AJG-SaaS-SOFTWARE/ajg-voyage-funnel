@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 test("Builder support reporting sends only non-PII structured metadata", () => {
   const source = readFileSync("lib/run-intake-reporting.ts", "utf8");
   assert.match(source, /AJG_RUN_TOKEN/);
-  assert.match(source, /AJG Site Builder/);
+  assert.match(source, /ELTARA/);
   assert.match(source, /builder-support/);
   assert.doesNotMatch(source, /user_id/i);
   assert.doesNotMatch(source, /subject/);
