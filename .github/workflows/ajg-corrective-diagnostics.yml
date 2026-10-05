@@ -32,12 +32,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run bounded diagnostics
-        id: diagnostics
+      - name: Run typecheck diagnostic
+        id: typecheck
         continue-on-error: true
-        run: |
-          npx tsc --noEmit
-          npm test
+        run: npx tsc --noEmit
+
+      - name: Run test diagnostic
+        id: tests
+        continue-on-error: true
+        run: npm test
 
       - name: Report verdict to issue
         if: always() && github.event.client_payload.issue_number != ''
@@ -45,17 +48,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE: ${{ github.event.client_payload.issue_number }}
-          OUTCOME: ${{ steps.diagnostics.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ "$OUTCOME" = "success" ]; then
+          if [ "$TYPECHECK" = "success" ] && [ "$TESTS" = "success" ]; then
             MARKER="<!-- ajg-corrective-result:v1 status=passed mode=diagnose -->"
             VERDICT="✅ Diagnostic correctif automatique : contrôles ELTARA au vert."
           else
             MARKER="<!-- ajg-corrective-result:v1 status=failed mode=diagnose -->"
             VERDICT="⚠️ Diagnostic correctif automatique : au moins un contrôle ELTARA a échoué."
           fi
+          DIAGNOSTIC="<!-- ajg-corrective-diagnostic:v1 typecheck=$TYPECHECK lint=na tests=$TESTS -->"
           gh issue comment "$ISSUE" --body "$MARKER
+          $DIAGNOSTIC
           $VERDICT
 
           Mode: diagnostic uniquement — aucun code, secret, donnée ou déploiement n'a été modifié.
