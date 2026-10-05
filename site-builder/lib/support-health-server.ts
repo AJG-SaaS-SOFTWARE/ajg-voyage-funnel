@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "./app-url";
 import { getStorageBackupStatus } from "./storage-backup";
+import { getAiQuotaHealth } from "./ai-quota-health";
 import {
   buildSupportDiagnosis,
   type SupportDiagnosis
@@ -244,7 +245,8 @@ export async function diagnoseSupportHealth(
     backup,
     storage,
     publicRender,
-    sitemap
+    sitemap,
+    aiQuota
   ] = await Promise.all([
     service
       .from("domains")
@@ -267,7 +269,15 @@ export async function diagnoseSupportHealth(
       : Promise.resolve({ checked: false, ok: false, status: null }),
     site.status === "published" && site.public_access_state !== "suspended"
       ? sitemapProbe(site.slug)
-      : Promise.resolve({ checked: false, ok: false, status: null, validXml: false })
+      : Promise.resolve({ checked: false, ok: false, status: null, validXml: false }),
+    getAiQuotaHealth(service, userId, site.id).catch(() => ({
+      planKey: "unknown",
+      planName: "Indisponible",
+      status: "unavailable" as const,
+      minute: { used: 0, limit: 0 },
+      daily: { used: 0, limit: 0 },
+      monthly: { used: 0, limit: 0 }
+    }))
   ]);
 
   return {
@@ -300,7 +310,8 @@ export async function diagnoseSupportHealth(
         !aiPolicyError && aiPolicy
           ? {
               enabled: aiPolicy.ai_enabled === true,
-              heavyEnabled: aiPolicy.heavy_enabled === true
+              heavyEnabled: aiPolicy.heavy_enabled === true,
+              quota: aiQuota
             }
           : undefined
     })
