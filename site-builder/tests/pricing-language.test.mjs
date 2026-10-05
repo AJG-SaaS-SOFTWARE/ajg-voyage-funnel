@@ -25,10 +25,10 @@ test("pricing content declares its page language", () => {
 });
 
 test("pricing routes expose reciprocal language alternates", () => {
-  assert.ok(pricingEn.includes('canonical: "https://ajg-site-builder.vercel.app/pricing"'));
-  assert.ok(pricingEn.includes('fr: "https://ajg-site-builder.vercel.app/tarifs"'));
-  assert.ok(pricingFr.includes('canonical: "https://ajg-site-builder.vercel.app/tarifs"'));
-  assert.ok(pricingFr.includes('en: "https://ajg-site-builder.vercel.app/pricing"'));
+  assert.ok(pricingEn.includes("canonical: `${base}/pricing`"));
+  assert.ok(pricingEn.includes('fr: `${base}/tarifs`'));
+  assert.ok(pricingFr.includes("canonical: `${base}/tarifs`"));
+  assert.ok(pricingFr.includes('en: `${base}/pricing`'));
 });
 
 test("middleware returns HTTP content language for public pricing routes", () => {
