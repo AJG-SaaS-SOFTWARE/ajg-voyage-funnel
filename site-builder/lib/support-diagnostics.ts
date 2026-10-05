@@ -54,6 +54,18 @@ export type SupportDiagnosticInput = {
   ai?: {
     enabled: boolean;
     heavyEnabled: boolean;
+    quota?: {
+      planKey: string;
+      subscriptionStatus: string;
+      betaActive: boolean;
+      todayUsed: number;
+      dailyLimit: number;
+      monthUsed: number;
+      monthlyLimit: number;
+      heavyMonthUsed: number;
+      heavyMonthlyLimit: number;
+      launchOperationsRemaining: number;
+    };
   };
   content?: {
     contactEnabled: boolean;
@@ -486,6 +498,23 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
   }
 
   if (input.ai) {
+    const quota = input.ai.quota;
+    const standardDailyExhausted = Boolean(quota?.dailyLimit && quota.todayUsed >= quota.dailyLimit);
+    const standardMonthlyExhausted = Boolean(quota?.monthlyLimit && quota.monthUsed >= quota.monthlyLimit);
+    const standardNearLimit = Boolean(
+      quota && (
+        (quota.dailyLimit > 0 && quota.todayUsed / quota.dailyLimit >= 0.8)
+        || (quota.monthlyLimit > 0 && quota.monthUsed / quota.monthlyLimit >= 0.8)
+      )
+    );
+    const heavyExhausted = Boolean(
+      quota?.heavyMonthlyLimit && quota.heavyMonthUsed >= quota.heavyMonthlyLimit
+    );
+    const heavyNearLimit = Boolean(
+      quota?.heavyMonthlyLimit
+      && quota.heavyMonthUsed / quota.heavyMonthlyLimit >= 0.8
+    );
+
     if (!input.ai.enabled) {
       checks.push({
         key: "ai",
@@ -493,19 +522,50 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         status: "incident",
         detail: "Les fonctions IA sont suspendues globalement par le garde-fou AJG."
       });
+    } else if (standardDailyExhausted || standardMonthlyExhausted) {
+      checks.push({
+        key: "ai",
+        label: "Quota IA",
+        status: "action",
+        detail: standardMonthlyExhausted
+          ? `Le quota IA mensuel du compte est atteint (${quota?.monthUsed}/${quota?.monthlyLimit}). Le site reste disponible.`
+          : `Le quota IA quotidien du compte est atteint (${quota?.todayUsed}/${quota?.dailyLimit}). Le site reste disponible.`,
+        clientAction: standardMonthlyExhausted
+          ? "Continuez avec l’éditeur manuel ou attendez le renouvellement du quota au début du mois prochain."
+          : "Continuez avec l’éditeur manuel ou réessayez après le renouvellement du quota quotidien."
+      });
     } else if (!input.ai.heavyEnabled) {
       checks.push({
         key: "ai",
         label: "Service IA",
         status: "action",
-        detail: "L'IA légère reste disponible mais les opérations lourdes sont temporairement suspendues."
+        detail: "L'IA standard reste disponible mais les opérations lourdes sont temporairement suspendues par le garde-fou AJG."
+      });
+    } else if (heavyExhausted) {
+      checks.push({
+        key: "ai",
+        label: "Quota IA Growth",
+        status: "action",
+        detail: `Le quota mensuel d’opérations IA lourdes est atteint (${quota?.heavyMonthUsed}/${quota?.heavyMonthlyLimit}). L’IA standard et le site restent disponibles.`,
+        clientAction: "Utilisez les fonctions IA standard ou attendez le renouvellement mensuel des opérations Growth lourdes."
+      });
+    } else if (standardNearLimit || heavyNearLimit) {
+      checks.push({
+        key: "ai",
+        label: "Quota IA",
+        status: "action",
+        detail: quota
+          ? `Usage IA à surveiller : standard ${quota.monthUsed}/${quota.monthlyLimit} ce mois${quota.heavyMonthlyLimit > 0 ? `, lourd ${quota.heavyMonthUsed}/${quota.heavyMonthlyLimit}` : ""}.`
+          : "L’usage IA approche d’un plafond de sécurité."
       });
     } else {
       checks.push({
         key: "ai",
         label: "Service IA",
         status: "healthy",
-        detail: "Les garde-fous globaux autorisent les fonctions IA."
+        detail: quota
+          ? `IA disponible · ${quota.monthUsed}/${quota.monthlyLimit} opérations standard ce mois${quota.heavyMonthlyLimit > 0 ? ` · ${quota.heavyMonthUsed}/${quota.heavyMonthlyLimit} opérations lourdes` : ""}${quota.launchOperationsRemaining > 0 ? ` · ${quota.launchOperationsRemaining} opération(s) Création IA restante(s)` : ""}.`
+          : "Les garde-fous globaux autorisent les fonctions IA."
       });
     }
   }
