@@ -362,7 +362,7 @@ Chaque site dispose d'un statut :
 - [x] HTTPS ;
 - [ ] formulaire ;
 - [x] liens configurés invalides (format HTTPS) ;
-- [ ] liens externes devenus inaccessibles après publication ;
+- [x] liens externes devenus inaccessibles après publication : probe HTTPS borné, redirections contrôlées et destinations privées/internes refusées ;
 - [x] images manquantes dans les modules/médias explicitement activés ;
 - [x] erreurs de rendu ;
 - [x] stockage ;
@@ -376,7 +376,7 @@ Chaque site dispose d'un statut :
 
 ### État d’implémentation
 
-Le Health Center vérifie déjà le backend, l’état de publication, le rendu public HTTPS, le domaine/DNS, la facturation, les sauvegardes, les garde-fous IA, la canonical, le sitemap et la latence. Il contrôle désormais aussi de façon déterministe le module Contact, les galeries/médias publiables, le format des liens configurés et la disponibilité des buckets `site-media` / `site-private-media`. Ces contrôles n’envoient aucun contenu client à un LLM et ne suivent pas les liens externes arbitraires.
+Le Health Center vérifie déjà le backend, l’état de publication, le rendu public HTTPS, le domaine/DNS, la facturation, les sauvegardes, les garde-fous IA, la canonical, le sitemap et la latence. Il contrôle désormais aussi de façon déterministe le module Contact, les galeries/médias publiables, le format et la disponibilité réelle des liens externes configurés, ainsi que la disponibilité des buckets `site-media` / `site-private-media`. Les probes de liens sont bornés à quatre destinations, n’acceptent que HTTPS, contrôlent chaque redirection et refusent les hôtes/adresses privés, locaux ou internes avant toute requête. Ces contrôles n’envoient aucun contenu client à un LLM.
 
 Le back-office Support expose également l’état de santé de l’infrastructure ELTARA : URL applicative de secours, domaine public et canari du wildcard de publication. Une panne DNS externe est distinguée d’une panne applicative afin de conserver l’accès administrateur et d’orienter immédiatement l’action vers le bon fournisseur.
 
