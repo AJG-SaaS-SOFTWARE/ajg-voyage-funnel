@@ -270,7 +270,7 @@ Objectif : connaître et maîtriser le coût de chaque utilisateur avant de dép
 - [x] alerte à 50 / 75 / 90 / 100 % du budget : vue admin + registre planifié, sans notifications externes ;
 - [x] circuit breaker individuel : plafonds atomiques compte/site/BUILD ;
 - [x] circuit breaker global AJG ;
-- [ ] détection d'usage anormal ;
+- [x] détection d'usage anormal : comparaison déterministe de la dernière heure aux 7 jours précédents, seuils minimums anti-faux-positifs, signal warning/critical sans modification automatique des quotas ;
 - [ ] optimisation cache / réutilisation de stratégie ;
 - [x] modèle Premium uniquement lorsque nécessaire : champs simples refusent un modèle Premium ;
 - [x] limitation des retries et régénérations intégrales : admission, idempotence, déduplication et cooldown ;
