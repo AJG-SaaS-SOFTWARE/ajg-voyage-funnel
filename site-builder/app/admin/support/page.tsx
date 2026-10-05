@@ -27,6 +27,21 @@ type SupportMetrics = {
   };
 };
 
+type PlatformProbe = {
+  host: string;
+  dns: "ok" | "nxdomain" | "error";
+  https: "ok" | "unavailable" | "skipped";
+  httpStatus: number | null;
+};
+
+type PlatformHealth = {
+  overall: "healthy" | "warning" | "incident";
+  app: PlatformProbe;
+  publicDomain: PlatformProbe;
+  managedDomainCanary: PlatformProbe;
+  nextAction: string | null;
+};
+
 type AdminTicket = {
   id: string;
   category: string;
@@ -53,6 +68,7 @@ async function sessionToken() {
 export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<AdminTicket[]>([]);
   const [metrics, setMetrics] = useState<SupportMetrics | null>(null);
+  const [platform, setPlatform] = useState<PlatformHealth | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "denied">("loading");
   const [message, setMessage] = useState("");
 
@@ -66,6 +82,7 @@ export default function AdminSupportPage() {
     if (!response.ok) throw new Error(body?.error || "Support indisponible.");
     setTickets(body.tickets || []);
     setMetrics(body.metrics || null);
+    setPlatform(body.platform || null);
     setState("ready");
   }
 
@@ -109,6 +126,34 @@ export default function AdminSupportPage() {
       {state === "denied" ? <section className="panel"><h2>Accès restreint</h2><p>Votre compte n'a pas le rôle administrateur.</p></section> : null}
       {state === "ready" ? (
         <>
+          {platform ? (
+            <section className="panel">
+              <p className="eyebrow">Infrastructure ELTARA</p>
+              <h2>État de santé de la plateforme</h2>
+              <div className="admin-metrics">
+                <article>
+                  <b>{platform.app.dns === "ok" && platform.app.https === "ok" ? "OK" : "ALERTE"}</b>
+                  <span>secours applicatif · {platform.app.host}</span>
+                </article>
+                <article>
+                  <b>{platform.publicDomain.dns === "ok" && platform.publicDomain.https === "ok" ? "OK" : platform.publicDomain.dns === "nxdomain" ? "NXDOMAIN" : "ALERTE"}</b>
+                  <span>domaine ELTARA · {platform.publicDomain.host}</span>
+                </article>
+                <article>
+                  <b>{platform.managedDomainCanary.dns === "ok" && platform.managedDomainCanary.https === "ok" ? "OK" : platform.managedDomainCanary.dns === "nxdomain" ? "NXDOMAIN" : "ALERTE"}</b>
+                  <span>sous-domaines clients · {platform.managedDomainCanary.host}</span>
+                </article>
+                <article>
+                  <b>{platform.overall === "healthy" ? "SAIN" : platform.overall === "warning" ? "À CORRIGER" : "INCIDENT"}</b>
+                  <span>état global</span>
+                </article>
+              </div>
+              {platform.nextAction ? (
+                <p className="plans-note" role="alert"><strong>Action requise :</strong> {platform.nextAction}</p>
+              ) : null}
+            </section>
+          ) : null}
+
           <section className="admin-metrics">
             <article><b>{openCount}</b><span>tickets ouverts</span></article>
             <article><b>{incidentCount}</b><span>incidents détectés</span></article>
