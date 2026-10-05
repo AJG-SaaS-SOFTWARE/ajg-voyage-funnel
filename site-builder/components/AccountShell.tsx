@@ -38,7 +38,7 @@ export function AccountShell({
 
         <div className="account-topbar-actions">
           <Link href="/builder" className="account-builder-shortcut">
-            {tr("Ouvrir le Builder", "Open Builder")} <span aria-hidden="true">→</span>
+            {tr("Ouvrir ELTARA", "Open ELTARA")} <span aria-hidden="true">→</span>
           </Link>
           <LanguageSwitch compact />
         </div>
