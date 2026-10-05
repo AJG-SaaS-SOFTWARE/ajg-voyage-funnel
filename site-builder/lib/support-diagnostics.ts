@@ -100,7 +100,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
           label: "Service ELTARA",
           status: "incident",
           detail: "Le backend ou la base de données ne répond pas normalement.",
-          clientAction: "Réessayez dans quelques minutes. Le ticket reste transmis à AJG si le service ne revient pas."
+          clientAction: "Réessayez dans quelques minutes. Le ticket reste transmis à l’équipe ELTARA si le service ne revient pas."
         }
   );
 
@@ -132,7 +132,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         label: "Publication",
         status: "incident",
         detail: "Le site est actuellement suspendu côté accès public.",
-        clientAction: "Consultez la rubrique Facturation. Si votre situation est à jour, laissez ce ticket ouvert pour vérification AJG."
+        clientAction: "Consultez la rubrique Facturation. Si votre situation est à jour, laissez ce ticket ouvert pour vérification par l’équipe ELTARA."
       });
     } else if (input.site.status === "published") {
       checks.push({
@@ -216,7 +216,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         key: "domain",
         label: "Domaine",
         status: "action",
-        detail: `${managed.hostname} n'est pas encore opérationnel. AJG peut retenter automatiquement son rattachement technique.`
+        detail: `${managed.hostname} n'est pas encore opérationnel. ELTARA peut retenter automatiquement son rattachement technique.`
       });
     } else {
       const failed = input.domains.find((item) => item.verificationStatus === "failed");
@@ -372,7 +372,7 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
         key: "backup",
         label: "Sauvegarde",
         status: "incident",
-        detail: "La sauvegarde externe est trop ancienne et nécessite une intervention AJG."
+        detail: "La sauvegarde externe est trop ancienne et nécessite une intervention de l’équipe ELTARA."
       });
     } else {
       checks.push({
