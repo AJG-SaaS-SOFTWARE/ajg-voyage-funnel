@@ -362,11 +362,11 @@ Chaque site dispose d'un statut :
 - [x] HTTPS ;
 - [x] formulaire natif : soumission publique FR/EN, validation serveur, consentement, anti-abus pseudonymisé, stockage Supabase et notification e-mail best-effort ;
 - [x] liens configurés invalides (format HTTPS) ;
-- [ ] liens externes devenus inaccessibles après publication ;
+- [x] liens externes devenus inaccessibles après publication : contrôle actif borné, timeout court, redirections limitées et garde SSRF contre les destinations locales/privées ;
 - [x] images manquantes dans les modules/médias explicitement activés ;
 - [x] erreurs de rendu ;
 - [x] stockage ;
-- [ ] quota IA ;
+- [x] quota IA : diagnostic serveur des fenêtres minute/jour/mois selon l’offre effective, détection quota atteint/proche et prise en compte du quota Growth lourd ;
 - [x] paiement ;
 - [x] sauvegarde ;
 - [x] SEO essentiel ;
