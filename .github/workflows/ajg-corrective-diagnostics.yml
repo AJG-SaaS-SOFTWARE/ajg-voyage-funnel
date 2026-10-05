@@ -1,0 +1,59 @@
+name: AJG Corrective Diagnostics
+
+on:
+  repository_dispatch:
+    types: [ajg-corrective-agent]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ajg-corrective-diagnostic-${{ github.event.client_payload.issue_number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    if: github.event.client_payload.mode == 'diagnose'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: site-builder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site-builder/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run bounded diagnostics
+        id: diagnostics
+        continue-on-error: true
+        run: |
+          npx tsc --noEmit
+          npm test
+
+      - name: Report verdict to issue
+        if: always() && github.event.client_payload.issue_number != ''
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.client_payload.issue_number }}
+          OUTCOME: ${{ steps.diagnostics.outcome }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$OUTCOME" = "success" ]; then
+            VERDICT="✅ Diagnostic correctif automatique : contrôles ELTARA au vert."
+          else
+            VERDICT="⚠️ Diagnostic correctif automatique : au moins un contrôle ELTARA a échoué."
+          fi
+          gh issue comment "$ISSUE" --body "$VERDICT
+
+          Mode: diagnostic uniquement — aucun code, secret, donnée ou déploiement n'a été modifié.
+          Exécution: $RUN_URL"
