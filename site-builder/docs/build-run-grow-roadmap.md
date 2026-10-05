@@ -360,7 +360,7 @@ Chaque site dispose d'un statut :
 - [x] publication ;
 - [x] domaine / DNS ;
 - [x] HTTPS ;
-- [ ] formulaire ;
+- [x] formulaire natif : soumission publique FR/EN, validation serveur, consentement, anti-abus pseudonymisé, stockage Supabase et notification e-mail best-effort ;
 - [x] liens configurés invalides (format HTTPS) ;
 - [ ] liens externes devenus inaccessibles après publication ;
 - [x] images manquantes dans les modules/médias explicitement activés ;
@@ -376,7 +376,9 @@ Chaque site dispose d'un statut :
 
 ### État d’implémentation
 
-Le Health Center vérifie déjà le backend, l’état de publication, le rendu public HTTPS, le domaine/DNS, la facturation, les sauvegardes, les garde-fous IA, la canonical, le sitemap et la latence. Il contrôle désormais aussi de façon déterministe le module Contact, les galeries/médias publiables, le format des liens configurés et la disponibilité des buckets `site-media` / `site-private-media`. Ces contrôles n’envoient aucun contenu client à un LLM et ne suivent pas les liens externes arbitraires.
+La boîte de réception client permet désormais de lire et supprimer les messages de contact stockés par site, sans dépendre de Resend. Les notifications e-mail restent un canal complémentaire lorsqu’elles sont configurées.
+
+Le Health Center vérifie déjà le backend, l’état de publication, le rendu public HTTPS, le domaine/DNS, la facturation, les sauvegardes, les garde-fous IA, la canonical, le sitemap et la latence. Le module Contact public est désormais branché sur le RPC sécurisé existant : formulaire natif, consentement explicite, validation serveur, fingerprint pseudonymisé, rate limit et conservation dans `contact_messages`; une notification Resend est envoyée lorsque le service e-mail est configuré. Il contrôle désormais aussi de façon déterministe le module Contact, les galeries/médias publiables, le format des liens configurés et la disponibilité des buckets `site-media` / `site-private-media`. Ces contrôles n’envoient aucun contenu client à un LLM et ne suivent pas les liens externes arbitraires.
 
 Le back-office Support expose également l’état de santé de l’infrastructure ELTARA : URL applicative de secours, domaine public et canari du wildcard de publication. Une panne DNS externe est distinguée d’une panne applicative afin de conserver l’accès administrateur et d’orienter immédiatement l’action vers le bon fournisseur.
 

@@ -171,7 +171,7 @@ Disponibles et facultatifs :
 1. Galerie / voyages avec photos personnelles et légendes.
 2. FAQ.
 3. Témoignages avec attribution.
-4. Contact par e-mail.
+4. Contact natif protégé, avec e-mail direct en solution de repli.
 5. Vidéo YouTube.
 6. Chiffres clés.
 7. Avantages.
@@ -181,7 +181,7 @@ L'utilisateur peut activer ou masquer chaque rubrique et modifier l'ordre d'affi
 Modules à étudier après validation bêta :
 
 - carnets de voyage avec pages individuelles ;
-- formulaire de contact protégé contre les abus ;
+- formulaire de contact protégé contre les abus ; livré côté public avec stockage sécurisé et fallback e-mail ;
 - blocs supplémentaires déterminés par les retours utilisateurs.
 
 ## Itération 4C — durcissement bêta et recette technique
