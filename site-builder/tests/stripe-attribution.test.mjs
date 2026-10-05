@@ -2,7 +2,7 @@ import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("Stripe Checkout and subscriptions carry AJG Site Builder attribution metadata", () => {
+test("Stripe Checkout and subscriptions preserve ELTARA technical attribution metadata", () => {
   const source = fs.readFileSync(new URL("../lib/stripe-billing.ts", import.meta.url), "utf8");
 
   const matches = source.match(/app:\s*"ajg_site_builder"/g) || [];
