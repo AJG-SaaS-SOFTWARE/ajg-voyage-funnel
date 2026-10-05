@@ -305,3 +305,56 @@ test("safe reachable external links stay healthy after active probing", () => {
   assert.match(check?.detail || "", /répondent au contrôle d’accessibilité/);
 });
 
+test("AI quota exhaustion becomes an actionable customer diagnosis", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    ai: {
+      enabled: true,
+      heavyEnabled: true,
+      quota: {
+        planKey: "free",
+        planName: "Gratuit",
+        status: "exhausted",
+        minute: { used: 1, limit: 5 },
+        daily: { used: 20, limit: 20 },
+        monthly: { used: 42, limit: 80 }
+      }
+    }
+  });
+
+  const check = result.checks.find((item) => item.key === "ai");
+  assert.equal(check?.status, "action");
+  assert.ok(check?.clientAction);
+  assert.match(check?.detail || "", /20\/20/);
+});
+
+test("unavailable AI quota telemetry is treated as a technical incident", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    ai: {
+      enabled: true,
+      heavyEnabled: true,
+      quota: {
+        planKey: "unknown",
+        planName: "Indisponible",
+        status: "unavailable",
+        minute: { used: 0, limit: 0 },
+        daily: { used: 0, limit: 0 },
+        monthly: { used: 0, limit: 0 }
+      }
+    }
+  });
+
+  const check = result.checks.find((item) => item.key === "ai");
+  assert.equal(check?.status, "incident");
+  assert.equal(check?.clientAction, undefined);
+});
+
