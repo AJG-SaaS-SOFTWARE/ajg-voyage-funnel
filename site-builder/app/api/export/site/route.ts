@@ -218,7 +218,7 @@ export async function GET(request: Request) {
     yield {
       path: "README.txt",
       data: [
-        tr("AJG Builder - archive de récupération", "AJG Builder - recovery archive"),
+        tr("ELTARA - archive de récupération", "ELTARA - recovery archive"),
         "",
         tr(
           "ajg-builder-export.json contient la configuration du site, les domaines, les carnets, les messages de contact et l'inventaire des médias.",
