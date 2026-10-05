@@ -161,7 +161,7 @@ export async function GET(request: Request) {
       "Sauvegarde externe des médias",
       present(process.env.BLOB_STORE_ID),
       "commercial",
-      "Store Vercel Blob privé connecté au Builder.",
+      "Store Vercel Blob privé connecté à ELTARA.",
       "Aucun store Vercel Blob privé n’est connecté : les objets Supabase Storage ne disposent pas encore de copie hors fournisseur.",
       "deferred"
     ),
@@ -196,7 +196,7 @@ export async function GET(request: Request) {
       "Stripe Billing · Customer Portal",
       present(process.env.STRIPE_PORTAL_CONFIGURATION_ID),
       "commercial",
-      "Configuration Customer Portal explicitement liée au Builder.",
+      "Configuration Customer Portal explicitement liée à ELTARA.",
       "STRIPE_PORTAL_CONFIGURATION_ID manque : le portail par défaut peut fonctionner en sandbox mais le lancement commercial doit pointer vers une configuration contrôlée.",
       "deferred"
     ),
@@ -358,7 +358,7 @@ export async function GET(request: Request) {
         label: "Sous-domaines gérés",
         scope: "beta",
         status: "warn",
-        detail: "Aucun sous-domaine AJG vérifié et primaire n'est encore disponible."
+        detail: "Aucun sous-domaine ELTARA vérifié et primaire n'est encore disponible."
       });
     }
 
