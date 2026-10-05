@@ -81,6 +81,6 @@ test("recovery archive filenames are safe and deterministic", () => {
   );
   assert.match(
     recoveryArchiveFilename("Mon Site Démo"),
-    /^ajg-builder-export-Mon-Site-Demo-\d{8}\.tar\.gz$/
+    /^eltara-export-Mon-Site-Demo-\d{8}\.tar\.gz$/
   );
 });
