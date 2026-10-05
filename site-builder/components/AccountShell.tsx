@@ -34,7 +34,7 @@ export function AccountShell({
         <Link href="/builder" className="account-brand">
           <span className="account-brand-mark" aria-hidden="true">A</span>
           <span>
-            <b>AJG Site Builder</b>
+            <b>ELTARA</b>
             <small>{tr("Espace compte", "Account")}</small>
           </span>
         </Link>
