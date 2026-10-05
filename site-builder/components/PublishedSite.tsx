@@ -6,7 +6,17 @@ import SiteModulesView from "./SiteModulesView";
 import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
 import { legalIsComplete } from "../lib/site-legal";
 
-export default function PublishedSite({ config, pageSlug = "", routeBase }: { config: SiteConfig; pageSlug?: string; routeBase?: string }) {
+export default function PublishedSite({
+  config,
+  siteId,
+  pageSlug = "",
+  routeBase
+}: {
+  config: SiteConfig;
+  siteId: string;
+  pageSlug?: string;
+  routeBase?: string;
+}) {
   const initials = (config.firstName?.[0] || "A") + (config.lastName?.[0] || "");
   const bookingHref = safeHttpsUrl(config.bookingUrl);
   const hasBooking = Boolean(config.design.showBooking && bookingHref && config.bookingLabel.trim());
@@ -73,11 +83,11 @@ export default function PublishedSite({ config, pageSlug = "", routeBase }: { co
         </section> : null}
 
         {pageAssets.length ? <section className="public-page-assets" aria-label={english ? "Selected content" : "Contenus sélectionnés"}>{pageAssets.map((asset) => asset ? <article key={asset.id}>{asset.kind === "image" && asset.url ? <img src={asset.url} alt={asset.name} /> : null}{asset.kind === "audio" && asset.url ? <audio controls preload="metadata" src={asset.url} /> : null}{asset.kind === "text" && asset.text ? <><h2>{asset.name}</h2><p>{asset.text}</p></> : null}{asset.kind === "document" && asset.url ? <a href={asset.url} target="_blank" rel="noreferrer">{asset.name}</a> : null}</article> : null)}</section> : null}
-        {isHome ? <SiteModulesView modules={config.design.modules} english={english} /> : null}
-        {currentPage?.kind === "gallery" ? <SiteModulesView modules={{ ...config.design.modules, order: ["gallery"] }} english={english} /> : null}
-        {currentPage?.kind === "faq" ? <SiteModulesView modules={{ ...config.design.modules, order: ["faq"] }} english={english} /> : null}
-        {currentPage?.kind === "contact" ? <SiteModulesView modules={{ ...config.design.modules, order: ["contact"] }} english={english} /> : null}
-        {currentPage?.kind === "services" ? <SiteModulesView modules={{ ...config.design.modules, order: ["benefits", "figures"] }} english={english} /> : null}
+        {isHome ? <SiteModulesView modules={config.design.modules} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "gallery" ? <SiteModulesView modules={{ ...config.design.modules, order: ["gallery"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "faq" ? <SiteModulesView modules={{ ...config.design.modules, order: ["faq"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "contact" ? <SiteModulesView modules={{ ...config.design.modules, order: ["contact"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "services" ? <SiteModulesView modules={{ ...config.design.modules, order: ["benefits", "figures"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
 
       </main>
 

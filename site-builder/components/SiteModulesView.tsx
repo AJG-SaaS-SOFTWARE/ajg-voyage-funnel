@@ -1,8 +1,19 @@
 import { Fragment } from "react";
 import ConsentVideo from "./ConsentVideo";
+import PublicContactForm from "./PublicContactForm";
 import { defaultSiteModules, type SiteModuleKey, type SiteModules } from "../lib/site-design";
 
-export default function SiteModulesView({ modules, english = false }: { modules: SiteModules; english?: boolean }) {
+export default function SiteModulesView({
+  modules,
+  english = false,
+  siteId,
+  privacyHref
+}: {
+  modules: SiteModules;
+  english?: boolean;
+  siteId?: string;
+  privacyHref?: string;
+}) {
   const gallery = modules.gallery.enabled ? modules.gallery.images.filter((image) => image.url) : [];
   const faq = modules.faq.enabled ? modules.faq.items.filter((item) => item.question.trim() && item.answer.trim()) : [];
   const testimonials = modules.testimonials.enabled ? modules.testimonials.items.filter((item) => item.quote.trim() && item.author.trim()) : [];
@@ -109,7 +120,11 @@ export default function SiteModulesView({ modules, english = false }: { modules:
         return email ? (
           <section className="site-module" id="contact">
             <h2>{titleFor("contact")}</h2>
-            <a className="button primary" href={`mailto:${email}`}>{english ? "Send an email" : "Envoyer un e-mail"}</a>
+            {siteId ? (
+              <PublicContactForm siteId={siteId} email={email} english={english} privacyHref={privacyHref} />
+            ) : (
+              <a className="button primary" href={`mailto:${email}`}>{english ? "Send an email" : "Envoyer un e-mail"}</a>
+            )}
           </section>
         ) : null;
     }

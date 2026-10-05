@@ -21,5 +21,5 @@ export default async function SiteSubPage({ params }: { params: Promise<{ slug: 
   const { slug, pageSlug } = await params;
   const site = await getPublicSite(slug);
   if (!site || site.config.architecture.mode !== "multi" || !site.config.architecture.pages.some((page) => page.enabled && page.slug === pageSlug)) notFound();
-  return <PublishedSite config={site.config} pageSlug={pageSlug} routeBase={await publicRouteBase(slug)} />;
+  return <PublishedSite config={site.config} siteId={site.id} pageSlug={pageSlug} routeBase={await publicRouteBase(slug)} />;
 }
