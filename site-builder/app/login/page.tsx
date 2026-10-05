@@ -77,9 +77,9 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page premium-auth-page">
-      <section className="auth-visual" aria-label="AJG Site Builder">
+      <section className="auth-visual" aria-label="ELTARA">
         <div className="auth-visual-overlay" />
-        <div className="auth-brand-row"><Link href="/" className="auth-brand">AJG Site Builder</Link><LanguageSwitch compact /></div>
+        <div className="auth-brand-row"><Link href="/" className="auth-brand">ELTARA</Link><LanguageSwitch compact /></div>
         <div className="auth-visual-copy">
           <p className="eyebrow">{tr("Création guidée · publication simplifiée", "Guided creation · simplified publishing")}</p>
           <h1>{tr("Créez votre présence en ligne sans partir de zéro", "Build your online presence without starting from scratch")}</h1>
