@@ -19,7 +19,7 @@ export default function BetaAccessPage() {
     <main className="auth-page">
       <section className="auth-card beta-access-card">
         <div className="builder-language-row">
-          <p className="eyebrow">AJG Site Builder · Beta</p>
+          <p className="eyebrow">ELTARA · Beta</p>
           <LanguageSwitch compact />
         </div>
         <h1>{tr("Accès bêta sur invitation", "Invitation-only beta access")}</h1>
