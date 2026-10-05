@@ -251,3 +251,40 @@ test("healthy configured content does not create a false customer action", () =>
   assert.ok(result.checks.some((check) => check.key === "content_links" && check.status === "healthy"));
   assert.ok(result.checks.some((check) => check.key === "storage" && check.status === "healthy"));
 });
+
+
+test("runtime error burst becomes an infrastructure incident without blaming the customer", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    runtime: { lastHour: 4, lastDay: 8, distinctCodes: 2, truncated: false }
+  });
+  const check = result.checks.find((item) => item.key === "runtime");
+  assert.equal(check?.status, "incident");
+  assert.equal(check?.clientAction, undefined);
+});
+
+test("small recent runtime repetition is monitored as an action while isolated history stays healthy", () => {
+  const recent = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    runtime: { lastHour: 1, lastDay: 2, distinctCodes: 1, truncated: false }
+  });
+  assert.equal(recent.checks.find((item) => item.key === "runtime")?.status, "action");
+
+  const isolated = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    runtime: { lastHour: 0, lastDay: 1, distinctCodes: 1, truncated: false }
+  });
+  assert.equal(isolated.checks.find((item) => item.key === "runtime")?.status, "healthy");
+});
