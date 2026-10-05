@@ -157,7 +157,7 @@ export default function PlansPage() {
             </div>
           </div>
           <div className="account-plan-overview-actions">
-            <Link className="button primary" href="/builder">{tr("Ouvrir le Builder", "Open Builder")} <span aria-hidden="true">→</span></Link>
+            <Link className="button primary" href="/builder">{tr("Ouvrir ELTARA", "Open ELTARA")} <span aria-hidden="true">→</span></Link>
             <Link className="text-link" href={locale === "en" ? "/pricing" : "/tarifs"}>{tr("Comparer les offres", "Compare plans")}</Link>
           </div>
         </section>
@@ -267,7 +267,7 @@ export default function PlansPage() {
         <p>{tr("Votre offre actuelle reste clairement identifiée. Aucun changement n’est appliqué sans action de votre part.", "Your current plan stays clearly identified. No change is applied without your action.")}</p>
       </div>
 
-      <section className="plans-grid plans-grid-three" aria-label={tr("Offres AJG", "AJG plans")}>
+      <section className="plans-grid plans-grid-three" aria-label={tr("Offres ELTARA", "ELTARA plans")}>
         <article className={!betaAccess.active && current.planKey === "free" ? "plan-card current" : "plan-card"}>
           <p className="eyebrow">{tr("Bêta / découverte", "Beta / discovery")}</p>
           <h2>{tr("Tester le produit", "Test the product")}</h2>
