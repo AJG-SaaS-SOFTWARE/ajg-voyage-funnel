@@ -180,6 +180,6 @@ export async function publicSiteUrl(siteId: string, slug: string) {
 
   const base =
     process.env.NEXT_PUBLIC_SITE_BUILDER_URL ||
-    "https://ajg-site-builder.vercel.app";
+    "https://eltara.ajgsolutionsgroup.com";
   return `${base.replace(/\/$/, "")}/site/${encodeURIComponent(slug)}`;
 }
