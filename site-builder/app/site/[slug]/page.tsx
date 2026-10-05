@@ -17,7 +17,7 @@ export async function generateMetadata({
 
   if (!site) {
     return {
-      title: "Website not found / Site introuvable | AJG Site Builder",
+      title: "Website not found / Site introuvable | ELTARA",
       robots: { index: false, follow: false }
     };
   }
