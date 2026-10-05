@@ -1,4 +1,4 @@
-# AJG Site Builder — effacement et purge contrôlée
+# ELTARA — effacement et purge contrôlée
 
 Dernière mise à jour : 29 septembre 2026.
 
