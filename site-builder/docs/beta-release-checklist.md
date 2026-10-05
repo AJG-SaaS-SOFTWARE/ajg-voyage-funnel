@@ -1,4 +1,4 @@
-# Recette bêta — AJG Site Builder
+# Recette bêta — ELTARA
 
 Dernière mise à jour : 29 septembre 2026.
 
