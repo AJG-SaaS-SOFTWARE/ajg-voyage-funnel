@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -18,11 +18,13 @@ function errorCode(error: unknown) {
   return "contact_unavailable";
 }
 
-function fingerprint(request: Request, siteId: string) {
+function fingerprint(request: Request, siteId: string, secret: string) {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "";
   const realIp = request.headers.get("x-real-ip")?.trim() || "";
   const agent = request.headers.get("user-agent")?.slice(0, 300) || "";
-  return createHash("sha256").update(`${siteId}|${forwarded || realIp || "unknown"}|${agent}`).digest("hex");
+  return createHmac("sha256", secret)
+    .update(`${siteId}|${forwarded || realIp || "unknown"}|${agent}`)
+    .digest("hex");
 }
 
 async function notifyConfiguredRecipient(args: {
@@ -146,7 +148,7 @@ export async function POST(request: Request) {
     p_subject: subject,
     p_message: message,
     p_consent: true,
-    p_abuse_fingerprint: fingerprint(request, siteId)
+    p_abuse_fingerprint: fingerprint(request, siteId, serviceKey)
   });
 
   if (error || !messageId) {
