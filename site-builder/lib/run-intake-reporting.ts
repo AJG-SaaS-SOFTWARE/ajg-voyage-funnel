@@ -4,6 +4,7 @@ type BuilderRunInput = {
   status: string;
   diagnosis: string;
   sitePresent: boolean;
+  ticketId: string;
 };
 
 export async function reportSupportTicketToRun(input: BuilderRunInput) {
@@ -27,6 +28,7 @@ export async function reportSupportTicketToRun(input: BuilderRunInput) {
       `site=${input.sitePresent ? "yes" : "no"}`,
     ].join(" · "),
     source: "builder-support",
+    externalRef: `builder-ticket:${input.ticketId}`,
     kind: input.diagnosis === "incident" ? "incident" : "support",
     priority,
   };
