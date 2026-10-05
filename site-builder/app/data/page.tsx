@@ -242,7 +242,7 @@ export default function DataRightsPage() {
 
       <section className="panel data-rights-panel data-rights-account">
         <div>
-          <p className="eyebrow">AJG Builder</p>
+          <p className="eyebrow">ELTARA</p>
           <h2>{tr("Demander la suppression de mon compte", "Request account deletion")}</h2>
 <p>{tr("Cette demande concerne l’ensemble du compte. Tous les sites sont retirés du public immédiatement. L’identité de connexion n’est supprimée qu’après traitement des dépendances et des données qui doivent éventuellement être conservées pour une obligation légale.", "This request covers the entire account. All websites are immediately removed from public access. The sign-in identity is deleted only after dependencies and any data subject to legal retention have been processed.")}</p>
         </div>
