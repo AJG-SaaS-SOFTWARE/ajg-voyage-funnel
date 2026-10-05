@@ -49,3 +49,15 @@ test("legacy technical identifiers remain stable during the brand migration", ()
   assert.match(store, /ajg-site-builder:draft/);
   assert.match(billing, /ajg_site_builder/);
 });
+
+test("ELTARA visual identity no longer depends on travel photography", () => {
+  const home = read("app/page.tsx");
+  const css = read("app/globals.css");
+  assert.match(home, /EltaraMark/);
+  assert.match(home, /eltara-hero-art/);
+  assert.doesNotMatch(home, /images\.pexels\.com/);
+  assert.doesNotMatch(css, /images\.pexels\.com/);
+  assert.match(css, /#432B86|var\(--eltara-indigo/);
+  assert.match(css, /#62D8EF/);
+});
+
