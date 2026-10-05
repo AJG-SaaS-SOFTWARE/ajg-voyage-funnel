@@ -19,7 +19,7 @@ export async function reportSupportTicketToRun(input: BuilderRunInput) {
         : "normal";
 
   const payload = {
-    product: "AJG Site Builder",
+    product: "ELTARA",
     title: `support · ${input.category}`.slice(0, 160),
     detail: [
       `severity=${input.severity}`,
