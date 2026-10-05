@@ -1,7 +1,7 @@
-# Configuration Supabase — AJG Site Builder
+# Configuration Supabase — ELTARA
 
 Projet dédié :
-- nom : AJG Site Builder
+- nom : ELTARA
 - région : eu-west-3 (Paris)
 - project ref : scxluqvigqgkquqwrseg
 - URL : https://scxluqvigqgkquqwrseg.supabase.co

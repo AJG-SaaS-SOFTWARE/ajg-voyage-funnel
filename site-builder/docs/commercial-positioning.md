@@ -1,18 +1,18 @@
-# AJG Site Builder — positionnement commercial et gamme cible
+# ELTARA — positionnement commercial et gamme cible
 
 Dernière mise à jour : 29 septembre 2026.
 
 ## Positionnement
 
-AJG Site Builder n'est pas commercialisé comme « un constructeur de sites moins cher ».
+ELTARA n'est pas commercialisé comme « un constructeur de sites moins cher ».
 
 La proposition de valeur est :
 
-> **Décrivez votre activité. AJG Builder vous aide à structurer, rédiger, personnaliser et publier un site professionnel — sans partir d'une page blanche.**
+> **Décrivez votre activité. ELTARA la transforme en une présence digitale professionnelle, structurée pour être visible, crédible et prête à évoluer.**
 
 Formulation courte recommandée :
 
-> **Votre site ne commence pas par un template. Il commence par votre activité.**
+> **Élevez votre présence digitale. Votre site commence par votre activité, pas par un template.**
 
 Le produit distingue deux niveaux d'assistance :
 
@@ -174,7 +174,7 @@ La validation commerciale utilise deux niveaux de sécurité complémentaires :
 
 La vente aux consommateurs est désactivée par défaut avec `AJG_COMMERCIAL_CONSUMER_SALES_ENABLED=false`. Elle ne doit être activée qu’après mise en place du parcours de rétractation, de la résiliation électronique, des informations précontractuelles B2C et du médiateur de la consommation compétent.
 
-La politique de confidentialité distingue les traitements propres à AJG Site Builder (compte, facturation, sécurité, support, pilotage produit) des cas où AJG peut traiter du contenu ou des données de visiteurs pour le compte du client qui publie son site.
+La politique de confidentialité distingue les traitements propres à ELTARA (compte, facturation, sécurité, support, pilotage produit) des cas où AJG peut traiter du contenu ou des données de visiteurs pour le compte du client qui publie son site.
 
 ## Gates restant nécessaires avant Stripe live
 

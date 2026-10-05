@@ -1,4 +1,4 @@
-# Assistant de rédaction IA — AJG Site Builder
+# Assistant de rédaction IA — ELTARA
 
 ## Objectif
 

@@ -11,8 +11,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug, pageSlug } = await params;
   const site = await getPublicSite(slug);
   const page = site?.config.architecture.pages.find((item) => item.enabled && item.slug === pageSlug);
-  if (!site) return { title: "Website not found / Site introuvable | AJG Site Builder", robots: { index: false, follow: false } };
-  if (!page || site.config.architecture.mode !== "multi") return { title: `${site.config.language === "en" ? "Page not found" : "Page introuvable"} | AJG Site Builder`, robots: { index: false, follow: false } };
+  if (!site) return { title: "Website not found / Site introuvable", robots: { index: false, follow: false } };
+  if (!page || site.config.architecture.mode !== "multi") return { title: `${site.config.language === "en" ? "Page not found" : "Page introuvable"}`, robots: { index: false, follow: false } };
   const canonical = `${await publicSiteUrl(site.id, slug)}/p/${encodeURIComponent(pageSlug)}`;
   return buildPublicMetadata(site.config, { canonical, pageTitle: page.title });
 }

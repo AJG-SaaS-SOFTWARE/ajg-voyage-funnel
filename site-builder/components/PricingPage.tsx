@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import styles from "./PricingPage.module.css";
+import { EltaraBrand } from "./EltaraBrand";
 
 type Locale = "fr" | "en";
 type BillingCycle = "monthly" | "annual";
@@ -11,10 +12,10 @@ type PricingPageProps = { locale: Locale; annualIncludesLaunch?: boolean };
 
 const copy = {
   fr: {
-    navLabel: "Tarifs AJG Site Builder",
+    navLabel: "Tarifs ELTARA",
     switchLabel: "English",
     switchHref: "/pricing",
-    eyebrow: "AJG Site Builder · Tarifs",
+    eyebrow: "ELTARA · Tarifs",
     title: "Créez. Gérez. Faites progresser.",
     subtitle:
       "BUILD, RUN, GROW : payez la création complète quand vous en avez besoin, puis choisissez le niveau de service récurrent adapté à votre site.",
@@ -86,10 +87,10 @@ const copy = {
     cancel: "Résiliation"
   },
   en: {
-    navLabel: "AJG Site Builder Pricing",
+    navLabel: "ELTARA Pricing",
     switchLabel: "Français",
     switchHref: "/tarifs",
-    eyebrow: "AJG Site Builder · Pricing",
+    eyebrow: "ELTARA · Pricing",
     title: "Build. Run. Grow.",
     subtitle:
       "BUILD, RUN, GROW: pay for full website creation when you need it, then choose the recurring service level that fits your website.",
@@ -175,9 +176,9 @@ export function PricingPage({ locale, annualIncludesLaunch = false }: PricingPag
   return (
     <main className={styles.page} lang={locale}>
       <header className={styles.topbar}>
-        <Link href="/" className={styles.brand} aria-label="AJG Site Builder">
+        <Link href="/" className={styles.brand} aria-label="ELTARA">
           <span className={styles.brandMark} aria-hidden="true">A</span>
-          <span>AJG Site Builder</span>
+          <span>ELTARA</span>
         </Link>
         <nav className={styles.topnav} aria-label={t.navLabel}>
           <Link href="/plans">{t.account}</Link>

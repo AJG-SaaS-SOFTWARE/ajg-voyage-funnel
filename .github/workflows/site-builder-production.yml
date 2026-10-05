@@ -1,4 +1,4 @@
-name: Site Builder Production Release
+name: ELTARA Production Release
 
 on:
   workflow_dispatch:
@@ -69,7 +69,7 @@ jobs:
               --data '{"rootDirectory":"site-builder"}')"
 
             if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-              echo "::error::Unable to restore the AJG Site Builder Vercel rootDirectory (HTTP $HTTP_CODE)."
+              echo "::error::Unable to restore the ELTARA Vercel rootDirectory (HTTP $HTTP_CODE)."
               cat /tmp/vercel-project-update.json
               exit 1
             fi
@@ -83,7 +83,7 @@ jobs:
           fi
 
           if [ "$ROOT_DIRECTORY" != "site-builder" ]; then
-            echo "::error::AJG Site Builder Vercel rootDirectory is '$ROOT_DIRECTORY', expected 'site-builder'."
+            echo "::error::ELTARA Vercel rootDirectory is '$ROOT_DIRECTORY', expected 'site-builder'."
             exit 1
           fi
 
@@ -120,7 +120,7 @@ jobs:
             value: crypto.randomBytes(32).toString("base64url"),
             type: "sensitive",
             target: ["production"],
-            comment: "AJG Site Builder scheduled job authorization"
+            comment: "ELTARA scheduled job authorization"
           }];
           process.stdout.write(JSON.stringify(payload));
           NODE
