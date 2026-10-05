@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         first_name: "Test",
         last_name: "E2E",
         hero_title: marker,
-        hero_subtitle: "Site temporaire de validation technique AJG Builder.",
+        hero_subtitle: "Site temporaire de validation technique ELTARA.",
         hero_tagline: "Validation interne",
         about_heading: "À propos du test",
         about_text: "Ce site temporaire vérifie le parcours réel du Builder. Il est supprimé automatiquement à la fin du contrôle.",
@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
     const heroSubtitle =
       typeof proposal?.heroSubtitle === "string" && proposal.heroSubtitle.trim()
         ? proposal.heroSubtitle.trim().slice(0, 420)
-        : "Site temporaire de validation technique AJG Builder.";
+        : "Site temporaire de validation technique ELTARA.";
     const aboutText =
       typeof proposal?.aboutText === "string" && proposal.aboutText.trim()
         ? proposal.aboutText.trim().slice(0, 1800)
