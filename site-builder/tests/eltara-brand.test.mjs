@@ -29,7 +29,10 @@ test("core customer-facing product surfaces no longer expose the legacy product 
     "components/PricingPage.tsx",
     "components/AccountShell.tsx",
     "components/AdminShell.tsx",
-    "components/CommercialLegalPage.tsx"
+    "components/CommercialLegalPage.tsx",
+    "app/admin/page.tsx",
+    "app/api/admin/storage-backup/route.ts",
+    "app/api/admin/builder-e2e/route.ts"
   ];
 
   for (const path of paths) {

@@ -222,7 +222,7 @@ export default function AdminPage() {
           .filter(Boolean);
         setMessage(
           instructions.length
-            ? `DNS AJG à configurer pour ${domain.hostname} : ${instructions.join(" | ")}`
+            ? `DNS ELTARA à configurer pour ${domain.hostname} : ${instructions.join(" | ")}`
             : result.ownershipVerified
               ? `${domain.hostname} est rattaché à Vercel mais le DNS public n’est pas encore opérationnel.`
               : `${domain.hostname} est encore en attente de vérification.`

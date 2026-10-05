@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         hero_subtitle: "Site temporaire de validation technique ELTARA.",
         hero_tagline: "Validation interne",
         about_heading: "À propos du test",
-        about_text: "Ce site temporaire vérifie le parcours réel du Builder. Il est supprimé automatiquement à la fin du contrôle.",
+        about_text: "Ce site temporaire vérifie le parcours réel d’ELTARA. Il est supprimé automatiquement à la fin du contrôle.",
         booking_label: "Continuer",
         booking_url: "",
         instagram_url: "",
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
             firstName: "Test",
             brandName: marker,
             architectBrief:
-              "Site interne de validation AJG Builder pour une activité indépendante fictive. Objectif : vérifier la génération structurée, la publication et le rendu, sans donnée commerciale réelle.",
+              "Site interne de validation ELTARA pour une activité indépendante fictive. Objectif : vérifier la génération structurée, la publication et le rendu, sans donnée commerciale réelle.",
             contentLibrary: []
           }
         }),
@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
     const aboutText =
       typeof proposal?.aboutText === "string" && proposal.aboutText.trim()
         ? proposal.aboutText.trim().slice(0, 1800)
-        : "Ce site temporaire vérifie le parcours réel du Builder et sera supprimé automatiquement.";
+        : "Ce site temporaire vérifie le parcours réel d’ELTARA et sera supprimé automatiquement.";
     const architecture = {
       mode: "single",
       pages: [
@@ -434,7 +434,7 @@ export async function POST(request: NextRequest) {
     currentStage = "complete";
   } catch (error) {
     const failure = {
-      error: "Builder E2E validation failed",
+      error: "ELTARA E2E validation failed",
       stage: currentStage,
       detail: shortError(error),
       steps
@@ -489,7 +489,7 @@ export async function POST(request: NextRequest) {
   if (!cleanupOk) {
     return NextResponse.json(
       {
-        error: "Builder E2E validation passed but cleanup failed",
+        error: "ELTARA E2E validation passed but cleanup failed",
         stage: "cleanup",
         steps
       },

@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Le store Vercel Blob privé n’est pas encore connecté au Builder.",
+            "Le store Vercel Blob privé n’est pas encore connecté à ELTARA.",
           configured: false
         },
         { status: 409 }
