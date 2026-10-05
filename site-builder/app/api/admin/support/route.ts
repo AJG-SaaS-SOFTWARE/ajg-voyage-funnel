@@ -25,7 +25,7 @@ async function platformProbe(host: string, path = "/"): Promise<PlatformProbe> {
   try {
     await resolveAny(host);
   } catch (error: any) {
-    dns = error?.code === "ENOTFOUND" || error?.code === "ENODATA" || error?.code === "ENOTFOUND"
+    dns = error?.code === "ENOTFOUND" || error?.code === "ENODATA"
       ? "nxdomain"
       : "error";
   }
