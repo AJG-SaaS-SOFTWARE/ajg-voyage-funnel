@@ -4469,3 +4469,14 @@ button.active .step-label small{color:#63817f}
 .auth-star{
   color:#62D8EF;
 }
+
+
+.auth-visual .auth-brand .eltara-lockup-copy strong{
+  color:#fff;
+}
+.auth-visual .auth-brand .eltara-lockup-copy small{
+  color:rgba(255,255,255,.72);
+}
+.auth-visual .auth-brand .eltara-mark{
+  filter:drop-shadow(0 8px 18px rgba(4,12,38,.28));
+}
