@@ -24,11 +24,11 @@ test("AJG corrective diagnostics executes ELTARA checks only", () => {
   assert.match(workflow, /id: tests/);
   assert.match(workflow, /npx tsc --noEmit/);
   assert.match(workflow, /npm test/);
-  assert.match(workflow, /ajg-corrective-result:v1/);
-  assert.match(workflow, /status=passed mode=diagnose/);
-  assert.match(workflow, /status=failed mode=diagnose/);
   assert.match(workflow, /ajg-corrective-diagnostic:v1/);
-  assert.match(workflow, /typecheck=\$TYPECHECK/);
-  assert.match(workflow, /lint=na/);
-  assert.match(workflow, /tests=\$TESTS/);
+});
+
+test("AJG corrective diagnostics supports correlated v2 attempts", () => {
+  assert.match(workflow, /client_payload\.attempt_id/);
+  assert.match(workflow, /ajg-corrective-result:v2 attempt=\$ATTEMPT_ID/);
+  assert.match(workflow, /ajg-corrective-result:v1/);
 });

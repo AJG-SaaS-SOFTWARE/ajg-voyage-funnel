@@ -50,13 +50,19 @@ jobs:
           ISSUE: ${{ github.event.client_payload.issue_number }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
           TESTS: ${{ steps.tests.outcome }}
+          ATTEMPT_ID: ${{ github.event.client_payload.attempt_id }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          if [ -n "$ATTEMPT_ID" ]; then
+            PREFIX="<!-- ajg-corrective-result:v2 attempt=$ATTEMPT_ID"
+          else
+            PREFIX="<!-- ajg-corrective-result:v1"
+          fi
           if [ "$TYPECHECK" = "success" ] && [ "$TESTS" = "success" ]; then
-            MARKER="<!-- ajg-corrective-result:v1 status=passed mode=diagnose -->"
+            MARKER="$PREFIX status=passed mode=diagnose -->"
             VERDICT="✅ Diagnostic correctif automatique : contrôles ELTARA au vert."
           else
-            MARKER="<!-- ajg-corrective-result:v1 status=failed mode=diagnose -->"
+            MARKER="$PREFIX status=failed mode=diagnose -->"
             VERDICT="⚠️ Diagnostic correctif automatique : au moins un contrôle ELTARA a échoué."
           fi
           DIAGNOSTIC="<!-- ajg-corrective-diagnostic:v1 typecheck=$TYPECHECK lint=na tests=$TESTS -->"
