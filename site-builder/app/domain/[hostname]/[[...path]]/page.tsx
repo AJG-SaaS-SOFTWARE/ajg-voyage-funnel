@@ -41,7 +41,7 @@ export default async function CustomDomainPage({params}:{params:Promise<{hostnam
  if(path[0]==="mentions-legales")return <LegalNoticePage config={site.config} routeBase="" />;
  if(path[0]==="confidentialite")return <PrivacyPage config={site.config} routeBase="" />;
  if(path[0]==="cookies")return <CookiesPage config={site.config} routeBase="" />;
- if(path[0]==="p"&&path[1])return <PublishedSite config={site.config} pageSlug={decodeURIComponent(path[1])} routeBase="" />;
+ if(path[0]==="p"&&path[1])return <PublishedSite config={site.config} siteId={site.id} pageSlug={decodeURIComponent(path[1])} routeBase="" />;
  if(path.length)notFound();
- return <PublishedSite config={site.config} routeBase="" />;
+ return <PublishedSite config={site.config} siteId={site.id} routeBase="" />;
 }
