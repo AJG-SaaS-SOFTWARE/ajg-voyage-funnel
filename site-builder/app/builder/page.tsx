@@ -1154,7 +1154,7 @@ export default function BuilderPage() {
       setSaved(true);
       setPublished(false);
     } catch (error) {
-      setSyncError(error instanceof Error ? error.message : tr("La sauvegarde n’a pas abouti. Vérifiez votre connexion puis réessayez ; vos modifications restent affichées dans le Builder.", "Saving did not complete. Check your connection and try again; your changes remain visible in the Builder."));
+      setSyncError(error instanceof Error ? error.message : tr("La sauvegarde n’a pas abouti. Vérifiez votre connexion puis réessayez ; vos modifications restent affichées dans ELTARA.", "Saving did not complete. Check your connection and try again; your changes remain visible in ELTARA."));
     } finally {
       setBusy(false);
     }
@@ -1362,7 +1362,7 @@ export default function BuilderPage() {
             <p>{tr("Avancez étape par étape. Vous pouvez revenir sur chaque section à tout moment.", "Move through the steps at your own pace. You can return to any section at any time.")}</p>
             <div className="beginner-promise">
               <span>✓</span>
-              <p>{tr("Pas besoin de compétences techniques : remplissez simplement les questions, nous nous occupons du reste.", "No technical skills needed: answer the questions and the Builder handles the rest.")}</p>
+              <p>{tr("Pas besoin de compétences techniques : remplissez simplement les questions, nous nous occupons du reste.", "No technical skills needed: answer the questions and ELTARA handles the rest.")}</p>
             </div>
           </div>
 
