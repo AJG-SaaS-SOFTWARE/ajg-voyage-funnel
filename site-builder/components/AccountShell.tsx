@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { EltaraBrand } from "./EltaraBrand";
 
 type AccountSection = "plans" | "billing" | "domains" | "data";
 
@@ -32,11 +33,7 @@ export function AccountShell({
     <main className="account-shell">
       <header className="account-topbar">
         <Link href="/builder" className="account-brand">
-          <span className="account-brand-mark" aria-hidden="true">A</span>
-          <span>
-            <b>ELTARA</b>
-            <small>{tr("Espace compte", "Account")}</small>
-          </span>
+          <EltaraBrand compact context={tr("Espace compte", "Account")} />
         </Link>
 
         <div className="account-topbar-actions">
