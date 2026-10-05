@@ -127,7 +127,7 @@ export async function getAdminManagedDomains(): Promise<AdminManagedDomain[]> {
     cache: "no-store"
   });
   const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(body?.error || "Sous-domaines AJG indisponibles.");
+  if (!response.ok) throw new Error(body?.error || "Sous-domaines ELTARA indisponibles.");
   return (body?.domains || []) as AdminManagedDomain[];
 }
 

@@ -2167,7 +2167,7 @@ export default function BuilderPage() {
 
                 <div className="quality-summary-card">
                   <div className="quality-summary-head">
-                    <div><span className="mini">AJG QUALITY CHECK</span><strong>{qualityPassed}/{qualityChecks.length} {tr("contrôles réussis", "checks passed")}</strong></div>
+                    <div><span className="mini">ELTARA QUALITY CHECK</span><strong>{qualityPassed}/{qualityChecks.length} {tr("contrôles réussis", "checks passed")}</strong></div>
                     <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} ${tr(qualityWarnings > 1 ? "améliorations" : "amélioration", qualityWarnings > 1 ? "improvements" : "improvement")}` : tr("Prêt ✓", "Ready ✓")}</span>
                   </div>
                   <div className="quality-check-list">
