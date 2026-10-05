@@ -15,6 +15,7 @@ test("Builder support reporting sends only non-PII structured metadata", () => {
 
 test("support ticket persistence happens before Run reporting", () => {
   const route = readFileSync("app/api/support/tickets/route.ts", "utf8");
-  assert.ok(route.indexOf('.from("support_tickets")') < route.indexOf("reportSupportTicketToRun"));
-  assert.match(route, /AbortSignal\.timeout\(2_500\)/);
+  assert.ok(route.indexOf('.from("support_tickets")') < route.lastIndexOf("reportSupportTicketToRun({"));
+  const reporter = readFileSync("lib/run-intake-reporting.ts", "utf8");
+  assert.match(reporter, /AbortSignal\.timeout\(2_500\)/);
 });
