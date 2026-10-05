@@ -251,3 +251,57 @@ test("healthy configured content does not create a false customer action", () =>
   assert.ok(result.checks.some((check) => check.key === "content_links" && check.status === "healthy"));
   assert.ok(result.checks.some((check) => check.key === "storage" && check.status === "healthy"));
 });
+
+
+test("published external links that stop responding become a guided customer action", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    content: {
+      contactEnabled: false,
+      contactEmailValid: false,
+      galleryEnabled: false,
+      galleryImageCount: 0,
+      invalidConfiguredLinks: 0,
+      checkedConfiguredLinks: 2,
+      probedConfiguredLinks: 2,
+      reachableConfiguredLinks: 1,
+      unreachableConfiguredLinks: 1,
+      unsafeConfiguredLinks: 0,
+      missingPublishableMedia: 0
+    }
+  });
+  const check = result.checks.find((item) => item.key === "content_links");
+  assert.equal(check?.status, "action");
+  assert.ok(check?.clientAction);
+  assert.match(check?.detail || "", /1 lien/);
+});
+
+test("private-network external destinations are refused as a customer action, not fetched", () => {
+  const result = buildSupportDiagnosis({
+    backendOk: true,
+    site: { id: "site", slug: "demo", status: "published", publicAccessState: "live" },
+    domains: [{ hostname: "demo.example.com", verificationStatus: "verified", isPrimary: true }],
+    billingState: "active",
+    publicRender: { checked: true, ok: true, status: 200 },
+    content: {
+      contactEnabled: false,
+      contactEmailValid: false,
+      galleryEnabled: false,
+      galleryImageCount: 0,
+      invalidConfiguredLinks: 0,
+      checkedConfiguredLinks: 1,
+      probedConfiguredLinks: 1,
+      reachableConfiguredLinks: 0,
+      unreachableConfiguredLinks: 0,
+      unsafeConfiguredLinks: 1,
+      missingPublishableMedia: 0
+    }
+  });
+  const check = result.checks.find((item) => item.key === "content_links");
+  assert.equal(check?.status, "action");
+  assert.match(check?.detail || "", /sécurité réseau/);
+});
