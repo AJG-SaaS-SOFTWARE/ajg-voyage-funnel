@@ -51,8 +51,8 @@ test("critical server APIs localize user-facing errors", () => {
 
 test("billing notification emails support French and English", () => {
   const source = read("app/api/cron/billing-notifications/route.ts");
-  assert.match(source, /Action required for your AJG Builder subscription/);
-  assert.match(source, /Action requise sur votre abonnement AJG Builder/);
+  assert.match(source, /Action required for your ELTARA subscription/);
+  assert.match(source, /Action requise sur votre abonnement ELTARA/);
   assert.match(source, /ajg_builder_locale/);
   assert.match(source, /site\.config\?\.language/);
 });
