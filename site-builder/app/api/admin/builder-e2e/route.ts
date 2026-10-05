@@ -347,9 +347,7 @@ export async function POST(request: NextRequest) {
       .eq("owner_id", user.id);
     if (publishError) throw publishError;
 
-    const root =
-      process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
-      "voyage.ajgsolutionsgroup.com";
+    const root = preferredPublishedRootDomain();
     const { error: domainError } = await userClient.from("domains").insert({
       site_id: siteId,
       hostname: `${slug}.${root}`,
