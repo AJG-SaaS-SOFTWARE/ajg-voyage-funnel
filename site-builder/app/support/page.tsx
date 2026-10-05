@@ -32,6 +32,7 @@ export default function SupportPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
+  const [healthNotice, setHealthNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
@@ -102,15 +103,15 @@ export default function SupportPage() {
 
   async function diagnose() {
     setDiagnosing(true);
-    setNotice("");
+    setHealthNotice("");
     try {
       await load();
-      setNotice(tr(
+      setHealthNotice(tr(
         "Diagnostic actualisé. Les contrôles techniques de votre site viennent d’être relancés.",
         "Diagnosis refreshed. Your website technical checks have just been run again."
       ));
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : tr(
+      setHealthNotice(error instanceof Error ? error.message : tr(
         "Nouveau diagnostic impossible.",
         "Unable to run a new diagnosis."
       ));
@@ -164,7 +165,7 @@ export default function SupportPage() {
     const action = payload?.health.diagnosis.repairActions?.[0];
     if (!accessToken || !siteId || !action) return;
     setRepairing(true);
-    setNotice("");
+    setHealthNotice("");
     try {
       const response = await fetch("/api/support/remediate", {
         method: "POST",
@@ -177,14 +178,14 @@ export default function SupportPage() {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(body?.error || tr("Correction automatique impossible.", "Automatic repair failed."));
-      setNotice(
+      setHealthNotice(
         body?.result?.status === "succeeded"
           ? tr("Correction technique appliquée. Le diagnostic a été actualisé.", "Technical repair applied. The diagnosis has been refreshed.")
           : tr("La correction automatique n’a pas suffi. Le diagnostic a été actualisé et peut être transmis à l’équipe ELTARA.", "Automatic repair was not sufficient. The diagnosis has been refreshed and can be escalated to the ELTARA team.")
       );
       await load();
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : tr("Correction automatique impossible.", "Automatic repair failed."));
+      setHealthNotice(error instanceof Error ? error.message : tr("Correction automatique impossible.", "Automatic repair failed."));
     } finally {
       setRepairing(false);
     }
@@ -265,6 +266,7 @@ export default function SupportPage() {
                 </button>
               ) : null}
             </div>
+            {healthNotice ? <p role="status">{healthNotice}</p> : null}
           </section>
 
           <section className="panel">
