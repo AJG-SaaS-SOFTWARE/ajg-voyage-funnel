@@ -6,7 +6,7 @@ import { appBaseUrl } from "../../lib/app-url";
 export function generateMetadata(): Metadata {
   const base = appBaseUrl();
   return {
-    title: "Tarifs — ELTARA",
+    title: "Tarifs",
     description: "Comparez Essentiel, Growth et la Création IA d’ELTARA.",
     alternates: {
       canonical: `${base}/tarifs`,
