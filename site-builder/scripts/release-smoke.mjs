@@ -64,7 +64,7 @@ try {
   await expectStatus("/api/admin/managed-domains", 401);
   await expectStatus("/api/admin/managed-domains", 401, { method: "POST" });
   await expectStatus("/api/admin/storage-bootstrap", 401, { method: "POST" });
-  console.log("AJG Builder release smoke passed.");
+  console.log("ELTARA release smoke passed.");
 } finally {
   child.kill("SIGTERM");
   await new Promise((resolve) => {
