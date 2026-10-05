@@ -20,9 +20,15 @@ test("AJG corrective diagnostics stays read-only", () => {
 
 test("AJG corrective diagnostics executes ELTARA checks only", () => {
   assert.match(workflow, /working-directory: site-builder/);
+  assert.match(workflow, /id: typecheck/);
+  assert.match(workflow, /id: tests/);
   assert.match(workflow, /npx tsc --noEmit/);
   assert.match(workflow, /npm test/);
   assert.match(workflow, /ajg-corrective-result:v1/);
   assert.match(workflow, /status=passed mode=diagnose/);
   assert.match(workflow, /status=failed mode=diagnose/);
+  assert.match(workflow, /ajg-corrective-diagnostic:v1/);
+  assert.match(workflow, /typecheck=\$TYPECHECK/);
+  assert.match(workflow, /lint=na/);
+  assert.match(workflow, /tests=\$TESTS/);
 });
