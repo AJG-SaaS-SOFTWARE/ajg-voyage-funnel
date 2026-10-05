@@ -5,6 +5,7 @@ import { AccountShell } from "../../components/AccountShell";
 import { downloadMySiteExport, getMyBillingState, openStripeBillingPortal, type BillingState } from "../../lib/billing-access";
 import { getMySites } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
+import { billingGuide, billingStateLabel } from "../../lib/billing-guidance";
 
 function date(value: string | null, locale: string) {
   return value ? new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { dateStyle: "long" }).format(new Date(value)) : "—";
@@ -41,6 +42,7 @@ export default function BillingPage() {
   }
 
   const limited = billing && !["free","trial","active"].includes(billing.state);
+  const guide = billing ? billingGuide(billing) : [];
   return <AccountShell
     active="billing"
     eyebrow={tr("Facturation & récupération", "Billing & recovery")}
@@ -49,7 +51,27 @@ export default function BillingPage() {
   >
     {sites.length>1?<section className="panel"><label>Site<select value={siteId} onChange={e=>{setSiteId(e.target.value);void load(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
     {message ? <p className="account-note">{message}</p> : null}
-    {billing ? <section className="usage-card"><div><p className="eyebrow">{tr("État", "Status")}</p><h2>{billing.state}</h2>
+    {billing ? <section className="panel billing-guide" aria-labelledby="billing-guide-title">
+      <p className="eyebrow">{tr("Parcours guidé", "Guided flow")}</p>
+      <h2 id="billing-guide-title">{tr("Comprendre et gérer votre accès", "Understand and manage your access")}</h2>
+      <p>{tr(
+        "ELTARA vous indique la prochaine action utile sans modifier vos droits depuis le navigateur. Les changements d’accès restent confirmés côté serveur.",
+        "ELTARA shows the next useful action without changing your entitlements from the browser. Access changes remain confirmed server-side."
+      )}</p>
+      <ol className="billing-guide-steps">
+        {guide.map((step, index) => (
+          <li className={`billing-guide-step ${step.status}`} key={step.key}>
+            <span aria-hidden="true">{step.status === "done" ? "✓" : index + 1}</span>
+            <div>
+              <b>{locale === "en" ? step.titleEn : step.titleFr}</b>
+              <p>{locale === "en" ? step.detailEn : step.detailFr}</p>
+              {step.href ? <a className="text-link" href={step.href}>{tr("Ouvrir Mon offre", "Open My plan")} →</a> : null}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section> : null}
+    {billing ? <section className="usage-card"><div><p className="eyebrow">{tr("État", "Status")}</p><h2>{billingStateLabel(billing.state, locale)}</h2>
       {limited ? <p>{tr("L’IA est coupée pendant la grâce. À la restriction, l’édition, les imports, la publication et les nouveaux formulaires sont également arrêtés. Le site public reste en ligne jusqu’à sa date de suspension.", "AI is disabled during the grace period. Once restricted, editing, imports, publishing and new forms are also disabled. The public website remains online until its suspension date.")}</p> : <p>{tr("Votre site dispose de ses capacités normales selon votre offre.", "Your website has its normal capabilities according to your plan.")}</p>}
       <dl className="billing-dates"><div><dt>{tr("Fin de grâce / restriction", "End of grace / restriction")}</dt><dd>{date(billing.graceUntil || billing.restrictedAt, locale)}</dd></div><div><dt>{tr("Suspension publique", "Public suspension")}</dt><dd>{date(billing.publicSuspendAt, locale)}</dd></div><div><dt>{tr("Export disponible jusqu’au", "Export available until")}</dt><dd>{date(billing.exportUntil, locale)}</dd></div><div><dt>{tr("Fin de la fenêtre de récupération prévue", "Planned recovery window end")}</dt><dd>{date(billing.deleteAfter, locale)}</dd></div></dl>
       <div className="builder-actions">
