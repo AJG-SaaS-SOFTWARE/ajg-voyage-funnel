@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { EltaraBrand } from "../../components/EltaraBrand";
 import { useProductLocale } from "../../lib/product-i18n";
 import { signOut } from "../../lib/supabase-site-repository";
 
@@ -19,7 +20,7 @@ export default function BetaAccessPage() {
     <main className="auth-page">
       <section className="auth-card beta-access-card">
         <div className="builder-language-row">
-          <p className="eyebrow">ELTARA · Beta</p>
+          <EltaraBrand compact context="Beta" />
           <LanguageSwitch compact />
         </div>
         <h1>{tr("Accès bêta sur invitation", "Invitation-only beta access")}</h1>
