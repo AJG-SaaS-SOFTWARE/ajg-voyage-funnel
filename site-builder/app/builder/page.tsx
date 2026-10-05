@@ -1323,7 +1323,7 @@ export default function BuilderPage() {
         <Link href="/" className="brand-link premium-brand-link">
           <span className="brand-mark">A</span>
           <span>
-            <strong>AJG Site Builder</strong>
+            <strong>ELTARA</strong>
             <small>Prototype 0.10</small>
           </span>
         </Link>
