@@ -1,0 +1,112 @@
+name: ELTARA Storage Backup Watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 */6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eltara-storage-backup-watchdog
+  cancel-in-progress: false
+
+jobs:
+  verify-and-recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_T1xBMzY6HJCAkUStrmkUgj60
+      VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
+      PRODUCTION_ALIAS: ajg-site-builder.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require Vercel token
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN is required for backup watchdog recovery."
+            exit 1
+          fi
+
+      - name: Check backup freshness
+        id: health
+        shell: bash
+        run: |
+          STATUS="$(curl --fail-with-body --silent --show-error             "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
+          printf '%s' "$STATUS" > /tmp/storage-backup-health.json
+
+          node <<'NODE' >> "$GITHUB_OUTPUT"
+          const fs = require("node:fs");
+          const status = JSON.parse(fs.readFileSync("/tmp/storage-backup-health.json", "utf8"));
+          const configured = status?.configured === true;
+          const ageHours = Number(status?.ageHours);
+          const lastCompletedAt =
+            typeof status?.lastCompletedAt === "string" ? status.lastCompletedAt : "";
+
+          console.log(`configured=${configured ? "true" : "false"}`);
+          console.log(`age_hours=${Number.isFinite(ageHours) ? ageHours : ""}`);
+          console.log(`last_completed_at=${lastCompletedAt}`);
+          console.log(
+            `needs_recovery=${
+              configured && (!Number.isFinite(ageHours) || ageHours >= 36)
+                ? "true"
+                : "false"
+            }`
+          );
+          NODE
+
+      - name: Refuse recovery when backup store is not configured
+        if: steps.health.outputs.configured != 'true'
+        run: |
+          echo "::error::ELTARA off-provider backup store is not configured."
+          exit 1
+
+      - name: Report healthy backup
+        if: steps.health.outputs.needs_recovery != 'true'
+        run: |
+          echo "ELTARA backup is fresh enough; no recovery action required." >> "$GITHUB_STEP_SUMMARY"
+          echo "Last completed: ${{ steps.health.outputs.last_completed_at }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Age: ${{ steps.health.outputs.age_hours }} h" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Trigger Vercel backup cron when stale
+        if: steps.health.outputs.needs_recovery == 'true'
+        working-directory: site-builder
+        shell: bash
+        run: |
+          echo "::warning::ELTARA backup is stale; triggering the guarded Vercel cron."
+          npx --yes vercel@60.1.3 crons run /api/cron/storage-backup             --token "$VERCEL_TOKEN"
+
+      - name: Verify recovery produced a newer backup
+        if: steps.health.outputs.needs_recovery == 'true'
+        shell: bash
+        env:
+          PREVIOUS_COMPLETED: ${{ steps.health.outputs.last_completed_at }}
+        run: |
+          for attempt in $(seq 1 18); do
+            STATUS="$(curl --fail-with-body --silent --show-error               "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
+            printf '%s' "$STATUS" > /tmp/storage-backup-health-after.json
+
+            NEW_COMPLETED="$(node -e '
+              const x=require("/tmp/storage-backup-health-after.json");
+              process.stdout.write(typeof x?.lastCompletedAt==="string"?x.lastCompletedAt:"");
+            ')"
+            NEW_STATUS="$(node -e '
+              const x=require("/tmp/storage-backup-health-after.json");
+              process.stdout.write(typeof x?.status==="string"?x.status:"unknown");
+            ')"
+
+            if [ -n "$NEW_COMPLETED" ] && [ "$NEW_COMPLETED" != "$PREVIOUS_COMPLETED" ]; then
+              echo "ELTARA backup recovered at $NEW_COMPLETED ($NEW_STATUS)." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            echo "Waiting for a newer completed backup ($attempt/18)..."
+            sleep 5
+          done
+
+          echo "::error::Backup recovery was triggered but no newer completed backup became visible."
+          cat /tmp/storage-backup-health-after.json || true
+          exit 1
