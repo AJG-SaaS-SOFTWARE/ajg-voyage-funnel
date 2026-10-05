@@ -273,7 +273,7 @@ export default function PlansPage() {
           <h2>{tr("Tester le produit", "Test the product")}</h2>
           <p className="plan-price">0 €</p>
           <ul>
-            <li>{tr("Sous-domaine AJG", "AJG subdomain")}</li>
+            <li>{tr("Sous-domaine inclus", "Included subdomain")}</li>
             <li>{tr("IA standard bornée", "Bounded standard AI")}</li>
             <li>{tr("Édition et publication essentielles", "Core editing and publishing")}</li>
           </ul>
