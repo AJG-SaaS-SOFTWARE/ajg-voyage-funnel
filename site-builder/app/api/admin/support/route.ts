@@ -3,6 +3,7 @@ import { resolveAny } from "node:dns/promises";
 import { createClient } from "@supabase/supabase-js";
 import { recordSupportEvent } from "../../../../lib/support-events";
 import { calculateSupportMetrics } from "../../../../lib/support-metrics";
+import { getRecentRuntimeHealth } from "../../../../lib/vercel-runtime-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,7 +95,8 @@ export async function GET(request: Request) {
     activeSites,
     appProbe,
     publicProbe,
-    canaryProbe
+    canaryProbe,
+    runtimeHealth
   ] = await Promise.all([
     auth.service
       .from("support_tickets")
@@ -124,7 +126,8 @@ export async function GET(request: Request) {
       .limit(5000),
     platformProbe(appHost, "/api/health"),
     platformProbe(publishedRoot, "/api/health"),
-    platformProbe(canaryHost, "/")
+    platformProbe(canaryHost, "/"),
+    getRecentRuntimeHealth()
   ]);
 
   if (queue.error) {
@@ -164,16 +167,28 @@ export async function GET(request: Request) {
     || canaryProbe.dns !== "ok"
     || canaryProbe.https !== "ok";
 
+  const runtimeIssue = runtimeHealth.status === "incident"
+    ? "incident"
+    : runtimeHealth.status === "warning"
+      ? "warning"
+      : null;
+
   const platform = {
-    overall: appProbe.dns !== "ok" || appProbe.https !== "ok"
+    overall: appProbe.dns !== "ok" || appProbe.https !== "ok" || runtimeIssue === "incident"
       ? "incident"
-      : externalIssue
+      : externalIssue || runtimeIssue === "warning"
         ? "warning"
         : "healthy",
     app: appProbe,
     publicDomain: publicProbe,
     managedDomainCanary: canaryProbe,
+    runtime: runtimeHealth,
     nextAction:
+      runtimeHealth.status === "incident"
+        ? "Des erreurs runtime récentes sont détectées sur la production ; inspecter les fonctions/routes concernées avant toute remédiation automatique."
+        : runtimeHealth.status === "warning"
+          ? "Quelques erreurs runtime récentes sont visibles ; surveiller leur répétition et ouvrir un incident si elles persistent."
+          :
       publicProbe.dns === "nxdomain" || canaryProbe.dns === "nxdomain"
         ? "DNS externe à corriger chez le fournisseur autoritatif : publier les enregistrements ELTARA et wildcard vers Vercel."
         : publicProbe.https !== "ok" || canaryProbe.https !== "ok"
