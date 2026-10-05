@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "./app-url";
 import { getStorageBackupStatus } from "./storage-backup";
+import { probeHttpsLinks } from "./external-link-health";
 import {
   buildSupportDiagnosis,
   type SupportDiagnosis
@@ -130,6 +131,9 @@ function contentHealthFromConfig(value: unknown) {
   const invalidConfiguredLinks = nonEmptyLinks.filter(
     (item) => !httpsUrl(item)
   ).length;
+  const configuredHttpsLinks = nonEmptyLinks
+    .map((item) => httpsUrl(item))
+    .filter((item): item is string => Boolean(item));
 
   const galleryImages = Array.isArray(gallery.images)
     ? gallery.images.filter(
@@ -156,6 +160,7 @@ function contentHealthFromConfig(value: unknown) {
     galleryImageCount: galleryImages.length,
     invalidConfiguredLinks,
     checkedConfiguredLinks: nonEmptyLinks.length,
+    configuredHttpsLinks,
     missingPublishableMedia
   };
 }
@@ -237,6 +242,8 @@ export async function diagnoseSupportHealth(
     };
   }
 
+  const { configuredHttpsLinks, ...contentHealth } = contentHealthFromConfig(site.config);
+
   const [
     { data: domains, error: domainError },
     { data: billing, error: billingError },
@@ -244,7 +251,8 @@ export async function diagnoseSupportHealth(
     backup,
     storage,
     publicRender,
-    sitemap
+    sitemap,
+    externalLinks
   ] = await Promise.all([
     service
       .from("domains")
@@ -267,7 +275,10 @@ export async function diagnoseSupportHealth(
       : Promise.resolve({ checked: false, ok: false, status: null }),
     site.status === "published" && site.public_access_state !== "suspended"
       ? sitemapProbe(site.slug)
-      : Promise.resolve({ checked: false, ok: false, status: null, validXml: false })
+      : Promise.resolve({ checked: false, ok: false, status: null, validXml: false }),
+    site.status === "published" && site.public_access_state !== "suspended"
+      ? probeHttpsLinks(configuredHttpsLinks)
+      : Promise.resolve([])
   ]);
 
   return {
@@ -287,7 +298,12 @@ export async function diagnoseSupportHealth(
         isPrimary: domain.is_primary
       })),
       billingState: billing?.state || null,
-      content: contentHealthFromConfig(site.config),
+      content: {
+        ...contentHealth,
+        reachableCheckedLinks: externalLinks.filter((item) => item.checked).length,
+        brokenConfiguredLinks: externalLinks.filter((item) => item.checked && !item.reachable).length,
+        unprobeableConfiguredLinks: externalLinks.filter((item) => !item.checked).length
+      },
       storage,
       publicRender,
       sitemap,
