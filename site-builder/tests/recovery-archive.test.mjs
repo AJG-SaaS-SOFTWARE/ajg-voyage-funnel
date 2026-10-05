@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 
 const {
@@ -87,7 +88,7 @@ test("recovery archive filenames are safe and deterministic", () => {
 
 
 test("ELTARA download naming does not change the internal recovery format contract", () => {
-  const route = fs.readFileSync(new URL("../app/api/export/site/route.ts", import.meta.url), "utf8");
+  const route = readFileSync(new URL("../app/api/export/site/route.ts", import.meta.url), "utf8");
   assert.match(route, /format:\s*"ajg-builder-export-v2"/);
   assert.doesNotMatch(route, /format:\s*"eltara-export-v2"/);
 });
