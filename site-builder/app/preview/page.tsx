@@ -9,6 +9,7 @@ import { isSupabaseConfigured } from "../../lib/supabase-browser";
 import { getMySite } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { preferredPublishedRootDomain } from "../../lib/published-domain";
 
 export default function PreviewPage() {
   const { tr } = useProductLocale();
