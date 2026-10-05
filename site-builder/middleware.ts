@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { managedSlugFromHostname, publishedRootDomains } from "./lib/published-domain";
 
-const rootDomain=process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN||"voyage.ajgsolutionsgroup.com";
 const appHostname=(process.env.NEXT_PUBLIC_SITE_BUILDER_URL||"https://eltara.ajgsolutionsgroup.com").replace(/^https?:\/\//,"").replace(/\/.*$/,"").toLowerCase();
 const reservedSubdomains=new Set(["www","app","builder","admin"]);
 
 export function middleware(request:NextRequest){
  const hostname=(request.headers.get("host")||"").split(":")[0].toLowerCase();
  if(!hostname)return NextResponse.next();
- const suffix="."+rootDomain;
- if(hostname.endsWith(suffix)){
-   const slug=hostname.slice(0,-suffix.length);
-   if(!slug||slug.includes(".")||reservedSubdomains.has(slug))return NextResponse.next();
+ const managedSlug=managedSlugFromHostname(hostname);
+ if(managedSlug){
+   const slug=managedSlug;
+   if(reservedSubdomains.has(slug))return NextResponse.next();
    const url=request.nextUrl.clone();
    const legacyPrefix="/site/"+encodeURIComponent(slug);
    if(request.nextUrl.pathname===legacyPrefix||request.nextUrl.pathname.startsWith(legacyPrefix+"/")){
@@ -29,7 +29,7 @@ export function middleware(request:NextRequest){
    url.port="";
    return NextResponse.redirect(url,308);
  }
- const isAppHost=hostname===appHostname||hostname===rootDomain||hostname==="localhost"||hostname.endsWith(".vercel.app");
+ const isAppHost=hostname===appHostname||publishedRootDomains().includes(hostname)||hostname==="localhost"||hostname.endsWith(".vercel.app");
  if(isAppHost){
    const response=NextResponse.next();
    if(request.nextUrl.pathname==="/pricing")response.headers.set("Content-Language","en");

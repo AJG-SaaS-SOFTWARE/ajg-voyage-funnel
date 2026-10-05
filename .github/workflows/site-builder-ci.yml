@@ -30,7 +30,8 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
-      NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN: voyage.ajgsolutionsgroup.com
+      NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN: eltara.ajgsolutionsgroup.com
+      NEXT_PUBLIC_LEGACY_PUBLISHED_ROOT_DOMAINS: voyage.ajgsolutionsgroup.com
       SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
     steps:
       - uses: actions/checkout@v4

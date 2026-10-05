@@ -9,6 +9,7 @@ import { isSupabaseConfigured } from "../../lib/supabase-browser";
 import { getMySite } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { preferredPublishedRootDomain } from "../../lib/published-domain";
 
 export default function PreviewPage() {
   const { tr } = useProductLocale();
@@ -43,7 +44,7 @@ export default function PreviewPage() {
       <header className="preview-toolbar">
         <Link href="/builder">← {tr("Modifier", "Edit")}</Link>
         <strong>{tr("Aperçu du site", "Website preview")}</strong>
-        <span>{tr("Aperçu · domaine cible :", "Preview · target domain:")} {config.slug ? config.slug + ".voyage.ajgsolutionsgroup.com" : tr("à choisir", "to choose")}</span><LanguageSwitch compact />
+        <span>{tr("Aperçu · domaine cible :", "Preview · target domain:")} {config.slug ? `${config.slug}.${preferredPublishedRootDomain()}` : tr("à choisir", "to choose")}</span><LanguageSwitch compact />
       </header>
       <div className="preview-canvas">
         <SitePreview config={config} />
