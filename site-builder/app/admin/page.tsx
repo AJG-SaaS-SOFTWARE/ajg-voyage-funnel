@@ -454,8 +454,8 @@ export default function AdminPage() {
               <p className="eyebrow">Publication ELTARA</p>
               <h2>Sous-domaines gérés</h2>
               <p>
-                La préparation DNS des adresses <code>*.voyage.ajgsolutionsgroup.com</code>
-                reste pilotée par l’administration. Les bêta-testeurs n’ont rien à configurer.
+                La préparation DNS des nouvelles adresses <code>*.eltara.ajgsolutionsgroup.com</code>
+                reste pilotée par l’administration. Les anciens sous-domaines *.voyage.ajgsolutionsgroup.com restent compatibles pendant la transition. Les bêta-testeurs n’ont rien à configurer.
               </p>
             </div>
             <div className="beta-side-metrics">
