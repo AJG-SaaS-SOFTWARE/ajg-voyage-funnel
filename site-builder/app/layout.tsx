@@ -6,8 +6,16 @@ import "./globals.css";
 import "./ajg-design-system.css";
 
 export const metadata: Metadata = {
-  title: "ELTARA — by AJG Horizon",
-  description: "ELTARA transforme votre activité en présence digitale professionnelle, de la création à la publication, avec l’assistance de l’IA. · Build and grow your digital presence with AI-assisted creation and publishing."
+  applicationName: "ELTARA",
+  title: {
+    default: "ELTARA — by AJG Horizon",
+    template: "%s | ELTARA"
+  },
+  description: "ELTARA transforme votre activité en présence digitale professionnelle, de la création à la publication, avec l’assistance de l’IA. · Build and grow your digital presence with AI-assisted creation and publishing.",
+  keywords: ["ELTARA", "création de site", "site professionnel", "IA", "présence digitale", "website builder"],
+  authors: [{ name: "AJG Horizon" }],
+  creator: "AJG Horizon",
+  publisher: "AJG Horizon"
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
