@@ -11,7 +11,7 @@ const code = ts.transpileModule(source, {
 }).outputText;
 const module = { exports: {} };
 new Function("require", "module", "exports", code)(require, module, module.exports);
-const { deriveAiQuotaHealth } = module.exports;
+const { deriveAiQuotaHealth, effectiveHeavyAiMonthlyLimit } = module.exports;
 
 test("AI quota health stays healthy below thresholds", () => {
   const result = deriveAiQuotaHealth({
@@ -69,4 +69,10 @@ test("AI quota health reports unavailable when limits cannot be resolved", () =>
     monthlyUsed: 0
   });
   assert.equal(result.status, "unavailable");
+});
+
+
+test("beta heavy AI quota mirrors the enforced 30-operation allowance", () => {
+  assert.equal(effectiveHeavyAiMonthlyLimit(true, 12), 30);
+  assert.equal(effectiveHeavyAiMonthlyLimit(false, 12), 12);
 });
