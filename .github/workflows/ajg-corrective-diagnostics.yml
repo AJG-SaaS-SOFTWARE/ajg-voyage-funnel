@@ -49,11 +49,14 @@ jobs:
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           if [ "$OUTCOME" = "success" ]; then
+            MARKER="<!-- ajg-corrective-result:v1 status=passed mode=diagnose -->"
             VERDICT="✅ Diagnostic correctif automatique : contrôles ELTARA au vert."
           else
+            MARKER="<!-- ajg-corrective-result:v1 status=failed mode=diagnose -->"
             VERDICT="⚠️ Diagnostic correctif automatique : au moins un contrôle ELTARA a échoué."
           fi
-          gh issue comment "$ISSUE" --body "$VERDICT
+          gh issue comment "$ISSUE" --body "$MARKER
+          $VERDICT
 
           Mode: diagnostic uniquement — aucun code, secret, donnée ou déploiement n'a été modifié.
           Exécution: $RUN_URL"
