@@ -84,3 +84,10 @@ test("recovery archive filenames are safe and deterministic", () => {
     /^eltara-export-Mon-Site-Demo-\d{8}\.tar\.gz$/
   );
 });
+
+
+test("ELTARA download naming does not change the internal recovery format contract", () => {
+  const route = fs.readFileSync(new URL("../app/api/export/site/route.ts", import.meta.url), "utf8");
+  assert.match(route, /format:\s*"ajg-builder-export-v2"/);
+  assert.doesNotMatch(route, /format:\s*"eltara-export-v2"/);
+});
