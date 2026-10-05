@@ -180,7 +180,13 @@ export default function Home() {
     <main className="shell premium-home">
       <section className="dashboard-hero">
         <div className="intro premium-intro">
-          <div className="builder-language-row"><p className="eyebrow">ELTARA · by AJG Horizon · Prototype 0.10.2</p><LanguageSwitch compact /></div>
+          <div className="builder-language-row">
+            <div>
+              <p className="eyebrow">ELTARA · by AJG Horizon</p>
+              <p className="eltara-tagline">{tr("Élevez votre présence digitale", "Elevate your digital presence")}</p>
+            </div>
+            <LanguageSwitch compact />
+          </div>
           <h1>{tr("Votre site en quelques étapes", "Your website in a few steps")}</h1>
           <p>{tr(
             "Élevez votre présence digitale : structurez votre identité, vos contenus, vos rendez-vous, vos médias et publiez un site professionnel depuis un même espace.",
