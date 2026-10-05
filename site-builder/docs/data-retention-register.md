@@ -1,10 +1,10 @@
-# AJG Site Builder — registre de conservation des données
+# ELTARA — registre de conservation des données
 
 Dernière mise à jour : 29 septembre 2026.
 
 Ce document fixe les règles de conservation applicables au Builder avant activation commerciale de Stripe. Les durées sont définies par finalité ; aucune donnée personnelle n'est conservée indéfiniment par défaut.
 
-## 1. Données de service AJG Builder
+## 1. Données de service ELTARA
 
 | Catégorie | Base / finalité | Durée en base active | Sort à l'effacement |
 |---|---|---|---|
