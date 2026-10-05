@@ -39,6 +39,16 @@ type PlatformHealth = {
   app: PlatformProbe;
   publicDomain: PlatformProbe;
   managedDomainCanary: PlatformProbe;
+  runtime: {
+    checked: boolean;
+    lookbackMinutes: number;
+    sampledLogs: number;
+    errorCount: number;
+    fatalCount: number;
+    http5xxCount: number;
+    truncated: boolean;
+    status: "healthy" | "warning" | "incident" | "unknown";
+  };
   nextAction: string | null;
 };
 
@@ -142,6 +152,10 @@ export default function AdminSupportPage() {
                 <article>
                   <b>{platform.managedDomainCanary.dns === "ok" && platform.managedDomainCanary.https === "ok" ? "OK" : platform.managedDomainCanary.dns === "nxdomain" ? "NXDOMAIN" : "ALERTE"}</b>
                   <span>sous-domaines clients · {platform.managedDomainCanary.host}</span>
+                </article>
+                <article>
+                  <b>{platform.runtime.status === "healthy" ? "0" : platform.runtime.status === "unknown" ? "—" : platform.runtime.errorCount + platform.runtime.http5xxCount}</b>
+                  <span>runtime · erreurs/5xx · {platform.runtime.lookbackMinutes} min{platform.runtime.truncated ? " · échantillon borné" : ""}</span>
                 </article>
                 <article>
                   <b>{platform.overall === "healthy" ? "SAIN" : platform.overall === "warning" ? "À CORRIGER" : "INCIDENT"}</b>
