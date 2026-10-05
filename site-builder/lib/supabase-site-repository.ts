@@ -4,6 +4,7 @@ import { getSupabaseBrowserClient } from "./supabase-browser";
 import { normalizeSiteDesign } from "./site-design";
 import { normalizeSiteLegalConfig } from "./site-legal";
 import { getProductLocale } from "./product-i18n";
+import { managedHostname } from "./published-domain";
 
 function clientTr(fr: string, en: string) {
   return getProductLocale() === "en" ? en : fr;
@@ -114,14 +115,11 @@ async function ensureManagedDomain(siteId: string, slug: string) {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
 
-  const root =
-    process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
-    "voyage.ajgsolutionsgroup.com";
-  const hostname = `${slug}.${root}`;
+  const hostname = managedHostname(slug);
 
   const { data: existing, error: readError } = await supabase
     .from("domains")
-    .select("id")
+    .select("id,hostname")
     .eq("site_id", siteId)
     .eq("kind", "managed_subdomain")
     .maybeSingle();
@@ -129,7 +127,7 @@ async function ensureManagedDomain(siteId: string, slug: string) {
   if (readError) throw readError;
 
   if (existing) {
-    return hostname;
+    return existing.hostname || hostname;
   }
 
   const { error } = await supabase.from("domains").insert({
