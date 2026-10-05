@@ -61,7 +61,7 @@ export default function FeedbackPage() {
           <p className="eyebrow">ELTARA Beta</p>
           <LanguageSwitch compact />
         </div>
-        <h1>{tr("Votre retour améliore le Builder", "Your feedback improves the Builder")}</h1>
+        <h1>{tr("Votre retour améliore ELTARA", "Your feedback improves ELTARA")}</h1>
         <p>
           {tr(
             "Décrivez ce qui vous bloque, ce qui manque ou ce qui pourrait être plus simple. Aucun historique de navigation, donnée publicitaire ou contenu du site n’est ajouté automatiquement à votre message.",
