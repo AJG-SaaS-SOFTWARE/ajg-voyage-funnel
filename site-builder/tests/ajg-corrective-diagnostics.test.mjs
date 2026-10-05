@@ -22,4 +22,7 @@ test("AJG corrective diagnostics executes ELTARA checks only", () => {
   assert.match(workflow, /working-directory: site-builder/);
   assert.match(workflow, /npx tsc --noEmit/);
   assert.match(workflow, /npm test/);
+  assert.match(workflow, /ajg-corrective-result:v1/);
+  assert.match(workflow, /status=passed mode=diagnose/);
+  assert.match(workflow, /status=failed mode=diagnose/);
 });
