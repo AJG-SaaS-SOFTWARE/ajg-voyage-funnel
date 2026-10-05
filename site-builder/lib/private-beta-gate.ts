@@ -99,7 +99,7 @@ export async function evaluatePrivateBetaGate(): Promise<PrivateBetaGateResult> 
   if (managedDomainError || !managedDomain?.hostname) {
     issues.push({
       key: "managed-subdomains",
-      detail: "Aucun sous-domaine AJG canari vérifié et primaire."
+      detail: "Aucun sous-domaine ELTARA canari vérifié et primaire."
     });
   } else {
     try {
@@ -117,7 +117,7 @@ export async function evaluatePrivateBetaGate(): Promise<PrivateBetaGateResult> 
     } catch {
       issues.push({
         key: "managed-subdomains",
-        detail: "Canari HTTPS AJG inaccessible."
+        detail: "Canari HTTPS ELTARA inaccessible."
       });
     }
   }
