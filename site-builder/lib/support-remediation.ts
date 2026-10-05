@@ -3,6 +3,7 @@ import {
   syncVercelDomain,
   VercelDomainSyncError
 } from "./vercel-domain-sync";
+import { managedHostname, managedSlugFromHostname } from "./published-domain";
 
 export type SupportRepairAction = "managed_domain_repair";
 export type SupportRepairTrigger = "client" | "system" | "admin";
@@ -18,30 +19,12 @@ export type SupportRepairResult = {
   audited?: boolean;
 };
 
-function publishedRootDomain() {
-  return (
-    process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN ||
-    "voyage.ajgsolutionsgroup.com"
-  )
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*$/, "")
-    .replace(/:\d+$/, "")
-    .replace(/\.$/, "");
-}
-
 function expectedManagedHostname(slug: string) {
-  const root = publishedRootDomain();
   const normalizedSlug = slug.trim().toLowerCase();
-  if (
-    !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(normalizedSlug) ||
-    !/^[a-z0-9.-]+$/.test(root) ||
-    !root.includes(".")
-  ) {
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(normalizedSlug)) {
     return null;
   }
-  return `${normalizedSlug}.${root}`;
+  return managedHostname(normalizedSlug);
 }
 
 function boundedMetadata(value: Record<string, unknown>) {
@@ -238,7 +221,8 @@ async function repairManagedDomain(
     created = true;
   }
 
-  if (managed.hostname !== expectedHostname) {
+  const managedSlug = managedSlugFromHostname(managed.hostname);
+  if (managed.hostname !== expectedHostname && managedSlug !== site.slug) {
     return finish(service, {
       ...input,
       action,
@@ -248,6 +232,8 @@ async function repairManagedDomain(
       metadata: { expected_hostname: expectedHostname }
     });
   }
+
+  const hostnameToSync = managed.hostname;
 
   const verifiedCustomInSnapshot = (domains || []).find(
     (domain) =>
@@ -318,7 +304,7 @@ async function repairManagedDomain(
   }
 
   try {
-    const sync = await syncVercelDomain(expectedHostname, "managed_subdomain");
+    const sync = await syncVercelDomain(hostnameToSync, "managed_subdomain");
     if (!sync.verified) {
       await service
         .from("domains")
