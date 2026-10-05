@@ -20,6 +20,31 @@ async function get(path, expected) {
   return response;
 }
 
+async function getPublicRoute(path) {
+  const response = await get(path, [200, 307, 308]);
+  if (response.status === 200) return response;
+
+  const location = response.headers.get("location") || "";
+  let redirected;
+  try {
+    redirected = new URL(location, baseUrl);
+  } catch {
+    throw new Error(`${path}: invalid canonical redirect location`);
+  }
+
+  if (redirected.hostname !== "eltara.ajgsolutionsgroup.com") {
+    throw new Error(
+      `${path}: unexpected canonical redirect host ${redirected.hostname || "unknown"}`,
+    );
+  }
+  if (redirected.pathname !== path) {
+    throw new Error(
+      `${path}: unexpected canonical redirect path ${redirected.pathname}`,
+    );
+  }
+  return response;
+}
+
 const health = await get("/api/health", [200]);
 const payload = await health.json();
 if (!payload?.ok || payload?.database !== "ok") {
@@ -36,9 +61,9 @@ if (expectedSha) {
   }
 }
 
-await get("/login", [200]);
-await get("/plans", [200]);
-await get("/billing", [200]);
+await getPublicRoute("/login");
+await getPublicRoute("/plans");
+await getPublicRoute("/billing");
 await get("/ci-route-that-does-not-exist", [404]);
 await get("/api/export/site?siteId=ci&format=archive", [401]);
 await get("/api/admin/release-readiness", [401]);
