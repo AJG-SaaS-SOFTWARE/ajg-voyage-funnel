@@ -118,7 +118,7 @@ export function CommercialLegalPage({ locale, kind }: { locale: Locale; kind: Ki
               <section className={styles.section}>
                 <h2>{fr ? "Finalités et bases légales" : "Purposes and legal bases"}</h2>
                 <ul>
-                  <li>{fr ? "Fournir le Builder, publier les sites, gérer le compte et l’abonnement : exécution du contrat ou mesures précontractuelles." : "Provide the Builder, publish websites, manage the account and subscription: performance of a contract or pre-contractual steps."}</li>
+                  <li>{fr ? "Fournir ELTARA, publier les sites, gérer le compte et l’abonnement : exécution du contrat ou mesures précontractuelles." : "Provide ELTARA, publish websites, manage the account and subscription: performance of a contract or pre-contractual steps."}</li>
                   <li>{fr ? "Facturation, comptabilité et obligations réglementaires : obligation légale lorsque applicable." : "Billing, accounting and regulatory obligations: legal obligation where applicable."}</li>
                   <li>{fr ? "Sécurité, lutte contre les abus, amélioration opérationnelle et mesure d’usage : intérêt légitime, sous réserve des droits des personnes." : "Security, abuse prevention, operational improvement and usage measurement: legitimate interests, subject to individual rights."}</li>
                   <li>{fr ? "Communications non indispensables et traceurs non essentiels : consentement lorsqu’il est requis." : "Non-essential communications and non-essential trackers: consent where required."}</li>
