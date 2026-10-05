@@ -181,6 +181,59 @@ export async function getMySite(siteId?: string): Promise<RemoteSite | null> {
   return toRemote(data, draft?.config);
 }
 
+export type ContactMessage = {
+  id: string;
+  siteId: string;
+  senderName: string;
+  senderEmail: string;
+  subject: string;
+  message: string;
+  consentAt: string;
+  createdAt: string;
+};
+
+export async function getMyContactMessages(siteId: string): Promise<ContactMessage[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("contact_messages")
+    .select("id,site_id,sender_name,sender_email,subject,message,consent_at,created_at")
+    .eq("owner_id", user.id)
+    .eq("site_id", siteId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    siteId: row.site_id,
+    senderName: row.sender_name,
+    senderEmail: row.sender_email,
+    subject: row.subject || "",
+    message: row.message,
+    consentAt: row.consent_at,
+    createdAt: row.created_at
+  }));
+}
+
+export async function deleteMyContactMessage(messageId: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
+  const user = await getCurrentUser();
+  if (!user) throw new Error(clientTr("Vous devez être connecté.", "You must be signed in."));
+
+  const { error } = await supabase
+    .from("contact_messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("owner_id", user.id);
+
+  if (error) throw error;
+}
+
 export async function saveMySite(config: SiteConfig, publish = false, siteId?: string): Promise<RemoteSite> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error(clientTr("Supabase n’est pas configuré.", "Supabase is not configured."));
