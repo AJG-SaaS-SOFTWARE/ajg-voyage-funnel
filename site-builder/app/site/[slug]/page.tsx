@@ -35,5 +35,5 @@ export default async function PublishedSitePage({
   const site = await getPublicSite(slug);
   if (!site) notFound();
 
-  return <PublishedSite config={site.config} routeBase={await publicRouteBase(slug)} />;
+  return <PublishedSite config={site.config} siteId={site.id} routeBase={await publicRouteBase(slug)} />;
 }
