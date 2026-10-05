@@ -2,7 +2,7 @@ export type SupportCheckStatus = "healthy" | "action" | "incident";
 export type SupportRepairAction = "managed_domain_repair";
 
 export type SupportCheck = {
-  key: "backend" | "publication" | "public_render" | "latency" | "seo" | "sitemap" | "domain" | "billing" | "backup" | "ai" | "contact" | "images" | "content_links" | "storage";
+  key: "backend" | "publication" | "public_render" | "latency" | "seo" | "sitemap" | "domain" | "billing" | "backup" | "ai" | "contact" | "images" | "content_links" | "storage" | "runtime";
   label: string;
   status: SupportCheckStatus;
   detail: string;
@@ -67,6 +67,12 @@ export type SupportDiagnosticInput = {
   storage?: {
     publicBucketAvailable: boolean;
     privateBucketAvailable: boolean;
+  };
+  runtime?: {
+    lastHour: number;
+    lastDay: number;
+    distinctCodes: number;
+    truncated: boolean;
   };
 };
 
@@ -483,6 +489,36 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
             detail: `Stockage indisponible : ${missing.join(", ")}.`
           }
     );
+  }
+
+  if (input.runtime) {
+    const runtime = input.runtime;
+    if (runtime.truncated || runtime.lastHour >= 3 || runtime.lastDay >= 10) {
+      checks.push({
+        key: "runtime",
+        label: "Erreurs récentes",
+        status: "incident",
+        detail: runtime.truncated
+          ? "Le volume d’erreurs runtime du site dépasse la fenêtre de diagnostic bornée et nécessite une vérification ELTARA."
+          : `${runtime.lastHour} erreur(s) runtime sur la dernière heure et ${runtime.lastDay} sur 24 h (${runtime.distinctCodes} type(s)).`
+      });
+    } else if (runtime.lastHour > 0 || runtime.lastDay >= 3) {
+      checks.push({
+        key: "runtime",
+        label: "Erreurs récentes",
+        status: "action",
+        detail: `${runtime.lastHour} erreur(s) runtime sur la dernière heure et ${runtime.lastDay} sur 24 h. Le site reste accessible mais la répétition est surveillée.`
+      });
+    } else {
+      checks.push({
+        key: "runtime",
+        label: "Erreurs récentes",
+        status: "healthy",
+        detail: runtime.lastDay > 0
+          ? `${runtime.lastDay} erreur(s) isolée(s) sur 24 h, sans série récente détectée.`
+          : "Aucune erreur runtime récente n’a été enregistrée pour ce site."
+      });
+    }
   }
 
   if (input.ai) {
