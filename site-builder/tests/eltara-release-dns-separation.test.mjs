@@ -9,5 +9,5 @@ test("ELTARA production release does not rollback healthy code for external DNS 
   assert.match(workflow, /Verify ELTARA public domain without rolling back code/);
   assert.match(workflow, /continue-on-error: true/);
   assert.match(workflow, /DNS must be completed at the external DNS provider/);
-  assert.match(workflow, /verify:deployment -- --url="https:\/\/$PRODUCTION_ALIAS"/);
+  assert.match(workflow, /verify:deployment -- --url="https:\/\/\$PRODUCTION_ALIAS"/);
 });
