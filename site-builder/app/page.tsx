@@ -180,11 +180,17 @@ export default function Home() {
     <main className="shell premium-home">
       <section className="dashboard-hero">
         <div className="intro premium-intro">
-          <div className="builder-language-row"><p className="eyebrow">AJG Site Builder · Prototype 0.10.2</p><LanguageSwitch compact /></div>
+          <div className="builder-language-row">
+            <div>
+              <p className="eyebrow">ELTARA · by AJG Horizon</p>
+              <p className="eltara-tagline">{tr("Élevez votre présence digitale", "Elevate your digital presence")}</p>
+            </div>
+            <LanguageSwitch compact />
+          </div>
           <h1>{tr("Votre site en quelques étapes", "Your website in a few steps")}</h1>
           <p>{tr(
-            "Un seul moteur pour créer et maintenir vos sites : identité, contenu, rendez-vous, médias, aperçu et publication.",
-            "One workspace to create and maintain your websites: identity, content, bookings, media, preview and publishing."
+            "Élevez votre présence digitale : structurez votre identité, vos contenus, vos rendez-vous, vos médias et publiez un site professionnel depuis un même espace.",
+            "Elevate your digital presence: shape your identity, content, bookings and media, then publish a professional website from one workspace."
           )}</p>
         </div>
 
@@ -239,7 +245,7 @@ export default function Home() {
         <section className="panel beta-tester-mission" aria-label={tr("Mission bêta", "Beta mission")}>
           <div className="beta-tester-mission-head">
             <div>
-              <p className="eyebrow">AJG Beta Tester</p>
+              <p className="eyebrow">ELTARA Beta Tester</p>
               <h2>{tr("Testez le parcours comme un vrai client", "Test the journey like a real customer")}</h2>
               <p>
                 {tr(
