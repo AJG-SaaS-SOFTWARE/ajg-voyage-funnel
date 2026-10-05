@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { EltaraBrand } from "./EltaraBrand";
 
 type AdminSection = "overview" | "privacy" | "finops" | "support";
 
@@ -22,11 +23,7 @@ export function AdminShell({
     <main className="admin-shell">
       <header className="admin-topbar">
         <div className="admin-brand-block">
-          <span className="admin-brand-mark" aria-hidden="true">A</span>
-          <div>
-            <b>AJG Site Builder</b>
-            <small>Back-office</small>
-          </div>
+          <EltaraBrand compact context="Back-office" />
         </div>
 
         <nav className="admin-nav" aria-label="Navigation administration">
