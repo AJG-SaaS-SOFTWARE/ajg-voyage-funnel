@@ -4574,6 +4574,19 @@ button.active .step-label small{color:#63817f}
 .premium-home .eltara-hero-art{
   min-height:390px;
 }
+.premium-home .premium-connection>div:not(.actions){
+  flex:1 1 auto;
+  min-width:0;
+}
+.premium-home .premium-connection>.actions{
+  flex:0 0 auto;
+  margin-left:auto;
+  justify-content:flex-end;
+  align-items:center;
+}
+.premium-home .premium-connection>.actions .button{
+  white-space:nowrap;
+}
 
 @media(max-width:1180px){
   .premium-home .dashboard-hero{
@@ -4625,6 +4638,14 @@ button.active .step-label small{color:#63817f}
   }
   .premium-home .eltara-hero-art{
     min-height:280px;
+  }
+  .premium-home .premium-connection>.actions{
+    width:100%;
+    margin-left:0;
+    justify-content:flex-start;
+  }
+  .premium-home .premium-connection>.actions .button{
+    width:auto;
   }
 }
 
