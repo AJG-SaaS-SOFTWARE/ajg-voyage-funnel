@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import styles from "./PricingPage.module.css";
+import { EltaraBrand } from "./EltaraBrand";
 
 type Locale = "fr" | "en";
 type BillingCycle = "monthly" | "annual";
