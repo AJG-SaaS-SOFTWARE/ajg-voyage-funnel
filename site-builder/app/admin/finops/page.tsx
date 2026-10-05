@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { AdminShell } from "../../../components/AdminShell";
 import { getAdminAiFinops } from "../../../lib/admin";
 import { usdCost, finopsMonitorLabel, type AiFinopsReport, type FinopsAlert, type FinopsMonitorStatus } from "../../../lib/ai-finops-report";
+import type { AiUsageAnomaly } from "../../../lib/ai-usage-anomaly";
 
-type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; generatedAt: string };
+type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; anomaly: AiUsageAnomaly; generatedAt: string };
 const dimensions = { plan: "Par offre", user: "Par compte", site: "Par site", operation: "Par opération demandée", model: "Par modèle demandé", day: "Par jour (UTC)" };
 
 export default function FinopsPage() {
@@ -53,6 +54,20 @@ export default function FinopsPage() {
           <p>IA : {report.policy.ai_enabled ? "active" : "suspendue"} · Opérations lourdes : {report.policy.heavy_enabled ? "actives" : "suspendues"}.</p>
           {result!.alerts.length ? <ul>{result!.alerts.map(alert => <li key={alert.key}><strong>{alert.level === "critical" ? "Critique" : alert.level === "warning" ? "À vérifier" : "Information"}</strong> : {alert.message}</li>)}</ul> : <p>Aucun seuil d’alerte global atteint.</p>}
           <p>Les alertes de marge en euros restent indisponibles tant que le taux de change daté et les revenus du compte ne sont pas rapprochés.</p>
+        </section>
+        <section className="panel">
+          <h2>Détection d’usage anormal</h2>
+          <p>
+            Signal déterministe sur la dernière heure, comparée aux {result!.anomaly.baselineDays} jours précédents. Il ne modifie jamais automatiquement les quotas.
+          </p>
+          <p>
+            État : <strong>{result!.anomaly.status === "healthy" ? "normal" : result!.anomaly.status === "warning" ? "pic inhabituel" : result!.anomaly.status === "critical" ? "pic critique" : "non déterminé"}</strong>
+            {" · "}{result!.anomaly.currentCalls} appel(s) sur 60 min
+            {" · "}moyenne {result!.anomaly.baselineCallsPerHour.toFixed(2)} appel(s)/h
+            {" · "}coût courant {usdCost(result!.anomaly.currentCostMicros)}
+            {" · "}moyenne {usdCost(Math.round(result!.anomaly.baselineCostMicrosPerHour))}/h.
+          </p>
+          {result!.anomaly.truncated ? <p>Échantillon borné : le système refuse de conclure plutôt que de produire un faux positif.</p> : null}
         </section>
         <section className="panel">
           <h2>Surveillance planifiée et exceptions</h2>

@@ -47,16 +47,36 @@ function harness({ role = 'admin', authenticated = true, rpcError = null, payloa
   const calls = [];
   const createClient = (url, key) => {
     calls.push(['client', key]);
-    if (key === 'service') return { rpc: async (name, args) => {
-      calls.push(['rpc', name, args]);
-      if (throws) throw Error('secret backend error');
-      return { data: payload, error: rpcError };
-    } };
+    if (key === 'service') return {
+      rpc: async (name, args) => {
+        calls.push(['rpc', name, args]);
+        if (throws) throw Error('secret backend error');
+        if (name === 'get_ai_finops_monitor_status') return { data: { items: [], activeAlerts: 0, lastRunAt: null }, error: null };
+        return { data: payload, error: rpcError };
+      },
+      from: (table) => ({
+        select() { return this; },
+        gte() { return this; },
+        order() { return this; },
+        async limit(value) {
+          calls.push(['query', table, value]);
+          return { data: [], error: null };
+        }
+      })
+    };
     return { auth: { getUser: async () => ({ data: { user: authenticated ? { id: 'user' } : null }, error: null }) }, from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role }, error: null }) }) }) }) };
   };
   const route = load('../app/api/admin/ai-finops/route.ts', {
     '@supabase/supabase-js': { createClient },
     '../../../../lib/ai-finops-report': reportLib,
+    '../../../../lib/ai-usage-anomaly': {
+      detectAiUsageAnomaly: () => ({
+        status: 'healthy', checked: true, windowMinutes: 60, baselineDays: 7,
+        currentCalls: 0, baselineCallsPerHour: 0, currentCostMicros: 0,
+        baselineCostMicrosPerHour: 0, callRatio: 0, costRatio: 0, truncated: false
+      }),
+      aiUsageAnomalyMessage: () => null
+    },
     'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } }
   });
   return { route, calls };
