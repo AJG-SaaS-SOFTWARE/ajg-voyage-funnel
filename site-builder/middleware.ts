@@ -21,6 +21,14 @@ export function middleware(request:NextRequest){
    const requestHeaders=new Headers(request.headers);requestHeaders.set("x-ajg-clean-public","1");
    return NextResponse.rewrite(url,{request:{headers:requestHeaders}});
  }
+ const legacyAppHostname="ajg-site-builder.vercel.app";
+ if(hostname===legacyAppHostname&&appHostname!==legacyAppHostname){
+   const url=request.nextUrl.clone();
+   url.protocol="https:";
+   url.hostname=appHostname;
+   url.port="";
+   return NextResponse.redirect(url,308);
+ }
  const isAppHost=hostname===appHostname||hostname===rootDomain||hostname==="localhost"||hostname.endsWith(".vercel.app");
  if(isAppHost){
    const response=NextResponse.next();
