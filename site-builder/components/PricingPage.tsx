@@ -80,7 +80,7 @@ const copy = {
     billingNote:
       "Le catalogue sandbox est préparé. Le gratuit donne un aperçu représentatif ; la publication, l'hébergement, le domaine, l'export et la Création IA complète restent payants ou réservés aux Beta Testers.",
     account: "Mon offre",
-    builder: "Ouvrir le Builder",
+    builder: "Ouvrir ELTARA",
     legal: "Mentions légales",
     privacy: "Confidentialité",
     terms: "Conditions",
@@ -155,7 +155,7 @@ const copy = {
     billingNote:
       "The sandbox catalogue is prepared. Free access gives a representative preview; publishing, hosting, domains, export and Full AI Launch remain paid or reserved for Beta Testers.",
     account: "My plan",
-    builder: "Open Builder",
+    builder: "Open ELTARA",
     legal: "Legal notice",
     privacy: "Privacy",
     terms: "Terms",
