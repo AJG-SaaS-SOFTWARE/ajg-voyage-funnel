@@ -10,4 +10,7 @@ test("ELTARA production release does not rollback healthy code for external DNS 
   assert.match(workflow, /continue-on-error: true/);
   assert.match(workflow, /DNS must be completed at the external DNS provider/);
   assert.match(workflow, /verify:deployment -- --url="https:\/\/\$PRODUCTION_ALIAS"/);
+  assert.match(workflow, /Verify managed-domain HTTPS canary when available/);
+  assert.match(workflow, /Managed-domain canary .*NXDOMAIN\/unresolvable/);
+  assert.match(workflow, /external DNS must publish the ELTARA wildcard\/subdomain record/);
 });
