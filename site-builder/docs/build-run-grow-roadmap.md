@@ -372,7 +372,7 @@ Chaque site dispose d'un statut :
 - [x] SEO essentiel ;
 - [x] sitemap / canonical ;
 - [x] latence anormale ;
-- [ ] erreurs runtime récentes.
+- [x] erreurs runtime récentes : signal Vercel borné sur la production courante, fenêtre d’une heure, comptage erreurs/fatals/5xx sans exposer le contenu des logs.
 
 ### État d’implémentation
 
