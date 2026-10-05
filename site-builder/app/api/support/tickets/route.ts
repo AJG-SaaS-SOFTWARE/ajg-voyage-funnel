@@ -131,6 +131,7 @@ export async function POST(request: Request) {
     status: ticket.status,
     diagnosis: health.diagnosis.overall,
     sitePresent: Boolean(ticket.site_id),
+    ticketId: String(ticket.id),
   });
 
   return NextResponse.json({ ticket, health }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
