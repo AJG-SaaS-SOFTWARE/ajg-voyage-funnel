@@ -68,10 +68,10 @@ export default function AdminLoginPage() {
 
   return (
     <main className="auth-page premium-auth-page">
-      <section className="auth-visual" aria-label="AJG Site Builder Administration">
+      <section className="auth-visual" aria-label="ELTARA Administration">
         <div className="auth-visual-overlay" />
         <div className="auth-brand-row">
-          <Link href="/" className="auth-brand">AJG Site Builder</Link>
+          <Link href="/" className="auth-brand">ELTARA</Link>
         </div>
         <div className="auth-visual-copy">
           <p className="eyebrow">Back-office sécurisé</p>
