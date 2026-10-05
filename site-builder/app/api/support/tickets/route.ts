@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
 import { supportReconcileDecision } from "../../../../lib/support-reconcile-policy";
 import { recordSupportEvent } from "../../../../lib/support-events";
+import { reportSupportTicketToRun } from "../../../../lib/run-intake-reporting";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -122,6 +123,14 @@ export async function POST(request: Request) {
       severity: ticket.severity,
       diagnosis: health.diagnosis.overall
     }
+  });
+
+  await reportSupportTicketToRun({
+    category: ticket.category,
+    severity: ticket.severity,
+    status: ticket.status,
+    diagnosis: health.diagnosis.overall,
+    sitePresent: Boolean(ticket.site_id),
   });
 
   return NextResponse.json({ ticket, health }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
