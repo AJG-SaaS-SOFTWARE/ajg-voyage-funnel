@@ -1,6 +1,6 @@
 # Beta and commercial billing readiness
 
-## AJG Site Builder
+## ELTARA
 
 The free Site Builder experience is a qualitative preview only. It must let a tester inspect representative paid value, but it must not unlock production-grade hosting or costly actions before payment.
 
