@@ -43,7 +43,7 @@ export default function PreviewPage() {
       <header className="preview-toolbar">
         <Link href="/builder">← {tr("Modifier", "Edit")}</Link>
         <strong>{tr("Aperçu du site", "Website preview")}</strong>
-        <span>{tr("Aperçu · domaine cible :", "Preview · target domain:")} {config.slug ? config.slug + ".voyage.ajgsolutionsgroup.com" : tr("à choisir", "to choose")}</span><LanguageSwitch compact />
+        <span>{tr("Aperçu · domaine cible :", "Preview · target domain:")} {config.slug ? `${config.slug}.${preferredPublishedRootDomain()}` : tr("à choisir", "to choose")}</span><LanguageSwitch compact />
       </header>
       <div className="preview-canvas">
         <SitePreview config={config} />
