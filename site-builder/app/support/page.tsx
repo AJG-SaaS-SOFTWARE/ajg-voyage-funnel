@@ -176,17 +176,17 @@ export default function SupportPage() {
     <main className="plans-page">
       <section className="plans-hero">
         <div className="builder-language-row">
-          <p className="eyebrow">AJG Support Center</p>
+          <p className="eyebrow">ELTARA Support Center</p>
           <LanguageSwitch compact />
         </div>
         <h1>{tr("Diagnostiquer avant de contacter le support", "Diagnose before contacting support")}</h1>
         <p>{tr(
-          "Le Builder vérifie automatiquement les causes courantes avant de transmettre un incident à AJG.",
-          "The Builder automatically checks common causes before escalating an incident to AJG."
+          "ELTARA vérifie automatiquement les causes courantes avant de transmettre un incident à AJG.",
+          "ELTARA automatically checks common causes before escalating an incident to AJG."
         )}</p>
         <div className="actions">
           <Link className="button secondary" href="/">{tr("Tableau de bord", "Dashboard")}</Link>
-          <Link className="button secondary" href="/builder">{tr("Ouvrir le Builder", "Open Builder")}</Link>
+          <Link className="button secondary" href="/builder">{tr("Ouvrir ELTARA", "Open ELTARA")}</Link>
         </div>
       </section>
 
