@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
-import { startAiLaunchCheckout, startPlanCheckout } from "../../lib/billing-access";
+import { getMyBillingState, openStripeBillingPortal, startAiLaunchCheckout, startPlanCheckout, type BillingState } from "../../lib/billing-access";
 import {
   freeEntitlements,
   getMyAiUsage,
@@ -40,24 +40,27 @@ export default function PlansPage() {
   const [siteId, setSiteId] = useState("");
   const [checkoutBusy, setCheckoutBusy] = useState("");
   const [checkoutMessage, setCheckoutMessage] = useState("");
+  const [billingState, setBillingState] = useState<BillingState | null>(null);
 
   const load = async (selectedId?: string) => {
     const owned = await getMySites();
     const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
     setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
     if (site && !siteId) setSiteId(site.id);
-    const [entitlements, access, aiUsage, storageUsage, beta] = await Promise.all([
+    const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
       site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
       site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
       getMyAiUsage(),
       getMyStorageUsage(site?.id),
-      getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
+      getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
+      site ? getMyBillingState(site.id).catch(() => null) : Promise.resolve(null)
     ]);
     setCurrent(entitlements);
     setAiAccess(access);
     setUsage(aiUsage);
     setStorage(storageUsage);
     setBetaAccess(beta);
+    setBillingState(resolvedBilling);
     setLoaded(true);
   };
 
@@ -73,15 +76,19 @@ export default function PlansPage() {
     });
   }, []);
 
-  async function beginCheckout(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
+  async function beginPlanChange(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
     if (!siteId || betaAccess.active) return;
     const key = `${planKey}:${billingCycle}`;
     setCheckoutBusy(key);
     setCheckoutMessage("");
     try {
+      if (billingState?.hasStripeSubscription) {
+        await openStripeBillingPortal(siteId);
+        return;
+      }
       await startPlanCheckout(siteId, planKey, billingCycle);
     } catch (error) {
-      setCheckoutMessage(error instanceof Error ? error.message : tr("Checkout indisponible.", "Checkout unavailable."));
+      setCheckoutMessage(error instanceof Error ? error.message : tr("Facturation indisponible.", "Billing unavailable."));
       setCheckoutBusy("");
     }
   }
@@ -264,7 +271,14 @@ export default function PlansPage() {
           <p className="eyebrow">{tr("Comparer", "Compare")}</p>
           <h2>{tr("Choisissez le niveau de service adapté à votre site", "Choose the service level that fits your website")}</h2>
         </div>
-        <p>{tr("Votre offre actuelle reste clairement identifiée. Aucun changement n’est appliqué sans action de votre part.", "Your current plan stays clearly identified. No change is applied without your action.")}</p>
+        <p>{tr(
+          billingState?.hasStripeSubscription
+            ? "Votre abonnement Stripe existe déjà : les changements de formule passent par le portail de facturation sécurisé, sans créer un second abonnement."
+            : "Votre offre actuelle reste clairement identifiée. Un premier abonnement ouvre Checkout ; aucun changement n’est appliqué sans votre action.",
+          billingState?.hasStripeSubscription
+            ? "You already have a Stripe subscription: plan changes use the secure billing portal without creating a second subscription."
+            : "Your current plan stays clearly identified. A first subscription opens Checkout; no change is applied without your action."
+        )}</p>
       </div>
 
       <section className="plans-grid plans-grid-three" aria-label={tr("Offres ELTARA", "ELTARA plans")}>
@@ -296,10 +310,10 @@ export default function PlansPage() {
           <p className="plan-status">{loaded && current.planKey === "essential" && !betaAccess.active ? tr("Votre offre actuelle", "Your current plan") : tr("RUN du site", "Website RUN")}</p>
           {!betaAccess.active && current.planKey !== "essential" ? (
             <div className="builder-actions">
-              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("essential", "monthly")}>
+              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("essential", "monthly")}>
                 {checkoutBusy === "essential:monthly" ? tr("Ouverture…", "Opening…") : tr("15 €/mois", "€15/month")}
               </button>
-              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("essential", "annual")}>
+              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("essential", "annual")}>
                 {checkoutBusy === "essential:annual" ? tr("Ouverture…", "Opening…") : tr("150 €/an", "€150/year")}
               </button>
             </div>
@@ -328,10 +342,10 @@ export default function PlansPage() {
           </p>
           {!betaAccess.active && current.planKey !== "growth" ? (
             <div className="builder-actions">
-              <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("growth", "monthly")}>
+              <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "monthly")}>
                 {checkoutBusy === "growth:monthly" ? tr("Ouverture…", "Opening…") : tr("29 €/mois", "€29/month")}
               </button>
-              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginCheckout("growth", "annual")}>
+              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "annual")}>
                 {checkoutBusy === "growth:annual" ? tr("Ouverture…", "Opening…") : annualIncludesLaunch ? tr("290 €/an · Création IA incluse", "€290/year · AI Launch included") : tr("290 €/an", "€290/year")}
               </button>
             </div>

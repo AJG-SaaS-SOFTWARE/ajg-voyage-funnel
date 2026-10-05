@@ -15,6 +15,7 @@ export type BillingState = {
   providerStatus: string | null;
   provider: string | null;
   hasBillingAccount: boolean;
+  hasStripeSubscription: boolean;
 };
 
 export async function getMyBillingState(siteId?: string): Promise<BillingState | null> {
@@ -24,7 +25,7 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
   if (!site) return null;
   const [{ data, error }, { data: subscription, error: subscriptionError }] = await Promise.all([
     supabase.from("site_billing_states").select("state,paid_through,grace_until,restricted_at,public_suspend_at,export_until,delete_after,provider_status").eq("site_id", site.id).maybeSingle(),
-    supabase.from("site_subscriptions").select("provider,provider_customer_id").eq("site_id", site.id).maybeSingle()
+    supabase.from("site_subscriptions").select("provider,provider_customer_id,provider_subscription_id,status").eq("site_id", site.id).maybeSingle()
   ]);
   if (error) throw error;
   if (subscriptionError) throw subscriptionError;
@@ -32,13 +33,23 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
     state: "active", paidThrough: null, graceUntil: null, restrictedAt: null,
     publicSuspendAt: null, exportUntil: null, deleteAfter: null, providerStatus: null,
     provider: subscription?.provider || null,
-    hasBillingAccount: Boolean(subscription?.provider === "stripe" && subscription?.provider_customer_id)
+    hasBillingAccount: Boolean(subscription?.provider === "stripe" && subscription?.provider_customer_id),
+    hasStripeSubscription: Boolean(
+      subscription?.provider === "stripe"
+      && subscription?.provider_subscription_id
+      && ["active", "trialing", "past_due"].includes(subscription?.status || "")
+    )
   };
   return {
     state: data.state, paidThrough: data.paid_through, graceUntil: data.grace_until, restrictedAt: data.restricted_at,
     publicSuspendAt: data.public_suspend_at, exportUntil: data.export_until, deleteAfter: data.delete_after, providerStatus: data.provider_status,
     provider: subscription?.provider || null,
-    hasBillingAccount: Boolean(subscription?.provider === "stripe" && subscription?.provider_customer_id)
+    hasBillingAccount: Boolean(subscription?.provider === "stripe" && subscription?.provider_customer_id),
+    hasStripeSubscription: Boolean(
+      subscription?.provider === "stripe"
+      && subscription?.provider_subscription_id
+      && ["active", "trialing", "past_due"].includes(subscription?.status || "")
+    )
   };
 }
 
