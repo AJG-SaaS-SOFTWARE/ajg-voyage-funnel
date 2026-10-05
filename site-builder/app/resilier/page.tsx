@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CommercialLegalPage } from "../../components/CommercialLegalPage";
 
 export const metadata: Metadata = {
-  title: "Résiliation — ELTARA",
+  title: "Résiliation",
   robots: { index: process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true", follow: true }
 };
 
