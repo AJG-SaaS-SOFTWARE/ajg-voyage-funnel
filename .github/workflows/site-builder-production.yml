@@ -24,7 +24,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_T1xBMzY6HJCAkUStrmkUgj60
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
-      PRODUCTION_ALIAS: ajg-site-builder.vercel.app
+      PRODUCTION_ALIAS: eltara.ajgsolutionsgroup.com
 
     steps:
       - uses: actions/checkout@v4
