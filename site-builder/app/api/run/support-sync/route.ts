@@ -28,6 +28,29 @@ function ticketId(externalRef: unknown) {
   return match?.[1] ?? null;
 }
 
+export async function GET() {
+  const tokenConfigured = Boolean(process.env.AJG_RUN_TOKEN?.trim());
+  const databaseConfigured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
+  );
+  const healthy = tokenConfigured && databaseConfigured;
+
+  return NextResponse.json(
+    {
+      status: healthy ? "healthy" : "critical",
+      summary: healthy
+        ? "Synchronisation AJG Run → ELTARA prête."
+        : "Synchronisation AJG Run → ELTARA incomplète.",
+      configuration: {
+        tokenConfigured,
+        databaseConfigured,
+      },
+    },
+    { status: healthy ? 200 : 503, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
 export async function POST(request: Request) {
   if (!authorized(request)) {
     return NextResponse.json({ ok: false }, { status: 401 });
