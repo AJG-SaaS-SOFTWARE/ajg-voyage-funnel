@@ -491,6 +491,41 @@ export type Database = {
           },
         ]
       }
+      runtime_error_events: {
+        Row: {
+          created_at: string
+          error_code: string
+          id: number
+          route_path: string
+          route_type: string
+          site_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_code: string
+          id?: never
+          route_path: string
+          route_type: string
+          site_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: string
+          id?: never
+          route_path?: string
+          route_type?: string
+          site_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_error_events_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_billing_states: {
         Row: {
           cancel_at_period_end: boolean
