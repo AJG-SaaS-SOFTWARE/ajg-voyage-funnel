@@ -28,7 +28,7 @@ Le prototype comprend déjà :
 1. Frontend et rendu public : Next.js sur Vercel.
 2. Authentification, données et médias : Supabase.
 3. Multi-tenant : un seul moteur, un enregistrement de site par membre.
-4. Sous-domaines réseau : `prenom.voyage.ajgsolutionsgroup.com`.
+4. Sous-domaines réseau : `prenom.eltara.ajgsolutionsgroup.com` pour les nouveaux sites ; les anciens `prenom.voyage.ajgsolutionsgroup.com` restent compatibles pendant la migration. Aucune migration destructive des anciens hostnames n’est effectuée.
 5. Domaines personnalisés : prévus dans une phase commerciale ultérieure.
 6. IA : génération côté serveur via `/api/ai/write`, quotas côté Supabase et validation utilisateur avant remplacement.
 7. Conformité : mentions obligatoires verrouillées dans le template.
