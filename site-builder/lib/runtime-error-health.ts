@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 type ErrorRequest = {
@@ -35,7 +34,11 @@ function routeKind(value: unknown) {
     : "unknown";
 }
 
-export function runtimeErrorCode(error: unknown, routePath: string) {
+function hex(bytes: Uint8Array) {
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+export async function runtimeErrorCode(error: unknown, routePath: string) {
   const digest =
     error && typeof error === "object" && "digest" in error
       ? String((error as { digest?: unknown }).digest || "").trim()
@@ -48,7 +51,9 @@ export function runtimeErrorCode(error: unknown, routePath: string) {
     error && typeof error === "object" && "name" in error
       ? String((error as { name?: unknown }).name || "Error")
       : "Error";
-  return `hash:${createHash("sha256").update(`${name}|${routePath}`).digest("hex").slice(0, 32)}`;
+  const bytes = new TextEncoder().encode(`${name}|${routePath}`);
+  const digestBytes = new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256", bytes));
+  return `hash:${hex(digestBytes).slice(0, 32)}`;
 }
 
 async function siteIdFromRequest(service: SupabaseClient, request: ErrorRequest) {
@@ -101,7 +106,7 @@ export async function recordNextRuntimeError(
       site_id: siteId,
       route_path: routePath,
       route_type: routeKind(context.routeType),
-      error_code: runtimeErrorCode(error, routePath)
+      error_code: await runtimeErrorCode(error, routePath)
     });
   } catch {
     // Error reporting must never create a second application failure.
