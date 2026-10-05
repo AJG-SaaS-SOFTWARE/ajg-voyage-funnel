@@ -58,8 +58,9 @@ export async function adminRunStorageBackup(): Promise<AdminStorageBackupRun> {
 
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import type { AiFinopsReport, FinopsAlert, FinopsMonitorStatus } from "./ai-finops-report";
+import type { AiUsageAnomaly } from "./ai-usage-anomaly";
 
-export async function getAdminAiFinops(month?: string, signal?: AbortSignal): Promise<{ report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; generatedAt: string }> {
+export async function getAdminAiFinops(month?: string, signal?: AbortSignal): Promise<{ report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; anomaly: AiUsageAnomaly; generatedAt: string }> {
   const token = await adminSessionToken();
   const response = await fetch("/api/admin/ai-finops" + (month ? "?month=" + encodeURIComponent(month) : ""), {
     headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal
