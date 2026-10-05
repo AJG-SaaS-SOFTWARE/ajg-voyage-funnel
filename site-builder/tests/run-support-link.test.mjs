@@ -10,3 +10,13 @@ test("Builder support Run reporting preserves the ticket reference", () => {
   assert.match(reporter, /builder-ticket:/);
   assert.match(reporter, /externalRef:/);
 });
+
+
+test("Builder exposes a token-protected Run status callback", () => {
+  const source = readFileSync("app/api/run/support-sync/route.ts", "utf8");
+  assert.match(source, /AJG_RUN_TOKEN/);
+  assert.match(source, /builder-ticket:/);
+  assert.match(source, /run_work_item_closed/);
+  assert.match(source, /actor: "system"/);
+  assert.doesNotMatch(source, /subject|message/);
+});
