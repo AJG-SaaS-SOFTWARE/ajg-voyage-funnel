@@ -44,7 +44,7 @@ export default function BillingPage() {
   return <AccountShell
     active="billing"
     eyebrow={tr("Facturation & récupération", "Billing & recovery")}
-    title={tr("Votre accès AJG Builder", "Your AJG Builder access")}
+    title={tr("Votre accès ELTARA", "Your ELTARA access")}
     description={tr("Suivez l’état de paiement du site sélectionné, les éventuelles échéances de restriction et vos options de récupération. Un impayé ne déclenche jamais la suppression automatique de vos données.", "Track the selected website’s billing status, any restriction deadlines and your recovery options. A failed payment never triggers automatic deletion of your data.")}
   >
     {sites.length>1?<section className="panel"><label>Site<select value={siteId} onChange={e=>{setSiteId(e.target.value);void load(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
