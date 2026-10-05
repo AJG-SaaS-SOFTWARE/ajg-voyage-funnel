@@ -280,7 +280,7 @@ export default function AdminPage() {
     try {
       await adminRemoveBetaMember(userId);
       await load();
-      setMessage("Statut Beta Tester retiré. Le compte AJG et ses sites ne sont pas supprimés ; les droits reviennent immédiatement à l’offre réelle.");
+      setMessage("Statut Beta Tester retiré. Le compte ELTARA et ses sites ne sont pas supprimés ; les droits reviennent immédiatement à l’offre réelle.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Retrait impossible.");
     } finally {
@@ -359,7 +359,7 @@ export default function AdminPage() {
   return (
     <AdminShell
       active="overview"
-      eyebrow="AJG Administration"
+      eyebrow="ELTARA Administration"
       title="Pilotage du parc de sites"
       description="Vue opérationnelle des sites, offres, domaines, bêta et prérequis de mise en production. L’accès reste contrôlé en base par un rôle administrateur dédié."
       actions={
@@ -451,7 +451,7 @@ export default function AdminPage() {
         <section className="panel admin-managed-domains">
           <div className="admin-readiness-heading">
             <div>
-              <p className="eyebrow">Publication AJG</p>
+              <p className="eyebrow">Publication ELTARA</p>
               <h2>Sous-domaines gérés</h2>
               <p>
                 La préparation DNS des adresses <code>*.voyage.ajgsolutionsgroup.com</code>
@@ -471,7 +471,7 @@ export default function AdminPage() {
                 <thead>
                   <tr>
                     <th>Site</th>
-                    <th>Adresse AJG</th>
+                    <th>Adresse ELTARA</th>
                     <th>État</th>
                     <th>Primaire</th>
                     <th>Action</th>
@@ -510,7 +510,7 @@ export default function AdminPage() {
               </table>
             </div>
           ) : (
-            <p className="plans-note">Aucun sous-domaine AJG à préparer pour le moment.</p>
+            <p className="plans-note">Aucun sous-domaine ELTARA à préparer pour le moment.</p>
           )}
         </section>
       ) : null}
@@ -592,7 +592,7 @@ export default function AdminPage() {
           </form>
           <p className="plans-note">
             Le statut Beta Tester est un grant temporaire indépendant de Stripe et ne crée
-            aucune facturation. Un nouveau compte reçoit l’invitation Supabase dans la langue sélectionnée et arrive sur le Builder dans cette même langue ; un compte AJG
+            aucune facturation. Un nouveau compte reçoit l’invitation Supabase dans la langue sélectionnée et arrive dans ELTARA dans cette même langue ; un compte ELTARA
             existant reçoit immédiatement les droits Pro et la préférence de langue associée. La durée est renouvelable depuis
             cette page. Cette phase reste volontairement plafonnée à 10 testeurs.
           </p>
@@ -1199,7 +1199,7 @@ export default function AdminPage() {
           <div className="admin-readiness-heading">
             <div>
               <p className="eyebrow">Recette E2E</p>
-              <h2>Parcours Builder complet</h2>
+              <h2>Parcours ELTARA complet</h2>
               <p>
                 Crée un site temporaire isolé, lui attribue un droit Pro interne éphémère,
                 consomme une génération AI Site Architect, teste un média privé, publie,
