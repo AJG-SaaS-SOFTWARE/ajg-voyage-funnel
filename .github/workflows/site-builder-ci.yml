@@ -1,7 +1,7 @@
-name: Site Builder CI
+name: ELTARA CI
 
 concurrency:
-  group: site-builder-ci-${{ github.event.pull_request.number || github.ref }}
+  group: eltara-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 on:
