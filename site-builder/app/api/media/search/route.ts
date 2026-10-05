@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(endpoint, {
-      headers: { Accept: "application/json", "User-Agent": "AJGSiteBuilder/1.0 (https://ajg-site-builder.vercel.app)" },
+      headers: { Accept: "application/json", "User-Agent": "ELTARA/1.0 (https://eltara.ajgsolutionsgroup.com)" },
       next: { revalidate: 3600 }
     });
     if (!response.ok) throw new Error(`Openverse ${response.status}`);
