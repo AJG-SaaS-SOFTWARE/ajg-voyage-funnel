@@ -97,3 +97,20 @@ ELTARA reste une marque produit autonome. AJG Horizon apparaît prioritairement 
 - dans les communications groupe.
 
 Dans l’interface quotidienne, la marque dominante est **ELTARA**.
+
+## Domaines publiés
+
+Depuis le 5 octobre 2026, le root de publication géré d’ELTARA est :
+
+`*.eltara.ajgsolutionsgroup.com`
+
+Règles de migration :
+
+- les **nouveaux sites** reçoivent un sous-domaine `slug.eltara.ajgsolutionsgroup.com` ;
+- les anciens `slug.voyage.ajgsolutionsgroup.com` restent supportés et ne sont pas réécrits automatiquement ;
+- le middleware reconnaît les deux roots pendant la période de transition ;
+- la réparation automatique des domaines conserve un hostname historique valide au lieu de le remplacer ;
+- Vercel porte le wildcard `*.eltara.ajgsolutionsgroup.com` sur le projet ELTARA ;
+- un retour temporaire au root historique reste possible en rebasculant `NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN` sans supprimer la compatibilité legacy.
+
+Cette migration ne modifie pas les domaines personnalisés possédés par les clients.
