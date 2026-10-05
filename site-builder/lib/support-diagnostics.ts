@@ -62,6 +62,10 @@ export type SupportDiagnosticInput = {
     galleryImageCount: number;
     invalidConfiguredLinks: number;
     checkedConfiguredLinks: number;
+    probedConfiguredLinks?: number;
+    reachableConfiguredLinks?: number;
+    unreachableConfiguredLinks?: number;
+    unsafeConfiguredLinks?: number;
     missingPublishableMedia: number;
   };
   storage?: {
@@ -442,6 +446,11 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
       });
     }
 
+    const unreachableLinks = content.unreachableConfiguredLinks || 0;
+    const unsafeLinks = content.unsafeConfiguredLinks || 0;
+    const probedLinks = content.probedConfiguredLinks || 0;
+    const reachableLinks = content.reachableConfiguredLinks || 0;
+
     checks.push(
       content.invalidConfiguredLinks > 0
         ? {
@@ -451,14 +460,37 @@ export function buildSupportDiagnosis(input: SupportDiagnosticInput): SupportDia
             detail: `${content.invalidConfiguredLinks} lien(s) configuré(s) ne sont pas des URL HTTPS exploitables.`,
             clientAction: "Corrigez les liens signalés dans ELTARA puis republiez le site."
           }
-        : {
-            key: "content_links",
-            label: "Liens configurés",
-            status: "healthy",
-            detail: content.checkedConfiguredLinks > 0
-              ? `${content.checkedConfiguredLinks} lien(s) configuré(s) ont un format HTTPS valide.`
-              : "Aucun lien externe configuré ne nécessite de contrôle."
-          }
+        : unsafeLinks > 0
+          ? {
+              key: "content_links",
+              label: "Liens externes",
+              status: "action",
+              detail: `${unsafeLinks} lien(s) externe(s) ont été refusés par le contrôle de sécurité réseau.`,
+              clientAction: "Remplacez les liens concernés par des destinations HTTPS publiques, puis republiez le site."
+            }
+          : unreachableLinks > 0
+            ? {
+                key: "content_links",
+                label: "Liens externes",
+                status: "action",
+                detail: `${unreachableLinks} lien(s) externe(s) ne répondent plus correctement depuis ELTARA.`,
+                clientAction: "Vérifiez ou remplacez les liens concernés dans ELTARA, puis republiez le site."
+              }
+            : probedLinks > 0
+              ? {
+                  key: "content_links",
+                  label: "Liens externes",
+                  status: "healthy",
+                  detail: `${reachableLinks}/${probedLinks} lien(s) externe(s) vérifié(s) répondent correctement.`
+                }
+              : {
+                  key: "content_links",
+                  label: "Liens configurés",
+                  status: "healthy",
+                  detail: content.checkedConfiguredLinks > 0
+                    ? `${content.checkedConfiguredLinks} lien(s) configuré(s) ont un format HTTPS valide ; la disponibilité sera contrôlée sur le site publié.`
+                    : "Aucun lien externe configuré ne nécessite de contrôle."
+                }
     );
   }
 
