@@ -195,7 +195,7 @@ export async function buildBuilderBusinessReport() {
       ? `${failedProviderEvents} événement(s) Stripe Builder nécessitent une reprise automatique.`
       : recurring.unmappedActivePrices > 0
         ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
-        : "Reporting agrégé AJG Site Builder. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
+        : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
 
   return {
     status,
