@@ -11,61 +11,61 @@ type NotificationCopy = Record<string, { subject: string; body: string }>;
 const copy: Record<NotificationLocale, NotificationCopy> = {
   fr: {
     payment_failed: {
-      subject: "Action requise sur votre abonnement AJG Builder",
+      subject: "Action requise sur votre abonnement ELTARA",
       body: "Nous n’avons pas pu confirmer votre dernier règlement. Votre site reste modifiable et publié pendant la période de grâce, mais l’assistant IA est temporairement suspendu."
     },
     reminder_j3: {
-      subject: "Rappel — règlement AJG Builder",
+      subject: "Rappel — règlement ELTARA",
       body: "Votre règlement reste à régulariser. Votre site continue de fonctionner pendant la période de grâce."
     },
     reminder_j7: {
-      subject: "Rappel — accès AJG Builder",
+      subject: "Rappel — accès ELTARA",
       body: "Votre règlement n’est pas encore régularisé. Pensez à mettre à jour votre moyen de paiement avant la fin de la période de grâce."
     },
     reminder_j12: {
-      subject: "AJG Builder — restriction prochaine",
+      subject: "ELTARA — restriction prochaine",
       body: "Sans régularisation, l’édition, les nouvelles publications, les imports et la collecte de nouveaux formulaires seront prochainement suspendus. Votre site public restera encore accessible pendant la période prévue."
     },
     retention_j74: {
-      subject: "AJG Builder — vos données sont toujours conservées",
+      subject: "ELTARA — vos données sont toujours conservées",
       body: "Votre site est suspendu, mais vos données restent conservées. Vous pouvez régulariser votre abonnement ou récupérer vos données depuis votre espace de facturation."
     },
     retention_j97: {
-      subject: "AJG Builder — rappel concernant vos données",
+      subject: "ELTARA — rappel concernant vos données",
       body: "Votre site reste suspendu et vos données sont toujours conservées. Aucune suppression automatique n’est déclenchée par ce rappel. Vous pouvez régulariser votre abonnement ou préparer votre export depuis votre espace de facturation."
     },
     reactivated: {
-      subject: "Votre site AJG Builder est réactivé",
+      subject: "Votre site ELTARA est réactivé",
       body: "Votre règlement a été confirmé. Les capacités de votre site et son accès public ont été rétablis."
     }
   },
   en: {
     payment_failed: {
-      subject: "Action required for your AJG Builder subscription",
+      subject: "Action required for your ELTARA subscription",
       body: "We could not confirm your latest payment. Your website remains editable and published during the grace period, but the AI assistant is temporarily suspended."
     },
     reminder_j3: {
-      subject: "Reminder — AJG Builder payment",
+      subject: "Reminder — ELTARA payment",
       body: "Your payment still needs attention. Your website continues to operate during the grace period."
     },
     reminder_j7: {
-      subject: "Reminder — AJG Builder access",
+      subject: "Reminder — ELTARA access",
       body: "Your payment has not been resolved yet. Please update your payment method before the grace period ends."
     },
     reminder_j12: {
-      subject: "AJG Builder — restriction approaching",
+      subject: "ELTARA — restriction approaching",
       body: "Without payment recovery, editing, new publications, imports and collection through new forms will soon be suspended. Your public website will remain accessible for the planned period."
     },
     retention_j74: {
-      subject: "AJG Builder — your data is still retained",
+      subject: "ELTARA — your data is still retained",
       body: "Your website is suspended, but your data is still retained. You can restore your subscription or recover your data from Billing."
     },
     retention_j97: {
-      subject: "AJG Builder — reminder about your data",
+      subject: "ELTARA — reminder about your data",
       body: "Your website remains suspended and your data is still retained. This reminder does not trigger automatic deletion. You can restore your subscription or prepare an export from Billing."
     },
     reactivated: {
-      subject: "Your AJG Builder website is active again",
+      subject: "Your ELTARA website is active again",
       body: "Your payment has been confirmed. Your website capabilities and public access have been restored."
     }
   }
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
           from,
           to: [userData.user.email],
           subject: message.subject,
-          text: `${message.body}\n\n${billingLabel} : ${appUrl}/billing\n\nAJG Builder`
+          text: `${message.body}\n\n${billingLabel} : ${appUrl}/billing\n\nELTARA`
         })
       });
       if (!response.ok) throw new Error(`resend_${response.status}`);
