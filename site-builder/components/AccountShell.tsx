@@ -6,7 +6,7 @@ import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { EltaraBrand } from "./EltaraBrand";
 
-type AccountSection = "plans" | "billing" | "domains" | "data";
+type AccountSection = "plans" | "billing" | "domains" | "messages" | "data";
 
 export function AccountShell({
   active,
@@ -26,6 +26,7 @@ export function AccountShell({
     { href: "/plans", label: tr("Mon offre", "My plan"), section: "plans" },
     { href: "/billing", label: tr("Facturation", "Billing"), section: "billing" },
     { href: "/domains", label: tr("Domaines", "Domains"), section: "domains" },
+    { href: "/messages", label: tr("Messages", "Messages"), section: "messages" },
     { href: "/data", label: tr("Mes données", "My data"), section: "data" }
   ];
 
