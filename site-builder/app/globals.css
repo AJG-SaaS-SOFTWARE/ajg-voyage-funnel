@@ -4555,11 +4555,11 @@ button.active .step-label small{color:#63817f}
   padding:8px 0 14px;
 }
 .premium-home .premium-intro h1{
-  max-width:820px;
+  max-width:790px;
   margin:0 0 22px;
-  color:#1a2b3d;
-  font-size:clamp(3.1rem,4.65vw,5.65rem);
-  line-height:.97;
+  color:#223753;
+  font-size:clamp(3.05rem,4.25vw,5.2rem);
+  line-height:1;
   letter-spacing:-.052em;
   font-weight:500;
   text-wrap:balance;
