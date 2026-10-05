@@ -609,12 +609,12 @@ export async function GET(request: Request) {
         activity: activityBySite
       },
       definitions: {
-        opened: "Utilisateur distinct ayant ouvert le Builder sur les 30 derniers jours.",
+        opened: "Utilisateur distinct ayant ouvert ELTARA sur les 30 derniers jours.",
         engaged:
           "Utilisateur distinct ayant atteint l’étape Message ou appliqué une proposition AI Site Architect/révision.",
         reviewed: "Utilisateur distinct ayant atteint l’étape Publication / revue.",
         published: "Utilisateur distinct ayant déclenché une publication réussie.",
-        onboardingSteps: "Utilisateurs distincts ayant atteint chaque étape du Builder. Les écarts entre étapes permettent de localiser une friction sans stocker le contenu saisi.",
+        onboardingSteps: "Utilisateurs distincts ayant atteint chaque étape d’ELTARA. Les écarts entre étapes permettent de localiser une friction sans stocker le contenu saisi.",
         onboardingPaths: "Premier choix explicite entre parcours manuel et Création IA, puis publication ultérieure et délai médian jusqu’à cette publication. Aucun contenu saisi n’est stocké dans cet événement.",
         aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
         architectAttempts: "Propositions Premium effectivement rendues au client ; aucun brief ni contenu client n’est enregistré dans les événements.",
