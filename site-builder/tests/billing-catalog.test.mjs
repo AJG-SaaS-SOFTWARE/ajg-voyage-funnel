@@ -20,7 +20,7 @@ test("billing catalogue supports BUILD RUN GROW", () => {
   ]) assert.ok(env.includes(key), key);
   assert.ok(subscription.includes('"free" | "essential" | "growth"'));
   assert.ok(env.includes("AJG_AI_LAUNCH_OPERATIONS=4"));
-  assert.ok(env.includes("AJG Site Builder has no free Stripe trial"));
+  assert.ok(env.includes("ELTARA has no free Stripe trial"));
   assert.ok(!env.includes("AJG_SUBSCRIPTION_TRIAL_DAYS"));
 });
 
