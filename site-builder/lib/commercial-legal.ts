@@ -27,7 +27,7 @@ export type CommercialLegalProfile = {
 export function commercialLegalProfile(): CommercialLegalProfile {
   return {
     legalName: env("AJG_LEGAL_NAME"),
-    tradeName: env("AJG_TRADE_NAME") || "AJG Site Builder",
+    tradeName: env("AJG_TRADE_NAME") || "ELTARA",
     legalForm: env("AJG_LEGAL_FORM"),
     shareCapital: env("AJG_SHARE_CAPITAL"),
     address: env("AJG_LEGAL_ADDRESS"),
