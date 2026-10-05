@@ -298,7 +298,7 @@ export async function GET(request: Request) {
         status: response.ok ? "pass" : "warn",
         scope: "beta",
         detail: response.ok
-          ? "Jeton serveur validé en lecture sur le projet AJG Site Builder."
+          ? "Jeton serveur validé en lecture sur le projet ELTARA."
           : `Jeton ou périmètre Vercel invalide pour ce projet (HTTP ${response.status}).`
       });
     } catch {
