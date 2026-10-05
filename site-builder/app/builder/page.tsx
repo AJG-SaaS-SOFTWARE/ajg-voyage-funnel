@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useProductLocale } from "../../lib/product-i18n";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { EltaraBrand } from "../../components/EltaraBrand";
 import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
 import ContentLibraryEditor from "../../components/ContentLibraryEditor";
@@ -1321,11 +1322,7 @@ export default function BuilderPage() {
     <main className="builder-shell premium-builder-shell">
       <header className="builder-topbar premium-builder-topbar">
         <Link href="/" className="brand-link premium-brand-link">
-          <span className="brand-mark">A</span>
-          <span>
-            <strong>ELTARA</strong>
-            <small>Prototype 0.10</small>
-          </span>
+          <EltaraBrand compact context="Prototype 0.10" />
         </Link>
 
         <div className="progress premium-progress" aria-label={tr("Progression ", "Progress ") + completion + "%"}>
