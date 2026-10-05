@@ -127,7 +127,7 @@ export default function SupportPage() {
         nextStatus === "resolved"
           ? tr("Le problème diagnostiqué n’est plus détecté : la demande a été résolue automatiquement.", "The diagnosed issue is no longer detected: the request was resolved automatically.")
           : nextStatus === "diagnosed"
-            ? tr("Le problème nécessite maintenant une vérification AJG. Votre demande a été escaladée.", "The issue now requires AJG review. Your request has been escalated.")
+            ? tr("Le problème nécessite maintenant une vérification par l’équipe ELTARA. Votre demande a été escaladée.", "The issue now requires ELTARA team review. Your request has been escalated.")
             : tr("L’action recommandée reste nécessaire. Le diagnostic a été actualisé.", "The recommended action is still required. The diagnosis has been refreshed.")
       );
       await load();
@@ -160,7 +160,7 @@ export default function SupportPage() {
       setNotice(
         body?.result?.status === "succeeded"
           ? tr("Correction technique appliquée. Le diagnostic a été actualisé.", "Technical repair applied. The diagnosis has been refreshed.")
-          : tr("La correction automatique n’a pas suffi. Le diagnostic a été actualisé et peut être transmis à AJG.", "Automatic repair was not sufficient. The diagnosis has been refreshed and can be escalated to AJG.")
+          : tr("La correction automatique n’a pas suffi. Le diagnostic a été actualisé et peut être transmis à l’équipe ELTARA.", "Automatic repair was not sufficient. The diagnosis has been refreshed and can be escalated to the ELTARA team.")
       );
       await load();
     } catch (error) {
@@ -181,8 +181,8 @@ export default function SupportPage() {
         </div>
         <h1>{tr("Diagnostiquer avant de contacter le support", "Diagnose before contacting support")}</h1>
         <p>{tr(
-          "ELTARA vérifie automatiquement les causes courantes avant de transmettre un incident à AJG.",
-          "ELTARA automatically checks common causes before escalating an incident to AJG."
+          "ELTARA vérifie automatiquement les causes courantes avant de transmettre un incident à l’équipe ELTARA.",
+          "ELTARA automatically checks common causes before escalating an incident to the ELTARA team."
         )}</p>
         <div className="actions">
           <Link className="button secondary" href="/">{tr("Tableau de bord", "Dashboard")}</Link>
