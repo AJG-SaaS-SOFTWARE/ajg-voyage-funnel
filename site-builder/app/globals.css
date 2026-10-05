@@ -726,8 +726,9 @@ input:focus,textarea:focus,select:focus{
   justify-content:space-between;
   color:#fff;
   background:
-    linear-gradient(180deg,rgba(10,30,37,.14),rgba(10,30,37,.52)),
-    url("https://images.pexels.com/photos/34851205/pexels-photo-34851205/free-photo-of-mediterranean-coastal-villa-with-scenic-mountain-view.jpeg?auto=compress&cs=tinysrgb&w=1600") center/cover no-repeat;
+    radial-gradient(circle at 74% 18%,rgba(98,216,239,.34),transparent 26rem),
+    radial-gradient(circle at 16% 86%,rgba(86,53,178,.36),transparent 28rem),
+    linear-gradient(145deg,#151837 0%,#2b2f72 38%,#365fb7 68%,#3aa9cc 100%);
 }
 .auth-visual::after{
   content:"";
@@ -4381,3 +4382,99 @@ button.active .step-label small{color:#63817f}
     width:auto;
   }
 }
+
+/* ELTARA brand hero */
+.eltara-hero-art{
+  display:grid;
+  place-items:center;
+  min-height:320px;
+  background:
+    radial-gradient(circle at 72% 22%,rgba(98,216,239,.34),transparent 28%),
+    radial-gradient(circle at 22% 78%,rgba(86,53,178,.28),transparent 34%),
+    linear-gradient(145deg,#f5f8ff 0%,#e8f7fb 42%,#ece9ff 100%);
+  border:1px solid rgba(78,121,216,.14);
+  box-shadow:0 28px 76px rgba(67,43,134,.10);
+}
+.eltara-hero-art::before{
+  inset:10% 12% 8% 20%;
+  border-radius:46% 54% 58% 42%;
+  background:rgba(255,255,255,.34);
+  border:1px solid rgba(255,255,255,.6);
+  backdrop-filter:blur(2px);
+}
+.eltara-hero-art::after{
+  inset:auto -12% -34% 36%;
+  height:82%;
+  background:radial-gradient(circle at center,rgba(78,121,216,.15),rgba(255,255,255,0) 68%);
+}
+.eltara-hero-symbol{
+  position:relative;
+  z-index:6;
+  width:min(46%,210px);
+  height:auto;
+  filter:drop-shadow(0 18px 28px rgba(67,43,134,.18));
+  transform:translateY(-18px);
+}
+.eltara-hero-wordmark{
+  position:absolute;
+  z-index:7;
+  left:28px;
+  bottom:22px;
+  color:var(--eltara-indigo,#432B86);
+  font-size:clamp(1.1rem,2vw,1.65rem);
+  font-weight:900;
+  letter-spacing:.16em;
+}
+.eltara-hero-glow{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(1px);
+  pointer-events:none;
+}
+.eltara-hero-glow-one{
+  width:180px;height:180px;
+  right:12%;top:12%;
+  background:rgba(98,216,239,.18);
+}
+.eltara-hero-glow-two{
+  width:220px;height:220px;
+  left:8%;bottom:-20%;
+  background:rgba(86,53,178,.12);
+}
+.eltara-hero-art .hero-orbit{
+  border-color:rgba(78,121,216,.34);
+  border-left-color:transparent;
+  border-bottom-color:transparent;
+}
+.eltara-hero-art .hero-star{
+  color:#62D8EF;
+  text-shadow:0 0 24px rgba(98,216,239,.45);
+}
+.eltara-hero-art .hero-photo-caption{
+  background:rgba(67,43,134,.72);
+  border-color:rgba(255,255,255,.28);
+}
+.auth-brand::before{display:none!important;content:none!important}
+.auth-visual::after{
+  background:
+    linear-gradient(90deg,rgba(10,14,46,.35),rgba(10,14,46,.02) 62%),
+    radial-gradient(circle at 20% 76%,rgba(98,216,239,.22),transparent 28rem);
+}
+.auth-orbit{
+  border-color:rgba(98,216,239,.30);
+  border-left-color:transparent;
+  border-bottom-color:transparent;
+}
+.auth-star{
+  color:#62D8EF;
+}
+.auth-visual .auth-brand .eltara-lockup-copy strong{
+  color:#fff;
+}
+.auth-visual .auth-brand .eltara-lockup-copy small{
+  color:rgba(255,255,255,.72);
+}
+.auth-visual .auth-brand .eltara-mark{
+  filter:drop-shadow(0 8px 18px rgba(4,12,38,.28));
+}
+
