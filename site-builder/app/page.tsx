@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "../lib/supabase-browser";
 import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
 import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "../components/LanguageSwitch";
+import { EltaraMark } from "../components/EltaraBrand";
 import { deriveOnboardingCreationPath, deriveOnboardingProgress } from "../lib/onboarding";
 import { getMyBetaAccess, getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements, type BetaAccess } from "../lib/subscription";
 import { trackProductEvent } from "../lib/product-analytics";
@@ -187,22 +188,20 @@ export default function Home() {
             </div>
             <LanguageSwitch compact />
           </div>
-          <h1>{tr("Votre site en quelques étapes", "Your website in a few steps")}</h1>
+          <h1>{tr("Créez une présence digitale qui évolue avec votre activité", "Build a digital presence that grows with your business")}</h1>
           <p>{tr(
-            "Élevez votre présence digitale : structurez votre identité, vos contenus, vos rendez-vous, vos médias et publiez un site professionnel depuis un même espace.",
-            "Elevate your digital presence: shape your identity, content, bookings and media, then publish a professional website from one workspace."
+            "Décrivez votre activité. ELTARA vous guide pour structurer, personnaliser et publier un site professionnel qui peut évoluer avec vous.",
+            "Describe your business. ELTARA guides you to structure, customize and publish a professional website designed to evolve with you."
           )}</p>
         </div>
 
-        <div className="hero-art hero-photo-art" aria-hidden="true">
-          <img
-            className="hero-photo"
-            src="https://images.pexels.com/photos/34851205/pexels-photo-34851205/free-photo-of-mediterranean-coastal-villa-with-scenic-mountain-view.jpeg?auto=compress&cs=tinysrgb&w=1600"
-            alt=""
-          />
-          <span className="hero-photo-wash" />
+        <div className="hero-art eltara-hero-art" aria-hidden="true">
+          <span className="eltara-hero-glow eltara-hero-glow-one" />
+          <span className="eltara-hero-glow eltara-hero-glow-two" />
+          <EltaraMark className="eltara-hero-symbol" />
           <span className="hero-orbit" />
           <span className="hero-star">✦</span>
+          <span className="eltara-hero-wordmark">ELTARA</span>
           <span className="hero-photo-caption">{tr("Création · personnalisation · publication", "Create · customize · publish")}</span>
         </div>
       </section>
@@ -363,7 +362,7 @@ export default function Home() {
             <div className="actions">
               <Link className="button primary premium-button" href={onboardingHref}>
                 {onboarding.done
-                  ? tr("Ouvrir le Builder", "Open Builder")
+                  ? tr("Ouvrir ELTARA", "Open ELTARA")
                   : tr("Continuer l’installation", "Continue setup")} <span aria-hidden="true">→</span>
               </Link>
             </div>
