@@ -1,4 +1,4 @@
-# Sauvegarde externe des médias — AJG Site Builder
+# Sauvegarde externe des médias — ELTARA
 
 ## Objectif
 
