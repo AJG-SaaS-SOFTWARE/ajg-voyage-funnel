@@ -181,7 +181,7 @@ export default function Home() {
     <main className="shell premium-home">
       <section className="dashboard-hero">
         <div className="intro premium-intro">
-          <div className="builder-language-row">
+          <div className="builder-language-row home-hero-meta">
             <div>
               <p className="eyebrow">ELTARA · by AJG Horizon</p>
               <p className="eltara-tagline">{tr("Élevez votre présence digitale", "Elevate your digital presence")}</p>
