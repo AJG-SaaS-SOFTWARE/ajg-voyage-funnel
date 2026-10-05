@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
   if (domain.kind !== "custom_domain") {
     return NextResponse.json(
-      { error: tr("Les sous-domaines gérés sont administrés par AJG.", "Managed subdomains are administered by AJG.") },
+      { error: tr("Les sous-domaines gérés sont administrés par ELTARA.", "Managed subdomains are administered by ELTARA.") },
       { status: 403 }
     );
   }
