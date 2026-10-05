@@ -55,6 +55,13 @@ Gradient principal :
 
 Le chrome du produit peut utiliser cette palette. Les sites créés par les clients conservent leur propre palette et ne doivent pas hériter de la marque ELTARA.
 
+### Direction iconographique
+
+- privilégier les formes abstraites, interfaces, trajectoires, étoiles et signes d’élévation liés à ELTARA ;
+- utiliser le gradient indigo → bleu → cyan comme repère de marque ;
+- éviter les photos de voyage, paysages ou lifestyle génériques pour représenter le produit lui-même ;
+- réserver la photographie aux contenus et sites des clients, pas à l’identité ELTARA.
+
 ## Déclinaisons
 
 1. **Logo marketing** : symbole + ELTARA + « Élevez votre présence digitale ».
