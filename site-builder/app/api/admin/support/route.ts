@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveAny } from "node:dns/promises";
 import { createClient } from "@supabase/supabase-js";
 import { recordSupportEvent } from "../../../../lib/support-events";
 import { calculateSupportMetrics } from "../../../../lib/support-metrics";
@@ -10,6 +11,50 @@ const statuses = new Set(["new","diagnosed","waiting_customer","in_progress","re
 
 function bearer(request: Request) {
   return request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
+}
+
+type PlatformProbe = {
+  host: string;
+  dns: "ok" | "nxdomain" | "error";
+  https: "ok" | "unavailable" | "skipped";
+  httpStatus: number | null;
+};
+
+async function platformProbe(host: string, path = "/"): Promise<PlatformProbe> {
+  let dns: PlatformProbe["dns"] = "ok";
+  try {
+    await resolveAny(host);
+  } catch (error: any) {
+    dns = error?.code === "ENOTFOUND" || error?.code === "ENODATA"
+      ? "nxdomain"
+      : "error";
+  }
+
+  if (dns !== "ok") {
+    return { host, dns, https: "skipped", httpStatus: null };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(`https://${host}${path}`, {
+      method: "GET",
+      cache: "no-store",
+      redirect: "manual",
+      signal: controller.signal,
+      headers: { "User-Agent": "ELTARA-Platform-Health/1.0" }
+    });
+    return {
+      host,
+      dns,
+      https: response.status < 500 ? "ok" : "unavailable",
+      httpStatus: response.status
+    };
+  } catch {
+    return { host, dns, https: "unavailable", httpStatus: null };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function requireAdmin(request: Request) {
@@ -37,12 +82,19 @@ export async function GET(request: Request) {
   if ("response" in auth) return auth.response;
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const publishedRoot = (process.env.NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN || "eltara.ajgsolutionsgroup.com").trim().toLowerCase();
+  const appHost = new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ajg-site-builder.vercel.app").hostname;
+  const canaryHost = `test-julien.${publishedRoot}`;
+
   const [
     queue,
     metricTickets,
     events,
     remediations,
-    activeSites
+    activeSites,
+    appProbe,
+    publicProbe,
+    canaryProbe
   ] = await Promise.all([
     auth.service
       .from("support_tickets")
@@ -69,7 +121,10 @@ export async function GET(request: Request) {
       .select("owner_id")
       .eq("status", "published")
       .eq("privacy_state", "active")
-      .limit(5000)
+      .limit(5000),
+    platformProbe(appHost, "/api/health"),
+    platformProbe(publishedRoot, "/api/health"),
+    platformProbe(canaryHost, "/")
   ]);
 
   if (queue.error) {
@@ -103,8 +158,33 @@ export async function GET(request: Request) {
     });
   }
 
+  const externalIssue =
+    publicProbe.dns !== "ok"
+    || publicProbe.https !== "ok"
+    || canaryProbe.dns !== "ok"
+    || canaryProbe.https !== "ok";
+
+  const platform = {
+    overall: appProbe.dns !== "ok" || appProbe.https !== "ok"
+      ? "incident"
+      : externalIssue
+        ? "warning"
+        : "healthy",
+    app: appProbe,
+    publicDomain: publicProbe,
+    managedDomainCanary: canaryProbe,
+    nextAction:
+      publicProbe.dns === "nxdomain" || canaryProbe.dns === "nxdomain"
+        ? "DNS externe à corriger chez le fournisseur autoritatif : publier les enregistrements ELTARA et wildcard vers Vercel."
+        : publicProbe.https !== "ok" || canaryProbe.https !== "ok"
+          ? "Le DNS résout mais HTTPS n'est pas encore opérationnel ; vérifier le rattachement et le certificat Vercel."
+          : appProbe.dns !== "ok" || appProbe.https !== "ok"
+            ? "L'URL de secours Vercel n'est pas joignable ; traiter cet incident applicatif en priorité."
+            : null
+  };
+
   return NextResponse.json(
-    { tickets: queue.data || [], metrics },
+    { tickets: queue.data || [], metrics, platform },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 }

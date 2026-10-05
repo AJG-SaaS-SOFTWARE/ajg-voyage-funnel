@@ -378,6 +378,8 @@ Chaque site dispose d'un statut :
 
 Le Health Center vérifie déjà le backend, l’état de publication, le rendu public HTTPS, le domaine/DNS, la facturation, les sauvegardes, les garde-fous IA, la canonical, le sitemap et la latence. Il contrôle désormais aussi de façon déterministe le module Contact, les galeries/médias publiables, le format des liens configurés et la disponibilité des buckets `site-media` / `site-private-media`. Ces contrôles n’envoient aucun contenu client à un LLM et ne suivent pas les liens externes arbitraires.
 
+Le back-office Support expose également l’état de santé de l’infrastructure ELTARA : URL applicative de secours, domaine public et canari du wildcard de publication. Une panne DNS externe est distinguée d’une panne applicative afin de conserver l’accès administrateur et d’orienter immédiatement l’action vers le bon fournisseur.
+
 ### Auto-remédiation
 
 Automatiser uniquement les actions sûres et réversibles :
