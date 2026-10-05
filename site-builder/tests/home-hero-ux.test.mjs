@@ -9,8 +9,8 @@ test("ELTARA home hero uses the balanced hierarchy and dedicated language contro
   assert.match(home, /home-hero-meta/);
   assert.match(css, /ELTARA home hero balance/);
   assert.match(css, /\.premium-home \.premium-intro h1\{/);
-  assert.match(css, /font-size:clamp\(3\.1rem,4\.65vw,5\.65rem\)/);
-  assert.match(css, /color:#1a2b3d/);
+  assert.match(css, /font-size:clamp\\(3\\.05rem,4\\.25vw,5\\.2rem\\)/);
+  assert.match(css, /color:#223753/);
 });
 
 test("home language switch is a branded segmented control instead of browser-default buttons", () => {
