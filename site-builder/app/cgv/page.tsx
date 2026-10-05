@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CommercialLegalPage } from "../../components/CommercialLegalPage";
 
 export const metadata: Metadata = {
-  title: "Conditions générales — AJG Site Builder",
+  title: "Conditions générales — ELTARA",
   robots: { index: process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true", follow: true }
 };
 
