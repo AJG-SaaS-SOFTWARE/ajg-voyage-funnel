@@ -24,7 +24,8 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_T1xBMzY6HJCAkUStrmkUgj60
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
-      PRODUCTION_ALIAS: eltara.ajgsolutionsgroup.com
+      PRODUCTION_ALIAS: ajg-site-builder.vercel.app
+      PUBLIC_DOMAIN: eltara.ajgsolutionsgroup.com
 
     steps:
       - uses: actions/checkout@v4
@@ -382,6 +383,24 @@ jobs:
           curl --fail --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors "https://$PRODUCTION_ALIAS/login" > /dev/null
           echo "Rollback requested to $PREVIOUS_DEPLOYMENT_ID after failed production revision/health verification." >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+      - name: Verify ELTARA public domain without rolling back code
+        continue-on-error: true
+        shell: bash
+        run: |
+          if ! getent hosts "$PUBLIC_DOMAIN" > /tmp/eltara-domain-hosts.txt 2>/dev/null; then
+            echo "::warning::$PUBLIC_DOMAIN is not resolvable yet. Production code remains verified on $PRODUCTION_ALIAS; DNS must be completed at the external DNS provider."
+            echo "ELTARA public domain pending DNS: $PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if ! curl --fail --silent --show-error --retry 4 --retry-delay 2 --retry-all-errors             "https://$PUBLIC_DOMAIN/api/health" > /tmp/eltara-public-health.json; then
+            echo "::warning::$PUBLIC_DOMAIN resolves but its HTTPS health check is not ready yet."
+            echo "ELTARA public domain resolves but HTTPS/health is pending: $PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "ELTARA public domain is live: https://$PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify managed-domain HTTPS canary when available
         shell: bash
