@@ -33,6 +33,7 @@ export default function SupportPage() {
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [diagnosing, setDiagnosing] = useState(false);
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
   const [repairing, setRepairing] = useState(false);
 
@@ -96,6 +97,25 @@ export default function SupportPage() {
       setNotice(error instanceof Error ? error.message : tr("Création impossible.", "Unable to create the ticket."));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function diagnose() {
+    setDiagnosing(true);
+    setNotice("");
+    try {
+      await load();
+      setNotice(tr(
+        "Diagnostic actualisé. Les contrôles techniques de votre site viennent d’être relancés.",
+        "Diagnosis refreshed. Your website technical checks have just been run again."
+      ));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : tr(
+        "Nouveau diagnostic impossible.",
+        "Unable to run a new diagnosis."
+      ));
+    } finally {
+      setDiagnosing(false);
     }
   }
 
@@ -223,13 +243,28 @@ export default function SupportPage() {
                 </li>
               ))}
             </ul>
-            {health.repairActions?.length ? (
-              <button className="button primary" onClick={() => void repair()} disabled={repairing}>
-                {repairing
-                  ? tr("Correction automatique…", "Repairing automatically…")
-                  : tr("Corriger automatiquement", "Repair automatically")}
+            <div className="actions">
+              <button
+                className="button secondary"
+                onClick={() => void diagnose()}
+                disabled={diagnosing || repairing}
+              >
+                {diagnosing
+                  ? tr("Diagnostic en cours…", "Running diagnosis…")
+                  : tr("Diagnostiquer mon site", "Diagnose my website")}
               </button>
-            ) : null}
+              {health.repairActions?.length ? (
+                <button
+                  className="button primary"
+                  onClick={() => void repair()}
+                  disabled={repairing || diagnosing}
+                >
+                  {repairing
+                    ? tr("Correction automatique…", "Repairing automatically…")
+                    : tr("Corriger automatiquement", "Repair automatically")}
+                </button>
+              ) : null}
+            </div>
           </section>
 
           <section className="panel">
