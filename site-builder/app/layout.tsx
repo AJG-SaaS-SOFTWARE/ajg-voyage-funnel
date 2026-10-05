@@ -6,8 +6,8 @@ import "./globals.css";
 import "./ajg-design-system.css";
 
 export const metadata: Metadata = {
-  title: "AJG Site Builder",
-  description: "AI-assisted website creation and publishing · Création et publication de sites assistées par IA."
+  title: "ELTARA — by AJG Horizon",
+  description: "ELTARA transforme votre activité en présence digitale professionnelle, de la création à la publication, avec l’assistance de l’IA. · Build and grow your digital presence with AI-assisted creation and publishing."
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
