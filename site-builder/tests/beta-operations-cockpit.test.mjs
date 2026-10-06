@@ -42,3 +42,12 @@ test("admin cockpit exposes publication, completion and follow-up status", () =>
   assert.match(admin, /Publié · retour attendu/);
   assert.match(admin, /À relancer/);
 });
+
+
+test("beta cohort surfaces grant/metadata inconsistencies instead of hiding them", () => {
+  assert.match(route, /metadataBeta/);
+  assert.match(route, /grantConfigured/);
+  assert.match(route, /cohortConsistent/);
+  assert.match(route, /consistencyIssues/);
+  assert.match(route, /cohortIds/);
+});
