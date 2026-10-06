@@ -70,6 +70,7 @@ await get("/api/admin/release-readiness", [401]);
 await get("/api/admin/beta-metrics", [401]);
 await get("/api/admin/ai-finops", [401]);
 await get("/api/admin/beta-cohort", [401]);
+await get("/api/admin/beta-followups", [405]);
 await get("/api/admin/managed-domains", [401]);
 
 console.log(JSON.stringify({
