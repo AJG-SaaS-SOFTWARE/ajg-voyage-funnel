@@ -6,8 +6,16 @@ const migration = fs.readFileSync(
   new URL("../docs/migrations/20261002133000_lock_free_preview_capabilities.sql", import.meta.url),
   "utf8"
 );
+const aiLockMigration = fs.readFileSync(
+  new URL("../docs/migrations/20261006193146_lock_free_preview_ai_generation.sql", import.meta.url),
+  "utf8"
+);
 const checkout = fs.readFileSync(
   new URL("../app/api/billing/checkout/route.ts", import.meta.url),
+  "utf8"
+);
+const aiWriteRoute = fs.readFileSync(
+  new URL("../app/api/ai/write/route.ts", import.meta.url),
   "utf8"
 );
 const stripe = fs.readFileSync(
@@ -31,6 +39,19 @@ test("free preview can draft but cannot publish, export, host, or collect leads"
   assert.match(migration, /can_collect_leads[\s\S]*?paid_run/);
   assert.match(migration, /public_site_available[\s\S]*?paid_run/);
   assert.ok(migration.includes("state in ('free','trial','active','grace')"));
+});
+
+test("free preview cannot consume AI while active paid and beta entitlements can", () => {
+  assert.ok(aiLockMigration.includes("Free preview AI lock"));
+  assert.ok(
+    aiLockMigration.includes(
+      "privacy_state='active' and current_run and state in ('active','trial')"
+    )
+  );
+  assert.ok(aiLockMigration.includes("Past-due and grace states suspend AI immediately"));
+  assert.ok(aiWriteRoute.includes("get_my_site_capabilities"));
+  assert.ok(aiWriteRoute.includes("capability?.can_generate_ai"));
+  assert.ok(aiWriteRoute.includes("{ status: 402 }"));
 });
 
 test("Site Builder never sends a free subscription trial to Stripe", () => {
