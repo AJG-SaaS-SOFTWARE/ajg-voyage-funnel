@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminShell } from "../../components/AdminShell";
 import {
   adminBootstrapPrivateStorage,
@@ -23,6 +23,7 @@ import {
   getReleaseReadiness,
   isCurrentUserAdmin,
   type AdminBetaCohort,
+  type AdminBetaCohortMember,
   type AdminBetaMetrics,
   type AdminFeedback,
   type AdminManagedDomain,
@@ -57,6 +58,52 @@ const standardAiOperationLabel: Record<string, string> = {
   standard_repair: "Réparation qualité"
 };
 
+type BetaOpsFilter = "all" | "followup" | "blocked" | "active" | "complete";
+
+function betaMemberBlocked(item: AdminBetaCohortMember) {
+  return !item.cohortConsistent || !item.accessActive;
+}
+
+function betaPriority(item: AdminBetaCohortMember) {
+  if (betaMemberBlocked(item)) return { code: "P1", label: "Accès à corriger" };
+  if (item.needsFollowUp) return { code: "P2", label: "Relance requise" };
+  if (item.mission.nextAction !== "complete") return { code: "P3", label: "Mission en cours" };
+  return { code: "OK", label: "Mission terminée" };
+}
+
+function betaNextActionLabel(item: AdminBetaCohortMember) {
+  if (item.mission.nextAction === "essential") return item.locale === "en" ? "test the Essential journey" : "tester le parcours Essentiel";
+  if (item.mission.nextAction === "publish") return item.locale === "en" ? "publish and review the website" : "publier et contrôler le site";
+  if (item.mission.nextAction === "compare") return item.locale === "en" ? "compare Essential with Growth" : "comparer Essentiel avec Growth";
+  if (item.mission.nextAction === "growth_explore") return item.locale === "en" ? "open Growth and Analytics" : "ouvrir Growth et Analytics";
+  if (item.mission.nextAction === "feedback") return item.locale === "en" ? "send your beta feedback" : "envoyer votre retour bêta";
+  return item.locale === "en" ? "mission complete" : "mission terminée";
+}
+
+function betaFollowUpMessage(item: AdminBetaCohortMember) {
+  const next = betaNextActionLabel(item);
+  if (item.locale === "en") {
+    return `Hello,
+
+A quick follow-up on your ELTARA beta test. Your current progress is ${item.mission.completedCount}/5 (${item.mission.percent}%).
+
+Your next useful step is to ${next}. Your beta access remains outside Stripe billing.
+
+If anything is blocking you, simply reply with what is unclear or not working.
+
+Thank you for your help testing ELTARA.`;
+  }
+  return `Bonjour,
+
+Petit suivi concernant votre test bêta ELTARA. Votre progression actuelle est de ${item.mission.completedCount}/5 (${item.mission.percent} %).
+
+La prochaine étape utile est de ${next}. Votre accès bêta reste bien entendu hors facturation Stripe.
+
+Si quelque chose vous bloque, répondez simplement en indiquant ce qui n’est pas clair ou ce qui ne fonctionne pas.
+
+Merci pour votre aide dans le test d’ELTARA.`;
+}
+
 export default function AdminPage() {
   const [rows, setRows] = useState<AdminSiteRow[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -67,6 +114,8 @@ export default function AdminPage() {
   const [betaDurationDays, setBetaDurationDays] = useState(30);
   const [betaLocale, setBetaLocale] = useState<"fr" | "en">("fr");
   const [betaInviteBusy, setBetaInviteBusy] = useState(false);
+  const [betaOpsFilter, setBetaOpsFilter] = useState<BetaOpsFilter>("all");
+  const [betaCopiedMemberId, setBetaCopiedMemberId] = useState<string | null>(null);
   const [managedDomains, setManagedDomains] = useState<AdminManagedDomain[]>([]);
   const [managedDomainBusy, setManagedDomainBusy] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
@@ -355,6 +404,40 @@ export default function AdminPage() {
   const betaInviteAllowed =
     betaTechnicalReady &&
     betaMemberCount < Math.min(betaCohort?.limit ?? 25, 10);
+  const betaBlockedCount =
+    betaCohort?.members.filter((item) => betaMemberBlocked(item)).length ?? 0;
+  const betaActiveMissionCount =
+    betaCohort?.members.filter((item) => !betaMemberBlocked(item) && item.mission.nextAction !== "complete").length ?? 0;
+  const betaVisibleMembers = useMemo(() => {
+    const members = betaCohort?.members || [];
+    const filtered = members.filter((item) => {
+      if (betaOpsFilter === "followup") return item.needsFollowUp;
+      if (betaOpsFilter === "blocked") return betaMemberBlocked(item);
+      if (betaOpsFilter === "active") return !betaMemberBlocked(item) && item.mission.nextAction !== "complete";
+      if (betaOpsFilter === "complete") return item.mission.nextAction === "complete";
+      return true;
+    });
+    return [...filtered].sort((a, b) => {
+      const aPriority = betaPriority(a).code;
+      const bPriority = betaPriority(b).code;
+      if (aPriority !== bPriority) return aPriority.localeCompare(bPriority);
+      if (a.mission.percent !== b.mission.percent) return a.mission.percent - b.mission.percent;
+      return (b.lastActivityAt || b.invitedAt || b.createdAt).localeCompare(
+        a.lastActivityAt || a.invitedAt || a.createdAt
+      );
+    });
+  }, [betaCohort, betaOpsFilter]);
+
+  const copyBetaFollowUp = async (item: AdminBetaCohortMember) => {
+    const body = betaFollowUpMessage(item);
+    try {
+      await navigator.clipboard.writeText(body);
+      setBetaCopiedMemberId(item.id);
+      setTimeout(() => setBetaCopiedMemberId((current) => current === item.id ? null : current), 1800);
+    } catch {
+      setMessage("Impossible de copier automatiquement. Utilisez le bouton E-mail pour préparer la relance.");
+    }
+  };
 
   return (
     <AdminShell
@@ -622,6 +705,32 @@ export default function AdminPage() {
           ) : null}
 
           {betaCohort?.members.length ? (
+            <div className="admin-beta-ops-toolbar">
+              <div className="admin-beta-ops-filters" role="group" aria-label="Filtrer les Beta Testers">
+                {([
+                  ["all", "Tous", betaMemberCount],
+                  ["followup", "À relancer", betaFollowUpCount],
+                  ["blocked", "Bloqués", betaBlockedCount],
+                  ["active", "En cours", betaActiveMissionCount],
+                  ["complete", "Terminés", betaCompletedCount]
+                ] as const).map(([key, label, count]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={betaOpsFilter === key ? "is-active" : ""}
+                    onClick={() => setBetaOpsFilter(key)}
+                  >
+                    {label} <b>{count}</b>
+                  </button>
+                ))}
+              </div>
+              <small>
+                {betaVisibleMembers.length} testeur{betaVisibleMembers.length > 1 ? "s" : ""} affiché{betaVisibleMembers.length > 1 ? "s" : ""} · priorité P1 → P3
+              </small>
+            </div>
+          ) : null}
+
+          {betaCohort?.members.length ? (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -635,13 +744,21 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {betaCohort.members.map((item) => (
+                  {betaVisibleMembers.map((item) => (
                     <tr key={item.id}>
                       <td>
-                        <b>{item.email}</b>
-                        <small className="admin-cell-note">
-                          invité le {new Date(item.invitedAt || item.createdAt).toLocaleDateString("fr-FR")}
-                        </small>
+                        <div className="admin-beta-member-identity">
+                          <span className={"beta-priority-badge " + betaPriority(item).code.toLowerCase()}>
+                            {betaPriority(item).code}
+                          </span>
+                          <div>
+                            <b>{item.email}</b>
+                            <small className="admin-cell-note">
+                              invité le {new Date(item.invitedAt || item.createdAt).toLocaleDateString("fr-FR")}
+                            </small>
+                            <small className="admin-cell-note">{betaPriority(item).label}</small>
+                          </div>
+                        </div>
                       </td>
                       <td>
                         <div className="admin-beta-member-progress">
@@ -726,7 +843,24 @@ export default function AdminPage() {
                           : "—"}
                       </td>
                       <td>
-                        <div className="admin-inline-actions">
+                        <div className="admin-inline-actions admin-beta-operational-actions">
+                          {item.mission.nextAction !== "complete" ? (
+                            <>
+                              <button
+                                type="button"
+                                className="text-button"
+                                onClick={() => void copyBetaFollowUp(item)}
+                              >
+                                {betaCopiedMemberId === item.id ? "Relance copiée ✓" : "Copier la relance"}
+                              </button>
+                              <a
+                                className="text-button"
+                                href={`mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent(item.locale === "en" ? "ELTARA beta — next step" : "Bêta ELTARA — prochaine étape")}&body=${encodeURIComponent(betaFollowUpMessage(item))}`}
+                              >
+                                Préparer l’e-mail
+                              </a>
+                            </>
+                          ) : null}
                           <button
                             type="button"
                             className="text-button"
