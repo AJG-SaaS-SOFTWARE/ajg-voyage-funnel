@@ -194,6 +194,14 @@ export type AdminBetaCohortMember = {
     percent: number;
     nextAction: "essential" | "publish" | "compare" | "growth_explore" | "feedback" | "complete";
   };
+  followUp: {
+    count: number;
+    lastSentAt: string | null;
+    lastAction: "essential" | "publish" | "compare" | "growth_explore" | "feedback" | "complete" | null;
+    resumedAfterLast: boolean;
+    awaitingResume: boolean;
+    overdueAfterFollowUp: boolean;
+  };
   betaStage: "invited" | "activated" | "building" | "published" | "complete";
   needsFollowUp: boolean;
   followUpReason: string | null;
@@ -207,6 +215,8 @@ export type AdminBetaCohort = {
   followUpRules: {
     invitationHours: number;
     inactivityHours: number;
+    duplicateGuardHours: number;
+    postFollowUpWaitHours: number;
   };
   missionSummary: {
     averagePercent: number;
@@ -236,6 +246,44 @@ export async function getAdminBetaCohort(): Promise<AdminBetaCohort> {
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.error || "Cohorte bêta indisponible.");
   return body as AdminBetaCohort;
+}
+
+export async function adminRecordBetaFollowUp(
+  member: AdminBetaCohortMember,
+  channel: "email" | "other" = "email"
+) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error("Votre session a expiré.");
+  if (member.mission.nextAction === "complete") throw new Error("Cette mission est déjà terminée.");
+
+  const response = await fetch("/api/admin/beta-followups", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      userId: member.id,
+      siteId: member.siteId,
+      nextAction: member.mission.nextAction,
+      channel
+    }),
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Enregistrement de la relance impossible.");
+  return body as {
+    followUp: {
+      id: string;
+      user_id: string;
+      site_id: string | null;
+      mission_next_action: string;
+      channel: string;
+      sent_at: string;
+    };
+  };
 }
 
 export async function adminInviteBetaMember(email: string, durationDays = 30, locale: "fr" | "en" = "fr") {
