@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { ok: true, created: true, bucket: "site-private-media" },
+    { ok: true, created: result.created, bucket: result.bucket },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 }
