@@ -345,6 +345,7 @@ export default function AdminPage() {
     betaCohort?.members.filter((item) => item.lastSignInAt).length ?? 0;
   const betaFullAccessCount =
     betaCohort?.members.filter((item) => item.accessActive).length ?? 0;
+  const betaConsistencyIssues = betaCohort?.consistencyIssues ?? 0;
   const betaPublishedCount =
     betaCohort?.members.filter((item) => ["published", "complete"].includes(item.betaStage)).length ?? 0;
   const betaCompletedCount =
@@ -532,6 +533,7 @@ export default function AdminPage() {
               <span><b>{betaCohort?.members.length ?? 0}</b> comptes bêta</span>
               <span><b>{betaActivatedCount}</b> activés</span>
               <span><b>{betaFullAccessCount}</b> accès complets actifs</span>
+              <span><b>{betaConsistencyIssues}</b> incohérence{betaConsistencyIssues > 1 ? "s" : ""}</span>
               <span><b>{betaPublishedCount}</b> publiés</span>
               <span><b>{betaCompletedCount}</b> missions terminées</span>
               <span><b>{betaFollowUpCount}</b> à relancer</span>
@@ -671,6 +673,11 @@ export default function AdminPage() {
                         <span className={item.accessActive ? "status-badge success" : "status-badge muted"}>
                           {item.accessActive ? "BUILD + Growth actif" : "Expiré / retiré"}
                         </span>
+                        {!item.cohortConsistent ? (
+                          <small className="admin-cell-note beta-follow-up-note">
+                            Configuration incomplète · réconcilier le statut bêta
+                          </small>
+                        ) : null}
                       </td>
                       <td>
                         {item.accessExpiresAt
@@ -685,7 +692,7 @@ export default function AdminPage() {
                             disabled={betaInviteBusy}
                             onClick={() => void renewBetaMember(item.email, item.locale)}
                           >
-                            Renouveler {betaDurationDays} j
+                            {!item.cohortConsistent ? "Réconcilier l’accès" : `Renouveler ${betaDurationDays} j`}
                           </button>
                           <button
                             type="button"
