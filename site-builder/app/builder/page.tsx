@@ -6,6 +6,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useProductLocale } from "../../lib/product-i18n";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { EltaraBrand } from "../../components/EltaraBrand";
+import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import SitePreview from "../../components/SitePreview";
 import MediaLibrary from "../../components/MediaLibrary";
 import ContentLibraryEditor from "../../components/ContentLibraryEditor";
@@ -32,6 +33,7 @@ import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import { legalMissingFields } from "../../lib/site-legal";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import { getPrivateBetaAccess } from "../../lib/private-beta-access";
+import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 import {
   getCurrentUser,
   getMyDomains,
@@ -201,6 +203,8 @@ export default function BuilderPage() {
     accessSource: "none",
     launchOperationsRemaining: 0
   });
+  const [betaTester, setBetaTester] = useState(false);
+  const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
   const [userEmail, setUserEmail] = useState("");
   const [origin, setOrigin] = useState("");
   const [verifiedPublicUrl, setVerifiedPublicUrl] = useState("");
@@ -333,10 +337,15 @@ export default function BuilderPage() {
   }, [remoteMode, remoteSiteId]);
 
   const paidAiAccessActive = ["active", "trialing"].includes(siteEntitlements.status);
-  const siteArchitectCreateAvailable =
+  const betaEssentialSimulation = betaTester && betaExperienceMode === "essential";
+  const actualSiteArchitectCreateAvailable =
     paidAiAccessActive && siteAiAccess.canCreateSite;
-  const siteRevisionAvailable =
+  const actualSiteRevisionAvailable =
     paidAiAccessActive && siteAiAccess.canReviseSite;
+  const siteArchitectCreateAvailable =
+    actualSiteArchitectCreateAvailable && !betaEssentialSimulation;
+  const siteRevisionAvailable =
+    actualSiteRevisionAvailable && !betaEssentialSimulation;
   const premiumAccessHref =
     ["past_due", "canceled", "suspended"].includes(siteEntitlements.status)
       ? "/billing"
@@ -346,6 +355,13 @@ export default function BuilderPage() {
   const showAdvancedDiscovery = !siteArchitectCreateAvailable || !siteRevisionAvailable;
   const growthActive = siteEntitlements.planKey === "growth" && paidAiAccessActive;
   const showGrowthRevisionWorkspace = siteRevisionAvailable && published;
+
+  const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
+    setBetaExperienceMode(mode);
+    writeBetaExperienceMode(mode);
+    setArchitectProposal(null);
+    setRevisionProposal(null);
+  };
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
@@ -413,6 +429,10 @@ export default function BuilderPage() {
         }
         if (cancelled) return;
 
+        setBetaTester(privateBetaAccess.betaActive);
+        if (privateBetaAccess.betaActive) {
+          setBetaExperienceMode(readBetaExperienceMode());
+        }
         setUserEmail(user.email || "");
         const sites = await getMySites();
         setOwnedSites(sites.map(site=>({id:site.id,slug:site.slug})));
@@ -459,12 +479,14 @@ export default function BuilderPage() {
     const focus = new URLSearchParams(window.location.search).get("focus");
     if (focus !== "architect") return;
     const timer = window.setTimeout(() => {
-      const node = document.getElementById("ai-site-architect");
+      const node =
+        document.getElementById("ai-site-architect") ||
+        document.getElementById("advanced-feature-discovery");
       if (node instanceof HTMLDetailsElement) node.open = true;
       node?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [ready, step]);
+  }, [ready, step, siteArchitectCreateAvailable]);
 
   const publicPath = "/site/" + config.slug;
   const betaPublicUrl = verifiedPublicUrl || (origin ? origin + publicPath : publicPath);
@@ -1357,6 +1379,13 @@ export default function BuilderPage() {
         </div>
       </header>
 
+      {betaTester ? (
+        <BetaExperienceSwitch
+          mode={betaExperienceMode}
+          onChange={changeBetaExperienceMode}
+        />
+      ) : null}
+
       <div className="builder-layout premium-builder-layout">
         <aside className="step-nav premium-step-nav">
           <div className="step-nav-heading">
@@ -1519,7 +1548,7 @@ export default function BuilderPage() {
                 }} />
                 <ArchitectureEditor value={config.architecture} library={config.contentLibrary} onChange={(architecture) => update("architecture", architecture)} />
                 {showAdvancedDiscovery ? (
-                  <details className="advanced-discovery-card">
+                  <details id="advanced-feature-discovery" className="advanced-discovery-card">
                     <summary>
                       <span className="advanced-discovery-icon">✦</span>
                       <span>
@@ -1559,8 +1588,16 @@ export default function BuilderPage() {
                         </article>
                       ) : null}
                       <div className="advanced-discovery-actions">
-                        <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
-                        <span>{tr("Aucune fonction verrouillée n’encombre votre éditeur.", "Locked features do not clutter your editor.")}</span>
+                        {betaEssentialSimulation ? (
+                          <button type="button" className="button secondary" onClick={() => changeBetaExperienceMode("growth")}>
+                            {tr("Tester maintenant l’expérience Growth", "Test the Growth experience now")}
+                          </button>
+                        ) : (
+                          <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
+                        )}
+                        <span>{betaEssentialSimulation
+                          ? tr("Vos droits bêta restent complets : le passage en Growth est instantané et sans paiement.", "Your beta rights remain complete: switching to Growth is instant and requires no payment.")
+                          : tr("Aucune fonction verrouillée n’encombre votre éditeur.", "Locked features do not clutter your editor.")}</span>
                       </div>
                     </div>
                   </details>

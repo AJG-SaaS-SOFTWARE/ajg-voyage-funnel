@@ -54,7 +54,7 @@ test("account pricing reflects BUILD RUN GROW commercial grid", () => {
   assert.ok(plans.includes("290 €"));
   assert.ok(plans.includes("Création IA · 49 €"));
   assert.ok(plans.includes("Beta Tester"));
-  assert.ok(plans.includes("Accès BUILD + Growth complet offert pendant la bêta"));
+  assert.ok(plans.includes("Vos droits BUILD + Growth complets restent actifs"));
   assert.ok(plans.includes('locale === "en" ? "/pricing" : "/tarifs"'));
   assert.ok(plans.includes('"month"'));
   assert.ok(plans.includes('"year"'));

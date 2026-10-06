@@ -8,9 +8,11 @@ import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
 import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { EltaraMark } from "../components/EltaraBrand";
+import { BetaExperienceSwitch } from "../components/BetaExperienceSwitch";
 import { deriveOnboardingCreationPath, deriveOnboardingProgress } from "../lib/onboarding";
 import { getMyBetaAccess, getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements, type BetaAccess } from "../lib/subscription";
 import { trackProductEvent } from "../lib/product-analytics";
+import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../lib/beta-experience-mode";
 
 function LockIcon() {
   return (
@@ -60,6 +62,7 @@ export default function Home() {
   const [canCreateWithAi, setCanCreateWithAi] = useState(false);
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
   const [betaAccess, setBetaAccess] = useState<BetaAccess>({ active: false, startsAt: null, expiresAt: null });
+  const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +122,9 @@ export default function Home() {
           setCanCreateWithAi(resolvedCanCreateWithAi);
           setRemoteSiteId(remote?.id || null);
           setBetaAccess(resolvedBetaAccess);
+          if (resolvedBetaAccess.active) {
+            setBetaExperienceMode(readBetaExperienceMode());
+          }
           setDraft(
             remote
               ? {
@@ -161,13 +167,25 @@ export default function Home() {
       : onboarding?.nextStep
         ? `/builder?step=${onboarding.nextStep}`
         : "/builder";
+  const effectiveCanCreateWithAi =
+    betaAccess.active && betaExperienceMode === "essential" ? false : canCreateWithAi;
+  const experiencePlanName = betaAccess.active
+    ? betaExperienceMode === "essential"
+      ? tr("Essentiel · mode test", "Essential · test mode")
+      : tr("Growth · mode test", "Growth · test mode")
+    : planName;
   const creationPath = onboarding
     ? deriveOnboardingCreationPath({
         progress: onboarding,
-        canCreateWithAi,
+        canCreateWithAi: effectiveCanCreateWithAi,
         entitlementActive
       })
     : null;
+
+  const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
+    setBetaExperienceMode(mode);
+    writeBetaExperienceMode(mode);
+  };
 
   const trackOnboardingPath = (path: "manual" | "ai") => {
     if (remoteStatus !== "authenticated") return;
@@ -248,8 +266,8 @@ export default function Home() {
               <h2>{tr("Testez le parcours comme un vrai client", "Test the journey like a real customer")}</h2>
               <p>
                 {tr(
-                  "Votre accès BUILD + Growth complet est gratuit pendant la bêta. L’objectif est de créer, publier puis nous signaler ce qui vous ralentit ou vous semble inutile.",
-                  "Your full BUILD + Growth access is free during the beta. The goal is to create, publish, then tell us what slows you down or feels unnecessary."
+                  "Vos droits BUILD + Growth restent complets pendant toute la bêta. Commencez en mode Essentiel, puis passez en Growth pour comparer les deux expériences sans paiement ni changement d’abonnement.",
+                  "Your full BUILD + Growth rights remain active throughout beta. Start in Essential mode, then switch to Growth to compare both experiences without payment or subscription changes."
                 )}
               </p>
             </div>
@@ -260,18 +278,23 @@ export default function Home() {
               </span>
             ) : null}
           </div>
+          <BetaExperienceSwitch
+            compact
+            mode={betaExperienceMode}
+            onChange={changeBetaExperienceMode}
+          />
           <ol className="beta-mission-steps">
             <li className={onboarding && onboarding.completeCount >= 2 ? "done" : ""}>
               <span>{onboarding && onboarding.completeCount >= 2 ? "✓" : "1"}</span>
-              <div><b>{tr("Créer une première version", "Create a first version")}</b><small>{tr("Manuellement ou avec le Concepteur IA.", "Manually or with the AI Site Architect.")}</small></div>
+              <div><b>{tr("Tester d’abord Essentiel", "Test Essential first")}</b><small>{tr("Créez et modifiez le site avec les fonctions du parcours RUN.", "Create and edit the website with the RUN journey capabilities.")}</small></div>
             </li>
-            <li className={draft?.status === "published" ? "done" : ""}>
-              <span>{draft?.status === "published" ? "✓" : "2"}</span>
-              <div><b>{tr("Publier réellement", "Publish for real")}</b><small>{tr("Passez le Quality Check et ouvrez le site public.", "Pass the Quality Check and open the public site.")}</small></div>
+            <li className={betaExperienceMode === "growth" ? "done" : ""}>
+              <span>{betaExperienceMode === "growth" ? "✓" : "2"}</span>
+              <div><b>{tr("Passer ensuite en Growth", "Then switch to Growth")}</b><small>{tr("Activez le mode Growth et testez les fonctions avancées sans toucher à Stripe.", "Enable Growth mode and test advanced capabilities without touching Stripe.")}</small></div>
             </li>
             <li>
               <span>3</span>
-              <div><b>{tr("Tester comme un visiteur", "Test as a visitor")}</b><small>{tr("Mobile, navigation, CTA, lisibilité et vitesse perçue.", "Mobile, navigation, CTA, readability and perceived speed.")}</small></div>
+              <div><b>{tr("Publier et tester comme un visiteur", "Publish and test as a visitor")}</b><small>{tr("Quality Check, mobile, navigation, CTA, lisibilité et vitesse perçue.", "Quality Check, mobile, navigation, CTA, readability and perceived speed.")}</small></div>
             </li>
             <li>
               <span>4</span>
@@ -334,12 +357,12 @@ export default function Home() {
                 <small>
                   {creationPath.mode === "ai_available"
                     ? tr(
-                        `Votre accès ${planName || "actuel"} permet une création BUILD complète par IA. Vous pouvez aussi tout construire manuellement.`,
-                        `Your ${planName || "current"} access includes full BUILD creation with AI. You can also build everything manually.`
+                        `Votre accès ${experiencePlanName || "actuel"} permet une création BUILD complète par IA. Vous pouvez aussi tout construire manuellement.`,
+                        `Your ${experiencePlanName || "current"} access includes full BUILD creation with AI. You can also build everything manually.`
                       )
                     : tr(
-                        `Votre accès ${planName || "actuel"} permet le parcours manuel. La création BUILD complète reste une option distincte si vous souhaitez accélérer la première version.`,
-                        `Your ${planName || "current"} access includes the manual path. Full BUILD creation remains a separate option if you want to accelerate the first version.`
+                        `Votre accès ${experiencePlanName || "actuel"} permet le parcours manuel. La création BUILD complète reste une option distincte si vous souhaitez accélérer la première version.`,
+                        `Your ${experiencePlanName || "current"} access includes the manual path. Full BUILD creation remains a separate option if you want to accelerate the first version.`
                       )}
                 </small>
               </div>
@@ -351,6 +374,10 @@ export default function Home() {
                   <Link className="button secondary premium-secondary" href="/builder?step=story&focus=architect" onClick={() => trackOnboardingPath("ai")}>
                     {tr("Créer avec l’IA", "Create with AI")} <span aria-hidden="true">✦</span>
                   </Link>
+                ) : betaAccess.active && betaExperienceMode === "essential" ? (
+                  <button type="button" className="button secondary premium-secondary" onClick={() => changeBetaExperienceMode("growth")}>
+                    {tr("Tester Growth", "Test Growth")}
+                  </button>
                 ) : (
                   <Link className="button secondary premium-secondary" href="/plans">
                     {tr("Voir Création IA", "View AI Launch")}

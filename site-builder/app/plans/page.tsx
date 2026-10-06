@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
+import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { getMyBillingState, openStripeBillingPortal, startAiLaunchCheckout, startPlanCheckout, type BillingState } from "../../lib/billing-access";
 import {
   freeEntitlements,
@@ -19,6 +20,7 @@ import {
 } from "../../lib/subscription";
 import { getMySites } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
+import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 
 const emptyAiAccess: SiteAiAccess = {
   canCreateSite: false,
@@ -32,6 +34,7 @@ export default function PlansPage() {
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
   const [aiAccess, setAiAccess] = useState<SiteAiAccess>(emptyAiAccess);
   const [betaAccess, setBetaAccess] = useState<BetaAccess>({ active: false, startsAt: null, expiresAt: null });
+  const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
   const [annualIncludesLaunch, setAnnualIncludesLaunch] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
@@ -60,6 +63,7 @@ export default function PlansPage() {
     setUsage(aiUsage);
     setStorage(storageUsage);
     setBetaAccess(beta);
+    if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
     setBillingState(resolvedBilling);
     setLoaded(true);
   };
@@ -111,6 +115,11 @@ export default function PlansPage() {
       : "";
 
   const paidPlan = current.planKey === "essential" || current.planKey === "growth";
+  const displayedPlanKey = betaAccess.active ? betaExperienceMode : current.planKey;
+  const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
+    setBetaExperienceMode(mode);
+    writeBetaExperienceMode(mode);
+  };
   const selectedSite = sites.find((site) => site.id === siteId) || sites[0];
   const aiUsagePercent = current.aiMonthlyLimit > 0 ? Math.min(100, (usage.month / current.aiMonthlyLimit) * 100) : 0;
   const storageLimitBytes = Math.max(1, storage.limitMb * 1024 * 1024);
@@ -146,12 +155,12 @@ export default function PlansPage() {
                 {betaAccess.active ? "Beta Tester" : tr("Accès actif", "Active access")}
               </span>
             </div>
-            <h2>{betaAccess.active ? "Growth" : current.planName}</h2>
+            <h2>{betaAccess.active ? (betaExperienceMode === "essential" ? tr("Essentiel · mode test", "Essential · test mode") : tr("Growth · mode test", "Growth · test mode")) : current.planName}</h2>
             <p>
               {betaAccess.active
                 ? tr(
-                    "Accès BUILD + Growth complet offert pendant la bêta, sans abonnement Stripe ni conversion payante automatique.",
-                    "Full BUILD + Growth access included during beta, with no Stripe subscription or automatic paid conversion."
+                    "Vos droits BUILD + Growth complets restent actifs. Le mode affiché simule l’expérience client sans modifier Stripe ni vos droits réels.",
+                    "Your full BUILD + Growth rights remain active. The displayed mode simulates the customer experience without changing Stripe or your real entitlements."
                   )
                 : tr(
                     "Retrouvez ici les capacités actives de votre site, vos quotas et les options disponibles pour le faire évoluer.",
@@ -170,6 +179,14 @@ export default function PlansPage() {
         </section>
       ) : null}
 
+      {loaded && betaAccess.active ? (
+        <BetaExperienceSwitch
+          compact
+          mode={betaExperienceMode}
+          onChange={changeBetaExperienceMode}
+        />
+      ) : null}
+
       {loaded ? (
         <section className="account-metrics-grid" aria-label={tr("Capacités et utilisation", "Capabilities and usage")}>
           <article className="account-metric-card">
@@ -182,7 +199,9 @@ export default function PlansPage() {
             </div>
             <h3>
               {betaAccess.active
-                ? tr("Disponible", "Available")
+                ? betaExperienceMode === "essential"
+                  ? tr("Hors parcours Essentiel", "Outside Essential journey")
+                  : tr("Disponible en mode bêta Growth", "Available in beta Growth mode")
                 : aiAccess.launchOperationsRemaining > 0
                   ? `${aiAccess.launchOperationsRemaining} ${tr("restante(s)", "remaining")}`
                   : tr("Non incluse", "Not included")}
@@ -294,7 +313,7 @@ export default function PlansPage() {
           <p className="plan-status">{loaded && !betaAccess.active && current.planKey === "free" ? tr("Votre accès actuel", "Your current access") : tr("Accès de découverte", "Discovery access")}</p>
         </article>
 
-        <article className={!betaAccess.active && current.planKey === "essential" ? "plan-card current" : "plan-card"}>
+        <article className={displayedPlanKey === "essential" ? "plan-card current" : "plan-card"}>
           <p className="eyebrow">RUN</p>
           <h2>{tr("Essentiel", "Essential")}</h2>
           <p className="plan-price">15 € <small>/ {tr("mois", "month")}</small></p>
@@ -307,7 +326,7 @@ export default function PlansPage() {
             <li>{tr("SEO et analytics essentiels", "Essential SEO and analytics")}</li>
             <li>{tr("Sauvegardes et self-service", "Backups and self-service")}</li>
           </ul>
-          <p className="plan-status">{loaded && current.planKey === "essential" && !betaAccess.active ? tr("Votre offre actuelle", "Your current plan") : tr("RUN du site", "Website RUN")}</p>
+          <p className="plan-status">{betaAccess.active && displayedPlanKey === "essential" ? tr("Mode bêta en cours", "Current beta mode") : loaded && current.planKey === "essential" && !betaAccess.active ? tr("Votre offre actuelle", "Your current plan") : tr("RUN du site", "Website RUN")}</p>
           {!betaAccess.active && current.planKey !== "essential" ? (
             <div className="builder-actions">
               <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("essential", "monthly")}>
@@ -320,7 +339,7 @@ export default function PlansPage() {
           ) : null}
         </article>
 
-        <article className={current.planKey === "growth" ? "plan-card current pro-offer-card" : "plan-card pro-offer-card"}>
+        <article className={displayedPlanKey === "growth" ? "plan-card current pro-offer-card" : "plan-card pro-offer-card"}>
           <p className="eyebrow">RUN + GROW</p>
           <h2>Growth</h2>
           <p className="plan-price">29 € <small>/ {tr("mois", "month")}</small></p>
@@ -335,7 +354,9 @@ export default function PlansPage() {
           </ul>
           <p className="plan-status">
             {betaAccess.active
-              ? tr("Inclus dans votre statut Beta Tester", "Included with your Beta Tester status")
+              ? displayedPlanKey === "growth"
+                ? tr("Mode bêta en cours", "Current beta mode")
+                : tr("Disponible via le sélecteur bêta", "Available from the beta switch")
               : loaded && current.planKey === "growth"
                 ? tr("Votre offre actuelle", "Your current plan")
                 : tr("Pilotage et amélioration continue", "Ongoing management and improvement")}
