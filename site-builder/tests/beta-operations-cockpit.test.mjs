@@ -86,7 +86,7 @@ test("admin beta mission mirrors the same five tester milestones and exposes the
 
 
 test("admin beta operations can filter by follow-up, blockers, active missions and completion", () => {
-  assert.match(admin, /type BetaOpsFilter = "all" \| "followup" \| "blocked" \| "active" \| "complete"/);
+  assert.match(admin, /type BetaOpsFilter = "all" \| "followup" \| "unresponsive" \| "blocked" \| "active" \| "complete"/);
   assert.match(admin, /betaOpsFilter/);
   assert.match(admin, /À relancer/);
   assert.match(admin, /Bloqués/);
