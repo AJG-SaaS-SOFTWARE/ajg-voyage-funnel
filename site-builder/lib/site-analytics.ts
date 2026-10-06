@@ -17,8 +17,21 @@ export type SiteAnalyticsRow = {
 export type AnalyticsOpportunity = {
   key: "cta" | "form" | "acquisition";
   priority: "high" | "medium";
+  impact: "high" | "medium";
+  confidence: "high" | "medium";
+  score: number;
+  evidenceCount: number;
   pagePath?: string;
   value: number;
+};
+
+export type PostPublishPerformance = {
+  status: "no_marker" | "collecting" | "low_signal" | "measured";
+  windowDays: number;
+  before: SiteAnalyticsSummary | null;
+  after: SiteAnalyticsSummary | null;
+  actionRatePoints: number;
+  outcome: "improved" | "stable" | "declined" | null;
 };
 
 export type SiteAnalyticsSummary = {
@@ -150,30 +163,52 @@ export function summarizeSiteAnalytics(rows: SiteAnalyticsRow[]): SiteAnalyticsS
 
   const weakCtaPage = topPages.find((page) => page.views >= 10 && page.ctaClicks === 0 && page.formSubmits === 0);
   if (weakCtaPage) {
+    const score = Math.min(100, Math.round(40 + Math.min(60, weakCtaPage.views * 2)));
     opportunities.push({
       key: "cta",
-      priority: weakCtaPage.views >= 25 ? "high" : "medium",
+      priority: score >= 70 ? "high" : "medium",
+      impact: weakCtaPage.views >= 25 ? "high" : "medium",
+      confidence: weakCtaPage.views >= 30 ? "high" : "medium",
+      score,
+      evidenceCount: weakCtaPage.views,
       pagePath: weakCtaPage.pagePath,
       value: weakCtaPage.views
     });
   }
 
   if (formStarts >= 5 && formSubmits / formStarts < 0.5) {
+    const completionRate = ratio(formSubmits, formStarts);
+    const abandonmentSeverity = 100 - completionRate;
+    const sampleStrength = Math.min(100, Math.round((formStarts / 20) * 100));
+    const score = Math.min(100, Math.round(abandonmentSeverity * 0.55 + sampleStrength * 0.45));
     opportunities.push({
       key: "form",
-      priority: formStarts >= 12 ? "high" : "medium",
-      value: ratio(formSubmits, formStarts)
+      priority: score >= 70 ? "high" : "medium",
+      impact: completionRate <= 30 || formStarts >= 12 ? "high" : "medium",
+      confidence: formStarts >= 15 ? "high" : "medium",
+      score,
+      evidenceCount: formStarts,
+      value: completionRate
     });
   }
 
   const dominantSource = sources[0];
   if (views >= 20 && dominantSource && dominantSource.views / views >= 0.8) {
+    const concentration = ratio(dominantSource.views, views);
+    const sampleStrength = Math.min(100, views);
+    const score = Math.min(100, Math.round(concentration * 0.65 + sampleStrength * 0.35));
     opportunities.push({
       key: "acquisition",
-      priority: views >= 50 ? "high" : "medium",
-      value: ratio(dominantSource.views, views)
+      priority: score >= 70 ? "high" : "medium",
+      impact: concentration >= 90 ? "high" : "medium",
+      confidence: views >= 50 ? "high" : "medium",
+      score,
+      evidenceCount: views,
+      value: concentration
     });
   }
+
+  opportunities.sort((a, b) => b.score - a.score);
 
   return {
     views,
@@ -227,4 +262,58 @@ export function compareSiteAnalytics(
       actionRatePoints: Math.round((current.actionRate - previous.actionRate) * 10) / 10
     }
   };
+}
+
+
+export function evaluatePostPublishPerformance(
+  rows: SiteAnalyticsRow[],
+  publishedAt: string | null,
+  now = new Date()
+): PostPublishPerformance {
+  if (!publishedAt) {
+    return { status: "no_marker", windowDays: 0, before: null, after: null, actionRatePoints: 0, outcome: null };
+  }
+
+  const published = new Date(publishedAt);
+  if (!Number.isFinite(published.getTime())) {
+    return { status: "no_marker", windowDays: 0, before: null, after: null, actionRatePoints: 0, outcome: null };
+  }
+
+  published.setUTCHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setUTCHours(0, 0, 0, 0);
+  const fullDaysAfter = Math.floor((today.getTime() - published.getTime()) / 86400000);
+
+  if (fullDaysAfter < 3) {
+    return { status: "collecting", windowDays: Math.max(0, fullDaysAfter), before: null, after: null, actionRatePoints: 0, outcome: null };
+  }
+
+  const windowDays = Math.min(14, fullDaysAfter);
+  const afterStart = new Date(published);
+  afterStart.setUTCDate(afterStart.getUTCDate() + 1);
+  const afterEnd = new Date(afterStart);
+  afterEnd.setUTCDate(afterEnd.getUTCDate() + (windowDays - 1));
+
+  const beforeEnd = new Date(published);
+  beforeEnd.setUTCDate(beforeEnd.getUTCDate() - 1);
+  const beforeStart = new Date(beforeEnd);
+  beforeStart.setUTCDate(beforeStart.getUTCDate() - (windowDays - 1));
+
+  const afterRows = rows.filter((row) => row.day >= dayKey(afterStart) && row.day <= dayKey(afterEnd));
+  const beforeRows = rows.filter((row) => row.day >= dayKey(beforeStart) && row.day <= dayKey(beforeEnd));
+  const before = summarizeSiteAnalytics(beforeRows);
+  const after = summarizeSiteAnalytics(afterRows);
+  const actionRatePoints = Math.round((after.actionRate - before.actionRate) * 10) / 10;
+
+  if (before.views + after.views < 20 || before.views < 5 || after.views < 5) {
+    return { status: "low_signal", windowDays, before, after, actionRatePoints, outcome: null };
+  }
+
+  const outcome = actionRatePoints >= 1
+    ? "improved"
+    : actionRatePoints <= -1
+      ? "declined"
+      : "stable";
+
+  return { status: "measured", windowDays, before, after, actionRatePoints, outcome };
 }
