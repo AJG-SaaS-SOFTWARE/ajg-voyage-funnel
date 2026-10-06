@@ -735,6 +735,27 @@ export default function AdminPage() {
 
           {betaMetrics ? (
             <>
+              <div className="beta-plan-journey-grid">
+                <article>
+                  <span>1</span>
+                  <b>{betaMetrics.betaExperience.essentialTesters}</b>
+                  <strong>Essentiel testé</strong>
+                  <small>{betaMetrics.cohort.size ? Math.round((betaMetrics.betaExperience.essentialTesters / betaMetrics.cohort.size) * 100) : 0} % de la cohorte</small>
+                </article>
+                <article>
+                  <span>2</span>
+                  <b>{betaMetrics.betaExperience.growthTesters}</b>
+                  <strong>Growth testé</strong>
+                  <small>{betaMetrics.cohort.size ? Math.round((betaMetrics.betaExperience.growthTesters / betaMetrics.cohort.size) * 100) : 0} % de la cohorte</small>
+                </article>
+                <article>
+                  <span>✓</span>
+                  <b>{betaMetrics.betaExperience.essentialThenGrowth}</b>
+                  <strong>Essentiel → Growth</strong>
+                  <small>{betaMetrics.betaExperience.orderedCompletionRate} % de la cohorte dans l’ordre demandé</small>
+                </article>
+              </div>
+
               <div className="beta-feedback-context-grid">
                 <article>
                   <span>RUN</span>
