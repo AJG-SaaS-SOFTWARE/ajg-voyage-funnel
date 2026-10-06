@@ -101,3 +101,13 @@ test("internal admins receive full beta entitlements for QA without Stripe mutat
   assert.match(migration, /create or replace function public\.get_my_beta_access/);
   assert.doesNotMatch(migration, /stripe/i);
 });
+
+
+test("beta mission gives a direct next action when switching from RUN to Growth", () => {
+  assert.match(home, /Passer en Growth/);
+  assert.match(home, /Ouvrir Growth/);
+  assert.match(home, /Publier pour tester Growth/);
+  assert.match(home, /href="\/growth"/);
+  assert.match(builder, /builder-growth-shortcut/);
+  assert.match(builder, /betaExperienceMode === "growth" && published/);
+});
