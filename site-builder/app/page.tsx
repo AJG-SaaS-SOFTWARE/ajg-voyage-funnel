@@ -68,6 +68,9 @@ export default function Home() {
     essentialTested: false,
     growthTested: false,
     essentialThenGrowth: false,
+    growthCockpitOpened: false,
+    analyticsOpened: false,
+    growthExplored: false,
     published: false,
     feedbackSent: false
   });
@@ -203,6 +206,31 @@ export default function Home() {
       })
     : null;
 
+  const betaMissionChecks = [
+    betaJourney.essentialTested,
+    betaJourney.published || draft?.status === "published",
+    betaJourney.essentialThenGrowth,
+    betaJourney.growthExplored,
+    betaJourney.feedbackSent
+  ];
+  const betaMissionCompleteCount = betaMissionChecks.filter(Boolean).length;
+  const betaMissionPercent = Math.round((betaMissionCompleteCount / betaMissionChecks.length) * 100);
+  const betaMissionComplete = betaMissionCompleteCount === betaMissionChecks.length;
+  const betaNextAction =
+    !betaJourney.essentialTested
+      ? { kind: "essential" as const, label: tr("Commencer par Essentiel", "Start with Essential") }
+      : !(betaJourney.published || draft?.status === "published")
+        ? { kind: "builder" as const, label: tr("Publier le site", "Publish website") }
+        : !betaJourney.essentialThenGrowth
+          ? { kind: "growth-mode" as const, label: tr("Passer en Growth", "Switch to Growth") }
+          : !betaJourney.growthCockpitOpened
+            ? { kind: "growth" as const, label: tr("Ouvrir le cockpit Growth", "Open Growth cockpit") }
+            : !betaJourney.analyticsOpened
+              ? { kind: "analytics" as const, label: tr("Vérifier Analytics", "Review Analytics") }
+              : !betaJourney.feedbackSent
+                ? { kind: "feedback" as const, label: tr("Envoyer votre retour", "Send your feedback") }
+                : { kind: "done" as const, label: tr("Mission bêta terminée", "Beta mission complete") };
+
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     setBetaExperienceMode(mode);
     writeBetaExperienceMode(mode);
@@ -312,50 +340,112 @@ export default function Home() {
             mode={betaExperienceMode}
             onChange={changeBetaExperienceMode}
           />
+          <div className="beta-mission-progress" aria-label={tr("Progression de la mission bêta", "Beta mission progress")}>
+            <div className="beta-mission-progress-copy">
+              <span>{tr("Progression", "Progress")}</span>
+              <b>{betaMissionCompleteCount}/5 · {betaMissionPercent}%</b>
+            </div>
+            <div className="beta-mission-progress-track" aria-hidden="true">
+              <span style={{ width: `${betaMissionPercent}%` }} />
+            </div>
+          </div>
           <ol className="beta-mission-steps">
-            <li className={betaJourney.essentialTested ? "done" : ""}>
+            <li className={betaJourney.essentialTested ? "done" : !betaJourney.essentialTested ? "next" : ""}>
               <span>{betaJourney.essentialTested ? "✓" : "1"}</span>
-              <div><b>{tr("Tester d’abord Essentiel", "Test Essential first")}</b><small>{tr(
+              <div><b>{tr("Tester Essentiel", "Test Essential")}</b><small>{tr(
                 betaJourney.essentialTested
-                  ? "Mode Essentiel déjà testé. Vous pouvez poursuivre le parcours ou passer à Growth."
-                  : "Créez et modifiez le site avec les fonctions du parcours RUN.",
+                  ? "Le parcours RUN a été commencé en mode Essentiel."
+                  : "Construisez et modifiez le site avec l’expérience client Essentiel.",
                 betaJourney.essentialTested
-                  ? "Essential mode has been tested. Continue the journey or move to Growth."
-                  : "Create and edit the website with the RUN journey capabilities."
+                  ? "The RUN journey has been started in Essential mode."
+                  : "Build and edit the website with the Essential customer experience."
               )}</small></div>
             </li>
-            <li className={betaJourney.growthTested ? "done" : ""}>
-              <span>{betaJourney.growthTested ? "✓" : "2"}</span>
-              <div><b>{tr("Passer ensuite en Growth", "Then switch to Growth")}</b><small>{tr(
-                betaJourney.growthTested
-                  ? betaJourney.essentialThenGrowth
-                    ? "Growth testé après Essentiel : comparaison validée."
-                    : "Growth a été testé. Revenez aussi sur Essentiel si vous voulez comparer les deux parcours dans l’ordre prévu."
-                  : "Activez le mode Growth et testez les fonctions avancées sans toucher à Stripe.",
-                betaJourney.growthTested
-                  ? betaJourney.essentialThenGrowth
-                    ? "Growth was tested after Essential: comparison complete."
-                    : "Growth has been tested. You can also return to Essential to compare both journeys in the intended order."
-                  : "Enable Growth mode and test advanced capabilities without touching Stripe."
+            <li className={betaJourney.published || draft?.status === "published" ? "done" : betaJourney.essentialTested ? "next" : ""}>
+              <span>{betaJourney.published || draft?.status === "published" ? "✓" : "2"}</span>
+              <div><b>{tr("Publier et contrôler", "Publish and review")}</b><small>{tr(
+                betaJourney.published || draft?.status === "published"
+                  ? "Une version réelle du site a été publiée."
+                  : "Publiez puis vérifiez mobile, navigation, CTA et lisibilité.",
+                betaJourney.published || draft?.status === "published"
+                  ? "A real version of the website has been published."
+                  : "Publish, then review mobile, navigation, CTA and readability."
               )}</small></div>
             </li>
-            <li className={betaJourney.published || draft?.status === "published" ? "done" : ""}>
-              <span>{betaJourney.published || draft?.status === "published" ? "✓" : "3"}</span>
-              <div><b>{tr("Publier et tester comme un visiteur", "Publish and test as a visitor")}</b><small>{tr("Quality Check, mobile, navigation, CTA, lisibilité et vitesse perçue.", "Quality Check, mobile, navigation, CTA, readability and perceived speed.")}</small></div>
+            <li className={betaJourney.essentialThenGrowth ? "done" : betaJourney.published || draft?.status === "published" ? "next" : ""}>
+              <span>{betaJourney.essentialThenGrowth ? "✓" : "3"}</span>
+              <div><b>{tr("Comparer avec Growth", "Compare with Growth")}</b><small>{tr(
+                betaJourney.essentialThenGrowth
+                  ? "Growth a bien été testé après Essentiel."
+                  : betaJourney.growthTested
+                    ? "Growth a déjà été ouvert, mais faites aussi la séquence Essentiel → Growth pour valider la comparaison."
+                    : "Passez en Growth sans paiement ni modification Stripe.",
+                betaJourney.essentialThenGrowth
+                  ? "Growth was tested after Essential."
+                  : betaJourney.growthTested
+                    ? "Growth was already opened, but also run the Essential → Growth sequence to validate the comparison."
+                    : "Switch to Growth without payment or Stripe changes."
+              )}</small></div>
             </li>
-            <li className={betaJourney.feedbackSent ? "done" : ""}>
-              <span>{betaJourney.feedbackSent ? "✓" : "4"}</span>
+            <li className={betaJourney.growthExplored ? "done" : betaJourney.essentialThenGrowth ? "next" : ""}>
+              <span>{betaJourney.growthExplored ? "✓" : "4"}</span>
+              <div><b>{tr("Explorer Growth + Analytics", "Explore Growth + Analytics")}</b><small>{tr(
+                betaJourney.growthExplored
+                  ? "Le cockpit Growth et Analytics ont été réellement ouverts en mode Growth."
+                  : betaJourney.growthCockpitOpened
+                    ? "Cockpit Growth validé. Il reste Analytics à vérifier."
+                    : betaJourney.analyticsOpened
+                      ? "Analytics validé. Il reste le cockpit Growth à vérifier."
+                      : "Ouvrez les deux vues pour tester le pilotage et les données de performance.",
+                betaJourney.growthExplored
+                  ? "The Growth cockpit and Analytics were both actually opened in Growth mode."
+                  : betaJourney.growthCockpitOpened
+                    ? "Growth cockpit checked. Analytics remains to be reviewed."
+                    : betaJourney.analyticsOpened
+                      ? "Analytics checked. The Growth cockpit remains to be reviewed."
+                      : "Open both views to test management and performance data."
+              )}</small></div>
+            </li>
+            <li className={betaJourney.feedbackSent ? "done" : betaJourney.growthExplored ? "next" : ""}>
+              <span>{betaJourney.feedbackSent ? "✓" : "5"}</span>
               <div><b>{tr("Envoyer un retour", "Send feedback")}</b><small>{tr(
                 betaJourney.feedbackSent
-                  ? "Au moins un retour a déjà été enregistré pour cette mission."
-                  : "Un blocage, une idée ou ce qui devrait être plus simple.",
+                  ? "Au moins un retour a été enregistré."
+                  : "Signalez un blocage, une idée ou ce qui devrait être plus simple.",
                 betaJourney.feedbackSent
-                  ? "At least one feedback item has already been recorded for this mission."
-                  : "A blocker, an idea, or anything that should be simpler."
+                  ? "At least one feedback item has been recorded."
+                  : "Report a blocker, an idea, or anything that should be simpler."
               )}</small></div>
             </li>
           </ol>
-          <div className="actions beta-mission-actions">
+          <div className={"beta-next-action " + (betaMissionComplete ? "complete" : "")}>
+            <div>
+              <span>{betaMissionComplete ? tr("Mission validée", "Mission complete") : tr("Prochaine action", "Next action")}</span>
+              <b>{betaNextAction.label}</b>
+            </div>
+            {!betaMissionComplete ? (
+              betaNextAction.kind === "essential" ? (
+                <button type="button" className="button primary" onClick={() => changeBetaExperienceMode("essential")}>
+                  {betaNextAction.label} <span aria-hidden="true">→</span>
+                </button>
+              ) : betaNextAction.kind === "growth-mode" ? (
+                <button type="button" className="button primary" onClick={() => changeBetaExperienceMode("growth")}>
+                  {betaNextAction.label} <span aria-hidden="true">→</span>
+                </button>
+              ) : betaNextAction.kind === "growth" ? (
+                <Link className="button primary" href="/growth">{betaNextAction.label} <span aria-hidden="true">→</span></Link>
+              ) : betaNextAction.kind === "analytics" ? (
+                <Link className="button primary" href="/analytics">{betaNextAction.label} <span aria-hidden="true">→</span></Link>
+              ) : betaNextAction.kind === "feedback" ? (
+                <Link className="button primary" href="/feedback">{betaNextAction.label} <span aria-hidden="true">→</span></Link>
+              ) : (
+                <Link className="button primary" href={onboardingHref}>{betaNextAction.label} <span aria-hidden="true">→</span></Link>
+              )
+            ) : (
+              <span className="beta-mission-complete-mark">✓</span>
+            )}
+          </div>
+                    <div className="actions beta-mission-actions">
             {betaExperienceMode === "growth" && draft?.status === "published" ? (
               <Link className="button primary" href="/growth">
                 {tr("Ouvrir Growth", "Open Growth")} <span aria-hidden="true">→</span>

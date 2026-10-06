@@ -29,8 +29,8 @@ test("Builder keeps real beta rights but hides Growth and BUILD in Essential sim
 test("dashboard lets beta testers move from Essential to Growth without checkout", () => {
   assert.match(home, /effectiveCanCreateWithAi/);
   assert.match(home, /betaExperienceMode === "essential" \? false : canCreateWithAi/);
-  assert.match(home, /Tester d’abord Essentiel/);
-  assert.match(home, /Passer ensuite en Growth/);
+  assert.match(home, /Tester Essentiel/);
+  assert.match(home, /Comparer avec Growth/);
   assert.match(home, /Tester Growth/);
   assert.match(home, /changeBetaExperienceMode\("growth"\)/);
 });
@@ -110,4 +110,25 @@ test("beta mission gives a direct next action when switching from RUN to Growth"
   assert.match(home, /href="\/growth"/);
   assert.match(builder, /builder-growth-shortcut/);
   assert.match(builder, /betaExperienceMode === "growth" && published/);
+});
+
+
+test("beta mission shows a five-step progress bar and a deterministic next action", () => {
+  assert.match(home, /betaMissionCompleteCount/);
+  assert.match(home, /betaMissionPercent/);
+  assert.match(home, /Progression de la mission bêta/);
+  assert.match(home, /Explorer Growth \+ Analytics/);
+  assert.match(home, /Prochaine action/);
+  assert.match(home, /betaJourney\.growthExplored/);
+});
+
+test("beta mission only validates Growth exploration after real Growth and Analytics visits", () => {
+  const analyticsLib = fs.readFileSync(new URL("../lib/product-analytics.ts", import.meta.url), "utf8");
+  const growthPage = fs.readFileSync(new URL("../app/growth/page.tsx", import.meta.url), "utf8");
+  const analyticsPage = fs.readFileSync(new URL("../app/analytics/page.tsx", import.meta.url), "utf8");
+  assert.match(analyticsLib, /beta_growth_cockpit_opened/);
+  assert.match(analyticsLib, /beta_analytics_opened/);
+  assert.match(analyticsLib, /growthExplored:growthCockpitOpened&&analyticsOpened/);
+  assert.match(growthPage, /trackProductEvent\("beta_growth_cockpit_opened", selected\.id\)/);
+  assert.match(analyticsPage, /trackProductEvent\("beta_analytics_opened", selected\.id\)/);
 });

@@ -1,13 +1,16 @@
 import { getProductLocale } from "./product-i18n";
 import { getSupabaseBrowserClient } from "./supabase-browser";
 
-export type ProductEventName="builder_open"|"onboarding_manual_selected"|"onboarding_ai_selected"|"beta_essential_selected"|"beta_growth_selected"|"step_identity"|"step_story"|"step_design"|"step_booking"|"step_options"|"step_review"|"architect_generated"|"architect_regenerated"|"architect_refined"|"architect_failed"|"architect_applied"|"revision_applied"|"publish_success";
+export type ProductEventName="builder_open"|"onboarding_manual_selected"|"onboarding_ai_selected"|"beta_essential_selected"|"beta_growth_selected"|"beta_growth_cockpit_opened"|"beta_analytics_opened"|"step_identity"|"step_story"|"step_design"|"step_booking"|"step_options"|"step_review"|"architect_generated"|"architect_regenerated"|"architect_refined"|"architect_failed"|"architect_applied"|"revision_applied"|"publish_success";
 export type FeedbackCategory="bug"|"idea"|"usability"|"quality"|"other";
 export type ArchitectQualityReason="need_mismatch"|"copy"|"structure"|"design"|"generic"|"other";
 export type BetaJourneyProgress={
  essentialTested:boolean;
  growthTested:boolean;
  essentialThenGrowth:boolean;
+ growthCockpitOpened:boolean;
+ analyticsOpened:boolean;
+ growthExplored:boolean;
  published:boolean;
  feedbackSent:boolean;
 };
@@ -25,7 +28,7 @@ export async function trackProductEvent(eventName:ProductEventName,siteId?:strin
 
 export async function getMyBetaJourneyProgress(siteId?:string|null):Promise<BetaJourneyProgress>{
  const supabase=getSupabaseBrowserClient();
- const empty={essentialTested:false,growthTested:false,essentialThenGrowth:false,published:false,feedbackSent:false};
+ const empty={essentialTested:false,growthTested:false,essentialThenGrowth:false,growthCockpitOpened:false,analyticsOpened:false,growthExplored:false,published:false,feedbackSent:false};
  if(!supabase)return empty;
  const {data:{user}}=await supabase.auth.getUser();
  if(!user)return empty;
@@ -33,7 +36,7 @@ export async function getMyBetaJourneyProgress(siteId?:string|null):Promise<Beta
   supabase
    .from("product_events")
    .select("event_name,site_id,created_at")
-   .in("event_name",["beta_essential_selected","beta_growth_selected","publish_success"])
+   .in("event_name",["beta_essential_selected","beta_growth_selected","beta_growth_cockpit_opened","beta_analytics_opened","publish_success"])
    .order("created_at",{ascending:true}),
   siteId
    ? supabase.from("user_feedback").select("id").eq("site_id",siteId).limit(1)
@@ -52,10 +55,15 @@ export async function getMyBetaJourneyProgress(siteId?:string|null):Promise<Beta
   });
  });
  const published=rows.some((item)=>item.event_name==="publish_success"&&(!siteId||item.site_id===siteId));
+ const growthCockpitOpened=rows.some((item)=>item.event_name==="beta_growth_cockpit_opened"&&(!siteId||item.site_id===siteId));
+ const analyticsOpened=rows.some((item)=>item.event_name==="beta_analytics_opened"&&(!siteId||item.site_id===siteId));
  return {
   essentialTested:essential.length>0,
   growthTested:growth.length>0,
   essentialThenGrowth,
+  growthCockpitOpened,
+  analyticsOpened,
+  growthExplored:growthCockpitOpened&&analyticsOpened,
   published,
   feedbackSent:Boolean(feedback?.length)
  };

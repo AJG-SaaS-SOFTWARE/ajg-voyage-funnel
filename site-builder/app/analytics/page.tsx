@@ -105,6 +105,9 @@ export default function AnalyticsPage() {
       setBetaActive(beta.active);
       if (beta.active) setBetaMode(resolvedMode);
       setGrowthExperience(beta.active ? resolvedMode === "growth" : paidGrowth);
+      if (beta.active && resolvedMode === "growth") {
+        void trackProductEvent("beta_analytics_opened", selected.id);
+      }
       setState("ready");
     } catch (error) {
       setState("error");
