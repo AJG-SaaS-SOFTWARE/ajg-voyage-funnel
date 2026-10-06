@@ -161,6 +161,57 @@ export async function adminSyncManagedDomain(domainId: string) {
   };
 }
 
+export type AdminBetaOperationsRun = {
+  id: number;
+  started_at: string;
+  completed_at: string | null;
+  status: "running" | "healthy" | "attention" | "failed";
+  scanned_users: number;
+  grant_count: number;
+  active_tester_count: number;
+  repaired_metadata: number;
+  revoked_stale_metadata: number;
+  repair_failures: number;
+  follow_up_candidates: number;
+  awaiting_resume: number;
+  unresponsive_after_followup: number;
+  completed_missions: number;
+  errors: string[];
+};
+
+export type AdminBetaOperationsStatus = {
+  latest: AdminBetaOperationsRun | null;
+  lastSuccessAt: string | null;
+  attentionRequired: boolean;
+  runs: AdminBetaOperationsRun[];
+};
+
+export async function getAdminBetaOperationsStatus(): Promise<AdminBetaOperationsStatus> {
+  const token = await adminSessionToken();
+  const response = await fetch("/api/admin/beta-operations", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "État de l’agent bêta indisponible.");
+  return body as AdminBetaOperationsStatus;
+}
+
+export async function adminRunBetaOperationsAgent(): Promise<AdminBetaOperationsStatus & { result: unknown }> {
+  const token = await adminSessionToken();
+  const response = await fetch("/api/admin/beta-operations", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = body?.detail ? ` — ${body.detail}` : "";
+    throw new Error((body?.error || "Exécution de l’agent bêta impossible.") + detail);
+  }
+  return body;
+}
+
 export type AdminBetaCohortMember = {
   id: string;
   email: string;
