@@ -20,11 +20,14 @@ const corrective = readFileSync(
 
 test("ELTARA exposes ESLint as a first-class CI gate", () => {
   assert.equal(packageJson.scripts.lint, "eslint .");
-  assert.match(eslintConfig, /eslint-config-next\/core-web-vitals/);
+  assert.match(eslintConfig, /FlatCompat/);
+  assert.match(eslintConfig, /next\/core-web-vitals/);
+  assert.match(eslintConfig, /next\/typescript/);
   assert.match(ci, /npm run lint/);
 });
 
 test("ELTARA pins the lint toolchain instead of relying on transient npx installs", () => {
+  assert.equal(packageJson.devDependencies?.["@eslint/eslintrc"], "3.3.7");
   assert.match(packageJson.devDependencies?.eslint || "", /^9\./);
   assert.equal(packageJson.devDependencies?.["eslint-config-next"], packageJson.dependencies.next);
 });
