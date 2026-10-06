@@ -408,7 +408,17 @@ export type AdminBetaMetrics = {
       };
     };
   };
-  feedback: { count: number; users: number; averageRating: number | null; open: number };
+  feedback: {
+    count: number;
+    users: number;
+    averageRating: number | null;
+    open: number;
+    byExperience: {
+      essential: { count: number; averageRating: number | null };
+      growth: { count: number; averageRating: number | null };
+      unknown: number;
+    };
+  };
   sites: {
     active: number;
     published: number;
