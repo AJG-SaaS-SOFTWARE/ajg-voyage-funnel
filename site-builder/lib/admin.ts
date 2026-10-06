@@ -297,6 +297,14 @@ export type AdminBetaMetrics = {
       reviewToPublished: number;
     };
   };
+  betaExperience: {
+    essentialTesters: number;
+    growthTesters: number;
+    bothTested: number;
+    essentialThenGrowth: number;
+    completionRate: number;
+    orderedCompletionRate: number;
+  };
   onboardingPaths: {
     totalSelections: number;
     aiShare: number;
@@ -412,6 +420,8 @@ export type AdminBetaMetrics = {
       eventCount: number;
       aiApplyCount: number;
       feedbackCount: number;
+      betaEssentialTested: boolean;
+      betaGrowthTested: boolean;
       lastActivity: string;
     }>;
   };
