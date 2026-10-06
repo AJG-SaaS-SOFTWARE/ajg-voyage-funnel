@@ -348,10 +348,9 @@ export default function AdminPage() {
   const betaConsistencyIssues = betaCohort?.consistencyIssues ?? 0;
   const betaPublishedCount =
     betaCohort?.members.filter((item) => ["published", "complete"].includes(item.betaStage)).length ?? 0;
-  const betaCompletedCount =
-    betaCohort?.members.filter((item) => item.betaStage === "complete").length ?? 0;
-  const betaFollowUpCount =
-    betaCohort?.members.filter((item) => item.needsFollowUp).length ?? 0;
+  const betaCompletedCount = betaCohort?.missionSummary.completed ?? 0;
+  const betaFollowUpCount = betaCohort?.missionSummary.needsFollowUp ?? 0;
+  const betaMissionAverage = betaCohort?.missionSummary.averagePercent ?? 0;
   const betaTargetReached = betaMemberCount >= 5 && betaMemberCount <= 10;
   const betaInviteAllowed =
     betaTechnicalReady &&
@@ -535,6 +534,7 @@ export default function AdminPage() {
               <span><b>{betaFullAccessCount}</b> accès complets actifs</span>
               <span><b>{betaConsistencyIssues}</b> incohérence{betaConsistencyIssues > 1 ? "s" : ""}</span>
               <span><b>{betaPublishedCount}</b> publiés</span>
+              <span><b>{betaMissionAverage}%</b> progression moyenne</span>
               <span><b>{betaCompletedCount}</b> missions terminées</span>
               <span><b>{betaFollowUpCount}</b> à relancer</span>
             </div>
@@ -600,6 +600,28 @@ export default function AdminPage() {
           </p>
 
           {betaCohort?.members.length ? (
+            <div className="admin-beta-mission-summary">
+              <div className="admin-beta-mission-summary-head">
+                <div>
+                  <span>Mission bêta · progression cohorte</span>
+                  <b>{betaMissionAverage}%</b>
+                </div>
+                <small>{betaCompletedCount}/{betaMemberCount} mission{betaCompletedCount > 1 ? "s" : ""} terminée{betaCompletedCount > 1 ? "s" : ""}</small>
+              </div>
+              <div className="admin-beta-mission-summary-track" aria-hidden="true">
+                <span style={{ width: `${betaMissionAverage}%` }} />
+              </div>
+              <div className="admin-beta-mission-step-kpis">
+                <span><b>{betaCohort.missionSummary.byStep.essential}</b> Essentiel</span>
+                <span><b>{betaCohort.missionSummary.byStep.published}</b> Publiés</span>
+                <span><b>{betaCohort.missionSummary.byStep.compared}</b> Comparés</span>
+                <span><b>{betaCohort.missionSummary.byStep.growthExplored}</b> Growth + Analytics</span>
+                <span><b>{betaCohort.missionSummary.byStep.feedback}</b> Feedbacks</span>
+              </div>
+            </div>
+          ) : null}
+
+          {betaCohort?.members.length ? (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -622,31 +644,50 @@ export default function AdminPage() {
                         </small>
                       </td>
                       <td>
-                        <span className={
-                          "status-badge " +
-                          (item.betaStage === "complete"
-                            ? "success"
-                            : item.needsFollowUp
-                              ? "warning"
-                              : item.betaStage === "published"
+                        <div className="admin-beta-member-progress">
+                          <div className="admin-beta-member-progress-head">
+                            <span className={
+                              "status-badge " +
+                              (item.mission.nextAction === "complete"
                                 ? "success"
-                                : "muted")
-                        }>
-                          {item.betaStage === "complete"
-                            ? "Mission terminée"
-                            : item.betaStage === "published"
-                              ? "Publié · retour attendu"
-                              : item.betaStage === "building"
-                                ? "Création en cours"
-                                : item.betaStage === "activated"
-                                  ? "Compte activé"
-                                  : "Invitation en attente"}
-                        </span>
-                        {item.needsFollowUp && item.followUpReason ? (
-                          <small className="admin-cell-note beta-follow-up-note">
-                            À relancer · {item.followUpReason}
-                          </small>
-                        ) : null}
+                                : item.needsFollowUp
+                                  ? "warning"
+                                  : "muted")
+                            }>
+                              {item.mission.nextAction === "complete"
+                                ? "Mission terminée"
+                                : `${item.mission.completedCount}/5 · ${item.mission.percent}%`}
+                            </span>
+                            <small>
+                              {item.mission.nextAction === "essential"
+                                ? "Prochaine · Tester Essentiel"
+                                : item.mission.nextAction === "publish"
+                                  ? "Prochaine · Publier"
+                                  : item.mission.nextAction === "compare"
+                                    ? "Prochaine · Essentiel → Growth"
+                                    : item.mission.nextAction === "growth_explore"
+                                      ? "Prochaine · Growth + Analytics"
+                                      : item.mission.nextAction === "feedback"
+                                        ? "Prochaine · Envoyer un retour"
+                                        : "5/5 validé"}
+                            </small>
+                          </div>
+                          <div className="admin-beta-member-progress-track" aria-hidden="true">
+                            <span style={{ width: `${item.mission.percent}%` }} />
+                          </div>
+                          <div className="admin-beta-member-step-dots" aria-label={`Mission bêta ${item.mission.completedCount} étapes sur 5`}>
+                            <i className={item.mission.essentialTested ? "done" : ""}>1</i>
+                            <i className={item.mission.published ? "done" : ""}>2</i>
+                            <i className={item.mission.essentialThenGrowth ? "done" : ""}>3</i>
+                            <i className={item.mission.growthExplored ? "done" : ""}>4</i>
+                            <i className={item.mission.feedbackSent ? "done" : ""}>5</i>
+                          </div>
+                          {item.needsFollowUp && item.followUpReason ? (
+                            <small className="admin-cell-note beta-follow-up-note">
+                              À relancer · {item.followUpReason}
+                            </small>
+                          ) : null}
+                        </div>
                       </td>
                       <td>
                         <b>{item.siteSlug || "—"}</b>
