@@ -361,6 +361,11 @@ export default function PlansPage() {
                 ? tr("Votre offre actuelle", "Your current plan")
                 : tr("Pilotage et amélioration continue", "Ongoing management and improvement")}
           </p>
+          {loaded && displayedPlanKey === "growth" ? (
+            <div className="builder-actions">
+              <Link className="button secondary" href="/growth">{tr("Ouvrir le pilotage Growth", "Open Growth cockpit")}</Link>
+            </div>
+          ) : null}
           {!betaAccess.active && current.planKey !== "growth" ? (
             <div className="builder-actions">
               <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "monthly")}>

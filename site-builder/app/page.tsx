@@ -58,6 +58,7 @@ export default function Home() {
   const [remoteStatus, setRemoteStatus] = useState<"checking" | "guest" | "authenticated" | "local">("checking");
   const [email, setEmail] = useState("");
   const [planName, setPlanName] = useState("");
+  const [planKey, setPlanKey] = useState<"free" | "essential" | "growth">("free");
   const [entitlementActive, setEntitlementActive] = useState(false);
   const [canCreateWithAi, setCanCreateWithAi] = useState(false);
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
@@ -93,6 +94,7 @@ export default function Home() {
           getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
         ]);
         let resolvedPlanName = "";
+        let resolvedPlanKey: "free" | "essential" | "growth" = "free";
         let resolvedEntitlementActive = false;
         let resolvedCanCreateWithAi = false;
 
@@ -103,11 +105,13 @@ export default function Home() {
               getMySiteAiAccess(remote.id)
             ]);
             resolvedPlanName = entitlements.planName;
+            resolvedPlanKey = entitlements.planKey;
             resolvedEntitlementActive = ["active", "trialing"].includes(entitlements.status);
             resolvedCanCreateWithAi = aiAccess.canCreateSite;
           } else {
             const entitlements = await getMyEntitlements();
             resolvedPlanName = entitlements.planName;
+            resolvedPlanKey = entitlements.planKey;
             resolvedEntitlementActive = ["active", "trialing"].includes(entitlements.status);
           }
         } catch {
@@ -118,6 +122,7 @@ export default function Home() {
           setEmail(user.email || "");
           setRemoteStatus("authenticated");
           setPlanName(resolvedPlanName);
+          setPlanKey(resolvedPlanKey);
           setEntitlementActive(resolvedEntitlementActive);
           setCanCreateWithAi(resolvedCanCreateWithAi);
           setRemoteSiteId(remote?.id || null);
@@ -174,6 +179,10 @@ export default function Home() {
       ? tr("Essentiel · mode test", "Essential · test mode")
       : tr("Growth · mode test", "Growth · test mode")
     : planName;
+  const growthExperienceAvailable =
+    entitlementActive &&
+    draft?.status === "published" &&
+    (betaAccess.active ? betaExperienceMode === "growth" : planKey === "growth");
   const creationPath = onboarding
     ? deriveOnboardingCreationPath({
         progress: onboarding,
@@ -399,6 +408,23 @@ export default function Home() {
               {tr("Votre brouillon est repris automatiquement et sauvegardé au fil des modifications.", "Your draft resumes automatically and is saved as you make changes.")}
             </small>
           ) : null}
+        </section>
+      ) : null}
+
+      {growthExperienceAvailable ? (
+        <section className="panel growth-dashboard-entry">
+          <div>
+            <p className="eyebrow">Growth</p>
+            <h2>{tr("Votre site est publié : passez au pilotage", "Your website is live: move to management")}</h2>
+            <p>{tr(
+              "Le cockpit Growth regroupe les contrôles de disponibilité, SEO technique, domaine, formulaire, médias et continuité de service pour vous montrer ce qui mérite votre attention.",
+              "The Growth cockpit brings together availability, technical SEO, domain, contact form, media and service continuity checks so you can see what deserves attention."
+            )}</p>
+          </div>
+          <div className="actions">
+            <Link className="button primary" href="/growth">{tr("Ouvrir le pilotage Growth", "Open Growth cockpit")} <span aria-hidden="true">→</span></Link>
+            <Link className="button secondary" href="/support">{tr("Health Center", "Health Center")}</Link>
+          </div>
         </section>
       ) : null}
 
