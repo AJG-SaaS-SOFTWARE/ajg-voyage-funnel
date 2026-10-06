@@ -709,6 +709,168 @@ export type Database = {
           },
         ]
       }
+      site_analytics_daily: {
+        Row: {
+          day: string
+          event_count: number
+          event_label: string
+          event_name: string
+          page_path: string
+          site_id: string
+          source: string
+        }
+        Insert: {
+          day?: string
+          event_count?: number
+          event_label?: string
+          event_name: string
+          page_path?: string
+          site_id: string
+          source?: string
+        }
+        Update: {
+          day?: string
+          event_count?: number
+          event_label?: string
+          event_name?: string
+          page_path?: string
+          site_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_analytics_daily_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_analytics_rate_limits: {
+        Row: {
+          created_at: string
+          event_count: number
+          event_name: string
+          fingerprint: string
+          minute_bucket: string
+          page_path: string
+          site_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_count?: number
+          event_name: string
+          fingerprint: string
+          minute_bucket: string
+          page_path: string
+          site_id: string
+        }
+        Update: {
+          created_at?: string
+          event_count?: number
+          event_name?: string
+          fingerprint?: string
+          minute_bucket?: string
+          page_path?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_analytics_rate_limits_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_growth_actions: {
+        Row: {
+          baseline_action_rate: number
+          baseline_actions: number
+          baseline_context: string | null
+          baseline_days: number
+          baseline_end: string
+          baseline_metric_key: string | null
+          baseline_metric_value: number | null
+          baseline_sample_size: number | null
+          baseline_start: string
+          baseline_views: number
+          confidence: string
+          created_at: string
+          id: string
+          impact: string
+          opportunity_key: string
+          owner_id: string
+          page_path: string | null
+          published_at: string | null
+          score: number
+          site_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          baseline_action_rate?: number
+          baseline_actions?: number
+          baseline_context?: string | null
+          baseline_days: number
+          baseline_end: string
+          baseline_metric_key?: string | null
+          baseline_metric_value?: number | null
+          baseline_sample_size?: number | null
+          baseline_start: string
+          baseline_views?: number
+          confidence: string
+          created_at?: string
+          id?: string
+          impact: string
+          opportunity_key: string
+          owner_id: string
+          page_path?: string | null
+          published_at?: string | null
+          score: number
+          site_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          baseline_action_rate?: number
+          baseline_actions?: number
+          baseline_context?: string | null
+          baseline_days?: number
+          baseline_end?: string
+          baseline_metric_key?: string | null
+          baseline_metric_value?: number | null
+          baseline_sample_size?: number | null
+          baseline_start?: string
+          baseline_views?: number
+          confidence?: string
+          created_at?: string
+          id?: string
+          impact?: string
+          opportunity_key?: string
+          owner_id?: string
+          page_path?: string | null
+          published_at?: string | null
+          score?: number
+          site_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_growth_actions_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_subscriptions: {
         Row: {
           current_period_end: string | null
@@ -1306,6 +1468,17 @@ export type Database = {
           storage_limit_mb: number
           used_bytes: number
         }[]
+      }
+      record_site_analytics_event: {
+        Args: {
+          p_event_label: string
+          p_event_name: string
+          p_fingerprint: string
+          p_page_path: string
+          p_site_id: string
+          p_source: string
+        }
+        Returns: boolean
       }
       release_my_site_ai_generation: {
         Args: { p_request_id: string }
