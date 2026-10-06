@@ -69,3 +69,15 @@ test("beta mission progress is reconstructed from the tester's own telemetry", (
   assert.match(home, /betaJourney\.feedbackSent/);
   assert.match(home, /getMyBetaJourneyProgress\(remoteSiteId\)/);
 });
+
+
+test("ordered beta completion accepts a later corrected Essential to Growth sequence", () => {
+  const analytics = fs.readFileSync(new URL("../lib/product-analytics.ts", import.meta.url), "utf8");
+  const metrics = fs.readFileSync(new URL("../app/api/admin/beta-metrics/route.ts", import.meta.url), "utf8");
+  assert.match(analytics, /essential\.some\(\(essentialEvent\)/);
+  assert.match(analytics, /growth\.some\(\(growthEvent\)/);
+  assert.match(metrics, /essentialTimes\.some/);
+  assert.match(metrics, /growthTimes\.some/);
+  assert.doesNotMatch(metrics, /firstEssentialByUser/);
+  assert.doesNotMatch(metrics, /firstGrowthByUser/);
+});
