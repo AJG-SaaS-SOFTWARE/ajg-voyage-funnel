@@ -220,6 +220,18 @@ export default function GrowthPage() {
     }
   }
 
+  const growthMetricLabel = (key: string) => {
+    if (key === "page_action_rate") return tr("Taux d’action de la page", "Page action rate");
+    if (key === "form_completion_rate") return tr("Complétion du formulaire", "Form completion rate");
+    if (key === "source_concentration") return tr("Concentration de la source principale", "Top source concentration");
+    return tr("Taux d’action global", "Overall action rate");
+  };
+
+  const growthMetricSampleLabel = (key: string, count: number) => {
+    if (key === "form_completion_rate") return `${count} ${tr("démarrages", "starts")}`;
+    return `${count} ${tr("vues", "views")}`;
+  };
+
   const guidanceByKey = useMemo(
     () => new Map(
       (diagnosis?.checks || [])
@@ -553,8 +565,8 @@ export default function GrowthPage() {
                 <p className="eyebrow">{tr("Historique Growth", "Growth history")}</p>
                 <h2>{tr("Chaque correction peut maintenant être suivie", "Every correction can now be tracked")}</h2>
                 <p>{tr(
-                  "ELTARA conserve le signal de départ, rattache la publication suivante à l’action et mesure ensuite l’évolution observée.",
-                  "ELTARA keeps the starting signal, links the next publication to the action, then measures the observed change."
+                  "ELTARA conserve le signal de départ, rattache la publication suivante à l’action et mesure ensuite la métrique réellement concernée : CTA de la page, complétion du formulaire ou concentration des sources.",
+                  "ELTARA keeps the starting signal, links the next publication to the action, then measures the metric that actually matters: page CTA rate, form completion or source concentration."
                 )}</p>
               </div>
             </div>
@@ -569,7 +581,14 @@ export default function GrowthPage() {
                     </div>
                     <div>
                       <b>{action.pagePath || tr("Signal global du site", "Site-wide signal")}</b>
-                      <small>{tr("Référence", "Baseline")} · {action.baselineViews} {tr("vues", "views")} · {action.baselineActionRate.toFixed(1)}%</small>
+                      <small>
+                        {growthMetricLabel(action.baselineMetricKey || "global_action_rate")} · {tr("référence", "baseline")}{" "}
+                        {(action.baselineMetricValue ?? action.baselineActionRate).toFixed(1)}% ·{" "}
+                        {growthMetricSampleLabel(
+                          action.baselineMetricKey || "global_action_rate",
+                          action.baselineSampleSize ?? action.baselineViews
+                        )}
+                      </small>
                     </div>
                     <div>
                       <b>{measurement.state === "planned"
@@ -586,7 +605,12 @@ export default function GrowthPage() {
                                   ? tr("Recul observé", "Decline observed")
                                   : tr("Performance stable", "Performance stable")}</b>
                       {measurement.state === "measured" ? (
-                        <small>{measurement.actionRatePoints > 0 ? "+" : ""}{measurement.actionRatePoints.toFixed(1)} pt · {measurement.afterViews} {tr("vues après publication", "views after publishing")}</small>
+                        <small>
+                          {growthMetricLabel(measurement.metricKey)} ·{" "}
+                          {measurement.baselineMetricValue.toFixed(1)}% → {measurement.afterMetricValue.toFixed(1)}% ·{" "}
+                          {measurement.metricDeltaPoints > 0 ? "+" : ""}{measurement.metricDeltaPoints.toFixed(1)} pt ·{" "}
+                          {growthMetricSampleLabel(measurement.metricKey, measurement.sampleSize)}
+                        </small>
                       ) : measurement.state === "planned" ? (
                         <small>{tr("La prochaine publication sera rattachée à cette action.", "The next publication will be linked to this action.")}</small>
                       ) : (
