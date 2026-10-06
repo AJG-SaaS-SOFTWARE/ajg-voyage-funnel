@@ -333,23 +333,19 @@ export async function GET(request: Request) {
     .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
   const betaEssentialUsers = new Set(betaEssentialEvents.map((item) => item.user_id));
   const betaGrowthUsers = new Set(betaGrowthEvents.map((item) => item.user_id));
-  const firstEssentialByUser = new Map<string, string>();
-  const firstGrowthByUser = new Map<string, string>();
-  for (const item of betaEssentialEvents) {
-    if (typeof item.user_id === "string" && !firstEssentialByUser.has(item.user_id)) {
-      firstEssentialByUser.set(item.user_id, item.created_at);
-    }
-  }
-  for (const item of betaGrowthEvents) {
-    if (typeof item.user_id === "string" && !firstGrowthByUser.has(item.user_id)) {
-      firstGrowthByUser.set(item.user_id, item.created_at);
-    }
-  }
   const betaBothUsers = [...betaEssentialUsers].filter((userId) => betaGrowthUsers.has(userId));
   const betaEssentialThenGrowthUsers = betaBothUsers.filter((userId) => {
-    const essentialAt = firstEssentialByUser.get(userId);
-    const growthAt = firstGrowthByUser.get(userId);
-    return Boolean(essentialAt && growthAt && essentialAt <= growthAt);
+    const essentialTimes = betaEssentialEvents
+      .filter((item) => item.user_id === userId)
+      .map((item) => Date.parse(String(item.created_at)))
+      .filter(Number.isFinite);
+    const growthTimes = betaGrowthEvents
+      .filter((item) => item.user_id === userId)
+      .map((item) => Date.parse(String(item.created_at)))
+      .filter(Number.isFinite);
+    return essentialTimes.some((essentialAt) =>
+      growthTimes.some((growthAt) => growthAt >= essentialAt)
+    );
   });
 
   const architectFirstRows = eventRows.filter(

@@ -43,13 +43,19 @@ export async function getMyBetaJourneyProgress(siteId?:string|null):Promise<Beta
  const rows=events||[];
  const essential=rows.filter((item)=>item.event_name==="beta_essential_selected");
  const growth=rows.filter((item)=>item.event_name==="beta_growth_selected");
- const firstEssential=essential[0]?.created_at?Date.parse(essential[0].created_at):NaN;
- const firstGrowth=growth[0]?.created_at?Date.parse(growth[0].created_at):NaN;
+ const essentialThenGrowth=essential.some((essentialEvent)=>{
+  const essentialAt=Date.parse(String(essentialEvent.created_at||""));
+  if(!Number.isFinite(essentialAt))return false;
+  return growth.some((growthEvent)=>{
+   const growthAt=Date.parse(String(growthEvent.created_at||""));
+   return Number.isFinite(growthAt)&&growthAt>=essentialAt;
+  });
+ });
  const published=rows.some((item)=>item.event_name==="publish_success"&&(!siteId||item.site_id===siteId));
  return {
   essentialTested:essential.length>0,
   growthTested:growth.length>0,
-  essentialThenGrowth:Number.isFinite(firstEssential)&&Number.isFinite(firstGrowth)&&firstEssential<=firstGrowth,
+  essentialThenGrowth,
   published,
   feedbackSent:Boolean(feedback?.length)
  };
