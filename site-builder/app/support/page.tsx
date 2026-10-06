@@ -39,6 +39,7 @@ export default function SupportPage() {
   const [diagnosing, setDiagnosing] = useState(false);
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
   const [repairing, setRepairing] = useState(false);
+  const [topic, setTopic] = useState("");
 
   async function token() {
     const supabase = getSupabaseBrowserClient();
@@ -64,6 +65,11 @@ export default function SupportPage() {
   }
 
   useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("topic") || "";
+    if (["domain", "billing", "publishing", "ai", "data"].includes(requested)) {
+      setTopic(requested);
+      setCategory(requested === "domain" ? "domain" : requested === "publishing" ? "publication" : requested);
+    }
     void load().catch(() => setState("error"));
   }, []);
 
@@ -195,7 +201,10 @@ export default function SupportPage() {
 
   const health = payload?.health.diagnosis;
   const guidance = health ? supportGuidanceForDiagnosis(health.checks, locale) : [];
-  const knowledgeArticles = supportArticlesForLocale(locale);
+  const allKnowledgeArticles = supportArticlesForLocale(locale);
+  const knowledgeArticles = topic
+    ? allKnowledgeArticles.filter((article) => article.category === topic)
+    : allKnowledgeArticles;
 
   return (
     <main className="plans-page">
@@ -297,10 +306,16 @@ export default function SupportPage() {
           <section className="panel" aria-labelledby="support-knowledge-title">
             <p className="eyebrow">{tr("Base de connaissances", "Knowledge base")}</p>
             <h2 id="support-knowledge-title">{tr("Résoudre les cas les plus fréquents", "Resolve the most common cases")}</h2>
-            <p>{tr(
-              "Ces fiches décrivent les parcours ELTARA actuels et renvoient directement vers l’écran concerné.",
-              "These guides describe the current ELTARA flows and link directly to the relevant screen."
-            )}</p>
+            <p>{topic
+              ? tr(
+                  "Vous arrivez depuis un écran précis : ELTARA affiche d’abord les fiches directement liées à ce contexte.",
+                  "You came from a specific screen: ELTARA shows the guides directly related to that context first."
+                )
+              : tr(
+                  "Ces fiches décrivent les parcours ELTARA actuels et renvoient directement vers l’écran concerné.",
+                  "These guides describe the current ELTARA flows and link directly to the relevant screen."
+                )}</p>
+            {topic ? <Link className="text-link" href="/support">{tr("Voir toute la base de connaissances", "View the full knowledge base")} →</Link> : null}
             <div className="support-knowledge-grid">
               {knowledgeArticles.map((article) => (
                 <article className="support-knowledge-card" key={article.key}>
