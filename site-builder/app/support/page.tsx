@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
@@ -40,6 +40,7 @@ export default function SupportPage() {
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
   const [repairing, setRepairing] = useState(false);
   const [topic, setTopic] = useState("");
+  const submitting = useRef(false);
 
   async function token() {
     const supabase = getSupabaseBrowserClient();
@@ -59,6 +60,10 @@ export default function SupportPage() {
       cache: "no-store"
     });
     const body = await response.json().catch(() => null);
+    if (response.status === 401) {
+      setState("guest");
+      return;
+    }
     if (!response.ok) throw new Error(body?.error || tr("Support indisponible.", "Support is unavailable."));
     setPayload(body);
     setState("ready");
@@ -75,14 +80,16 @@ export default function SupportPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const accessToken = await token();
-    if (!accessToken) {
-      setState("guest");
-      return;
-    }
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setNotice("");
     try {
+      const accessToken = await token();
+      if (!accessToken) {
+        setState("guest");
+        return;
+      }
       const response = await fetch("/api/support/tickets", {
         method: "POST",
         headers: {
@@ -91,20 +98,49 @@ export default function SupportPage() {
         },
         body: JSON.stringify({ category, subject, message }),
         cache: "no-store"
+      }).catch(() => {
+        throw new Error(tr(
+          "La réponse à l’envoi n’a pas été reçue. La demande a peut-être été enregistrée : actualisez vos demandes avant de réessayer.",
+          "No submission response was received. The request may have been saved: refresh your requests before trying again."
+        ));
       });
       const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.error || tr("Création impossible.", "Unable to create the ticket."));
+      if (!response.ok) {
+        if (response.status === 401) setState("guest");
+        if (response.status >= 500) {
+          throw new Error(tr(
+            "L’envoi n’a pas pu être confirmé. Actualisez vos demandes avant de réessayer.",
+            "Submission could not be confirmed. Refresh your requests before trying again."
+          ));
+        }
+        throw new Error(body?.error || tr("Création impossible.", "Unable to create the ticket."));
+      }
+      if (response.status !== 201 || typeof body?.ticket?.id !== "string" || !body.ticket.id) {
+        throw new Error(tr(
+          "L’envoi n’a pas pu être confirmé. Actualisez vos demandes avant de réessayer.",
+          "Submission could not be confirmed. Refresh your requests before trying again."
+        ));
+      }
       setSubject("");
       setMessage("");
-      setNotice(
+      const confirmation =
         body?.ticket?.status === "waiting_customer"
-          ? tr("Diagnostic terminé : une action vous est proposée ci-dessous avant escalade.", "Diagnosis complete: an action is suggested below before escalation.")
-          : tr("Ticket enregistré avec son diagnostic technique.", "Ticket saved with its technical diagnosis.")
-      );
-      await load();
+          ? tr("Demande enregistrée. Retrouvez l’action proposée dans « Mes demandes » avant escalade.", "Request saved. Find the suggested action in My requests before escalation.")
+          : tr("Ticket enregistré avec son diagnostic technique.", "Ticket saved with its technical diagnosis.");
+      setNotice(confirmation);
+      try {
+        await load();
+      } catch {
+        setState("error");
+        setNotice(confirmation + " " + tr(
+          "La liste n’a pas pu être actualisée. Votre demande est déjà enregistrée : ne l’envoyez pas une seconde fois.",
+          "The list could not be refreshed. Your request is already saved: do not submit it again."
+        ));
+      }
     } catch (error) {
       setNotice(error instanceof Error ? error.message : tr("Création impossible.", "Unable to create the ticket."));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -213,12 +249,14 @@ export default function SupportPage() {
           <p className="eyebrow">ELTARA Support Center</p>
           <LanguageSwitch compact />
         </div>
-        <h1>{tr("Diagnostiquer avant de contacter le support", "Diagnose before contacting support")}</h1>
+        <h1>{tr("Aide et demandes", "Help and requests")}</h1>
         <p>{tr(
-          "ELTARA vérifie automatiquement les causes courantes avant de transmettre un incident à l’équipe ELTARA.",
-          "ELTARA automatically checks common causes before escalating an incident to the ELTARA team."
+          "Signalez un problème et retrouvez vos demandes ici. ELTARA joint les contrôles techniques disponibles pour faciliter leur traitement.",
+          "Report a problem and track your requests here. ELTARA attaches available technical checks to help the team review them."
         )}</p>
         <div className="actions">
+          <a className="button primary" href="#new-request">{tr("Signaler un problème", "Report a problem")}</a>
+          <Link className="button secondary" href="/feedback">{tr("Proposer une amélioration", "Suggest an improvement")}</Link>
           <Link className="button secondary" href="/">{tr("Tableau de bord", "Dashboard")}</Link>
           <Link className="button secondary" href="/builder">{tr("Ouvrir ELTARA", "Open ELTARA")}</Link>
         </div>
@@ -233,7 +271,48 @@ export default function SupportPage() {
       ) : null}
 
       {state === "loading" ? <section className="panel"><p>{tr("Diagnostic en cours…", "Running diagnosis…")}</p></section> : null}
-      {state === "error" ? <section className="panel"><p>{tr("Le centre de diagnostic est momentanément indisponible.", "The diagnostic center is temporarily unavailable.")}</p></section> : null}
+      {state === "error" ? (
+        <section className="panel">
+          <p>{tr("Le diagnostic ou la liste des demandes est momentanément indisponible. Vous pouvez toujours préparer votre message.", "Diagnosis or the request list is temporarily unavailable. You can still prepare your message.")}</p>
+          <button className="button secondary" onClick={() => void diagnose()} disabled={diagnosing}>
+            {diagnosing ? tr("Actualisation…", "Refreshing…") : tr("Actualiser mes demandes", "Refresh my requests")}
+          </button>
+          {healthNotice ? <p role="status">{healthNotice}</p> : null}
+        </section>
+      ) : null}
+
+      {state !== "guest" ? (
+        <section className="panel" id="new-request" aria-labelledby="new-request-title">
+          <h2 id="new-request-title">{tr("Ouvrir une demande", "Open a request")}</h2>
+          <p>{tr(
+            "Indiquez le problème en quelques mots. Le diagnostic est ajouté lors de l’envoi. N’ajoutez jamais de mot de passe, clé API, donnée bancaire ou information personnelle sensible.",
+            "Describe the problem briefly. Diagnosis is added when you submit. Never include passwords, API keys, banking details or sensitive personal information."
+          )}</p>
+          <form className="feedback-form" onSubmit={submit} aria-busy={busy}>
+            <label>{tr("Motif", "Category")}
+              <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                <option value="bug">{tr("Problème ou dysfonctionnement", "Problem or malfunction")}</option>
+                <option value="domain">{tr("Domaine / DNS", "Domain / DNS")}</option>
+                <option value="publication">{tr("Publication", "Publishing")}</option>
+                <option value="billing">{tr("Facturation", "Billing")}</option>
+                <option value="ai">{tr("Création IA", "AI creation")}</option>
+                <option value="data">{tr("Données", "Data")}</option>
+                <option value="other">{tr("Autre", "Other")}</option>
+              </select>
+            </label>
+            <label>{tr("Sujet", "Subject")}
+              <input required minLength={3} maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} />
+            </label>
+            <label className="feedback-message">{tr("Décrivez ce que vous essayiez de faire", "Describe what you were trying to do")}
+              <textarea required minLength={10} rows={5} maxLength={4000} value={message} onChange={(event) => setMessage(event.target.value)} />
+            </label>
+            <button className="button primary" disabled={busy || subject.trim().length < 3 || message.trim().length < 10}>
+              {busy ? tr("Envoi…", "Sending…") : tr("Envoyer ma demande", "Send my request")}
+            </button>
+          </form>
+        </section>
+      ) : null}
+      {notice ? <p className="plans-note" role="status">{notice}</p> : null}
 
       {state === "ready" && health ? (
         <>
@@ -329,37 +408,6 @@ export default function SupportPage() {
                 </article>
               ))}
             </div>
-          </section>
-
-          <section className="panel">
-            <h2>{tr("Ouvrir une demande", "Open a request")}</h2>
-            <p>{tr(
-              "Votre diagnostic actuel sera joint automatiquement au ticket. N'ajoutez jamais de mot de passe, clé API ou donnée bancaire.",
-              "Your current diagnosis will automatically be attached to the ticket. Never include passwords, API keys or banking details."
-            )}</p>
-            <form className="feedback-form" onSubmit={submit}>
-              <label>{tr("Motif", "Category")}
-                <select value={category} onChange={(event) => setCategory(event.target.value)}>
-                  <option value="bug">Bug</option>
-                  <option value="domain">{tr("Domaine / DNS", "Domain / DNS")}</option>
-                  <option value="publication">{tr("Publication", "Publishing")}</option>
-                  <option value="billing">{tr("Facturation", "Billing")}</option>
-                  <option value="ai">IA</option>
-                  <option value="data">{tr("Données", "Data")}</option>
-                  <option value="other">{tr("Autre", "Other")}</option>
-                </select>
-              </label>
-              <label>{tr("Sujet", "Subject")}
-                <input maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} />
-              </label>
-              <label className="feedback-message">{tr("Décrivez ce que vous essayiez de faire", "Describe what you were trying to do")}
-                <textarea rows={7} maxLength={4000} value={message} onChange={(event) => setMessage(event.target.value)} />
-              </label>
-              <button className="button primary" disabled={busy || subject.trim().length < 3 || message.trim().length < 10}>
-                {busy ? tr("Diagnostic et envoi…", "Diagnosing and sending…") : tr("Diagnostiquer et envoyer", "Diagnose and send")}
-              </button>
-            </form>
-            {notice ? <p role="status">{notice}</p> : null}
           </section>
 
           <section className="panel">
