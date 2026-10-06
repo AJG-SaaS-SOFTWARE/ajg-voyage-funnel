@@ -4,7 +4,7 @@ import { billingServiceClient } from "../../../../lib/server-billing";
 import {
   normalizeStripeSubscriptionStatus,
   retrieveStripeSubscription,
-  stripeInvoiceIsInitialSubscriptionPayment,
+  stripeInvoiceAccessTransition,
   stripeInvoiceMetadata,
   stripeInvoicePaidThrough,
   stripeInvoicePriceId,
@@ -284,20 +284,10 @@ async function bindAndApplyInvoice(
       : "");
   if (!customerId) return "ignored";
 
+  const transition = stripeInvoiceAccessTransition(event.type, invoice);
+  if (!transition) return "ignored";
+  const { providerStatus, providerEventType } = transition;
   const paid = event.type === "invoice.paid";
-  const initialFailure =
-    event.type === "invoice.payment_failed" &&
-    stripeInvoiceIsInitialSubscriptionPayment(invoice);
-  const providerStatus = paid
-    ? "active"
-    : initialFailure
-      ? "suspended"
-      : "past_due";
-  const providerEventType = paid
-    ? "payment_succeeded"
-    : initialFailure
-      ? "subscription_pending"
-      : "payment_failed";
   const invoicePaidThrough = paid ? stripeInvoicePaidThrough(invoice) : null;
   const paidThrough =
     invoicePaidThrough ||
