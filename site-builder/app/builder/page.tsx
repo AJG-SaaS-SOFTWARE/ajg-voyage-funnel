@@ -1569,7 +1569,7 @@ export default function BuilderPage() {
                   <summary>
                     <span className="guided-writing-icon">✦</span>
                     <span><b>{tr("Créer mon site avec l’IA", "Create my website with AI")}</b><small>{tr("BUILD · décrivez votre besoin et obtenez une proposition complète à valider.", "BUILD · describe what you need and get a complete proposal to review.")}</small></span>
-                    <span className="guided-writing-badge">{siteArchitectCreateAvailable ? tr("BUILD disponible", "BUILD available") : "🔒 BUILD"}</span>
+                    <span className="guided-writing-badge">{tr("BUILD disponible", "BUILD available")}</span>
                   </summary>
                   <div className="guided-writing-body">
                     <p className="guided-writing-intro">{tr("Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée.", "Describe what you need in your own words. The Premium Site Architect first understands your business, audience, goal and positioning, then builds the visitor journey, architecture, copy and visual direction. Every proposal goes through a critical quality review before you see it.")}</p>
