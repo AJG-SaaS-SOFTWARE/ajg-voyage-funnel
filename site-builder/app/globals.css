@@ -4900,3 +4900,11 @@ button.active .step-label small{color:#63817f}
 .admin-beta-operational-actions{min-width:150px}
 .admin-beta-operational-actions a.text-button{text-decoration:none}
 @media(max-width:760px){.admin-beta-ops-toolbar{align-items:stretch;flex-direction:column}.admin-beta-ops-filters{display:grid;grid-template-columns:1fr 1fr}.admin-beta-ops-filters button{text-align:left}}
+
+
+/* Beta follow-up memory — visible state without automatic outreach. */
+.beta-follow-up-history{display:block;margin-top:5px;font-weight:680}
+.beta-follow-up-history.is-waiting{color:#6d6f94}
+.beta-follow-up-history.is-resumed{color:#087d76}
+.beta-follow-up-history.is-overdue{color:#a64a3c}
+.admin-beta-operational-actions button:disabled{opacity:.55;cursor:not-allowed}
