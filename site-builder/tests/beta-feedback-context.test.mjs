@@ -38,4 +38,7 @@ test("admin cockpit separates feedback volume and rating for Essential and Growt
   assert.match(admin, /Feedback Growth/);
   assert.match(admin, /feedback\.byExperience\.essential\.averageRating/);
   assert.match(admin, /feedback\.byExperience\.growth\.averageRating/);
+  assert.match(admin, /beta-plan-journey-grid/);
+  assert.match(admin, /betaExperience\.essentialThenGrowth/);
+  assert.match(admin, /orderedCompletionRate/);
 });
