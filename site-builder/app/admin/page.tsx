@@ -6,6 +6,7 @@ import { AdminShell } from "../../components/AdminShell";
 import {
   adminBootstrapPrivateStorage,
   adminInviteBetaMember,
+  adminRunBetaOperationsAgent,
   adminRecordBetaFollowUp,
   adminRemoveBetaMember,
   adminRunBuilderE2E,
@@ -16,6 +17,7 @@ import {
   adminSyncManagedDomain,
   getAdminBetaCohort,
   getAdminBetaMetrics,
+  getAdminBetaOperationsStatus,
   getAdminFeedback,
   getAdminManagedDomains,
   getAdminMetrics,
@@ -25,6 +27,7 @@ import {
   isCurrentUserAdmin,
   type AdminBetaCohort,
   type AdminBetaCohortMember,
+  type AdminBetaOperationsStatus,
   type AdminBetaMetrics,
   type AdminFeedback,
   type AdminManagedDomain,
@@ -114,6 +117,8 @@ export default function AdminPage() {
   const [feedback, setFeedback] = useState<AdminFeedback[]>([]);
   const [betaMetrics, setBetaMetrics] = useState<AdminBetaMetrics | null>(null);
   const [betaCohort, setBetaCohort] = useState<AdminBetaCohort | null>(null);
+  const [betaAgentStatus, setBetaAgentStatus] = useState<AdminBetaOperationsStatus | null>(null);
+  const [betaAgentRunning, setBetaAgentRunning] = useState(false);
   const [betaEmail, setBetaEmail] = useState("");
   const [betaDurationDays, setBetaDurationDays] = useState(30);
   const [betaLocale, setBetaLocale] = useState<"fr" | "en">("fr");
@@ -152,16 +157,18 @@ export default function AdminPage() {
     setMetrics(nextMetrics);
     setFeedback(nextFeedback);
 
-    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextManagedDomains, nextBackupStatus] = await Promise.all([
+    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextBetaAgentStatus, nextManagedDomains, nextBackupStatus] = await Promise.all([
       getReleaseReadiness().catch(() => null),
       getAdminBetaMetrics().catch(() => null),
       getAdminBetaCohort().catch(() => null),
+      getAdminBetaOperationsStatus().catch(() => null),
       getAdminManagedDomains().catch(() => []),
       getAdminStorageBackupStatus().catch(() => null)
     ]);
     setReadiness(nextReadiness);
     setBetaMetrics(nextBetaMetrics);
     setBetaCohort(nextBetaCohort);
+    setBetaAgentStatus(nextBetaAgentStatus);
     setManagedDomains(nextManagedDomains);
     setBackupStatus(nextBackupStatus);
 
@@ -447,6 +454,30 @@ export default function AdminPage() {
     }
   };
 
+  const runBetaAgentNow = async () => {
+    setMessage("");
+    setBetaAgentRunning(true);
+    try {
+      const next = await adminRunBetaOperationsAgent();
+      setBetaAgentStatus(next);
+      await load();
+      const latest = next.latest;
+      if (!latest) {
+        setMessage("Agent bêta exécuté, mais aucun journal n’a été retourné.");
+      } else if (latest.status === "failed") {
+        setMessage("Agent bêta exécuté : une intervention technique reste nécessaire.");
+      } else if (latest.status === "attention") {
+        setMessage("Agent bêta exécuté : les corrections sûres sont faites, des cas humains restent à traiter.");
+      } else {
+        setMessage("Agent bêta exécuté : aucun problème non résolu.");
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Exécution de l’agent bêta impossible.");
+    } finally {
+      setBetaAgentRunning(false);
+    }
+  };
+
   const recordBetaFollowUp = async (item: AdminBetaCohortMember) => {
     setMessage("");
     setBetaFollowUpBusyId(item.id);
@@ -703,6 +734,76 @@ export default function AdminPage() {
             existant reçoit immédiatement les droits Pro et la préférence de langue associée. La durée est renouvelable depuis
             cette page. Cette phase reste volontairement plafonnée à 10 testeurs.
           </p>
+
+          <div className={
+            "admin-beta-agent " +
+            (betaAgentStatus?.attentionRequired ? "needs-attention" : betaAgentStatus?.latest ? "healthy" : "unknown")
+          }>
+            <div className="admin-beta-agent-head">
+              <div>
+                <span className="eyebrow">Agent RUN bêta</span>
+                <h3>
+                  {betaAgentStatus?.latest
+                    ? betaAgentStatus.attentionRequired
+                      ? "Intervention requise"
+                      : betaAgentStatus.latest.status === "attention"
+                        ? "Agent actif · suivi humain restant"
+                        : "Agent autonome opérationnel"
+                    : "En attente de première exécution journalisée"}
+                </h3>
+                <p>
+                  L’agent corrige seul les incohérences d’accès sûres, surveille les relances et ne vous remonte que ce qu’il ne peut pas résoudre sans décision humaine.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="button secondary"
+                disabled={betaAgentRunning}
+                onClick={() => void runBetaAgentNow()}
+              >
+                {betaAgentRunning ? "Analyse en cours…" : "Exécuter maintenant"}
+              </button>
+            </div>
+            {betaAgentStatus?.latest ? (
+              <>
+                <div className="admin-beta-agent-kpis">
+                  <span><b>{betaAgentStatus.latest.repaired_metadata + betaAgentStatus.latest.revoked_stale_metadata}</b> correction(s) auto</span>
+                  <span><b>{betaAgentStatus.latest.repair_failures}</b> échec(s) technique(s)</span>
+                  <span><b>{betaAgentStatus.latest.follow_up_candidates}</b> relance(s) à préparer</span>
+                  <span><b>{betaAgentStatus.latest.unresponsive_after_followup}</b> sans reprise</span>
+                  <span><b>{betaAgentStatus.latest.completed_missions}</b> mission(s) terminée(s)</span>
+                </div>
+                <div className="admin-beta-agent-meta">
+                  <span>
+                    Dernière exécution : {betaAgentStatus.latest.completed_at
+                      ? new Date(betaAgentStatus.latest.completed_at).toLocaleString("fr-FR")
+                      : "en cours"}
+                  </span>
+                  <span>
+                    Statut : {betaAgentStatus.latest.status === "healthy"
+                      ? "sain"
+                      : betaAgentStatus.latest.status === "attention"
+                        ? "attention"
+                        : betaAgentStatus.latest.status === "failed"
+                          ? "échec"
+                          : "en cours"}
+                  </span>
+                  <span>{betaAgentStatus.runs.length} exécution(s) récente(s) conservée(s)</span>
+                </div>
+                {betaAgentStatus.latest.errors?.length ? (
+                  <div className="admin-beta-agent-errors">
+                    {betaAgentStatus.latest.errors.slice(0, 3).map((error) => (
+                      <small key={error}>{error}</small>
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="admin-beta-agent-empty">
+                Le cron quotidien est actif. Vous pouvez aussi lancer une analyse manuelle pour initialiser le journal immédiatement.
+              </p>
+            )}
+          </div>
 
           {betaCohort?.members.length ? (
             <div className="admin-beta-mission-summary">
