@@ -75,3 +75,26 @@ test("admin beta mission mirrors the same five tester milestones and exposes the
   assert.match(route, /Math\.round\(\(completedCount \/ checks\.length\) \* 100\)/);
   assert.match(admin, /admin-beta-member-step-dots/);
 });
+
+
+test("admin beta operations can filter by follow-up, blockers, active missions and completion", () => {
+  assert.match(admin, /type BetaOpsFilter = "all" \| "followup" \| "blocked" \| "active" \| "complete"/);
+  assert.match(admin, /betaOpsFilter/);
+  assert.match(admin, /À relancer/);
+  assert.match(admin, /Bloqués/);
+  assert.match(admin, /En cours/);
+  assert.match(admin, /Terminés/);
+  assert.match(admin, /betaVisibleMembers/);
+});
+
+test("admin beta operations ranks members and prepares a contextual follow-up without sending it automatically", () => {
+  assert.match(admin, /betaPriority/);
+  assert.match(admin, /P1/);
+  assert.match(admin, /P2/);
+  assert.match(admin, /P3/);
+  assert.match(admin, /betaFollowUpMessage/);
+  assert.match(admin, /Copier la relance/);
+  assert.match(admin, /mailto:/);
+  assert.match(admin, /Préparer l’e-mail/);
+  assert.doesNotMatch(admin, /sendEmail\(/);
+});
