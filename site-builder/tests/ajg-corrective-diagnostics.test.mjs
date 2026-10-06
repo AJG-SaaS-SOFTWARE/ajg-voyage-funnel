@@ -32,3 +32,16 @@ test("AJG corrective diagnostics supports correlated v2 attempts", () => {
   assert.match(workflow, /ajg-corrective-result:v2 attempt=\$ATTEMPT_ID/);
   assert.match(workflow, /ajg-corrective-result:v1/);
 });
+
+test("AJG corrective execution exposes the dispatch identity before its result", () => {
+  const runName = workflow.split("\n").find((line) => line.startsWith("run-name:"));
+  assert.ok(runName);
+  assert.ok(runName.includes("ajg-corrective:v2 attempt="));
+  assert.ok(runName.includes("github.event.client_payload.attempt_id || 'legacy'"));
+  assert.ok(runName.includes("mode="));
+  assert.ok(runName.includes("github.event.client_payload.mode || 'unknown'"));
+  assert.ok(runName.includes("issue="));
+  assert.ok(runName.includes("github.event.client_payload.issue_number || 'unknown'"));
+  assert.ok(!runName.includes("inputs."));
+  assert.ok(!runName.includes("client_payload.detail"));
+});

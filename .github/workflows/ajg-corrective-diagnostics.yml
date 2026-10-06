@@ -1,4 +1,5 @@
 name: AJG Corrective Diagnostics
+run-name: "ajg-corrective:v2 attempt=${{ github.event.client_payload.attempt_id || 'legacy' }} mode=${{ github.event.client_payload.mode || 'unknown' }} issue=${{ github.event.client_payload.issue_number || 'unknown' }}"
 
 on:
   repository_dispatch:
