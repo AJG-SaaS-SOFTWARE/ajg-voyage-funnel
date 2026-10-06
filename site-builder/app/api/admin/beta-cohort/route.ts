@@ -39,6 +39,15 @@ type BetaMissionProgress = {
   nextAction: BetaMissionNextAction;
 };
 
+type BetaFollowUpInfo = {
+  count: number;
+  lastSentAt: string | null;
+  lastAction: BetaMissionNextAction | null;
+  resumedAfterLast: boolean;
+  awaitingResume: boolean;
+  overdueAfterFollowUp: boolean;
+};
+
 type BetaActivity = {
   siteId: string | null;
   siteSlug: string | null;
@@ -51,7 +60,12 @@ type BetaActivity = {
   mission: BetaMissionProgress;
 };
 
-function member(user: User, grant?: BetaGrant | null, activity?: BetaActivity) {
+function member(
+  user: User,
+  grant?: BetaGrant | null,
+  activity?: BetaActivity,
+  followUp?: BetaFollowUpInfo
+) {
   const metadataBeta = user.app_metadata?.ajg_beta === true;
   const grantConfigured = grant?.active === true;
   const accessActive =
@@ -84,7 +98,15 @@ function member(user: User, grant?: BetaGrant | null, activity?: BetaActivity) {
     productEventCount: activity?.productEventCount || 0,
     aiEventCount: activity?.aiEventCount || 0,
     mission: activity?.mission || emptyMissionProgress(),
-    ...betaOperationalStatus(user, grant, activity)
+    followUp: followUp || {
+      count: 0,
+      lastSentAt: null,
+      lastAction: null,
+      resumedAfterLast: false,
+      awaitingResume: false,
+      overdueAfterFollowUp: false
+    },
+    ...betaOperationalStatus(user, grant, activity, followUp)
   };
 }
 
@@ -178,7 +200,8 @@ function missionFollowUpReason(nextAction: BetaMissionNextAction) {
 function betaOperationalStatus(
   user: User,
   grant?: BetaGrant | null,
-  activity?: BetaActivity
+  activity?: BetaActivity,
+  followUp?: BetaFollowUpInfo
 ) {
   const now = Date.now();
   const invitedAt =
@@ -193,12 +216,27 @@ function betaOperationalStatus(
   const inviteAgeHours = Number.isFinite(invitedAt) ? (now - invitedAt) / 3_600_000 : 0;
   const inactivityHours = Number.isFinite(lastActivityAt) ? (now - lastActivityAt) / 3_600_000 : null;
   const mission = activity?.mission || emptyMissionProgress();
+  const lastFollowUpAt = followUp?.lastSentAt ? Date.parse(followUp.lastSentAt) : NaN;
+  const hasFollowUp = Number.isFinite(lastFollowUpAt);
+  const activityAfterFollowUp =
+    hasFollowUp && Number.isFinite(lastActivityAt) && lastActivityAt > lastFollowUpAt;
+  const followUpAgeHours = hasFollowUp ? (now - lastFollowUpAt) / 3_600_000 : null;
+  const waitingAfterFollowUp =
+    hasFollowUp && !activityAfterFollowUp && followUpAgeHours !== null && followUpAgeHours < 72;
+  const overdueAfterFollowUp =
+    hasFollowUp && !activityAfterFollowUp && followUpAgeHours !== null && followUpAgeHours >= 72;
 
   if (!user.last_sign_in_at) {
     return {
       betaStage: "invited" as const,
-      needsFollowUp: inviteAgeHours >= 48,
-      followUpReason: inviteAgeHours >= 48 ? "Invitation non activée depuis plus de 48 h." : null
+      needsFollowUp: waitingAfterFollowUp ? false : overdueAfterFollowUp || inviteAgeHours >= 48,
+      followUpReason: waitingAfterFollowUp
+        ? null
+        : overdueAfterFollowUp
+          ? "Déjà relancé, mais aucune activation n’a été observée depuis plus de 72 h."
+          : inviteAgeHours >= 48
+            ? "Invitation non activée depuis plus de 48 h."
+            : null
     };
   }
 
@@ -210,8 +248,19 @@ function betaOperationalStatus(
     };
   }
 
-  const needsFollowUp = inactivityHours !== null && inactivityHours >= 72;
-  const followUpReason = needsFollowUp ? missionFollowUpReason(mission.nextAction) : null;
+  const staleJourney = inactivityHours !== null && inactivityHours >= 72;
+  const needsFollowUp =
+    waitingAfterFollowUp
+      ? false
+      : overdueAfterFollowUp || staleJourney;
+  const followUpReason =
+    waitingAfterFollowUp
+      ? null
+      : overdueAfterFollowUp
+        ? "Déjà relancé, mais aucune reprise d’activité n’a été observée depuis plus de 72 h."
+        : needsFollowUp
+          ? missionFollowUpReason(mission.nextAction)
+          : null;
 
   if (mission.published || activity?.siteStatus === "published") {
     return {
@@ -322,7 +371,7 @@ export async function GET(request: Request) {
       (grants || []).map((grant) => [grant.user_id, grant as BetaGrant])
     );
 
-    const [siteResult, eventResult, feedbackResult] = userIds.length
+    const [siteResult, eventResult, feedbackResult, followUpResult] = userIds.length
       ? await Promise.all([
           auth.service
             .from("sites")
@@ -339,16 +388,22 @@ export async function GET(request: Request) {
             .from("user_feedback")
             .select("user_id,site_id,created_at")
             .in("user_id", userIds)
-            .gte("created_at", new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString())
+            .gte("created_at", new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString()),
+          auth.service
+            .from("beta_followups")
+            .select("user_id,site_id,mission_next_action,sent_at")
+            .in("user_id", userIds)
+            .order("sent_at", { ascending: false })
         ])
       : [
+          { data: [], error: null },
           { data: [], error: null },
           { data: [], error: null },
           { data: [], error: null }
         ];
 
-    if (siteResult.error || eventResult.error || feedbackResult.error) {
-      throw siteResult.error || eventResult.error || feedbackResult.error;
+    if (siteResult.error || eventResult.error || feedbackResult.error || followUpResult.error) {
+      throw siteResult.error || eventResult.error || feedbackResult.error || followUpResult.error;
     }
 
     const activityByUser = new Map<string, BetaActivity>();
@@ -403,12 +458,37 @@ export async function GET(request: Request) {
       });
     }
 
+    const followUpByUser = new Map<string, BetaFollowUpInfo>();
+    for (const user of users) {
+      const history = (followUpResult.data || []).filter((item) => item.user_id === user.id);
+      const latest = history[0] || null;
+      const activity = activityByUser.get(user.id);
+      const lastActivityAt = activity?.lastActivityAt ? Date.parse(activity.lastActivityAt) : NaN;
+      const lastSentAt = latest?.sent_at ? Date.parse(latest.sent_at) : NaN;
+      const resumedAfterLast =
+        Number.isFinite(lastActivityAt) &&
+        Number.isFinite(lastSentAt) &&
+        lastActivityAt > lastSentAt;
+      const ageHours = Number.isFinite(lastSentAt)
+        ? (Date.now() - lastSentAt) / 3_600_000
+        : null;
+      followUpByUser.set(user.id, {
+        count: history.length,
+        lastSentAt: latest?.sent_at || null,
+        lastAction: (latest?.mission_next_action as BetaMissionNextAction | undefined) || null,
+        resumedAfterLast,
+        awaitingResume: Boolean(latest) && !resumedAfterLast && ageHours !== null && ageHours < 72,
+        overdueAfterFollowUp: Boolean(latest) && !resumedAfterLast && ageHours !== null && ageHours >= 72
+      });
+    }
+
     const members = users
       .map((user) =>
         member(
           user,
           grantsByUser.get(user.id),
-          activityByUser.get(user.id)
+          activityByUser.get(user.id),
+          followUpByUser.get(user.id)
         )
       )
       .sort((a, b) => {
@@ -444,7 +524,9 @@ export async function GET(request: Request) {
         defaultAccessDays: 30,
         followUpRules: {
           invitationHours: 48,
-          inactivityHours: 72
+          inactivityHours: 72,
+          duplicateGuardHours: 24,
+          postFollowUpWaitHours: 72
         },
         missionSummary,
         members
