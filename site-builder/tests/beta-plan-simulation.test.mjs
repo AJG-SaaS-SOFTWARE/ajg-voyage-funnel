@@ -29,8 +29,8 @@ test("Builder keeps real beta rights but hides Growth and BUILD in Essential sim
 test("dashboard lets beta testers move from Essential to Growth without checkout", () => {
   assert.match(home, /effectiveCanCreateWithAi/);
   assert.match(home, /betaExperienceMode === "essential" \? false : canCreateWithAi/);
-  assert.match(home, /Tester d’abord Essentiel/);
-  assert.match(home, /Passer ensuite en Growth/);
+  assert.match(home, /Tester Essentiel/);
+  assert.match(home, /Comparer avec Growth/);
   assert.match(home, /Tester Growth/);
   assert.match(home, /changeBetaExperienceMode\("growth"\)/);
 });
