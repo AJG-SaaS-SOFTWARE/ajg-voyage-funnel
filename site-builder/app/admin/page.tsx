@@ -727,12 +727,35 @@ export default function AdminPage() {
                 <span><b>{betaMetrics.ai.generations}</b> générations IA</span>
                 <span><b>{betaMetrics.feedback.count}</b> retours</span>
                 <span><b>{betaMetrics.feedback.averageRating ?? "—"}</b> note moyenne</span>
+                <span><b>{betaMetrics.feedback.byExperience.essential.count}</b> retours Essentiel</span>
+                <span><b>{betaMetrics.feedback.byExperience.growth.count}</b> retours Growth</span>
               </div>
             ) : null}
           </div>
 
           {betaMetrics ? (
             <>
+              <div className="beta-feedback-context-grid">
+                <article>
+                  <span>RUN</span>
+                  <b>{betaMetrics.feedback.byExperience.essential.count}</b>
+                  <strong>Feedback Essentiel</strong>
+                  <small>note moyenne {betaMetrics.feedback.byExperience.essential.averageRating ?? "—"}/5</small>
+                </article>
+                <article>
+                  <span>RUN + GROW</span>
+                  <b>{betaMetrics.feedback.byExperience.growth.count}</b>
+                  <strong>Feedback Growth</strong>
+                  <small>note moyenne {betaMetrics.feedback.byExperience.growth.averageRating ?? "—"}/5</small>
+                </article>
+                <article>
+                  <span>?</span>
+                  <b>{betaMetrics.feedback.byExperience.unknown}</b>
+                  <strong>Contexte non attribué</strong>
+                  <small>anciens retours ou mode non instrumenté</small>
+                </article>
+              </div>
+
               <div className="beta-funnel-grid">
                 <article>
                   <span>1</span>
