@@ -6,7 +6,7 @@ import { useProductLocale } from "../lib/product-i18n";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { EltaraBrand } from "./EltaraBrand";
 
-type AccountSection = "plans" | "billing" | "domains" | "messages" | "data";
+type AccountSection = "plans" | "billing" | "domains" | "messages" | "analytics" | "data";
 
 export function AccountShell({
   active,
@@ -27,6 +27,7 @@ export function AccountShell({
     billing: { topic: "billing", labelFr: "Résoudre un problème de facturation", labelEn: "Resolve a billing issue" },
     domains: { topic: "domain", labelFr: "Aide domaine & DNS", labelEn: "Domain & DNS help" },
     messages: { topic: "publishing", labelFr: "Aide formulaire & publication", labelEn: "Form & publishing help" },
+    analytics: { topic: "publishing", labelFr: "Comprendre mes analytics", labelEn: "Understand my analytics" },
     data: { topic: "data", labelFr: "Aide export & données", labelEn: "Export & data help" }
   };
   const currentHelp = contextTopic[active];
@@ -35,6 +36,7 @@ export function AccountShell({
     { href: "/billing", label: tr("Facturation", "Billing"), section: "billing" },
     { href: "/domains", label: tr("Domaines", "Domains"), section: "domains" },
     { href: "/messages", label: tr("Messages", "Messages"), section: "messages" },
+    { href: "/analytics", label: "Analytics", section: "analytics" },
     { href: "/data", label: tr("Mes données", "My data"), section: "data" }
   ];
 
@@ -60,7 +62,7 @@ export function AccountShell({
             <Link href="/builder" className="account-nav-builder">
               <span aria-hidden="true">✦</span>
               <span>
-                <b>Builder</b>
+                <b>ELTARA</b>
                 <small>{tr("Créer et modifier votre site", "Create and edit your website")}</small>
               </span>
             </Link>
