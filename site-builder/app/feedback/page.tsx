@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { submitFeedback, type FeedbackCategory } from "../../lib/product-analytics";
+import { submitFeedback, trackProductEvent, type FeedbackCategory } from "../../lib/product-analytics";
 import { useProductLocale } from "../../lib/product-i18n";
 import { getMySite } from "../../lib/supabase-site-repository";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
+import { getMyBetaAccess } from "../../lib/subscription";
+import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 
 export default function FeedbackPage() {
   const { tr } = useProductLocale();
@@ -15,26 +18,47 @@ export default function FeedbackPage() {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [siteId, setSiteId] = useState<string | null>(null);
+  const [betaActive, setBetaActive] = useState(false);
+  const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
 
   useEffect(() => {
     let cancelled = false;
-    void getMySite()
-      .then((site) => {
-        if (!cancelled) setSiteId(site?.id || null);
-      })
-      .catch(() => {
-        if (!cancelled) setSiteId(null);
-      });
+    void Promise.all([
+      getMySite().catch(() => null),
+      getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
+    ]).then(([site, beta]) => {
+      if (cancelled) return;
+      setSiteId(site?.id || null);
+      setBetaActive(beta.active);
+      if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
+    });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
+    setBetaExperienceMode(mode);
+    writeBetaExperienceMode(mode);
+    if (betaActive) {
+      void trackProductEvent(
+        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        siteId
+      );
+    }
+  };
 
   const send = async (event: FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setStatus("");
     try {
+      if (betaActive) {
+        await trackProductEvent(
+          betaExperienceMode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+          siteId
+        );
+      }
       await submitFeedback({ category, rating, message, siteId });
       setMessage("");
       setStatus(
@@ -73,13 +97,25 @@ export default function FeedbackPage() {
         </Link>
       </section>
 
+      {betaActive ? (
+        <BetaExperienceSwitch
+          compact
+          mode={betaExperienceMode}
+          onChange={changeBetaExperienceMode}
+        />
+      ) : null}
+
       <section className="panel beta-feedback-guide">
         <p className="eyebrow">{tr("Pour un retour utile", "For useful feedback")}</p>
         <h2>{tr("Dites-nous surtout où vous avez hésité", "Tell us where you hesitated")}</h2>
         <p>
           {tr(
-            "Indiquez ce que vous cherchiez à faire, ce que vous attendiez, puis ce qui vous a surpris ou ralenti. Le site est relié au retour uniquement par son identifiant technique.",
-            "Tell us what you were trying to do, what you expected, and what surprised or slowed you down. The website is linked to the feedback only through its technical identifier."
+            betaActive
+              ? `Indiquez ce que vous cherchiez à faire, ce que vous attendiez, puis ce qui vous a surpris ou ralenti. Votre retour sera analysé dans le contexte du parcours ${betaExperienceMode === "growth" ? "Growth" : "Essentiel"} ; aucun contenu de votre site n’est ajouté automatiquement.`
+              : "Indiquez ce que vous cherchiez à faire, ce que vous attendiez, puis ce qui vous a surpris ou ralenti. Le site est relié au retour uniquement par son identifiant technique.",
+            betaActive
+              ? `Tell us what you were trying to do, what you expected, and what surprised or slowed you down. Your feedback will be analyzed in the context of the ${betaExperienceMode === "growth" ? "Growth" : "Essential"} journey; no website content is added automatically.`
+              : "Tell us what you were trying to do, what you expected, and what surprised or slowed you down. The website is linked to the feedback only through its technical identifier."
           )}
         </p>
       </section>
