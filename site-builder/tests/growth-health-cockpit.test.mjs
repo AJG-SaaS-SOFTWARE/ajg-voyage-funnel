@@ -48,7 +48,7 @@ test("Growth cockpit is gated by plan, beta simulation mode and first publicatio
 
 test("Growth cockpit reuses deterministic Health Center checks without premium AI scan", () => {
   assert.match(page, /\/api\/support\/health\?siteId=/);
-  assert.match(page, /supportGuidanceForDiagnosis/);
+  assert.match(page, /supportGuidanceForCheck/);
   assert.match(page, /ne déclenche pas de modèle IA Premium|n’utilise pas de modèle IA Premium/);
   assert.doesNotMatch(page, /\/api\/ai\/write|\/api\/ai\//);
 });
@@ -65,4 +65,11 @@ test("active Growth offer exposes the cockpit from My plan", () => {
   assert.match(plans, /displayedPlanKey === "growth"/);
   assert.match(plans, /href="\/growth"/);
   assert.match(plans, /Ouvrir le pilotage Growth/);
+});
+
+
+test("Growth explains every non-healthy check instead of using the support page four-item cap", () => {
+  assert.match(page, /supportGuidanceForCheck\(check, locale\)/);
+  assert.doesNotMatch(page, /supportGuidanceForDiagnosis/);
+  assert.match(page, /ELTARA a détecté un écart qui mérite votre attention/);
 });
