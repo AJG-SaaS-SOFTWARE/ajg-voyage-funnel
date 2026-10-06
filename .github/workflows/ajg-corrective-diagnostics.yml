@@ -10,12 +10,15 @@ permissions:
   issues: write
 
 concurrency:
-  group: ajg-corrective-diagnostic-${{ github.event.client_payload.issue_number || github.run_id }}
+  group: ajg-corrective-${{ github.event.client_payload.mode || 'unknown' }}-${{ github.event.client_payload.issue_number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   diagnose:
     if: github.event.client_payload.mode == 'diagnose'
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults:
@@ -38,6 +41,11 @@ jobs:
         continue-on-error: true
         run: npx tsc --noEmit
 
+      - name: Run lint diagnostic
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+
       - name: Run test diagnostic
         id: tests
         continue-on-error: true
@@ -50,26 +58,272 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ISSUE: ${{ github.event.client_payload.issue_number }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
+          LINT: ${{ steps.lint.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           ATTEMPT_ID: ${{ github.event.client_payload.attempt_id }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ -n "$ATTEMPT_ID" ]; then
-            PREFIX="<!-- ajg-corrective-result:v2 attempt=$ATTEMPT_ID"
+          if ! [[ "$ISSUE" =~ ^[0-9]+$ ]]; then
+            exit 0
+          fi
+          SAFE_ATTEMPT=$(printf '%s' "$ATTEMPT_ID" | tr -cd '[:alnum:]_.-')
+          if [ -n "$SAFE_ATTEMPT" ]; then
+            PREFIX="<!-- ajg-corrective-result:v2 attempt=$SAFE_ATTEMPT"
           else
             PREFIX="<!-- ajg-corrective-result:v1"
           fi
-          if [ "$TYPECHECK" = "success" ] && [ "$TESTS" = "success" ]; then
+          if [ "$TYPECHECK" = "success" ] && [ "$LINT" = "success" ] && [ "$TESTS" = "success" ]; then
             MARKER="$PREFIX status=passed mode=diagnose -->"
             VERDICT="✅ Diagnostic correctif automatique : contrôles ELTARA au vert."
           else
             MARKER="$PREFIX status=failed mode=diagnose -->"
             VERDICT="⚠️ Diagnostic correctif automatique : au moins un contrôle ELTARA a échoué."
           fi
-          DIAGNOSTIC="<!-- ajg-corrective-diagnostic:v1 typecheck=$TYPECHECK lint=na tests=$TESTS -->"
+          DIAGNOSTIC="<!-- ajg-corrective-diagnostic:v1 typecheck=$TYPECHECK lint=$LINT tests=$TESTS -->"
           gh issue comment "$ISSUE" --body "$MARKER
           $DIAGNOSTIC
           $VERDICT
 
           Mode: diagnostic uniquement — aucun code, secret, donnée ou déploiement n'a été modifié.
+          Exécution: $RUN_URL"
+
+  lint_fix:
+    if: github.event.client_payload.mode == 'lint_fix'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    concurrency:
+      group: eltara-corrective-lint-fix
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: site-builder
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Capture trusted base
+        id: base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site-builder/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Assess bounded ESLint auto-fix surface
+        id: assess
+        shell: bash
+        run: |
+          set +e
+          npx eslint app components lib --fix-dry-run --format json > /tmp/eltara-eslint-fix.json
+          ESLINT_EXIT=$?
+          set -e
+          export ESLINT_EXIT
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          let results;
+          try {
+            results = JSON.parse(fs.readFileSync('/tmp/eltara-eslint-fix.json', 'utf8'));
+          } catch {
+            console.error('Unable to parse ESLint dry-run output.');
+            process.exit(2);
+          }
+          const root = process.cwd();
+          const candidates = [...new Set(results
+            .filter((item) => typeof item.output === 'string')
+            .map((item) => path.relative(root, item.filePath).replaceAll('\\', '/'))
+          )].sort();
+          const remainingErrors = results.reduce((sum, item) => sum + Number(item.errorCount || 0), 0);
+          const allowedRoot = /^(app|components|lib)\//;
+          const allowedExt = /\.(?:[cm]?js|jsx|ts|tsx)$/i;
+          const sensitive = candidates.filter((file) =>
+            !allowedRoot.test(file) ||
+            !allowedExt.test(file) ||
+            /(^|\/)(?:migrations?|secrets?|credentials?)(?:\/|[-_.])/i.test(file) ||
+            /(^|\/)supabase(?:\/|[-_.])/i.test(file) ||
+            /\.sql$/i.test(file) ||
+            file === 'package.json' ||
+            file === 'package-lock.json' ||
+            file.startsWith('.github/')
+          );
+          let status = 'candidate';
+          let reason = 'safe_candidate';
+          if (Number(process.env.ESLINT_EXIT || 0) > 1) {
+            status = 'blocked'; reason = 'eslint_runtime_error';
+          } else if (remainingErrors > 0) {
+            status = 'blocked'; reason = 'unfixable_errors';
+          } else if (sensitive.length > 0) {
+            status = 'blocked'; reason = 'sensitive_path';
+          } else if (candidates.length > 8) {
+            status = 'blocked'; reason = 'too_many_files';
+          } else if (candidates.length === 0) {
+            status = 'noop'; reason = 'no_safe_fix';
+          }
+          fs.writeFileSync('/tmp/eltara-lint-files.txt', candidates.join('\n'));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `status=${status}\nreason=${reason}\nfiles_count=${candidates.length}\nremaining_errors=${remainingErrors}\n`);
+          console.log(`ELTARA_LINT_FIX status=${status} reason=${reason} files=${candidates.length} remaining_errors=${remainingErrors}`);
+          if (sensitive.length) console.log('Rejected paths: ' + sensitive.join(', '));
+          NODE
+
+      - name: Apply bounded ESLint fixes
+        id: apply
+        if: steps.assess.outputs.status == 'candidate'
+        shell: bash
+        run: |
+          mapfile -t files < /tmp/eltara-lint-files.txt
+          npx eslint "${files[@]}" --fix
+          node - <<'NODE'
+          const fs = require('fs');
+          const { execFileSync } = require('child_process');
+          const expected = new Set(fs.readFileSync('/tmp/eltara-lint-files.txt', 'utf8').split('\n').filter(Boolean));
+          const changed = execFileSync('git', ['diff', '--name-only'], { encoding: 'utf8' }).split('\n').filter(Boolean);
+          const forbidden = changed.filter((file) =>
+            !expected.has(file) ||
+            !/^(app|components|lib)\//.test(file) ||
+            /(^|\/)(?:migrations?|secrets?|credentials?)(?:\/|[-_.])/i.test(file) ||
+            /(^|\/)supabase(?:\/|[-_.])/i.test(file) ||
+            /\.sql$/i.test(file) ||
+            file === 'package.json' ||
+            file === 'package-lock.json' ||
+            file.startsWith('.github/')
+          );
+          const numstat = execFileSync('git', ['diff', '--numstat'], { encoding: 'utf8' }).trim();
+          const lineDelta = numstat ? numstat.split('\n').reduce((sum, line) => {
+            const [add, del] = line.split('\t');
+            const a = Number(add); const d = Number(del);
+            return sum + (Number.isFinite(a) ? a : 0) + (Number.isFinite(d) ? d : 0);
+          }, 0) : 0;
+          if (forbidden.length) { console.error('Forbidden diff: ' + forbidden.join(', ')); process.exit(3); }
+          if (changed.length > 8) { console.error('Diff exceeds 8 files.'); process.exit(4); }
+          if (lineDelta > 250) { console.error('Diff exceeds 250 changed lines.'); process.exit(5); }
+          const status = changed.length ? 'changed' : 'noop';
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `status=${status}\nfiles_count=${changed.length}\nline_delta=${lineDelta}\n`);
+          console.log(`ELTARA_LINT_APPLY status=${status} files=${changed.length} line_delta=${lineDelta}`);
+          NODE
+
+      - name: Run full ELTARA quality gate
+        if: steps.apply.outputs.status == 'changed'
+        run: |
+          npm test
+          npm run lint
+          node --check scripts/verify-deployment.mjs
+          npx tsc --noEmit
+          npm run build
+          npm run test:smoke
+
+      - name: Prepare audited corrective branch
+        id: branch
+        if: steps.apply.outputs.status == 'changed'
+        shell: bash
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "${{ steps.base.outputs.sha }}" ]; then
+            echo "main changed since diagnosis; refusing an untested merge."
+            exit 6
+          fi
+          BRANCH="ajg-corrective/eltara-lint-${GITHUB_RUN_ID}"
+          git config user.name "AJG Corrective Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -- app components lib
+          if git diff --cached --quiet; then
+            echo "No audited diff remains."
+            exit 7
+          fi
+          git commit -m "ELTARA: autonomous bounded lint correction"
+          git push origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create and merge audited corrective PR
+        id: merge
+        if: steps.branch.outputs.branch != ''
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          HEAD_SHA: ${{ steps.branch.outputs.head_sha }}
+          ISSUE: ${{ github.event.client_payload.issue_number }}
+        shell: bash
+        run: |
+          BODY="Automated bounded ESLint correction. Dry-run, allowlist, diff limits and the full ELTARA quality gate passed before this PR was created."
+          if [[ "$ISSUE" =~ ^[0-9]+$ ]]; then
+            BODY="$BODY Refs #$ISSUE."
+          fi
+          PR_URL=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$BRANCH" --title "ELTARA: autonomous bounded lint correction" --body "$BODY")
+          PR_NUMBER=$(gh pr view "$PR_URL" --repo "$GITHUB_REPOSITORY" --json number --jq '.number')
+          PR_BASE=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.base.sha')
+          if [ "$PR_BASE" != "$BASE_SHA" ]; then
+            gh pr close "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --comment "Main moved after the validated corrective run; automatic merge refused."
+            git push origin --delete "$BRANCH" || true
+            exit 8
+          fi
+          MERGE_JSON=$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/merge" -f merge_method=squash -f sha="$HEAD_SHA")
+          echo "$MERGE_JSON" | jq -e '.merged == true' >/dev/null
+          MERGE_SHA=$(echo "$MERGE_JSON" | jq -r '.sha')
+          git push origin --delete "$BRANCH" || true
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "merge_sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Report lint-fix verdict to issue
+        if: always() && github.event.client_payload.issue_number != ''
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.client_payload.issue_number }}
+          ATTEMPT_ID: ${{ github.event.client_payload.attempt_id }}
+          ASSESS_STATUS: ${{ steps.assess.outputs.status }}
+          ASSESS_REASON: ${{ steps.assess.outputs.reason }}
+          ASSESS_FILES: ${{ steps.assess.outputs.files_count }}
+          APPLY_STATUS: ${{ steps.apply.outputs.status }}
+          PR_URL: ${{ steps.merge.outputs.pr_url }}
+          MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          if ! [[ "$ISSUE" =~ ^[0-9]+$ ]]; then
+            exit 0
+          fi
+          SAFE_ATTEMPT=$(printf '%s' "$ATTEMPT_ID" | tr -cd '[:alnum:]_.-')
+          SAFE_REASON=$(printf '%s' "$ASSESS_REASON" | tr -cd '[:alnum:]_.-')
+          if [ -n "$SAFE_ATTEMPT" ]; then
+            PREFIX="<!-- ajg-corrective-result:v2 attempt=$SAFE_ATTEMPT"
+          else
+            PREFIX="<!-- ajg-corrective-result:v1"
+          fi
+          STATUS="failed"
+          ACTION="failed"
+          VERDICT="⚠️ Auto-correction lint ELTARA arrêtée avant fusion."
+          if [ "$ASSESS_STATUS" = "noop" ] || [ "$APPLY_STATUS" = "noop" ]; then
+            STATUS="passed"
+            ACTION="no_change"
+            VERDICT="✅ Auto-correction lint ELTARA : aucune modification sûre nécessaire."
+          elif [ -n "$MERGE_SHA" ]; then
+            STATUS="passed"
+            ACTION="merged"
+            VERDICT="✅ Auto-correction lint ELTARA fusionnée après tous les contrôles."
+          elif [ "$ASSESS_STATUS" = "blocked" ]; then
+            ACTION="blocked"
+            VERDICT="⚠️ Auto-correction lint ELTARA refusée par les garde-fous ($SAFE_REASON)."
+          fi
+          MARKER="$PREFIX status=$STATUS mode=lint_fix -->"
+          DETAIL="<!-- ajg-corrective-lint-fix:v1 action=$ACTION files=${ASSESS_FILES:-0} reason=${SAFE_REASON:-none} -->"
+          EXTRA=""
+          if [ -n "$PR_URL" ]; then EXTRA=" PR: $PR_URL · merge: $MERGE_SHA"; fi
+          gh issue comment "$ISSUE" --body "$MARKER
+          $DETAIL
+          $VERDICT
+
+          Limites: max 8 fichiers / 250 lignes, zones sensibles exclues, qualité complète obligatoire.$EXTRA
           Exécution: $RUN_URL"
