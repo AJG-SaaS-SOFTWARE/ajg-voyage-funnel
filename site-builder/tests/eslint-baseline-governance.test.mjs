@@ -38,9 +38,13 @@ test("ELTARA pins the lint toolchain instead of relying on transient npx install
   assert.equal(packageJson.devDependencies?.["eslint-config-next"], packageJson.dependencies.next);
 });
 
-test("ELTARA corrective diagnostics remain read-only until the lint baseline is proven", () => {
-  assert.match(corrective, /contents: read/);
-  assert.doesNotMatch(corrective, /contents: write/);
-  assert.doesNotMatch(corrective, /npm install/);
-  assert.doesNotMatch(corrective, /git push/);
+test("ELTARA corrective writes are isolated to the post-baseline lint_fix mode", () => {
+  const diagnose = corrective.split("\n  diagnose:")[1].split("\n  lint_fix:")[0];
+  const lintFix = corrective.split("\n  lint_fix:")[1];
+  assert.match(diagnose, /contents: read/);
+  assert.doesNotMatch(diagnose, /contents: write/);
+  assert.match(lintFix, /contents: write/);
+  assert.match(lintFix, /--fix-dry-run/);
+  assert.match(lintFix, /package-lock\.json/);
+  assert.doesNotMatch(lintFix, /npm install(?:\s|$)/);
 });
