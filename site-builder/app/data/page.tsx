@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
+import { CustomerErrorHelp } from "../../components/CustomerErrorHelp";
 import { useProductLocale } from "../../lib/product-i18n";
 import { downloadMySiteExport } from "../../lib/billing-access";
 import {
@@ -155,6 +156,7 @@ export default function DataRightsPage() {
       description={tr("Exportez vos données ou demandez leur effacement. Une demande d’effacement reste distincte d’un impayé : un problème de paiement ne supprime jamais automatiquement vos sites.", "Export your data or request erasure. An erasure request is separate from a failed payment: payment issues never automatically delete your websites.")}
     >
       {message ? <p className="account-note" role="status">{message}</p> : null}
+      <CustomerErrorHelp message={message} />
 
       <section className="panel data-rights-panel">
         <div>
