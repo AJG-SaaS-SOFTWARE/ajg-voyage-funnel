@@ -155,3 +155,11 @@ test("Growth history displays specific baseline and post-publication KPI values"
   assert.match(page, /measurement\.afterMetricValue/);
   assert.match(page, /measurement\.metricDeltaPoints/);
 });
+
+
+test("Growth is discoverable from the account navigation instead of only plan-specific cards", () => {
+  const shell = fs.readFileSync(new URL("../components/AccountShell.tsx", import.meta.url), "utf8");
+  assert.match(shell, /href="\/growth"/);
+  assert.match(shell, /Piloter et améliorer votre site/);
+  assert.match(shell, /account-nav-growth/);
+});
