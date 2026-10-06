@@ -16,7 +16,9 @@ test("Builder loads site-scoped BUILD and Growth access", () => {
 });
 
 test("AI Architect creation and Growth revision controls have distinct gates", () => {
-  assert.ok(source.includes("disabled={!siteArchitectCreateAvailable}"));
+  assert.ok(source.includes("{siteArchitectCreateAvailable ? ("));
+  assert.ok(source.includes("showGrowthRevisionWorkspace = siteRevisionAvailable && published"));
+  assert.ok(source.includes("{showGrowthRevisionWorkspace ? ("));
   assert.ok(
     source.includes(
       "disabled={!siteArchitectCreateAvailable || architectLoading || !architectBriefReady}"
@@ -29,11 +31,14 @@ test("AI Architect creation and Growth revision controls have distinct gates", (
   );
 });
 
-test("Locked BUILD and Growth cards route to plan or billing recovery", () => {
+test("Unavailable BUILD and Growth tools use progressive discovery instead of locked editor cards", () => {
+  assert.ok(source.includes("showAdvancedDiscovery"));
+  assert.ok(source.includes("advanced-discovery-card"));
+  assert.ok(source.includes('"Découvrir les fonctions avancées"'));
+  assert.ok(source.includes('"Aucune fonction verrouillée n’encombre votre éditeur."'));
   assert.ok(source.includes('premiumAccessHref === "/billing"'));
   assert.ok(source.includes('"Régulariser mon accès"'));
   assert.ok(source.includes('"Voir Growth / Création IA"'));
-  assert.ok(source.includes("premium-feature-lock-note"));
-  assert.ok(source.includes('"🔒 BUILD"'));
-  assert.ok(source.includes('"🔒 Growth"'));
+  assert.equal(source.includes('"🔒 BUILD"'), false);
+  assert.equal(source.includes('"🔒 Growth"'), false);
 });

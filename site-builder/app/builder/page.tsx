@@ -343,6 +343,9 @@ export default function BuilderPage() {
       : "/plans";
   const premiumAccessLabel =
     premiumAccessHref === "/billing" ? tr("Régulariser mon accès", "Restore my access") : tr("Voir Growth / Création IA", "View Growth / AI Launch");
+  const showAdvancedDiscovery = !siteArchitectCreateAvailable || !siteRevisionAvailable;
+  const growthActive = siteEntitlements.planKey === "growth" && paidAiAccessActive;
+  const showGrowthRevisionWorkspace = siteRevisionAvailable && published;
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
@@ -1515,19 +1518,61 @@ export default function BuilderPage() {
                   return uploadContentAsset(file, site.id);
                 }} />
                 <ArchitectureEditor value={config.architecture} library={config.contentLibrary} onChange={(architecture) => update("architecture", architecture)} />
-                <details id="ai-site-architect" className={"guided-writing-card ai-architect-card " + (!siteArchitectCreateAvailable ? "premium-feature-locked" : "")}>
+                {showAdvancedDiscovery ? (
+                  <details className="advanced-discovery-card">
+                    <summary>
+                      <span className="advanced-discovery-icon">✦</span>
+                      <span>
+                        <b>{premiumAccessHref === "/billing"
+                          ? tr("Réactiver mes fonctions avancées", "Restore my advanced features")
+                          : tr("Découvrir les fonctions avancées", "Discover advanced features")}</b>
+                        <small>{tr(
+                          "Votre parcours reste centré sur les outils disponibles. Ouvrez seulement si vous voulez voir ce que Growth ou la Création IA peuvent ajouter.",
+                          "Your workflow stays focused on available tools. Open this only if you want to see what Growth or AI Launch can add."
+                        )}</small>
+                      </span>
+                      <span className="advanced-discovery-badge">{tr("Facultatif", "Optional")}</span>
+                    </summary>
+                    <div className="advanced-discovery-body">
+                      {!siteRevisionAvailable ? (
+                        <article>
+                          <span className="advanced-discovery-kicker">GROWTH</span>
+                          <b>{tr("Piloter et faire évoluer le site", "Manage and improve the website")}</b>
+                          <p>{tr(
+                            "Révisions globales par IA, diagnostics et recommandations continues, SEO/AEO et optimisation de la conversion.",
+                            "AI-powered full-site revisions, continuous diagnostics and recommendations, SEO/AEO and conversion optimization."
+                          )}</p>
+                        </article>
+                      ) : null}
+                      {!siteArchitectCreateAvailable ? (
+                        <article>
+                          <span className="advanced-discovery-kicker">BUILD</span>
+                          <b>{tr("Faire concevoir le site par l’IA", "Have AI design the website")}</b>
+                          <p>{tr(
+                            growthActive
+                              ? "La Création IA complète reste un droit BUILD distinct ; elle peut être achetée séparément ou incluse selon l’offre Growth annuelle."
+                              : "La Création IA complète construit une proposition de site à partir de votre brief. Elle est disponible séparément et peut être incluse avec Growth annuel.",
+                            growthActive
+                              ? "Full AI Launch remains a separate BUILD entitlement; it can be purchased separately or included depending on the annual Growth offer."
+                              : "Full AI Launch builds a website proposal from your brief. It is available separately and may be included with annual Growth."
+                          )}</p>
+                        </article>
+                      ) : null}
+                      <div className="advanced-discovery-actions">
+                        <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
+                        <span>{tr("Aucune fonction verrouillée n’encombre votre éditeur.", "Locked features do not clutter your editor.")}</span>
+                      </div>
+                    </div>
+                  </details>
+                ) : null}
+                {siteArchitectCreateAvailable ? (
+                <details id="ai-site-architect" className="guided-writing-card ai-architect-card">
                   <summary>
                     <span className="guided-writing-icon">✦</span>
                     <span><b>{tr("Créer mon site avec l’IA", "Create my website with AI")}</b><small>{tr("BUILD · décrivez votre besoin et obtenez une proposition complète à valider.", "BUILD · describe what you need and get a complete proposal to review.")}</small></span>
-                    <span className="guided-writing-badge">{siteArchitectCreateAvailable ? tr("BUILD disponible", "BUILD available") : "🔒 BUILD"}</span>
+                    <span className="guided-writing-badge">{tr("BUILD disponible", "BUILD available")}</span>
                   </summary>
                   <div className="guided-writing-body">
-                    {!siteArchitectCreateAvailable ? (
-                      <div className="premium-feature-lock-note" role="note">
-                        <div><b>{tr("Création IA complète", "Full AI Launch")}</b><p>{tr("La création complète utilise un droit BUILD distinct de l’abonnement. Il peut être acheté une fois ou être inclus avec Growth annuel. L’IA rédactionnelle légère reste disponible selon votre offre.", "Full website creation uses a BUILD entitlement separate from the subscription. It can be purchased once or included with annual Growth. Light AI writing remains available according to your plan.")}</p></div>
-                        <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
-                      </div>
-                    ) : null}
                     <p className="guided-writing-intro">{tr("Décrivez votre besoin librement. L’Architecte Premium commence par comprendre votre activité, votre public, votre objectif et votre positionnement, puis construit le parcours du visiteur, l’architecture, les textes et la direction visuelle. Chaque proposition passe ensuite par un audit critique avant de vous être montrée.", "Describe what you need in your own words. The Premium Site Architect first understands your business, audience, goal and positioning, then builds the visitor journey, architecture, copy and visual direction. Every proposal goes through a critical quality review before you see it.")}</p>
                     <div className="architect-brief-guide">
                       <b>{tr("Pour un résultat exceptionnel, indiquez si vous les connaissez :", "For the strongest result, include these details when you know them:")}</b>
@@ -1704,17 +1749,13 @@ export default function BuilderPage() {
                     ) : null}
                   </div>
                 </details>
-                <details className={"guided-writing-card ai-architect-card " + (!siteRevisionAvailable ? "premium-feature-locked" : "")}>
-                  <summary><span className="guided-writing-icon">↻</span><span><b>{tr("Modifier tout le site avec l’IA", "Revise the whole website with AI")}</b><small>{tr("Growth · demandez une évolution globale sans écraser automatiquement votre version actuelle.", "Growth · request a global revision without automatically overwriting your current version.")}</small></span><span className="guided-writing-badge">{siteRevisionAvailable ? tr("Aperçu avant application", "Preview before applying") : "🔒 Growth"}</span></summary>
+                ) : null}
+                {showGrowthRevisionWorkspace ? (
+                <details className="guided-writing-card ai-architect-card growth-revision-card">
+                  <summary><span className="guided-writing-icon">↻</span><span><b>{tr("Modifier tout le site avec l’IA", "Revise the whole website with AI")}</b><small>{tr("Growth · demandez une évolution globale sans écraser automatiquement votre version actuelle.", "Growth · request a global revision without automatically overwriting your current version.")}</small></span><span className="guided-writing-badge">{tr("Aperçu avant application", "Preview before applying")}</span></summary>
                   <div className="guided-writing-body">
-                    {!siteRevisionAvailable ? (
-                      <div className="premium-feature-lock-note" role="note">
-                        <div><b>{tr("Révision globale incluse avec Growth", "Full-site revision is included with Growth")}</b><p>{tr("Vous pouvez toujours modifier chaque champ manuellement ou utiliser l’assistant IA standard prévu dans les champs autorisés.", "You can still edit every field manually or use the standard AI assistant available in supported fields.")}</p></div>
-                        <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
-                      </div>
-                    ) : null}
                     <p className="guided-writing-intro">{tr("Exemples : « rends le site plus haut de gamme », « passe à trois pages », « mets davantage l’accent sur les familles », « utilise mes photos sur la galerie et simplifie l’accueil ».", "Examples: “make the website feel more premium”, “switch to three pages”, “focus more on families”, “use my photos in the gallery and simplify the homepage”.")}</p>
-                    <label className="guided-question"><span>{tr("Modification souhaitée", "Requested change")}</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!siteArchitectCreateAvailable} placeholder={tr("Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible.", "Describe what you want to change. AI will preserve the rest as much as possible.")} /></label>
+                    <label className="guided-question"><span>{tr("Modification souhaitée", "Requested change")}</span><textarea rows={4} maxLength={1200} value={revisionRequest} onChange={(e) => setRevisionRequest(e.target.value)} disabled={!siteRevisionAvailable} placeholder={tr("Décrivez ce que vous voulez changer. L’IA préservera le reste autant que possible.", "Describe what you want to change. AI will preserve the rest as much as possible.")} /></label>
                     <button type="button" className="button primary premium-button" disabled={!siteRevisionAvailable || revisionLoading || !revisionRequest.trim()} onClick={requestGlobalRevision}>{revisionLoading ? tr("Préparation de la révision…", "Preparing revision…") : tr("Préparer la révision", "Prepare revision")} <span aria-hidden="true">→</span></button>
                     {revisionProposal ? (
                       <div className="ai-current-note revision-preview" role="status">
@@ -1742,6 +1783,7 @@ export default function BuilderPage() {
                     ) : null}
                   </div>
                 </details>
+                ) : null}
                 <details className="guided-writing-card" open>
                   <summary>
                     <span className="guided-writing-icon">✦</span>
