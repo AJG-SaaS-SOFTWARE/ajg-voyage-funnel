@@ -168,6 +168,9 @@ export type AdminBetaCohortMember = {
   lastSignInAt: string | null;
   invitedAt: string | null;
   accessActive: boolean;
+  metadataBeta: boolean;
+  grantConfigured: boolean;
+  cohortConsistent: boolean;
   accessStartsAt: string | null;
   accessExpiresAt: string | null;
   locale: "fr" | "en";
@@ -186,6 +189,7 @@ export type AdminBetaCohortMember = {
 
 export type AdminBetaCohort = {
   limit: number;
+  consistencyIssues: number;
   operationalTarget: number;
   defaultAccessDays: number;
   followUpRules: {
