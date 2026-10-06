@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";\nimport { recordPublicAnalytics } from "./PublicAnalyticsTracker";
+import { FormEvent, useRef, useState } from "react";
+import { recordPublicAnalytics } from "./PublicAnalyticsTracker";
 
 type Props = {
   siteId: string;
@@ -11,7 +12,8 @@ type Props = {
 };
 
 export default function PublicContactForm({ siteId, pagePath, email, english = false, privacyHref }: Props) {
-  const [sending, setSending] = useState(false);\n  const started = useRef(false);
+  const [sending, setSending] = useState(false);
+  const started = useRef(false);
   const [status, setStatus] = useState<{ state: "idle" | "success" | "error"; message: string }>({ state: "idle", message: "" });
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -49,7 +51,8 @@ export default function PublicContactForm({ siteId, pagePath, email, english = f
         const message = copy[code] || ["Envoi impossible pour le moment. Vous pouvez utiliser l’e-mail direct ci-dessous.", "Unable to send right now. You can use the direct email link below."];
         throw new Error(english ? message[1] : message[0]);
       }
-      recordPublicAnalytics(siteId, "form_submit", pagePath, "contact");\n      event.currentTarget.reset();
+      recordPublicAnalytics(siteId, "form_submit", pagePath, "contact");
+      event.currentTarget.reset();
       setStatus({
         state: "success",
         message: english ? "Message sent. Thank you — the site publisher can now reply to you." : "Message envoyé. Merci — l’éditeur du site peut maintenant vous répondre."
@@ -65,7 +68,15 @@ export default function PublicContactForm({ siteId, pagePath, email, english = f
   }
 
   return (
-    <form\n      className="public-contact-form"\n      onSubmit={submit}\n      onFocusCapture={() => {\n        if (started.current) return;\n        started.current = true;\n        recordPublicAnalytics(siteId, "form_start", pagePath, "contact");\n      }}\n    >
+    <form
+      className="public-contact-form"
+      onSubmit={submit}
+      onFocusCapture={() => {
+        if (started.current) return;
+        started.current = true;
+        recordPublicAnalytics(siteId, "form_start", pagePath, "contact");
+      }}
+    >
       <label>
         {english ? "Name" : "Nom"}
         <input name="name" required maxLength={100} autoComplete="name" />
