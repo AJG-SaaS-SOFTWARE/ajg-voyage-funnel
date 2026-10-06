@@ -4,6 +4,10 @@ import { createHmac } from "node:crypto";
 import fs from "node:fs";
 import {
   normalizeStripeSubscriptionStatus,
+  stripeInvoiceAccessTransition,
+  stripeInvoiceMetadata,
+  stripeInvoicePaidThrough,
+  stripeInvoicePriceId,
   stripePeriodEnd,
   stripeSubscriptionIdFromInvoice,
   verifyStripeWebhookSignature
@@ -101,6 +105,106 @@ test("subscription period end supports legacy root and current item object graph
     new Date(legacyUnix * 1000).toISOString()
   );
   assert.equal(stripePeriodEnd({ items: { data: [] } }), null);
+});
+
+test("invoice payload helpers support Stripe 2026 subscription invoice shape", () => {
+  const invoice = {
+    billing_reason: "subscription_create",
+    parent: {
+      subscription_details: {
+        subscription: "sub_current",
+        metadata: {
+          site_id: "site_123",
+          owner_id: "owner_123",
+          plan_key: "essential"
+        }
+      }
+    },
+    lines: {
+      data: [
+        {
+          parent: {
+            subscription_item_details: {
+              subscription: "sub_current",
+              subscription_item: "si_123"
+            }
+          },
+          pricing: {
+            price_details: {
+              price: "price_essential_monthly",
+              product: "prod_essential"
+            }
+          },
+          period: { start: 1791316344, end: 1793994744 }
+        }
+      ]
+    },
+    period_end: 1791316344
+  };
+
+  assert.equal(stripeInvoicePriceId(invoice), "price_essential_monthly");
+  assert.deepEqual(stripeInvoiceMetadata(invoice), {
+    site_id: "site_123",
+    owner_id: "owner_123",
+    plan_key: "essential"
+  });
+  assert.equal(
+    stripeInvoicePaidThrough(invoice),
+    new Date(1793994744 * 1000).toISOString()
+  );
+  assert.notEqual(
+    stripeInvoicePaidThrough(invoice),
+    new Date(invoice.period_end * 1000).toISOString()
+  );
+});
+
+test("initial payment failure never starts ELTARA grace", () => {
+  assert.deepEqual(
+    stripeInvoiceAccessTransition("invoice.payment_failed", {
+      billing_reason: "subscription_create"
+    }),
+    {
+      providerStatus: "suspended",
+      providerEventType: "subscription_pending",
+      startsGrace: false
+    }
+  );
+});
+
+test("renewal failure starts grace while payment recovery restores active access", () => {
+  assert.deepEqual(
+    stripeInvoiceAccessTransition("invoice.payment_failed", {
+      billing_reason: "subscription_cycle"
+    }),
+    {
+      providerStatus: "past_due",
+      providerEventType: "payment_failed",
+      startsGrace: true
+    }
+  );
+  assert.deepEqual(
+    stripeInvoiceAccessTransition("invoice.paid", {
+      billing_reason: "subscription_cycle"
+    }),
+    {
+      providerStatus: "active",
+      providerEventType: "payment_succeeded",
+      startsGrace: false
+    }
+  );
+});
+
+test("invoice webhook branch is independent from outbound Stripe subscription retrieval", () => {
+  const source = fs.readFileSync(
+    new URL("../app/api/billing/stripe-webhook/route.ts", import.meta.url),
+    "utf8"
+  );
+  const invoiceBranch = source.slice(
+    source.indexOf('if (event.type === "invoice.paid"'),
+    source.indexOf('return NextResponse.json({ received: true, result: "ignored" });')
+  );
+  assert.ok(invoiceBranch.includes("bindAndApplyInvoice"));
+  assert.ok(!invoiceBranch.includes("retrieveStripeSubscription"));
 });
 
 test("Stripe webhook route reads raw body before JSON parsing", () => {
