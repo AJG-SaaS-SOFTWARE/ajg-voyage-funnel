@@ -91,3 +91,13 @@ test("Beta tester mode switch stays visible in Builder header and admin QA is ex
   assert.match(switcher, /Mode bêta/);
   assert.match(switcher, /GROW/);
 });
+
+
+test("internal admins receive full beta entitlements for QA without Stripe mutation", () => {
+  const migration = fs.readFileSync(new URL("../supabase/migrations/20261006120100_admin_beta_entitlements.sql", import.meta.url), "utf8");
+  assert.match(migration, /public\.user_roles/);
+  assert.match(migration, /ur\.role = 'admin'/);
+  assert.match(migration, /create or replace function public\.has_active_beta_access/);
+  assert.match(migration, /create or replace function public\.get_my_beta_access/);
+  assert.doesNotMatch(migration, /stripe/i);
+});
