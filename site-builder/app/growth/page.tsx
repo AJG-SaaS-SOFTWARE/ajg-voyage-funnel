@@ -7,6 +7,12 @@ import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 import { getMySites } from "../../lib/supabase-site-repository";
+import {
+  evaluatePostPublishPerformance,
+  getMySiteAnalytics,
+  summarizeSiteAnalytics,
+  type SiteAnalyticsRow
+} from "../../lib/site-analytics";
 import { getMyBetaAccess, getMySiteEntitlements } from "../../lib/subscription";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 import { trackProductEvent } from "../../lib/product-analytics";
@@ -15,7 +21,7 @@ import { supportGuidanceForCheck } from "../../lib/support-guidance";
 import { groupGrowthHealthChecks, growthHealthCounts, type GrowthHealthGroupKey } from "../../lib/growth-health";
 
 type GrowthState = "loading" | "guest" | "locked" | "no_site" | "draft" | "ready" | "error";
-type SiteOption = { id: string; slug: string; status: string };
+type SiteOption = { id: string; slug: string; status: string; publishedAt: string | null };
 
 const groupLabels: Record<GrowthHealthGroupKey, { fr: string; en: string; detailFr: string; detailEn: string }> = {
   availability: {
@@ -54,6 +60,7 @@ export default function GrowthPage() {
   const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
   const [notice, setNotice] = useState("");
   const [running, setRunning] = useState(false);
+  const [analyticsRows, setAnalyticsRows] = useState<SiteAnalyticsRow[]>([]);
 
   async function sessionToken() {
     const supabase = getSupabaseBrowserClient();
@@ -73,11 +80,12 @@ export default function GrowthPage() {
       }
 
       const owned = await getMySites();
-      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status }));
+      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt }));
       setSites(options);
       if (!options.length) {
         setSiteId("");
         setDiagnosis(null);
+        setAnalyticsRows([]);
         setState("no_site");
         return;
       }
@@ -100,16 +108,19 @@ export default function GrowthPage() {
 
       if (!growthExperienceEnabled) {
         setDiagnosis(null);
+        setAnalyticsRows([]);
         setState("locked");
         return;
       }
 
       if (selected.status !== "published") {
         setDiagnosis(null);
+        setAnalyticsRows([]);
         setState("draft");
         return;
       }
 
+      const analyticsPromise = getMySiteAnalytics(selected.id, 180).catch(() => [] as SiteAnalyticsRow[]);
       const response = await fetch("/api/support/health?siteId=" + encodeURIComponent(selected.id), {
         headers: { Authorization: "Bearer " + accessToken },
         cache: "no-store"
@@ -123,6 +134,7 @@ export default function GrowthPage() {
         throw new Error(body?.error || tr("Pilotage Growth indisponible.", "Growth cockpit is unavailable."));
       }
       setDiagnosis(body.health.diagnosis);
+      setAnalyticsRows(await analyticsPromise);
       setState("ready");
     } catch (error) {
       setState("error");
@@ -160,6 +172,15 @@ export default function GrowthPage() {
   const counts = useMemo(
     () => diagnosis ? growthHealthCounts(diagnosis.checks) : { healthy: 0, action: 0, incident: 0 },
     [diagnosis]
+  );
+  const selectedSite = sites.find((site) => site.id === siteId) || null;
+  const performanceSummary = useMemo(
+    () => summarizeSiteAnalytics(analyticsRows),
+    [analyticsRows]
+  );
+  const postPublishPerformance = useMemo(
+    () => evaluatePostPublishPerformance(analyticsRows, selectedSite?.publishedAt || null),
+    [analyticsRows, selectedSite?.publishedAt]
   );
   const guidanceByKey = useMemo(
     () => new Map(
@@ -358,13 +379,142 @@ export default function GrowthPage() {
             })}
           </section>
 
+
+          <section className="panel growth-performance-panel">
+            <div className="growth-performance-head">
+              <div>
+                <p className="eyebrow">{tr("Performance", "Performance")}</p>
+                <h2>{tr("Opportunités classées par impact et confiance", "Opportunities ranked by impact and confidence")}</h2>
+                <p>{tr(
+                  "Growth classe uniquement les signaux qui dépassent un seuil minimum. Le score combine l’ampleur du problème et la quantité de données observées.",
+                  "Growth ranks only signals that pass a minimum threshold. The score combines issue magnitude with the amount of observed data."
+                )}</p>
+              </div>
+              <Link className="button secondary" href="/analytics">{tr("Voir tous les analytics", "View all analytics")}</Link>
+            </div>
+
+            {performanceSummary.opportunities.length ? (
+              <div className="growth-performance-opportunities">
+                {performanceSummary.opportunities.map((item, index) => (
+                  <article key={item.key + (item.pagePath || "")}>
+                    <div className="growth-opportunity-rank">
+                      <span>#{index + 1}</span>
+                      <strong>{item.score}/100</strong>
+                    </div>
+                    <div className="growth-opportunity-copy">
+                      <div className="growth-opportunity-badges">
+                        <span className={"impact " + item.impact}>
+                          {tr("Impact", "Impact")} · {item.impact === "high" ? tr("fort", "high") : tr("modéré", "medium")}
+                        </span>
+                        <span className={"confidence " + item.confidence}>
+                          {tr("Confiance", "Confidence")} · {item.confidence === "high" ? tr("forte", "high") : tr("moyenne", "medium")}
+                        </span>
+                      </div>
+                      <h3>{item.key === "cta"
+                        ? tr("Une page reçoit des visites sans générer d’action", "A page receives visits without generating action")
+                        : item.key === "form"
+                          ? tr("Le formulaire perd trop de visiteurs", "The form loses too many visitors")
+                          : tr("Le trafic dépend trop d’une seule source", "Traffic relies too heavily on one source")}</h3>
+                      <p>{item.key === "cta"
+                        ? tr(
+                            `${item.pagePath === "/" ? "L’accueil" : item.pagePath} totalise ${item.evidenceCount} vues sans action mesurée.`,
+                            `${item.pagePath === "/" ? "Home" : item.pagePath} has ${item.evidenceCount} views without a measured action.`
+                          )
+                        : item.key === "form"
+                          ? tr(
+                              `${item.evidenceCount} démarrages de formulaire observés, pour ${item.value.toFixed(1)}% de complétion.`,
+                              `${item.evidenceCount} form starts observed, with ${item.value.toFixed(1)}% completion.`
+                            )
+                          : tr(
+                              `${item.value.toFixed(1)}% des visites viennent de la même catégorie de source sur ${item.evidenceCount} vues.`,
+                              `${item.value.toFixed(1)}% of visits come from the same source category across ${item.evidenceCount} views.`
+                            )}</p>
+                      <Link className="text-link" href={item.key === "cta" ? "/builder?step=story" : item.key === "form" ? "/builder?step=options" : "/builder?step=booking"}>
+                        {tr("Agir sur ce signal", "Act on this signal")} →
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="growth-performance-empty">
+                <b>{tr("Aucun signal assez fort pour être priorisé", "No signal is strong enough to prioritize")}</b>
+                <p>{tr(
+                  "Growth attend un volume minimum avant de classer une opportunité, afin d’éviter les recommandations fragiles.",
+                  "Growth waits for a minimum amount of data before ranking an opportunity, to avoid weak recommendations."
+                )}</p>
+              </div>
+            )}
+          </section>
+
+          <section className="panel growth-measurement-panel">
+            <div>
+              <p className="eyebrow">{tr("Mesurer après publication", "Measure after publishing")}</p>
+              <h2>{tr("La dernière modification a-t-elle amélioré le signal ?", "Did the latest change improve the signal?")}</h2>
+              <p>{tr(
+                "ELTARA compare des fenêtres de même durée avant et après la dernière publication. Cette mesure montre une évolution, pas une causalité certaine.",
+                "ELTARA compares equal windows before and after the latest publication. This shows a change, not guaranteed causality."
+              )}</p>
+            </div>
+
+            {postPublishPerformance.status === "measured" && postPublishPerformance.before && postPublishPerformance.after ? (
+              <div className={"growth-measurement-result " + postPublishPerformance.outcome}>
+                <div>
+                  <small>{tr("Fenêtre comparée", "Compared window")}</small>
+                  <strong>{postPublishPerformance.windowDays} {tr("jours avant / après", "days before / after")}</strong>
+                </div>
+                <div>
+                  <small>{tr("Taux d’action avant", "Action rate before")}</small>
+                  <strong>{postPublishPerformance.before.actionRate.toFixed(1)}%</strong>
+                </div>
+                <div>
+                  <small>{tr("Taux d’action après", "Action rate after")}</small>
+                  <strong>{postPublishPerformance.after.actionRate.toFixed(1)}%</strong>
+                </div>
+                <div>
+                  <small>{tr("Évolution", "Change")}</small>
+                  <strong>{postPublishPerformance.actionRatePoints > 0 ? "+" : ""}{postPublishPerformance.actionRatePoints.toFixed(1)} pt</strong>
+                </div>
+                <p>{postPublishPerformance.outcome === "improved"
+                  ? tr("Signal positif : la performance s’est améliorée après publication.", "Positive signal: performance improved after publishing.")
+                  : postPublishPerformance.outcome === "declined"
+                    ? tr("Signal négatif : la performance a reculé après publication. Une nouvelle correction peut être utile.", "Negative signal: performance declined after publishing. Another correction may help.")
+                    : tr("Signal stable : aucune évolution suffisamment nette n’est encore visible.", "Stable signal: no sufficiently clear change is visible yet.")}</p>
+              </div>
+            ) : postPublishPerformance.status === "collecting" ? (
+              <div className="growth-measurement-wait">
+                <b>{tr("Mesure en cours", "Measurement in progress")}</b>
+                <p>{tr(
+                  "ELTARA attend au moins 3 jours complets après la publication avant de comparer les performances.",
+                  "ELTARA waits for at least 3 full days after publishing before comparing performance."
+                )}</p>
+              </div>
+            ) : postPublishPerformance.status === "low_signal" ? (
+              <div className="growth-measurement-wait">
+                <b>{tr("Pas encore assez de trafic pour conclure", "Not enough traffic to conclude yet")}</b>
+                <p>{tr(
+                  "Les fenêtres avant/après existent, mais le volume observé est trop faible pour afficher un verdict fiable.",
+                  "Before/after windows exist, but observed volume is too low to display a reliable verdict."
+                )}</p>
+              </div>
+            ) : (
+              <div className="growth-measurement-wait">
+                <b>{tr("Première publication à mesurer", "First publication to measure")}</b>
+                <p>{tr(
+                  "Une fois une publication enregistrée et suffisamment de trafic collecté, Growth affichera ici l’évolution avant/après.",
+                  "Once a publication is recorded and enough traffic is collected, Growth will show the before/after change here."
+                )}</p>
+              </div>
+            )}
+          </section>
+
           <section className="panel growth-next-level">
             <div>
               <p className="eyebrow">{tr("Boucle Growth", "Growth loop")}</p>
               <h2>{tr("Observer avant de recommander", "Observe before recommending")}</h2>
               <p>{tr(
-                "Cette première version du Manager s’appuie sur des signaux déterministes. Les prochaines briques ajouteront les opportunités de contenu, conversion et SEO/AEO seulement lorsque des données suffisantes justifient une analyse.",
-                "This first Manager version relies on deterministic signals. The next layers will add content, conversion and SEO/AEO opportunities only when enough data justifies analysis."
+                "Growth combine maintenant santé technique, opportunités de performance classées et mesure avant/après publication. Les prochaines briques pourront ajouter des recommandations SEO/AEO et contenu sur la même logique de preuve.",
+                "Growth now combines technical health, ranked performance opportunities and before/after publishing measurement. The next layers can add SEO/AEO and content recommendations using the same evidence-based logic."
               )}</p>
             </div>
             <div className="actions">

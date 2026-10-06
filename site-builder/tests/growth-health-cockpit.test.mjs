@@ -4,6 +4,7 @@ import fs from "node:fs";
 import ts from "typescript";
 
 const helperSource = fs.readFileSync(new URL("../lib/growth-health.ts", import.meta.url), "utf8");
+const analyticsSource = fs.readFileSync(new URL("../lib/site-analytics.ts", import.meta.url), "utf8");
 const page = fs.readFileSync(new URL("../app/growth/page.tsx", import.meta.url), "utf8");
 const home = fs.readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const plans = fs.readFileSync(new URL("../app/plans/page.tsx", import.meta.url), "utf8");
@@ -72,4 +73,30 @@ test("Growth explains every non-healthy check instead of using the support page 
   assert.match(page, /supportGuidanceForCheck\(check, locale\)/);
   assert.doesNotMatch(page, /supportGuidanceForDiagnosis/);
   assert.match(page, /ELTARA a détecté un écart qui mérite votre attention/);
+});
+
+
+test("Growth ranks performance opportunities with deterministic impact and confidence", () => {
+  assert.match(page, /Opportunités classées par impact et confiance/);
+  assert.match(page, /\{item\.score\}\/100/);
+  assert.match(page, /item\.impact/);
+  assert.match(page, /item\.confidence/);
+  assert.match(analyticsSource, /opportunities\.sort\(\(a, b\) => b\.score - a\.score\)/);
+  assert.match(analyticsSource, /confidence: weakCtaPage\.views >= 30 \? "high" : "medium"/);
+  assert.match(analyticsSource, /confidence: formStarts >= 15 \? "high" : "medium"/);
+});
+
+test("Growth measures post-publish change without claiming causality", () => {
+  assert.match(page, /evaluatePostPublishPerformance/);
+  assert.match(page, /Cette mesure montre une évolution, pas une causalité certaine/);
+  assert.match(analyticsSource, /fullDaysAfter < 3/);
+  assert.match(analyticsSource, /before\.views \+ after\.views < 20/);
+  assert.match(analyticsSource, /actionRatePoints >= 1/);
+  assert.match(analyticsSource, /actionRatePoints <= -1/);
+});
+
+test("Growth keeps low-signal performance states explicit instead of inventing a verdict", () => {
+  assert.match(page, /postPublishPerformance\.status === "collecting"/);
+  assert.match(page, /postPublishPerformance\.status === "low_signal"/);
+  assert.match(page, /Pas encore assez de trafic pour conclure/);
 });
