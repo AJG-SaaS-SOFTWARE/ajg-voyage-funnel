@@ -11,7 +11,7 @@ import { EltaraMark } from "../components/EltaraBrand";
 import { BetaExperienceSwitch } from "../components/BetaExperienceSwitch";
 import { deriveOnboardingCreationPath, deriveOnboardingProgress } from "../lib/onboarding";
 import { getMyBetaAccess, getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements, type BetaAccess } from "../lib/subscription";
-import { trackProductEvent } from "../lib/product-analytics";
+import { getMyBetaJourneyProgress, trackProductEvent, type BetaJourneyProgress } from "../lib/product-analytics";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../lib/beta-experience-mode";
 
 function LockIcon() {
@@ -64,6 +64,13 @@ export default function Home() {
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
   const [betaAccess, setBetaAccess] = useState<BetaAccess>({ active: false, startsAt: null, expiresAt: null });
   const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
+  const [betaJourney, setBetaJourney] = useState<BetaJourneyProgress>({
+    essentialTested: false,
+    growthTested: false,
+    essentialThenGrowth: false,
+    published: false,
+    feedbackSent: false
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -129,6 +136,11 @@ export default function Home() {
           setBetaAccess(resolvedBetaAccess);
           if (resolvedBetaAccess.active) {
             setBetaExperienceMode(readBetaExperienceMode());
+            void getMyBetaJourneyProgress(remote?.id || null)
+              .then((progress) => {
+                if (!cancelled) setBetaJourney(progress);
+              })
+              .catch(() => undefined);
           }
           setDraft(
             remote
@@ -195,9 +207,11 @@ export default function Home() {
     setBetaExperienceMode(mode);
     writeBetaExperienceMode(mode);
     if (betaAccess.active && remoteStatus === "authenticated") {
-      void trackProductEvent(
-        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
-        remoteSiteId
+      const eventName = mode === "growth" ? "beta_growth_selected" : "beta_essential_selected";
+      void trackProductEvent(eventName, remoteSiteId).then(() =>
+        getMyBetaJourneyProgress(remoteSiteId)
+          .then(setBetaJourney)
+          .catch(() => undefined)
       );
     }
   };
@@ -299,21 +313,46 @@ export default function Home() {
             onChange={changeBetaExperienceMode}
           />
           <ol className="beta-mission-steps">
-            <li className={onboarding && onboarding.completeCount >= 2 ? "done" : ""}>
-              <span>{onboarding && onboarding.completeCount >= 2 ? "✓" : "1"}</span>
-              <div><b>{tr("Tester d’abord Essentiel", "Test Essential first")}</b><small>{tr("Créez et modifiez le site avec les fonctions du parcours RUN.", "Create and edit the website with the RUN journey capabilities.")}</small></div>
+            <li className={betaJourney.essentialTested ? "done" : ""}>
+              <span>{betaJourney.essentialTested ? "✓" : "1"}</span>
+              <div><b>{tr("Tester d’abord Essentiel", "Test Essential first")}</b><small>{tr(
+                betaJourney.essentialTested
+                  ? "Mode Essentiel déjà testé. Vous pouvez poursuivre le parcours ou passer à Growth."
+                  : "Créez et modifiez le site avec les fonctions du parcours RUN.",
+                betaJourney.essentialTested
+                  ? "Essential mode has been tested. Continue the journey or move to Growth."
+                  : "Create and edit the website with the RUN journey capabilities."
+              )}</small></div>
             </li>
-            <li className={betaExperienceMode === "growth" ? "done" : ""}>
-              <span>{betaExperienceMode === "growth" ? "✓" : "2"}</span>
-              <div><b>{tr("Passer ensuite en Growth", "Then switch to Growth")}</b><small>{tr("Activez le mode Growth et testez les fonctions avancées sans toucher à Stripe.", "Enable Growth mode and test advanced capabilities without touching Stripe.")}</small></div>
+            <li className={betaJourney.growthTested ? "done" : ""}>
+              <span>{betaJourney.growthTested ? "✓" : "2"}</span>
+              <div><b>{tr("Passer ensuite en Growth", "Then switch to Growth")}</b><small>{tr(
+                betaJourney.growthTested
+                  ? betaJourney.essentialThenGrowth
+                    ? "Growth testé après Essentiel : comparaison validée."
+                    : "Growth a été testé. Revenez aussi sur Essentiel si vous voulez comparer les deux parcours dans l’ordre prévu."
+                  : "Activez le mode Growth et testez les fonctions avancées sans toucher à Stripe.",
+                betaJourney.growthTested
+                  ? betaJourney.essentialThenGrowth
+                    ? "Growth was tested after Essential: comparison complete."
+                    : "Growth has been tested. You can also return to Essential to compare both journeys in the intended order."
+                  : "Enable Growth mode and test advanced capabilities without touching Stripe."
+              )}</small></div>
             </li>
-            <li>
-              <span>3</span>
+            <li className={betaJourney.published || draft?.status === "published" ? "done" : ""}>
+              <span>{betaJourney.published || draft?.status === "published" ? "✓" : "3"}</span>
               <div><b>{tr("Publier et tester comme un visiteur", "Publish and test as a visitor")}</b><small>{tr("Quality Check, mobile, navigation, CTA, lisibilité et vitesse perçue.", "Quality Check, mobile, navigation, CTA, readability and perceived speed.")}</small></div>
             </li>
-            <li>
-              <span>4</span>
-              <div><b>{tr("Envoyer un retour", "Send feedback")}</b><small>{tr("Un blocage, une idée ou ce qui devrait être plus simple.", "A blocker, an idea, or anything that should be simpler.")}</small></div>
+            <li className={betaJourney.feedbackSent ? "done" : ""}>
+              <span>{betaJourney.feedbackSent ? "✓" : "4"}</span>
+              <div><b>{tr("Envoyer un retour", "Send feedback")}</b><small>{tr(
+                betaJourney.feedbackSent
+                  ? "Au moins un retour a déjà été enregistré pour cette mission."
+                  : "Un blocage, une idée ou ce qui devrait être plus simple.",
+                betaJourney.feedbackSent
+                  ? "At least one feedback item has already been recorded for this mission."
+                  : "A blocker, an idea, or anything that should be simpler."
+              )}</small></div>
             </li>
           </ol>
           <div className="actions beta-mission-actions">
