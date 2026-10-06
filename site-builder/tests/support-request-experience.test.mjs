@@ -169,6 +169,7 @@ test("expired session during initial load hides submission and offers login", as
   await app.mount();
   assert.equal(app.find("form"), undefined);
   assert.match(app.text(), /Connexion requise/);
+  assert.equal(app.find("a").props.href, "/login");
 });
 
 test("missing session never sends a request", async () => {
