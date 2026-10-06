@@ -17,7 +17,8 @@ test("Builder loads site-scoped BUILD and Growth access", () => {
 
 test("AI Architect creation and Growth revision controls have distinct gates", () => {
   assert.ok(source.includes("{siteArchitectCreateAvailable ? ("));
-  assert.ok(source.includes("{siteRevisionAvailable ? ("));
+  assert.ok(source.includes("showGrowthRevisionWorkspace = siteRevisionAvailable && published"));
+  assert.ok(source.includes("{showGrowthRevisionWorkspace ? ("));
   assert.ok(
     source.includes(
       "disabled={!siteArchitectCreateAvailable || architectLoading || !architectBriefReady}"
