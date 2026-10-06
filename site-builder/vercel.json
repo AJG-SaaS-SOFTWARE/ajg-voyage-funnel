@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/storage-backup",
       "schedule": "40 2 * * *"
+    },
+    {
+      "path": "/api/cron/beta-operations",
+      "schedule": "5 7 * * *"
     }
   ],
   "git": {
