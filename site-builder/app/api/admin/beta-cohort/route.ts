@@ -30,6 +30,8 @@ type BetaActivity = {
 };
 
 function member(user: User, grant?: BetaGrant | null, activity?: BetaActivity) {
+  const metadataBeta = user.app_metadata?.ajg_beta === true;
+  const grantConfigured = grant?.active === true;
   const accessActive =
     Boolean(grant?.active) &&
     Boolean(grant?.starts_at && new Date(grant.starts_at).getTime() <= Date.now()) &&
@@ -45,6 +47,9 @@ function member(user: User, grant?: BetaGrant | null, activity?: BetaActivity) {
         ? user.app_metadata.beta_invited_at
         : null,
     accessActive,
+    metadataBeta,
+    grantConfigured,
+    cohortConsistent: metadataBeta === grantConfigured,
     accessStartsAt: grant?.starts_at || null,
     accessExpiresAt: grant?.expires_at || null,
     locale: user.user_metadata?.ajg_builder_locale === "en" ? "en" : "fr",
@@ -178,10 +183,10 @@ async function requireAdmin(request: Request): Promise<AdminContext> {
   return { ok: true, service, adminUserId: user.id };
 }
 
-async function listBetaUsers(service: SupabaseClient) {
+async function listAllUsers(service: SupabaseClient) {
   const { data, error } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (error) throw error;
-  return (data.users || []).filter((user) => user.app_metadata?.ajg_beta === true);
+  return data.users || [];
 }
 
 export async function GET(request: Request) {
@@ -189,15 +194,24 @@ export async function GET(request: Request) {
   if (!auth.ok) return auth.response;
 
   try {
-    const users = await listBetaUsers(auth.service);
+    const [allUsers, grantResult] = await Promise.all([
+      listAllUsers(auth.service),
+      auth.service
+        .from("beta_access_grants")
+        .select("user_id,active,starts_at,expires_at")
+    ]);
+    if (grantResult.error) throw grantResult.error;
+
+    const grants = grantResult.data || [];
+    const cohortIds = new Set<string>();
+    for (const user of allUsers) {
+      if (user.app_metadata?.ajg_beta === true) cohortIds.add(user.id);
+    }
+    for (const grant of grants) {
+      if (grant.active === true) cohortIds.add(grant.user_id);
+    }
+    const users = allUsers.filter((user) => cohortIds.has(user.id));
     const userIds = users.map((user) => user.id);
-    const { data: grants, error: grantsError } = userIds.length
-      ? await auth.service
-          .from("beta_access_grants")
-          .select("user_id,active,starts_at,expires_at")
-          .in("user_id", userIds)
-      : { data: [], error: null };
-    if (grantsError) throw grantsError;
     const grantsByUser = new Map(
       (grants || []).map((grant) => [grant.user_id, grant as BetaGrant])
     );
@@ -272,6 +286,10 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         limit: 25,
+        consistencyIssues: users.filter((user) => {
+          const grant = grantsByUser.get(user.id);
+          return (user.app_metadata?.ajg_beta === true) !== (grant?.active === true);
+        }).length,
         operationalTarget: 10,
         defaultAccessDays: 30,
         followUpRules: {
