@@ -496,15 +496,15 @@ Objectif : justifier chaque mois les 14 € de différence entre Essentiel et Gr
 
 ### Niveau 1 — Health
 
-- [ ] site cassé / sain ;
-- [ ] SEO technique ;
-- [ ] contenus incomplets ;
-- [ ] liens ;
-- [ ] performance ;
-- [ ] domaine ;
-- [ ] formulaire.
+- [x] site cassé / sain : synthèse Growth basée sur publication + rendu public + état global du Health Center ;
+- [x] SEO technique : canonical HTTPS et sitemap remontés dans le cockpit Growth ;
+- [x] contenus incomplets : formulaire, galerie et médias publiables contrôlés de façon déterministe ;
+- [x] liens : format et accessibilité des liens HTTPS configurés intégrés au cockpit ;
+- [x] performance : temps de réponse public comparé au seuil de diagnostic existant ;
+- [x] domaine : vérification et état primaire du domaine/sous-domaine intégrés ;
+- [x] formulaire : activation et adresse de réception contrôlées.
 
-Très peu d'IA Premium.
+Très peu d'IA Premium. **Niveau 1 livré sans IA Premium** : la première vue AI Website Manager réutilise les signaux techniques déterministes existants et ne déclenche aucun scan LLM.
 
 ### Niveau 2 — Opportunities
 
