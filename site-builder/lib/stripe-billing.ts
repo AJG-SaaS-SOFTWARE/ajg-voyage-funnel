@@ -339,6 +339,32 @@ export function stripeInvoiceIsInitialSubscriptionPayment(invoice: any) {
   return invoice?.billing_reason === "subscription_create";
 }
 
+export function stripeInvoiceAccessTransition(
+  eventType: string,
+  invoice: any
+) {
+  if (eventType === "invoice.paid") {
+    return {
+      providerStatus: "active" as const,
+      providerEventType: "payment_succeeded" as const,
+      startsGrace: false
+    };
+  }
+  if (eventType !== "invoice.payment_failed") return null;
+  if (stripeInvoiceIsInitialSubscriptionPayment(invoice)) {
+    return {
+      providerStatus: "suspended" as const,
+      providerEventType: "subscription_pending" as const,
+      startsGrace: false
+    };
+  }
+  return {
+    providerStatus: "past_due" as const,
+    providerEventType: "payment_failed" as const,
+    startsGrace: true
+  };
+}
+
 export function stripePeriodEnd(subscription: any) {
   const rootPeriodEnd = subscription?.current_period_end;
   const itemPeriodEnd = subscription?.items?.data?.[0]?.current_period_end;
