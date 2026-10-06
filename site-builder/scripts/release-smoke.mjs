@@ -68,6 +68,9 @@ try {
   await expectStatus("/api/admin/managed-domains", 401, { method: "POST" });
   await expectStatus("/api/admin/storage-bootstrap", 401, { method: "POST" });
   await expectStatus("/api/cron/beta-operations", 401);
+  await expectStatus("/api/cron/support-operations", 401);
+  await expectStatus("/api/admin/support-operations", 401);
+  await expectStatus("/api/admin/support-operations", 401, { method: "POST" });
   console.log("ELTARA release smoke passed.");
 } finally {
   child.kill("SIGTERM");

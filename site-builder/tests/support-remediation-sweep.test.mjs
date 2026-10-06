@@ -7,7 +7,11 @@ const sweep = fs.readFileSync(
   "utf8"
 );
 const cron = fs.readFileSync(
-  new URL("../app/api/cron/storage-backup/route.ts", import.meta.url),
+  new URL("../app/api/cron/support-operations/route.ts", import.meta.url),
+  "utf8"
+);
+const agent = fs.readFileSync(
+  new URL("../lib/support-operations-agent.ts", import.meta.url),
   "utf8"
 );
 
@@ -34,12 +38,13 @@ test("remediation sweep enforces a cooldown and reuses the audited repair engine
   assert.match(sweep, /trigger: "system"/);
 });
 
-test("existing authenticated daily cron runs remediation without adding a schedule", () => {
+test("dedicated authenticated support cron delegates remediation to the operations agent", () => {
   const auth = cron.indexOf("authorization !== ");
-  const remediation = cron.indexOf("runSupportRemediationSweepSafely()");
+  const agentCall = cron.indexOf("runSupportOperationsAgentFromEnvironment()");
   assert.ok(auth >= 0);
-  assert.ok(remediation > auth);
-  assert.match(cron, /remediation\.ok/);
+  assert.ok(agentCall > auth);
+  assert.match(agent, /runSupportRemediationSweepSafely/);
+  assert.match(agent, /remediation\.ok/);
 });
 
 

@@ -4925,3 +4925,16 @@ button.active .step-label small{color:#63817f}
 .admin-beta-agent-errors{display:grid;gap:5px;padding:10px;border-radius:10px;background:rgba(177,66,50,.07);color:#973e32}
 @media(max-width:900px){.admin-beta-agent-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){.admin-beta-agent-head{flex-direction:column}.admin-beta-agent-head .button{width:100%}.admin-beta-agent-kpis{grid-template-columns:1fr 1fr}}
+
+
+/* Support RUN autonomous agent */
+.support-run-agent{display:grid;gap:14px}
+.support-run-agent.healthy{border-color:rgba(12,159,150,.22);background:linear-gradient(145deg,rgba(241,252,249,.94),rgba(255,255,255,.9))}
+.support-run-agent.needs-attention{border-color:rgba(184,91,55,.24);background:linear-gradient(145deg,rgba(255,247,241,.96),rgba(255,255,255,.9))}
+.support-run-agent.unknown{border-color:rgba(69,111,201,.16);background:linear-gradient(145deg,rgba(247,249,255,.94),rgba(255,255,255,.9))}
+.support-run-agent-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.support-run-agent-head>div{display:grid;gap:5px}
+.support-run-agent-head h2{margin:0}
+.support-run-agent-head p{margin:0;max-width:900px;color:#66757b;line-height:1.55}
+.support-run-agent-errors{display:grid;gap:5px;padding:10px 12px;border-radius:12px;background:rgba(178,61,46,.07);color:#963b30}
+@media(max-width:720px){.support-run-agent-head{flex-direction:column}.support-run-agent-head .button{width:100%}}

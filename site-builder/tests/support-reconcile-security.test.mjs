@@ -7,7 +7,7 @@ const reconciler = fs.readFileSync(
   "utf8"
 );
 const cron = fs.readFileSync(
-  new URL("../app/api/cron/storage-backup/route.ts", import.meta.url),
+  new URL("../app/api/cron/support-operations/route.ts", import.meta.url),
   "utf8"
 );
 
@@ -24,10 +24,10 @@ test("ticket update is compare-and-set so manual support work cannot be overwrit
   assert.match(reconciler, /\.eq\("id", ticket\.id\)/);
 });
 
-test("existing authenticated storage cron reuses the reconciliation without a new schedule", () => {
+test("dedicated authenticated support cron runs the autonomous operations agent", () => {
   const auth = cron.indexOf("authorization !== ");
-  const support = cron.indexOf("runSupportReconciliationSafely()");
+  const support = cron.indexOf("runSupportOperationsAgentFromEnvironment()");
   assert.ok(auth >= 0);
   assert.ok(support > auth);
-  assert.match(cron, /support\.ok/);
+  assert.match(cron, /result\.ok/);
 });
