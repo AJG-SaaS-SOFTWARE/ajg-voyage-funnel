@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { CustomerErrorHelp } from "../../components/CustomerErrorHelp";
 import { useProductLocale } from "../../lib/product-i18n";
-import { downloadMySiteExport } from "../../lib/billing-access";
+import { downloadMySiteExport, downloadMySiteRecoveryJson } from "../../lib/billing-access";
+import { siteConfigFromRecoveryExport } from "../../lib/site-recovery";
 import {
   getMyErasureRequests,
   requestDataErasure,
@@ -13,6 +14,7 @@ import {
 import {
   getCurrentUser,
   getMySites,
+  saveMySite,
   type RemoteSite
 } from "../../lib/supabase-site-repository";
 
@@ -79,6 +81,62 @@ export default function DataRightsPage() {
       setMessage(`${tr("Archive de", "Archive for")} « ${site.slug} » ${tr("préparée.", "prepared.")}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : tr("Export impossible.", "Export unavailable."));
+    } finally {
+      setBusyKey("");
+    }
+  }
+
+  async function downloadRecoveryJson(site: RemoteSite) {
+    setBusyKey("recovery-export:" + site.id);
+    setMessage("");
+    try {
+      await downloadMySiteRecoveryJson(site.id);
+      setMessage(tr("Fichier de restauration préparé.", "Recovery file prepared."));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : tr("Export de restauration impossible.", "Recovery export unavailable."));
+    } finally {
+      setBusyKey("");
+    }
+  }
+
+  async function restoreSiteConfig(site: RemoteSite, file: File) {
+    setBusyKey("restore:" + site.id);
+    setMessage("");
+    try {
+      if (file.size > 2 * 1024 * 1024) {
+        throw new Error(tr("Le fichier de restauration dépasse 2 Mo.", "The recovery file exceeds 2 MB."));
+      }
+      const parsed = JSON.parse(await file.text());
+      const preview = siteConfigFromRecoveryExport(parsed, { id: site.id, slug: site.slug });
+      const when = preview.exportedAt
+        ? new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(preview.exportedAt))
+        : tr("date inconnue", "unknown date");
+      const confirmed = window.confirm(
+        tr(
+          `Restaurer la configuration du site « ${site.slug} » depuis la sauvegarde du ${when} ? La version publique actuelle reste en ligne : ELTARA créera uniquement un brouillon à vérifier avant republication.`,
+          `Restore the configuration for “${site.slug}” from the backup dated ${when}? The current public version stays online: ELTARA will only create a draft to review before republishing.`
+        )
+      );
+      if (!confirmed) return;
+      await saveMySite(preview.config, false, site.id);
+      setMessage(tr(
+        "Configuration restaurée dans un brouillon. Ouvrez ELTARA, contrôlez l’aperçu puis republiez si tout est correct.",
+        "Configuration restored into a draft. Open ELTARA, review the preview, then republish if everything is correct."
+      ));
+      await load();
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "";
+      const friendly =
+        code === "recovery_site_mismatch"
+          ? tr("Ce fichier appartient à un autre site. ELTARA refuse de l’appliquer ici.", "This file belongs to another website. ELTARA will not apply it here.")
+          : code === "unsupported_recovery_format"
+            ? tr("Format de restauration non pris en charge. Utilisez un fichier JSON exporté par ELTARA.", "Unsupported recovery format. Use a JSON file exported by ELTARA.")
+            : code === "invalid_recovery_file"
+              ? tr("Fichier de restauration invalide ou incomplet.", "Invalid or incomplete recovery file.")
+              : error instanceof Error
+                ? error.message
+                : tr("Restauration impossible.", "Unable to restore the website.");
+      setMessage(friendly);
     } finally {
       setBusyKey("");
     }
@@ -174,18 +232,67 @@ export default function DataRightsPage() {
                   <small>/{site.slug}</small>
                   {pending ? <span className="data-rights-status">{tr("Effacement demandé", "Erasure requested")}</span> : null}
                 </div>
-                <button
-                  type="button"
-                  className="button secondary"
-                  disabled={busyKey === "export:" + site.id}
-                  onClick={() => void exportSite(site)}
-                >
-                  {busyKey === "export:" + site.id ? tr("Préparation…", "Preparing…") : tr("Télécharger mon archive", "Download my archive")}
-                </button>
+                <div className="data-rights-export-actions">
+                  <button
+                    type="button"
+                    className="button secondary"
+                    disabled={busyKey === "export:" + site.id}
+                    onClick={() => void exportSite(site)}
+                  >
+                    {busyKey === "export:" + site.id ? tr("Préparation…", "Preparing…") : tr("Télécharger mon archive", "Download my archive")}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-button"
+                    disabled={busyKey === "recovery-export:" + site.id}
+                    onClick={() => void downloadRecoveryJson(site)}
+                  >
+                    {tr("Télécharger le fichier de restauration", "Download recovery file")}
+                  </button>
+                </div>
               </article>
             );
           })}
           {!sites.length && !message ? <p>{tr("Aucun site n’est associé à ce compte.", "No website is associated with this account.")}</p> : null}
+        </div>
+      </section>
+
+      <section className="panel data-rights-panel site-recovery-panel">
+        <div>
+          <p className="eyebrow">{tr("Récupération", "Recovery")}</p>
+          <h2>{tr("Restaurer une ancienne configuration", "Restore a previous configuration")}</h2>
+          <p>{tr(
+            "Le fichier JSON de restauration remet uniquement la configuration du même site dans un brouillon. La version publique actuelle reste en ligne jusqu’à votre republication. Domaines, messages, journaux et fichiers médias ne sont jamais recréés silencieusement.",
+            "The JSON recovery file restores only the configuration of the same website into a draft. The current public version stays online until you republish. Domains, messages, journals and media files are never silently recreated."
+          )}</p>
+        </div>
+        <ol className="site-recovery-steps">
+          <li><span>1</span><div><b>{tr("Conserver une sauvegarde", "Keep a backup")}</b><p>{tr("Téléchargez régulièrement l’archive complète et le fichier JSON de restauration.", "Regularly download the full archive and the JSON recovery file.")}</p></div></li>
+          <li><span>2</span><div><b>{tr("Importer le bon fichier", "Import the right file")}</b><p>{tr("ELTARA vérifie que le fichier appartient exactement au site sélectionné.", "ELTARA verifies that the file belongs exactly to the selected website.")}</p></div></li>
+          <li><span>3</span><div><b>{tr("Prévisualiser avant publication", "Preview before publishing")}</b><p>{tr("La restauration crée un brouillon : vous gardez la décision finale de republier.", "Recovery creates a draft: you keep the final decision to republish.")}</p></div></li>
+        </ol>
+        <div className="data-rights-site-list">
+          {sites.map((site) => (
+            <article className="data-rights-site site-recovery-row" key={"restore-" + site.id}>
+              <div>
+                <b>{site.config.brandName || site.slug}</b>
+                <small>/{site.slug}</small>
+              </div>
+              <label className="button secondary site-recovery-file">
+                {busyKey === "restore:" + site.id ? tr("Restauration…", "Restoring…") : tr("Choisir un fichier JSON", "Choose JSON file")}
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  disabled={busyKey === "restore:" + site.id}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    if (file) void restoreSiteConfig(site, file);
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
+            </article>
+          ))}
         </div>
       </section>
 
