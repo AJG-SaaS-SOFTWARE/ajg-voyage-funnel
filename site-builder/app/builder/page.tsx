@@ -34,6 +34,7 @@ import { legalMissingFields } from "../../lib/site-legal";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
+import { markGrowthActionPublished } from "../../lib/growth-actions";
 import {
   getCurrentUser,
   getMyDomains,
@@ -282,6 +283,7 @@ export default function BuilderPage() {
   const [reviewing, setReviewing] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [changeVersion, setChangeVersion] = useState(0);
+  const [growthActionId, setGrowthActionId] = useState("");
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const latestVersion = useRef(0);
   const trackedProductEvents = useRef(new Set<string>());
@@ -413,7 +415,9 @@ export default function BuilderPage() {
     let cancelled = false;
 
     const boot = async () => {
-      const requestedStep = new URLSearchParams(window.location.search).get("step");
+      const searchParams = new URLSearchParams(window.location.search);
+      const requestedStep = searchParams.get("step");
+      setGrowthActionId(searchParams.get("growthAction") || "");
       if (steps.some((item) => item.key === requestedStep)) {
         setStep(requestedStep as StepKey);
       }
@@ -1230,6 +1234,10 @@ export default function BuilderPage() {
         publishConfig = { ...config, contentLibrary: { assets: promotedAssets } };
         const remote = await saveMySite(publishConfig, true, publishedSiteId || undefined);
         publishedSiteId = remote.id;
+        if (growthActionId && remote.publishedAt) {
+          await markGrowthActionPublished(growthActionId, remote.id, remote.publishedAt);
+          setGrowthActionId("");
+        }
         setRemoteSiteId(remote.id);
         setConfig(publishConfig);
         await refreshVerifiedPublicUrl(remote.id);

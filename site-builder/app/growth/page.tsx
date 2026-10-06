@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
@@ -19,6 +20,13 @@ import { trackProductEvent } from "../../lib/product-analytics";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import { supportGuidanceForCheck } from "../../lib/support-guidance";
 import { groupGrowthHealthChecks, growthHealthCounts, type GrowthHealthGroupKey } from "../../lib/growth-health";
+import {
+  getMyGrowthActions,
+  measureGrowthAction,
+  startGrowthAction,
+  type GrowthAction
+} from "../../lib/growth-actions";
+import type { AnalyticsOpportunity } from "../../lib/site-analytics";
 
 type GrowthState = "loading" | "guest" | "locked" | "no_site" | "draft" | "ready" | "error";
 type SiteOption = { id: string; slug: string; status: string; publishedAt: string | null };
@@ -51,6 +59,7 @@ const groupLabels: Record<GrowthHealthGroupKey, { fr: string; en: string; detail
 };
 
 export default function GrowthPage() {
+  const router = useRouter();
   const { locale, tr } = useProductLocale();
   const [state, setState] = useState<GrowthState>("loading");
   const [sites, setSites] = useState<SiteOption[]>([]);
@@ -61,6 +70,8 @@ export default function GrowthPage() {
   const [notice, setNotice] = useState("");
   const [running, setRunning] = useState(false);
   const [analyticsRows, setAnalyticsRows] = useState<SiteAnalyticsRow[]>([]);
+  const [growthActions, setGrowthActions] = useState<GrowthAction[]>([]);
+  const [actionBusy, setActionBusy] = useState(false);
 
   async function sessionToken() {
     const supabase = getSupabaseBrowserClient();
@@ -86,6 +97,7 @@ export default function GrowthPage() {
         setSiteId("");
         setDiagnosis(null);
         setAnalyticsRows([]);
+        setGrowthActions([]);
         setState("no_site");
         return;
       }
@@ -109,6 +121,7 @@ export default function GrowthPage() {
       if (!growthExperienceEnabled) {
         setDiagnosis(null);
         setAnalyticsRows([]);
+        setGrowthActions([]);
         setState("locked");
         return;
       }
@@ -116,11 +129,13 @@ export default function GrowthPage() {
       if (selected.status !== "published") {
         setDiagnosis(null);
         setAnalyticsRows([]);
+        setGrowthActions([]);
         setState("draft");
         return;
       }
 
       const analyticsPromise = getMySiteAnalytics(selected.id, 180).catch(() => [] as SiteAnalyticsRow[]);
+      const growthActionsPromise = getMyGrowthActions(selected.id).catch(() => [] as GrowthAction[]);
       const response = await fetch("/api/support/health?siteId=" + encodeURIComponent(selected.id), {
         headers: { Authorization: "Bearer " + accessToken },
         cache: "no-store"
@@ -134,7 +149,9 @@ export default function GrowthPage() {
         throw new Error(body?.error || tr("Pilotage Growth indisponible.", "Growth cockpit is unavailable."));
       }
       setDiagnosis(body.health.diagnosis);
-      setAnalyticsRows(await analyticsPromise);
+      const [rows, actions] = await Promise.all([analyticsPromise, growthActionsPromise]);
+      setAnalyticsRows(rows);
+      setGrowthActions(actions);
       setState("ready");
     } catch (error) {
       setState("error");
@@ -182,6 +199,27 @@ export default function GrowthPage() {
     () => evaluatePostPublishPerformance(analyticsRows, selectedSite?.publishedAt || null),
     [analyticsRows, selectedSite?.publishedAt]
   );
+  const measuredGrowthActions = useMemo(
+    () => growthActions.map((action) => ({ action, measurement: measureGrowthAction(action, analyticsRows) })),
+    [growthActions, analyticsRows]
+  );
+
+  async function actOnOpportunity(item: AnalyticsOpportunity) {
+    if (!siteId || actionBusy) return;
+    setActionBusy(true);
+    setNotice("");
+    try {
+      const action = await startGrowthAction(siteId, item, analyticsRows, 30);
+      setGrowthActions((current) => [action, ...current.filter((entry) => entry.status !== "planned")]);
+      const step = item.key === "cta" ? "story" : item.key === "form" ? "options" : "booking";
+      router.push(`/builder?step=${step}&growthAction=${encodeURIComponent(action.id)}`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : tr("Impossible de démarrer cette action Growth.", "Unable to start this Growth action."));
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
   const guidanceByKey = useMemo(
     () => new Map(
       (diagnosis?.checks || [])
@@ -429,9 +467,9 @@ export default function GrowthPage() {
                               `${item.value.toFixed(1)}% des visites viennent de la même catégorie de source sur ${item.evidenceCount} vues.`,
                               `${item.value.toFixed(1)}% of visits come from the same source category across ${item.evidenceCount} views.`
                             )}</p>
-                      <Link className="text-link" href={item.key === "cta" ? "/builder?step=story" : item.key === "form" ? "/builder?step=options" : "/builder?step=booking"}>
-                        {tr("Agir sur ce signal", "Act on this signal")} →
-                      </Link>
+                      <button className="text-link growth-action-button" type="button" disabled={actionBusy} onClick={() => void actOnOpportunity(item)}>
+                        {actionBusy ? tr("Préparation…", "Preparing…") : tr("Agir et mesurer", "Act and measure")} →
+                      </button>
                     </div>
                   </article>
                 ))}
@@ -504,6 +542,64 @@ export default function GrowthPage() {
                   "Une fois une publication enregistrée et suffisamment de trafic collecté, Growth affichera ici l’évolution avant/après.",
                   "Once a publication is recorded and enough traffic is collected, Growth will show the before/after change here."
                 )}</p>
+              </div>
+            )}
+          </section>
+
+
+          <section className="panel growth-history-panel">
+            <div className="growth-performance-head">
+              <div>
+                <p className="eyebrow">{tr("Historique Growth", "Growth history")}</p>
+                <h2>{tr("Chaque correction peut maintenant être suivie", "Every correction can now be tracked")}</h2>
+                <p>{tr(
+                  "ELTARA conserve le signal de départ, rattache la publication suivante à l’action et mesure ensuite l’évolution observée.",
+                  "ELTARA keeps the starting signal, links the next publication to the action, then measures the observed change."
+                )}</p>
+              </div>
+            </div>
+            {notice ? <p className="notice error">{notice}</p> : null}
+            {measuredGrowthActions.length ? (
+              <div className="growth-history-list">
+                {measuredGrowthActions.slice(0, 8).map(({ action, measurement }) => (
+                  <article key={action.id} className={"growth-history-item is-" + measurement.state}>
+                    <div>
+                      <span className="growth-history-kind">{action.opportunityKey === "cta" ? "CTA" : action.opportunityKey === "form" ? tr("Formulaire", "Form") : tr("Acquisition", "Acquisition")}</span>
+                      <strong>{action.score}/100</strong>
+                    </div>
+                    <div>
+                      <b>{action.pagePath || tr("Signal global du site", "Site-wide signal")}</b>
+                      <small>{tr("Référence", "Baseline")} · {action.baselineViews} {tr("vues", "views")} · {action.baselineActionRate.toFixed(1)}%</small>
+                    </div>
+                    <div>
+                      <b>{measurement.state === "planned"
+                        ? tr("Correction en cours", "Correction in progress")
+                        : measurement.state === "collecting"
+                          ? tr("Mesure en cours", "Measurement in progress")
+                          : measurement.state === "low_signal"
+                            ? tr("Signal encore insuffisant", "Signal still too weak")
+                            : measurement.state === "cancelled"
+                              ? tr("Remplacée par une nouvelle action", "Replaced by a new action")
+                              : measurement.outcome === "improved"
+                                ? tr("Amélioration observée", "Improvement observed")
+                                : measurement.outcome === "declined"
+                                  ? tr("Recul observé", "Decline observed")
+                                  : tr("Performance stable", "Performance stable")}</b>
+                      {measurement.state === "measured" ? (
+                        <small>{measurement.actionRatePoints > 0 ? "+" : ""}{measurement.actionRatePoints.toFixed(1)} pt · {measurement.afterViews} {tr("vues après publication", "views after publishing")}</small>
+                      ) : measurement.state === "planned" ? (
+                        <small>{tr("La prochaine publication sera rattachée à cette action.", "The next publication will be linked to this action.")}</small>
+                      ) : (
+                        <small>{tr("ELTARA attend davantage de données avant de conclure.", "ELTARA is waiting for more data before concluding.")}</small>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="growth-performance-empty">
+                <b>{tr("Aucune action Growth suivie pour le moment", "No tracked Growth action yet")}</b>
+                <p>{tr("Choisissez « Agir et mesurer » sur une opportunité pour démarrer la première boucle complète.", "Choose “Act and measure” on an opportunity to start the first complete loop.")}</p>
               </div>
             )}
           </section>
