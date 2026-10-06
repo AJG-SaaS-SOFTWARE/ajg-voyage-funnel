@@ -38,11 +38,13 @@ function harness({ fetch, session = true, locale = "fr" } = {}) {
     "../../lib/support-knowledge": { supportArticlesForLocale: () => [] }
   };
   const module = { exports: {} };
-  new Function("require", "module", "exports", "fetch", "window", code)(
+  let identitySequence = 0;
+  new Function("require", "module", "exports", "fetch", "window", "crypto", code)(
     (name) => { assert.ok(name in dependencies, `Unexpected dependency: ${name}`); return dependencies[name]; },
     module, module.exports,
     async (url, options) => { calls.push({ url, ...options }); return fetch(url, options); },
-    { location: { search: "" } }
+    { location: { search: "" } },
+    { randomUUID: () => `00000000-0000-4000-8000-${String(++identitySequence).padStart(12, "0")}` }
   );
   const render = () => { cursor = 0; refCursor = 0; return module.exports.default(); };
   const nodes = (tree) => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === "object" ? [tree, ...nodes(tree.props?.children)] : [];
@@ -55,7 +57,13 @@ function harness({ fetch, session = true, locale = "fr" } = {}) {
   render();
   return { calls, render, nodes, find, text: () => text(render()), fill,
     submit: () => find("form").props.onSubmit({ preventDefault() {} }),
-    async mount() { effects[0](); await new Promise(setImmediate); }
+    async mount() { effects[0](); await new Promise(setImmediate); },
+    async refresh() {
+      const button = nodes(render()).find((node) => node.type === "button" && ["Actualiser mes demandes", "Diagnostiquer mon site"].includes(node.props.children));
+      assert.ok(button, "Refresh action must remain accessible");
+      button.props.onClick();
+      await new Promise(setImmediate);
+    }
   };
 }
 
@@ -75,7 +83,7 @@ test("initial GET failure keeps the request form and a refresh action", async ()
 
 test("confirmed POST remains saved when the subsequent GET fails", async () => {
   const app = harness({ fetch: async (_, options) => options.method === "POST"
-    ? response(201, { ticket: { id: "synthetic-ticket", status: "diagnosed" } })
+    ? response(201, { ticket: { id: JSON.parse(options.body).requestId, status: "diagnosed" } })
     : response(503, { error: "Synthetic outage" }) });
   app.fill();
   await app.submit();
@@ -89,7 +97,7 @@ test("confirmed POST remains saved when the subsequent GET fails", async () => {
 
 test("confirmed request and refreshed list are displayed in English", async () => {
   const app = harness({ locale: "en", fetch: async (_, options) => options.method === "POST"
-    ? response(201, { ticket: { id: "synthetic-ticket", status: "diagnosed" } })
+    ? response(201, { ticket: { id: JSON.parse(options.body).requestId, status: "diagnosed" } })
     : response(200, { health, tickets: [] }) });
   app.fill();
   await app.submit();
@@ -108,7 +116,9 @@ test("concurrent submissions perform one POST until its response is received", a
   await new Promise(setImmediate);
   assert.equal(app.calls.length, 1);
   assert.equal(app.find("form").props["aria-busy"], true);
-  finish(response(201, { ticket: { id: "synthetic-ticket", status: "diagnosed" } }));
+  assert.equal(app.find("input").props.disabled, true);
+  assert.equal(app.find("textarea").props.disabled, true);
+  finish(response(201, { ticket: { id: JSON.parse(app.calls[0].body).requestId, status: "diagnosed" } }));
   await Promise.all([first, second]);
   assert.equal(app.calls.filter((call) => call.method === "POST").length, 1);
   assert.equal(app.find("form").props["aria-busy"], false);
@@ -145,7 +155,7 @@ test("server failure is an unconfirmed submission and is not retried", async () 
 
 test("saved ticket requiring customer action remains confirmed without refreshed history", async () => {
   const app = harness({ fetch: async (_, options) => options.method === "POST"
-    ? response(201, { ticket: { id: "synthetic-ticket", status: "waiting_customer" } })
+    ? response(201, { ticket: { id: JSON.parse(options.body).requestId, status: "waiting_customer" } })
     : response(503, {}) });
   app.fill();
   await app.submit();
@@ -178,4 +188,128 @@ test("missing session never sends a request", async () => {
   await app.submit();
   assert.equal(app.calls.length, 0);
   assert.equal(app.find("form"), undefined);
+});
+
+test("manual retry after a lost response reuses the same identity", async () => {
+  let posts = 0;
+  const app = harness({ fetch: async (_, options) => {
+    if (options.method !== "POST") return response(200, { health, tickets: [] });
+    if (++posts === 1) throw new Error("Synthetic lost response");
+    return response(201, { ticket: { id: JSON.parse(options.body).requestId, status: "diagnosed" }, replayed: true });
+  } });
+  app.fill();
+  await app.submit();
+  await app.submit();
+  const submitted = app.calls.filter((call) => call.method === "POST").map((call) => JSON.parse(call.body));
+  assert.equal(submitted.length, 2);
+  assert.equal(submitted[0].requestId, submitted[1].requestId);
+  assert.equal(app.find("input").props.value, "");
+  assert.match(app.text(), /Ticket enregistré/);
+});
+
+test("quota rejection after an earlier unknown result never rotates the identity", async () => {
+  let posts = 0;
+  const app = harness({ fetch: async () => ++posts === 1 ? response(503, {}) : response(429, { error: "Synthetic quota" }) });
+  app.fill();
+  await app.submit();
+  await app.submit();
+  await app.submit();
+  assert.equal(new Set(app.calls.map((call) => JSON.parse(call.body).requestId)).size, 1);
+});
+
+test("a changed draft cannot be sent while the first submission is unconfirmed", async () => {
+  const app = harness({ fetch: async () => response(503, {}) });
+  app.fill();
+  await app.submit();
+  app.find("textarea").props.onChange({ target: { value: "Different synthetic description" } });
+  await app.submit();
+  assert.match(app.text(), /Un envoi précédent reste à vérifier/);
+  assert.equal(app.calls.length, 1);
+});
+
+test("positive refresh reconciles the pending identity and preserves a different new draft", async () => {
+  let savedId;
+  const app = harness({ fetch: async (_, options) => {
+    if (options.method === "POST") {
+      savedId = JSON.parse(options.body).requestId;
+      throw new Error("Synthetic lost response");
+    }
+    return response(200, { health, tickets: savedId ? [{ id: savedId, subject: "Synthetic saved request", message: "Synthetic description", status: "diagnosed", created_at: "2026-10-06T00:00:00Z" }] : [] });
+  } });
+  await app.mount();
+  app.fill();
+  await app.submit();
+  app.find("textarea").props.onChange({ target: { value: "Different synthetic description" } });
+  await app.refresh();
+  assert.match(app.text(), /Votre demande a été retrouvée/);
+  assert.equal(app.find("textarea").props.value, "Different synthetic description");
+  const previousId = savedId;
+  await app.submit();
+  assert.notEqual(savedId, previousId);
+});
+
+test("a missing ticket in a refreshed list does not release an uncertain identity", async () => {
+  const app = harness({ fetch: async (_, options) => options.method === "POST" ? response(503, {}) : response(200, { health, tickets: [] }) });
+  await app.mount();
+  app.fill();
+  await app.submit();
+  await app.refresh();
+  await app.submit();
+  const posts = app.calls.filter((call) => call.method === "POST");
+  assert.equal(JSON.parse(posts[0].body).requestId, JSON.parse(posts[1].body).requestId);
+});
+
+test("late initial GET can reconcile a submission without leaving its old draft reusable", async () => {
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  const app = harness({ fetch: async (_, options) => options.method === "POST" ? response(503, {}) : pending });
+  await app.mount();
+  app.fill();
+  await app.submit();
+  const sent = app.calls.find((call) => call.method === "POST");
+  release(response(200, { health, tickets: [{ id: JSON.parse(sent.body).requestId, subject: "Synthetic request", message: "Synthetic description", status: "diagnosed", created_at: "2026-10-06T00:00:00Z" }] }));
+  await new Promise(setImmediate);
+  assert.equal(app.find("input").props.value, "");
+  assert.equal(app.find("textarea").props.value, "");
+  assert.match(app.text(), /Votre demande a été retrouvée/);
+});
+
+test("a different ticket ID in a 201 response is not accepted as confirmation", async () => {
+  const app = harness({ fetch: async () => response(201, { ticket: { id: "unrelated-synthetic-ticket" } }) });
+  app.fill();
+  await app.submit();
+  await app.submit();
+  assert.match(app.text(), /n’a pas pu être confirmé/);
+  assert.equal(JSON.parse(app.calls[0].body).requestId, JSON.parse(app.calls[1].body).requestId);
+  assert.equal(app.find("input").props.value, "Synthetic support request");
+});
+
+test("a first pre-insert validation rejection allows a corrected draft with a fresh identity", async () => {
+  const app = harness({ fetch: async () => response(400, { error: "Synthetic rejection" }) });
+  app.fill();
+  await app.submit();
+  app.find("textarea").props.onChange({ target: { value: "Corrected synthetic description" } });
+  await app.submit();
+  assert.equal(app.calls.length, 2);
+  assert.notEqual(JSON.parse(app.calls[0].body).requestId, JSON.parse(app.calls[1].body).requestId);
+});
+
+test("positive GET confirmation cannot be downgraded by a later failed POST response", async () => {
+  let finishGet, finishPost;
+  const pendingGet = new Promise((resolve) => { finishGet = resolve; });
+  const pendingPost = new Promise((resolve) => { finishPost = resolve; });
+  const app = harness({ fetch: async (_, options) => options.method === "POST" ? pendingPost : pendingGet });
+  await app.mount();
+  app.fill();
+  const sending = app.submit();
+  await new Promise(setImmediate);
+  const sent = app.calls.find((call) => call.method === "POST");
+  finishGet(response(200, { health, tickets: [{ id: JSON.parse(sent.body).requestId, subject: "Synthetic request", message: "Synthetic description", status: "diagnosed", created_at: "2026-10-06T00:00:00Z" }] }));
+  await new Promise(setImmediate);
+  app.render();
+  finishPost(response(503, {}));
+  await sending;
+  assert.match(app.text(), /Votre demande a été retrouvée/);
+  assert.doesNotMatch(app.text(), /n’a pas pu être confirmé/);
+  assert.equal(app.find("input").props.value, "");
 });
