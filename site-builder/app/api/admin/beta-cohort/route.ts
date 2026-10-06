@@ -18,6 +18,27 @@ type BetaGrant = {
   expires_at: string;
 };
 
+type BetaMissionNextAction =
+  | "essential"
+  | "publish"
+  | "compare"
+  | "growth_explore"
+  | "feedback"
+  | "complete";
+
+type BetaMissionProgress = {
+  essentialTested: boolean;
+  published: boolean;
+  essentialThenGrowth: boolean;
+  growthCockpitOpened: boolean;
+  analyticsOpened: boolean;
+  growthExplored: boolean;
+  feedbackSent: boolean;
+  completedCount: number;
+  percent: number;
+  nextAction: BetaMissionNextAction;
+};
+
 type BetaActivity = {
   siteId: string | null;
   siteSlug: string | null;
@@ -27,6 +48,7 @@ type BetaActivity = {
   feedbackCount: number;
   productEventCount: number;
   aiEventCount: number;
+  mission: BetaMissionProgress;
 };
 
 function member(user: User, grant?: BetaGrant | null, activity?: BetaActivity) {
@@ -61,8 +83,96 @@ function member(user: User, grant?: BetaGrant | null, activity?: BetaActivity) {
     feedbackCount: activity?.feedbackCount || 0,
     productEventCount: activity?.productEventCount || 0,
     aiEventCount: activity?.aiEventCount || 0,
+    mission: activity?.mission || emptyMissionProgress(),
     ...betaOperationalStatus(user, grant, activity)
   };
+}
+
+function emptyMissionProgress(): BetaMissionProgress {
+  return {
+    essentialTested: false,
+    published: false,
+    essentialThenGrowth: false,
+    growthCockpitOpened: false,
+    analyticsOpened: false,
+    growthExplored: false,
+    feedbackSent: false,
+    completedCount: 0,
+    percent: 0,
+    nextAction: "essential"
+  };
+}
+
+function deriveBetaMissionProgress(
+  events: Array<{ site_id: string | null; event_name: string; created_at: string }>,
+  feedback: Array<{ site_id: string | null; created_at: string }>,
+  siteId: string | null,
+  published: boolean
+): BetaMissionProgress {
+  const essentialEvents = events.filter((event) => event.event_name === "beta_essential_selected");
+  const growthEvents = events.filter((event) => event.event_name === "beta_growth_selected");
+  const essentialThenGrowth = essentialEvents.some((essentialEvent) => {
+    const essentialAt = Date.parse(essentialEvent.created_at);
+    if (!Number.isFinite(essentialAt)) return false;
+    return growthEvents.some((growthEvent) => {
+      const growthAt = Date.parse(growthEvent.created_at);
+      return Number.isFinite(growthAt) && growthAt >= essentialAt;
+    });
+  });
+  const eventMatchesSite = (event: { site_id: string | null }) =>
+    !siteId || event.site_id === siteId;
+  const feedbackMatchesSite = (item: { site_id: string | null }) =>
+    !siteId || item.site_id === siteId || item.site_id === null;
+  const growthCockpitOpened = events.some(
+    (event) => event.event_name === "beta_growth_cockpit_opened" && eventMatchesSite(event)
+  );
+  const analyticsOpened = events.some(
+    (event) => event.event_name === "beta_analytics_opened" && eventMatchesSite(event)
+  );
+  const growthExplored = growthCockpitOpened && analyticsOpened;
+  const feedbackSent = feedback.some(feedbackMatchesSite);
+  const checks = [
+    essentialEvents.length > 0,
+    published,
+    essentialThenGrowth,
+    growthExplored,
+    feedbackSent
+  ];
+  const completedCount = checks.filter(Boolean).length;
+  const nextAction: BetaMissionNextAction =
+    !checks[0]
+      ? "essential"
+      : !checks[1]
+        ? "publish"
+        : !checks[2]
+          ? "compare"
+          : !checks[3]
+            ? "growth_explore"
+            : !checks[4]
+              ? "feedback"
+              : "complete";
+
+  return {
+    essentialTested: checks[0],
+    published: checks[1],
+    essentialThenGrowth: checks[2],
+    growthCockpitOpened,
+    analyticsOpened,
+    growthExplored,
+    feedbackSent,
+    completedCount,
+    percent: Math.round((completedCount / checks.length) * 100),
+    nextAction
+  };
+}
+
+function missionFollowUpReason(nextAction: BetaMissionNextAction) {
+  if (nextAction === "essential") return "Compte activé mais le test Essentiel n’a pas commencé depuis plus de 72 h.";
+  if (nextAction === "publish") return "Essentiel testé mais aucun site n’a été publié depuis plus de 72 h.";
+  if (nextAction === "compare") return "Site publié mais la comparaison Essentiel → Growth n’a pas été faite depuis plus de 72 h.";
+  if (nextAction === "growth_explore") return "Comparaison engagée mais Growth + Analytics ne sont pas tous les deux explorés après 72 h.";
+  if (nextAction === "feedback") return "Parcours fonctionnel terminé mais aucun retour n’a été envoyé après 72 h.";
+  return null;
 }
 
 function betaOperationalStatus(
@@ -82,6 +192,7 @@ function betaOperationalStatus(
       : NaN;
   const inviteAgeHours = Number.isFinite(invitedAt) ? (now - invitedAt) / 3_600_000 : 0;
   const inactivityHours = Number.isFinite(lastActivityAt) ? (now - lastActivityAt) / 3_600_000 : null;
+  const mission = activity?.mission || emptyMissionProgress();
 
   if (!user.last_sign_in_at) {
     return {
@@ -91,42 +202,37 @@ function betaOperationalStatus(
     };
   }
 
-  if (activity?.publishedAt || activity?.siteStatus === "published") {
-    if ((activity.feedbackCount || 0) > 0) {
-      return {
-        betaStage: "complete" as const,
-        needsFollowUp: false,
-        followUpReason: null
-      };
-    }
+  if (mission.nextAction === "complete") {
+    return {
+      betaStage: "complete" as const,
+      needsFollowUp: false,
+      followUpReason: null
+    };
+  }
+
+  const needsFollowUp = inactivityHours !== null && inactivityHours >= 72;
+  const followUpReason = needsFollowUp ? missionFollowUpReason(mission.nextAction) : null;
+
+  if (mission.published || activity?.siteStatus === "published") {
     return {
       betaStage: "published" as const,
-      needsFollowUp: inactivityHours !== null && inactivityHours >= 72,
-      followUpReason:
-        inactivityHours !== null && inactivityHours >= 72
-          ? "Site publié mais aucun retour reçu après 72 h."
-          : null
+      needsFollowUp,
+      followUpReason
     };
   }
 
   if (activity?.siteId || (activity?.productEventCount || 0) > 0) {
     return {
       betaStage: "building" as const,
-      needsFollowUp: inactivityHours !== null && inactivityHours >= 72,
-      followUpReason:
-        inactivityHours !== null && inactivityHours >= 72
-          ? "Création commencée mais inactive depuis plus de 72 h."
-          : null
+      needsFollowUp,
+      followUpReason
     };
   }
 
   return {
     betaStage: "activated" as const,
-    needsFollowUp: inactivityHours !== null && inactivityHours >= 72,
-    followUpReason:
-      inactivityHours !== null && inactivityHours >= 72
-        ? "Compte activé mais aucune création détectée depuis plus de 72 h."
-        : null
+    needsFollowUp,
+    followUpReason
   };
 }
 
@@ -258,16 +364,24 @@ export async function GET(request: Request) {
         ...feedback.map((item) => item.created_at)
       ].filter((value): value is string => Boolean(value));
 
+      const latestPublishedAt =
+        sites
+          .map((site) => site.published_at)
+          .filter((value): value is string => Boolean(value))
+          .sort()
+          .at(-1) || null;
+      const sitePublished = Boolean(
+        latestPublishedAt || primarySite?.status === "published" ||
+        events.some((event) =>
+          event.event_name === "publish_success" &&
+          (!primarySite?.id || event.site_id === primarySite.id)
+        )
+      );
       activityByUser.set(user.id, {
         siteId: primarySite?.id || null,
         siteSlug: primarySite?.slug || null,
         siteStatus: primarySite?.status || null,
-        publishedAt:
-          sites
-            .map((site) => site.published_at)
-            .filter((value): value is string => Boolean(value))
-            .sort()
-            .at(-1) || null,
+        publishedAt: latestPublishedAt,
         lastActivityAt: timestamps.sort().at(-1) || null,
         feedbackCount: feedback.length,
         productEventCount: events.length,
@@ -279,9 +393,45 @@ export async function GET(request: Request) {
             "architect_applied",
             "revision_applied"
           ].includes(event.event_name)
-        ).length
+        ).length,
+        mission: deriveBetaMissionProgress(
+          events,
+          feedback,
+          primarySite?.id || null,
+          sitePublished
+        )
       });
     }
+
+    const members = users
+      .map((user) =>
+        member(
+          user,
+          grantsByUser.get(user.id),
+          activityByUser.get(user.id)
+        )
+      )
+      .sort((a, b) => {
+        if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
+        if (a.mission.percent !== b.mission.percent) return a.mission.percent - b.mission.percent;
+        return (b.lastActivityAt || b.invitedAt || b.createdAt).localeCompare(
+          a.lastActivityAt || a.invitedAt || a.createdAt
+        );
+      });
+    const missionSummary = {
+      averagePercent: members.length
+        ? Math.round(members.reduce((sum, item) => sum + item.mission.percent, 0) / members.length)
+        : 0,
+      completed: members.filter((item) => item.mission.nextAction === "complete").length,
+      needsFollowUp: members.filter((item) => item.needsFollowUp).length,
+      byStep: {
+        essential: members.filter((item) => item.mission.essentialTested).length,
+        published: members.filter((item) => item.mission.published).length,
+        compared: members.filter((item) => item.mission.essentialThenGrowth).length,
+        growthExplored: members.filter((item) => item.mission.growthExplored).length,
+        feedback: members.filter((item) => item.mission.feedbackSent).length
+      }
+    };
 
     return NextResponse.json(
       {
@@ -296,20 +446,8 @@ export async function GET(request: Request) {
           invitationHours: 48,
           inactivityHours: 72
         },
-        members: users
-          .map((user) =>
-            member(
-              user,
-              grantsByUser.get(user.id),
-              activityByUser.get(user.id)
-            )
-          )
-          .sort((a, b) => {
-            if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
-            return (b.lastActivityAt || b.invitedAt || b.createdAt).localeCompare(
-              a.lastActivityAt || a.invitedAt || a.createdAt
-            );
-          })
+        missionSummary,
+        members
       },
       { headers: { "Cache-Control": "private, no-store" } }
     );
