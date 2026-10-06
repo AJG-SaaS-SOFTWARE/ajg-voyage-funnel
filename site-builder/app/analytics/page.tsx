@@ -13,21 +13,27 @@ import { trackProductEvent } from "../../lib/product-analytics";
 
 type LoadState = "loading" | "ready" | "error";
 
-const sourceLabel = (source: string, tr: (fr: string, en: string) => string) => ({
-  direct: tr("Direct", "Direct"),
-  internal: tr("Interne", "Internal"),
-  search: tr("Recherche", "Search"),
-  social: tr("Réseaux sociaux", "Social"),
-  referral: tr("Sites référents", "Referrals"),
-  other: tr("Autre", "Other")
-}[source] || source);
+const sourceLabel = (source: string, tr: (fr: string, en: string) => string) => {
+  const labels: Record<string, string> = {
+    direct: tr("Direct", "Direct"),
+    internal: tr("Interne", "Internal"),
+    search: tr("Recherche", "Search"),
+    social: tr("Réseaux sociaux", "Social"),
+    referral: tr("Sites référents", "Referrals"),
+    other: tr("Autre", "Other")
+  };
+  return labels[source] || source;
+};
 
-const ctaLabel = (label: string, tr: (fr: string, en: string) => string) => ({
-  booking: tr("Réservation", "Booking"),
-  social_instagram: "Instagram",
-  social_facebook: "Facebook",
-  contact_email: tr("E-mail", "Email")
-}[label] || label.replaceAll("_", " "));
+const ctaLabel = (label: string, tr: (fr: string, en: string) => string) => {
+  const labels: Record<string, string> = {
+    booking: tr("Réservation", "Booking"),
+    social_instagram: "Instagram",
+    social_facebook: "Facebook",
+    contact_email: tr("E-mail", "Email")
+  };
+  return labels[label] || label.replaceAll("_", " ");
+};
 
 export default function AnalyticsPage() {
   const { tr } = useProductLocale();
