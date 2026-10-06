@@ -290,7 +290,12 @@ export function stripeObjectId(value: any) {
 }
 
 export function stripePeriodEnd(subscription: any) {
-  const unix = subscription?.current_period_end;
+  const rootPeriodEnd = subscription?.current_period_end;
+  const itemPeriodEnd = subscription?.items?.data?.[0]?.current_period_end;
+  const unix =
+    typeof rootPeriodEnd === "number" && Number.isFinite(rootPeriodEnd)
+      ? rootPeriodEnd
+      : itemPeriodEnd;
   return typeof unix === "number" && Number.isFinite(unix)
     ? new Date(unix * 1000).toISOString()
     : null;
