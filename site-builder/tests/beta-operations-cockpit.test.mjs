@@ -14,6 +14,14 @@ const adminClient = fs.readFileSync(
   new URL("../lib/admin.ts", import.meta.url),
   "utf8"
 );
+const followUpRoute = fs.readFileSync(
+  new URL("../app/api/admin/beta-followups/route.ts", import.meta.url),
+  "utf8"
+);
+const followUpMigration = fs.readFileSync(
+  new URL("../supabase/migrations/20261006171500_beta_followup_history.sql", import.meta.url),
+  "utf8"
+);
 
 test("beta cohort endpoint derives progress from existing operational data only", () => {
   assert.match(route, /from\("sites"\)/);
@@ -78,7 +86,7 @@ test("admin beta mission mirrors the same five tester milestones and exposes the
 
 
 test("admin beta operations can filter by follow-up, blockers, active missions and completion", () => {
-  assert.match(admin, /type BetaOpsFilter = "all" \| "followup" \| "blocked" \| "active" \| "complete"/);
+  assert.match(admin, /type BetaOpsFilter = "all" \| "followup" \| "unresponsive" \| "blocked" \| "active" \| "complete"/);
   assert.match(admin, /betaOpsFilter/);
   assert.match(admin, /À relancer/);
   assert.match(admin, /Bloqués/);
@@ -97,4 +105,36 @@ test("admin beta operations ranks members and prepares a contextual follow-up wi
   assert.match(admin, /mailto:/);
   assert.match(admin, /Préparer l’e-mail/);
   assert.doesNotMatch(admin, /sendEmail\(/);
+});
+
+
+test("beta follow-up history is service-only, indexed and protected by RLS", () => {
+  assert.match(followUpMigration, /create table public\.beta_followups/);
+  assert.match(followUpMigration, /enable row level security/);
+  assert.match(followUpMigration, /revoke all on public\.beta_followups from anon, authenticated/);
+  assert.match(followUpMigration, /beta_followups_user_sent_idx/);
+  assert.match(followUpMigration, /beta_followups_site_idx/);
+  assert.match(followUpMigration, /beta_followups_admin_idx/);
+});
+
+test("admin records a follow-up explicitly and blocks same-step duplicates for 24 hours", () => {
+  assert.match(followUpRoute, /mission_next_action/);
+  assert.match(followUpRoute, /ageHours < 24/);
+  assert.match(followUpRoute, /déjà été enregistrée dans les dernières 24 h/);
+  assert.match(followUpRoute, /role\?\.role !== "admin"/);
+  assert.match(adminClient, /adminRecordBetaFollowUp/);
+  assert.match(admin, /Marquer envoyée/);
+  assert.match(admin, /Relance enregistrée/);
+});
+
+test("cohort suppresses duplicate reminders while waiting and escalates no-response after 72 hours", () => {
+  assert.match(route, /from\("beta_followups"\)/);
+  assert.match(route, /awaitingResume/);
+  assert.match(route, /overdueAfterFollowUp/);
+  assert.match(route, /activityAfterFollowUp/);
+  assert.match(route, /followUpAgeHours < 72/);
+  assert.match(route, /aucune reprise d’activité n’a été observée depuis plus de 72 h/);
+  assert.match(admin, /Sans reprise/);
+  assert.match(admin, /activité reprise/);
+  assert.match(admin, /en attente de reprise/);
 });

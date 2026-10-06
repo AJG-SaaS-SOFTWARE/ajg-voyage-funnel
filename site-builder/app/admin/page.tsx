@@ -6,6 +6,7 @@ import { AdminShell } from "../../components/AdminShell";
 import {
   adminBootstrapPrivateStorage,
   adminInviteBetaMember,
+  adminRecordBetaFollowUp,
   adminRemoveBetaMember,
   adminRunBuilderE2E,
   adminRunStorageE2E,
@@ -58,7 +59,7 @@ const standardAiOperationLabel: Record<string, string> = {
   standard_repair: "Réparation qualité"
 };
 
-type BetaOpsFilter = "all" | "followup" | "blocked" | "active" | "complete";
+type BetaOpsFilter = "all" | "followup" | "unresponsive" | "blocked" | "active" | "complete";
 
 function betaMemberBlocked(item: AdminBetaCohortMember) {
   return !item.cohortConsistent || !item.accessActive;
@@ -66,7 +67,10 @@ function betaMemberBlocked(item: AdminBetaCohortMember) {
 
 function betaPriority(item: AdminBetaCohortMember) {
   if (betaMemberBlocked(item)) return { code: "P1", label: "Accès à corriger" };
+  if (item.followUp.overdueAfterFollowUp) return { code: "P2", label: "Sans reprise après relance" };
   if (item.needsFollowUp) return { code: "P2", label: "Relance requise" };
+  if (item.followUp.awaitingResume) return { code: "P3", label: "Relance envoyée · attente" };
+  if (item.followUp.resumedAfterLast) return { code: "P3", label: "Reprise après relance" };
   if (item.mission.nextAction !== "complete") return { code: "P3", label: "Mission en cours" };
   return { code: "OK", label: "Mission terminée" };
 }
@@ -116,6 +120,7 @@ export default function AdminPage() {
   const [betaInviteBusy, setBetaInviteBusy] = useState(false);
   const [betaOpsFilter, setBetaOpsFilter] = useState<BetaOpsFilter>("all");
   const [betaCopiedMemberId, setBetaCopiedMemberId] = useState<string | null>(null);
+  const [betaFollowUpBusyId, setBetaFollowUpBusyId] = useState<string | null>(null);
   const [managedDomains, setManagedDomains] = useState<AdminManagedDomain[]>([]);
   const [managedDomainBusy, setManagedDomainBusy] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
@@ -408,10 +413,13 @@ export default function AdminPage() {
     betaCohort?.members.filter((item) => betaMemberBlocked(item)).length ?? 0;
   const betaActiveMissionCount =
     betaCohort?.members.filter((item) => !betaMemberBlocked(item) && item.mission.nextAction !== "complete").length ?? 0;
+  const betaUnresponsiveCount =
+    betaCohort?.members.filter((item) => item.followUp.overdueAfterFollowUp).length ?? 0;
   const betaVisibleMembers = useMemo(() => {
     const members = betaCohort?.members || [];
     const filtered = members.filter((item) => {
       if (betaOpsFilter === "followup") return item.needsFollowUp;
+      if (betaOpsFilter === "unresponsive") return item.followUp.overdueAfterFollowUp;
       if (betaOpsFilter === "blocked") return betaMemberBlocked(item);
       if (betaOpsFilter === "active") return !betaMemberBlocked(item) && item.mission.nextAction !== "complete";
       if (betaOpsFilter === "complete") return item.mission.nextAction === "complete";
@@ -436,6 +444,20 @@ export default function AdminPage() {
       setTimeout(() => setBetaCopiedMemberId((current) => current === item.id ? null : current), 1800);
     } catch {
       setMessage("Impossible de copier automatiquement. Utilisez le bouton E-mail pour préparer la relance.");
+    }
+  };
+
+  const recordBetaFollowUp = async (item: AdminBetaCohortMember) => {
+    setMessage("");
+    setBetaFollowUpBusyId(item.id);
+    try {
+      await adminRecordBetaFollowUp(item, "email");
+      await load();
+      setMessage(`Relance enregistrée pour ${item.email}. ELTARA attend maintenant une reprise d’activité avant de reproposer une relance.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Enregistrement de la relance impossible.");
+    } finally {
+      setBetaFollowUpBusyId(null);
     }
   };
 
@@ -710,6 +732,7 @@ export default function AdminPage() {
                 {([
                   ["all", "Tous", betaMemberCount],
                   ["followup", "À relancer", betaFollowUpCount],
+                  ["unresponsive", "Sans reprise", betaUnresponsiveCount],
                   ["blocked", "Bloqués", betaBlockedCount],
                   ["active", "En cours", betaActiveMissionCount],
                   ["complete", "Terminés", betaCompletedCount]
@@ -799,6 +822,25 @@ export default function AdminPage() {
                             <i className={item.mission.growthExplored ? "done" : ""}>4</i>
                             <i className={item.mission.feedbackSent ? "done" : ""}>5</i>
                           </div>
+                          {item.followUp.lastSentAt ? (
+                            <small className={
+                              "admin-cell-note beta-follow-up-history " +
+                              (item.followUp.overdueAfterFollowUp
+                                ? "is-overdue"
+                                : item.followUp.resumedAfterLast
+                                  ? "is-resumed"
+                                  : "is-waiting")
+                            }>
+                              Relancé le {new Date(item.followUp.lastSentAt).toLocaleDateString("fr-FR")}
+                              {" · "}
+                              {item.followUp.overdueAfterFollowUp
+                                ? "aucune reprise observée"
+                                : item.followUp.resumedAfterLast
+                                  ? "activité reprise"
+                                  : "en attente de reprise"}
+                              {item.followUp.count > 1 ? ` · ${item.followUp.count} relances` : ""}
+                            </small>
+                          ) : null}
                           {item.needsFollowUp && item.followUpReason ? (
                             <small className="admin-cell-note beta-follow-up-note">
                               À relancer · {item.followUpReason}
@@ -859,6 +901,23 @@ export default function AdminPage() {
                               >
                                 Préparer l’e-mail
                               </a>
+                              <button
+                                type="button"
+                                className="text-button"
+                                disabled={
+                                  betaFollowUpBusyId === item.id ||
+                                  (item.followUp.lastAction === item.mission.nextAction &&
+                                    item.followUp.lastSentAt !== null &&
+                                    Date.now() - new Date(item.followUp.lastSentAt).getTime() < 24 * 60 * 60 * 1000)
+                                }
+                                onClick={() => void recordBetaFollowUp(item)}
+                              >
+                                {betaFollowUpBusyId === item.id
+                                  ? "Enregistrement…"
+                                  : item.followUp.awaitingResume
+                                    ? "Relance enregistrée"
+                                    : "Marquer envoyée"}
+                              </button>
                             </>
                           ) : null}
                           <button
