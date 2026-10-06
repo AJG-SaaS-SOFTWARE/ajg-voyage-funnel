@@ -10,7 +10,7 @@ import { getMySites } from "../../lib/supabase-site-repository";
 import { getMyBetaAccess, getMySiteEntitlements } from "../../lib/subscription";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
-import { supportGuidanceForDiagnosis } from "../../lib/support-guidance";
+import { supportGuidanceForCheck } from "../../lib/support-guidance";
 import { groupGrowthHealthChecks, growthHealthCounts, type GrowthHealthGroupKey } from "../../lib/growth-health";
 
 type GrowthState = "loading" | "guest" | "locked" | "no_site" | "draft" | "ready" | "error";
@@ -154,13 +154,14 @@ export default function GrowthPage() {
     () => diagnosis ? growthHealthCounts(diagnosis.checks) : { healthy: 0, action: 0, incident: 0 },
     [diagnosis]
   );
-  const guidance = useMemo(
-    () => diagnosis ? supportGuidanceForDiagnosis(diagnosis.checks, locale) : [],
-    [diagnosis, locale]
-  );
   const guidanceByKey = useMemo(
-    () => new Map(guidance.map((item) => [item.key, item])),
-    [guidance]
+    () => new Map(
+      (diagnosis?.checks || [])
+        .map((check) => supportGuidanceForCheck(check, locale))
+        .filter((item) => Boolean(item))
+        .map((item) => [item!.key, item!] as const)
+    ),
+    [diagnosis, locale]
   );
 
   return (
@@ -335,7 +336,9 @@ export default function GrowthPage() {
                             <b>{item?.title || check.label}</b>
                             <p>{item
                               ? item.why
-                              : tr("Contrôle validé par les diagnostics techniques ELTARA.", "Check passed by ELTARA technical diagnostics.")}</p>
+                              : check.status === "healthy"
+                                ? tr("Contrôle validé par les diagnostics techniques ELTARA.", "Check passed by ELTARA technical diagnostics.")
+                                : tr("ELTARA a détecté un écart qui mérite votre attention.", "ELTARA detected an issue that deserves your attention.")}</p>
                             {item ? <small><strong>{tr("Prochaine action :", "Next action:")}</strong> {item.action}</small> : null}
                           </div>
                           {item?.href && item.cta ? <Link className="text-link" href={item.href}>{item.cta} →</Link> : null}
