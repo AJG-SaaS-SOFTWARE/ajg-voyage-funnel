@@ -4799,3 +4799,42 @@ button.active .step-label small{color:#63817f}
 .growth-history-item.is-planned{border-color:#d8d7cc;background:#fffdf7}
 .growth-history-item.is-cancelled{opacity:.62}
 @media(max-width:800px){.growth-history-item{grid-template-columns:1fr}.growth-history-item>div:first-child{justify-content:space-between}}
+
+
+/* Clear route from RUN to the Growth cockpit. */
+.account-nav-growth{
+  display:grid!important;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:9px;
+  align-items:center;
+  padding:12px!important;
+  border-color:rgba(78,121,216,.10)!important;
+  background:linear-gradient(120deg,rgba(245,247,255,.76),rgba(255,255,255,.56));
+}
+.account-nav-growth>span:first-child{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:#eef1ff;
+  color:#5064d9;
+  font-size:.68rem;
+  font-weight:900;
+}
+.account-nav-growth>span:last-child{min-width:0;display:grid;gap:2px}
+.account-nav-growth b{color:#334465;font-size:.72rem}
+.account-nav-growth small{
+  overflow:hidden;
+  color:#8790a0;
+  font-size:.57rem;
+  font-weight:560;
+  line-height:1.3;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.builder-growth-shortcut{
+  min-width:68px;
+  padding-inline:10px!important;
+  box-shadow:0 5px 14px rgba(76,91,205,.12);
+}

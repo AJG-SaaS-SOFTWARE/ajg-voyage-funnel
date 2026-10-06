@@ -356,11 +356,24 @@ export default function Home() {
             </li>
           </ol>
           <div className="actions beta-mission-actions">
+            {betaExperienceMode === "growth" && draft?.status === "published" ? (
+              <Link className="button primary" href="/growth">
+                {tr("Ouvrir Growth", "Open Growth")} <span aria-hidden="true">→</span>
+              </Link>
+            ) : betaExperienceMode === "essential" ? (
+              <button type="button" className="button primary" onClick={() => changeBetaExperienceMode("growth")}>
+                {tr("Passer en Growth", "Switch to Growth")} <span aria-hidden="true">→</span>
+              </button>
+            ) : (
+              <Link className="button primary" href={onboardingHref}>
+                {tr("Publier pour tester Growth", "Publish to test Growth")} <span aria-hidden="true">→</span>
+              </Link>
+            )}
             <Link className="button secondary" href={onboardingHref}>
               {draft?.status === "published" ? tr("Modifier le site", "Edit website") : tr("Continuer la mission", "Continue mission")}
             </Link>
-            <Link className={draft?.status === "published" ? "button primary" : "button secondary"} href="/feedback">
-              {tr("Donner mon retour", "Give feedback")} <span aria-hidden="true">→</span>
+            <Link className="button secondary" href="/feedback">
+              {tr("Donner mon retour", "Give feedback")}
             </Link>
           </div>
           <small className="beta-mission-note">

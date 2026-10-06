@@ -1403,6 +1403,11 @@ export default function BuilderPage() {
           <span className={"cloud-pill builder-header-status " + (remoteMode ? "online" : "local")}>
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
+          {betaTester && betaExperienceMode === "growth" && published ? (
+            <Link href="/growth" className="button primary builder-growth-shortcut">
+              GROW <span aria-hidden="true">→</span>
+            </Link>
+          ) : null}
           {userEmail ? <Link href="/plans" className="button secondary builder-header-action">{tr("Mon offre", "My plan")}</Link> : null}
           {userEmail ? <Link href="/domains" className="button secondary builder-header-action">{tr("Domaines", "Domains")}</Link> : null}
           {userEmail ? <Link href="/data" className="button secondary builder-header-action">{tr("Mes données", "My data")}</Link> : null}
