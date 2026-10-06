@@ -1,15 +1,17 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { recordPublicMetric } from "../lib/public-analytics";
 
 type Props = {
   siteId: string;
+  pageKey: string;
   email: string;
   english?: boolean;
   privacyHref?: string;
 };
 
-export default function PublicContactForm({ siteId, email, english = false, privacyHref }: Props) {
+export default function PublicContactForm({ siteId, pageKey, email, english = false, privacyHref }: Props) {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<{ state: "idle" | "success" | "error"; message: string }>({ state: "idle", message: "" });
 
@@ -49,6 +51,7 @@ export default function PublicContactForm({ siteId, email, english = false, priv
         throw new Error(english ? message[1] : message[0]);
       }
       event.currentTarget.reset();
+      recordPublicMetric(siteId, pageKey, "contact_submit");
       setStatus({
         state: "success",
         message: english ? "Message sent. Thank you — the site publisher can now reply to you." : "Message envoyé. Merci — l’éditeur du site peut maintenant vous répondre."
