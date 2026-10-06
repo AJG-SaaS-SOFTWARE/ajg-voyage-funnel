@@ -152,6 +152,9 @@ export default function GrowthPage() {
       const [rows, actions] = await Promise.all([analyticsPromise, growthActionsPromise]);
       setAnalyticsRows(rows);
       setGrowthActions(actions);
+      if (beta.active && resolvedMode === "growth") {
+        void trackProductEvent("beta_growth_cockpit_opened", selected.id);
+      }
       setState("ready");
     } catch (error) {
       setState("error");
