@@ -81,3 +81,20 @@ test("ordered beta completion accepts a later corrected Essential to Growth sequ
   assert.doesNotMatch(metrics, /firstEssentialByUser/);
   assert.doesNotMatch(metrics, /firstGrowthByUser/);
 });
+
+
+test("Builder keeps the beta RUN/GROW switch visible in the top bar", () => {
+  assert.match(switcher, /inline\?: boolean/);
+  assert.match(switcher, /Mode bêta/);
+  assert.match(switcher, /inline \? "GROW" : "RUN \+ GROW"/);
+  assert.match(builder, /<BetaExperienceSwitch\s+inline/);
+  assert.doesNotMatch(builder, /<BetaExperienceSwitch\s+mode=\{betaExperienceMode\}\s+onChange=\{changeBetaExperienceMode\}\s+\/>/);
+});
+
+test("admins automatically receive beta simulation rights for internal QA", () => {
+  const migration = fs.readFileSync(new URL("../supabase/migrations/20261006115600_admin_beta_simulation_access.sql", import.meta.url), "utf8");
+  assert.match(migration, /public\.user_roles/);
+  assert.match(migration, /ur\.role = 'admin'/);
+  assert.match(migration, /create or replace function public\.has_active_beta_access/);
+  assert.match(migration, /create or replace function public\.get_my_beta_access/);
+});
