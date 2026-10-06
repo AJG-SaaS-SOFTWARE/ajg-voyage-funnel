@@ -255,7 +255,7 @@ export default function SupportPage() {
           "Report a problem and track your requests here. ELTARA attaches available technical checks to help the team review them."
         )}</p>
         <div className="actions">
-          <a className="button primary" href="#new-request">{tr("Signaler un problème", "Report a problem")}</a>
+          <a className="button primary" href={state === "guest" ? "/login" : "#new-request"}>{tr("Signaler un problème", "Report a problem")}</a>
           <Link className="button secondary" href="/feedback">{tr("Proposer une amélioration", "Suggest an improvement")}</Link>
           <Link className="button secondary" href="/">{tr("Tableau de bord", "Dashboard")}</Link>
           <Link className="button secondary" href="/builder">{tr("Ouvrir ELTARA", "Open ELTARA")}</Link>
