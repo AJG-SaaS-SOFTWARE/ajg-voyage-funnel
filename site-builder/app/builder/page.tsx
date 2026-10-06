@@ -205,6 +205,7 @@ export default function BuilderPage() {
     launchOperationsRemaining: 0
   });
   const [betaTester, setBetaTester] = useState(false);
+  const [adminQa, setAdminQa] = useState(false);
   const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
   const [userEmail, setUserEmail] = useState("");
   const [origin, setOrigin] = useState("");
@@ -448,6 +449,7 @@ export default function BuilderPage() {
         if (cancelled) return;
 
         setBetaTester(privateBetaAccess.betaActive);
+        setAdminQa(privateBetaAccess.admin && !privateBetaAccess.betaActive);
         if (privateBetaAccess.betaActive) {
           setBetaExperienceMode(readBetaExperienceMode());
         }
@@ -1376,7 +1378,20 @@ export default function BuilderPage() {
           <span style={{ width: completion + "%" }} />
         </div>
 
-        <div className="topbar-account premium-topbar-account"><LanguageSwitch compact />
+        <div className="topbar-account premium-topbar-account">
+          {betaTester ? (
+            <BetaExperienceSwitch
+              inline
+              mode={betaExperienceMode}
+              onChange={changeBetaExperienceMode}
+            />
+          ) : adminQa ? (
+            <Link className="admin-qa-pill" href="/admin" title={tr("Ce compte administrateur n’est pas un Beta Tester actif.", "This administrator account is not an active Beta Tester.")}>
+              <span>QA</span>
+              <b>{tr("Admin", "Admin")}</b>
+            </Link>
+          ) : null}
+          <LanguageSwitch compact />
           {ownedSites.length>1?<select aria-label={tr("Site actif", "Active website")} value={remoteSiteId||""} onChange={async e=>{
             const next=await getMySite(e.target.value);
             if(!next)return;
@@ -1401,11 +1416,17 @@ export default function BuilderPage() {
         </div>
       </header>
 
-      {betaTester ? (
-        <BetaExperienceSwitch
-          mode={betaExperienceMode}
-          onChange={changeBetaExperienceMode}
-        />
+      {adminQa ? (
+        <section className="admin-qa-notice" role="status">
+          <div>
+            <b>{tr("Compte Admin/QA", "Admin/QA account")}</b>
+            <span>{tr(
+              "Vous pouvez administrer ELTARA, mais ce compte n’a pas de grant Beta Tester actif. Le parcours RUN/GROW n’est donc pas simulé tant que vous ne l’ajoutez pas à la cohorte.",
+              "You can administer ELTARA, but this account has no active Beta Tester grant. The RUN/GROW journey is not simulated until you add it to the cohort."
+            )}</span>
+          </div>
+          <Link className="text-link" href="/admin">{tr("Gérer la cohorte bêta", "Manage beta cohort")} →</Link>
+        </section>
       ) : null}
 
       <div className="builder-layout premium-builder-layout">

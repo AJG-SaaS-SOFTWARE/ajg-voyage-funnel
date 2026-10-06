@@ -81,3 +81,13 @@ test("ordered beta completion accepts a later corrected Essential to Growth sequ
   assert.doesNotMatch(metrics, /firstEssentialByUser/);
   assert.doesNotMatch(metrics, /firstGrowthByUser/);
 });
+
+
+test("Beta tester mode switch stays visible in Builder header and admin QA is explicit", () => {
+  assert.match(builder, /<BetaExperienceSwitch\s+inline/);
+  assert.match(builder, /adminQa/);
+  assert.match(builder, /Compte Admin\/QA/);
+  assert.match(switcher, /inline = false/);
+  assert.match(switcher, /Mode bêta/);
+  assert.match(switcher, /GROW/);
+});
