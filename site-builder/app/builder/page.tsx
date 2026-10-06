@@ -361,7 +361,21 @@ export default function BuilderPage() {
     writeBetaExperienceMode(mode);
     setArchitectProposal(null);
     setRevisionProposal(null);
+    if (betaTester) {
+      void trackProductEvent(
+        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        remoteSiteId
+      );
+    }
   };
+
+  useEffect(() => {
+    if (!ready || !betaTester) return;
+    void trackProductEvent(
+      betaExperienceMode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+      remoteSiteId
+    );
+  }, [ready, betaTester, betaExperienceMode, remoteSiteId]);
 
   useEffect(() => {
     if (!ready || !remoteMode) return;

@@ -9,6 +9,7 @@ import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 import { getMySites } from "../../lib/supabase-site-repository";
 import { getMyBetaAccess, getMySiteEntitlements } from "../../lib/subscription";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
+import { trackProductEvent } from "../../lib/product-analytics";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import { supportGuidanceForCheck } from "../../lib/support-guidance";
 import { groupGrowthHealthChecks, growthHealthCounts, type GrowthHealthGroupKey } from "../../lib/growth-health";
@@ -138,6 +139,12 @@ export default function GrowthPage() {
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     writeBetaExperienceMode(mode);
     setBetaExperienceMode(mode);
+    if (betaActive) {
+      void trackProductEvent(
+        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        siteId || null
+      );
+    }
     if (mode === "growth") {
       void load(siteId || undefined, mode);
     } else {

@@ -21,6 +21,7 @@ import {
 import { getMySites } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
+import { trackProductEvent } from "../../lib/product-analytics";
 
 const emptyAiAccess: SiteAiAccess = {
   canCreateSite: false,
@@ -119,6 +120,12 @@ export default function PlansPage() {
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     setBetaExperienceMode(mode);
     writeBetaExperienceMode(mode);
+    if (betaAccess.active) {
+      void trackProductEvent(
+        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        siteId || null
+      );
+    }
   };
   const selectedSite = sites.find((site) => site.id === siteId) || sites[0];
   const aiUsagePercent = current.aiMonthlyLimit > 0 ? Math.min(100, (usage.month / current.aiMonthlyLimit) * 100) : 0;

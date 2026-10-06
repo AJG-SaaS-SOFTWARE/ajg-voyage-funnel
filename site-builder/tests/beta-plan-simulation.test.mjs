@@ -42,3 +42,15 @@ test("plan page shows simulated Essential or Growth while billing actions stay d
   assert.match(plans, /if \(!siteId \|\| betaAccess\.active\) return/);
   assert.match(plans, /sans modifier Stripe ni vos droits réels/);
 });
+
+
+test("beta plan switches are instrumented without storing customer content", () => {
+  const analytics = fs.readFileSync(new URL("../lib/product-analytics.ts", import.meta.url), "utf8");
+  const metrics = fs.readFileSync(new URL("../app/api/admin/beta-metrics/route.ts", import.meta.url), "utf8");
+  assert.match(analytics, /beta_essential_selected/);
+  assert.match(analytics, /beta_growth_selected/);
+  assert.match(builder, /trackProductEvent/);
+  assert.match(metrics, /essentialThenGrowth/);
+  assert.match(metrics, /betaEssentialTested/);
+  assert.match(metrics, /betaGrowthTested/);
+});
