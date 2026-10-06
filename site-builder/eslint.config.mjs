@@ -4,10 +4,16 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
 });
 
-export default [
+const eslintConfig = [
   ...compat.config({
-    extends: ["next/core-web-vitals", "next/typescript"],
+    extends: ["next/core-web-vitals"],
   }),
+  {
+    files: ["tests/**/*.{js,mjs,cjs,ts,tsx}"],
+    rules: {
+      "@next/next/no-assign-module-variable": "off",
+    },
+  },
   {
     ignores: [
       ".next/**",
@@ -18,3 +24,5 @@ export default [
     ],
   },
 ];
+
+export default eslintConfig;
