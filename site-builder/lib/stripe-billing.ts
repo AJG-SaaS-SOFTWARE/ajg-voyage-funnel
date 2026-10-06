@@ -289,6 +289,82 @@ export function stripeObjectId(value: any) {
   return typeof value?.id === "string" ? value.id : "";
 }
 
+export function stripeInvoiceMetadata(invoice: any) {
+  const parentMetadata = invoice?.parent?.subscription_details?.metadata;
+  if (parentMetadata && typeof parentMetadata === "object") {
+    return parentMetadata as Record<string, unknown>;
+  }
+  const lineMetadata = invoice?.lines?.data?.find(
+    (line: any) => line?.metadata && typeof line.metadata === "object"
+  )?.metadata;
+  return lineMetadata && typeof lineMetadata === "object"
+    ? (lineMetadata as Record<string, unknown>)
+    : {};
+}
+
+export function stripeInvoicePriceId(invoice: any) {
+  const line = invoice?.lines?.data?.find((candidate: any) =>
+    Boolean(
+      candidate?.parent?.subscription_item_details?.subscription ||
+      candidate?.subscription ||
+      candidate?.price ||
+      candidate?.pricing?.price_details?.price
+    )
+  );
+  const price =
+    line?.pricing?.price_details?.price ??
+    line?.price ??
+    line?.plan ??
+    null;
+  return stripeObjectId(price);
+}
+
+export function stripeInvoicePaidThrough(invoice: any) {
+  const ends = (Array.isArray(invoice?.lines?.data) ? invoice.lines.data : [])
+    .filter((line: any) =>
+      Boolean(
+        line?.parent?.subscription_item_details?.subscription ||
+        line?.subscription
+      )
+    )
+    .map((line: any) => line?.period?.end)
+    .filter((value: unknown): value is number =>
+      typeof value === "number" && Number.isFinite(value)
+    );
+  if (!ends.length) return null;
+  return new Date(Math.max(...ends) * 1000).toISOString();
+}
+
+export function stripeInvoiceIsInitialSubscriptionPayment(invoice: any) {
+  return invoice?.billing_reason === "subscription_create";
+}
+
+export function stripeInvoiceAccessTransition(
+  eventType: string,
+  invoice: any
+) {
+  if (eventType === "invoice.paid") {
+    return {
+      providerStatus: "active" as const,
+      providerEventType: "payment_succeeded" as const,
+      startsGrace: false
+    };
+  }
+  if (eventType !== "invoice.payment_failed") return null;
+  if (stripeInvoiceIsInitialSubscriptionPayment(invoice)) {
+    return {
+      providerStatus: "suspended" as const,
+      providerEventType: "subscription_pending" as const,
+      startsGrace: false
+    };
+  }
+  return {
+    providerStatus: "past_due" as const,
+    providerEventType: "payment_failed" as const,
+    startsGrace: true
+  };
+}
+
 export function stripePeriodEnd(subscription: any) {
   const rootPeriodEnd = subscription?.current_period_end;
   const itemPeriodEnd = subscription?.items?.data?.[0]?.current_period_end;
