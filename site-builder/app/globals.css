@@ -4881,3 +4881,22 @@ button.active .step-label small{color:#63817f}
 .admin-beta-member-step-dots i.done{background:#dff7f4;color:#087d76}
 @media(max-width:900px){.admin-beta-mission-step-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.admin-beta-mission-summary-head{align-items:flex-start;flex-direction:column}.admin-beta-mission-step-kpis{grid-template-columns:1fr 1fr}}
+
+
+/* Beta operations — prioritize, filter and prepare contextual follow-ups. */
+.admin-beta-ops-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:16px 0 12px;flex-wrap:wrap}
+.admin-beta-ops-toolbar>small{color:#738087;font-size:.68rem}
+.admin-beta-ops-filters{display:flex;gap:7px;flex-wrap:wrap}
+.admin-beta-ops-filters button{border:1px solid rgba(16,33,43,.11);border-radius:999px;padding:8px 11px;background:rgba(255,255,255,.72);color:#5e6c73;font:inherit;font-size:.68rem;font-weight:720;cursor:pointer}
+.admin-beta-ops-filters button b{margin-left:4px;color:#334465}
+.admin-beta-ops-filters button.is-active{border-color:rgba(78,121,216,.28);background:#eef1ff;color:#4054bf}
+.admin-beta-member-identity{display:flex;align-items:flex-start;gap:9px;min-width:210px}
+.admin-beta-member-identity>div{display:grid;gap:2px;min-width:0}
+.beta-priority-badge{display:grid;place-items:center;flex:0 0 auto;min-width:30px;height:24px;padding:0 6px;border-radius:8px;font-size:.6rem;font-weight:900;letter-spacing:.04em}
+.beta-priority-badge.p1{background:#fce8e5;color:#a13b2f}
+.beta-priority-badge.p2{background:#fff2d8;color:#8a5f0c}
+.beta-priority-badge.p3{background:#eef1ff;color:#4d5fc1}
+.beta-priority-badge.ok{background:#dff7f4;color:#087d76}
+.admin-beta-operational-actions{min-width:150px}
+.admin-beta-operational-actions a.text-button{text-decoration:none}
+@media(max-width:760px){.admin-beta-ops-toolbar{align-items:stretch;flex-direction:column}.admin-beta-ops-filters{display:grid;grid-template-columns:1fr 1fr}.admin-beta-ops-filters button{text-align:left}}
