@@ -3,6 +3,7 @@ import { runSupportReconciliationSafely } from "./support-reconcile";
 import { runSupportRemediationSweepSafely } from "./support-remediation-sweep";
 import { getRecentRuntimeHealth } from "./vercel-runtime-health";
 import { reportRuntimeIncidentToRun } from "./run-intake-reporting";
+import { runPlatformSelfHealing } from "./platform-self-healing";
 
 export type SupportOperationsAgentResult = {
   ok: boolean;
@@ -12,6 +13,7 @@ export type SupportOperationsAgentResult = {
   completedAt: string;
   reconcile: Awaited<ReturnType<typeof runSupportReconciliationSafely>>;
   remediation: Awaited<ReturnType<typeof runSupportRemediationSweepSafely>>;
+  platform: Awaited<ReturnType<typeof runPlatformSelfHealing>>;
   runtime: Awaited<ReturnType<typeof getRecentRuntimeHealth>>;
   reportedToRun: boolean;
   reportReason: string | null;
@@ -21,11 +23,13 @@ export type SupportOperationsAgentResult = {
 function statusFor(input: {
   reconcile: Awaited<ReturnType<typeof runSupportReconciliationSafely>>;
   remediation: Awaited<ReturnType<typeof runSupportRemediationSweepSafely>>;
+  platform: Awaited<ReturnType<typeof runPlatformSelfHealing>>;
   runtime: Awaited<ReturnType<typeof getRecentRuntimeHealth>>;
 }) {
-  if (!input.reconcile.ok || !input.remediation.ok) return "failed" as const;
+  if (!input.reconcile.ok || !input.remediation.ok || input.platform.status === "failed") return "failed" as const;
   if (
     input.runtime.status === "incident" ||
+    input.platform.status === "attention" ||
     input.reconcile.failed > 0 ||
     input.remediation.failed > 0
   ) return "attention" as const;
@@ -45,6 +49,7 @@ export async function runSupportOperationsAgent(
   if (runError || !run) throw runError || new Error("support_operations_journal_unavailable");
 
   try {
+    const platform = await runPlatformSelfHealing(service);
     const [reconcile, remediation, runtime] = await Promise.all([
       runSupportReconciliationSafely(now),
       runSupportRemediationSweepSafely(now),
@@ -53,7 +58,10 @@ export async function runSupportOperationsAgent(
 
     const errors = [
       reconcile.error ? `reconcile:${reconcile.error}` : null,
-      remediation.error ? `remediation:${remediation.error}` : null
+      remediation.error ? `remediation:${remediation.error}` : null,
+      ...platform.actions
+        .filter((action) => action.status === "failed")
+        .map((action) => `platform:${action.action}:${action.code}`)
     ].filter((value): value is string => Boolean(value));
 
     const report = await reportRuntimeIncidentToRun({
@@ -65,7 +73,7 @@ export async function runSupportOperationsAgent(
       source: "builder-support-operations"
     });
 
-    const runStatus = statusFor({ reconcile, remediation, runtime });
+    const runStatus = statusFor({ reconcile, remediation, platform, runtime });
     const completedAt = new Date().toISOString();
     const reportReason =
       runtime.status === "incident"
@@ -94,6 +102,11 @@ export async function runSupportOperationsAgent(
         remediation_succeeded: remediation.succeeded,
         remediation_no_change: remediation.noChange,
         remediation_failed: remediation.failed,
+        platform_status: platform.status,
+        platform_repaired: platform.repaired,
+        platform_failed: platform.failed,
+        platform_actions: platform.actions,
+        backup_status_after: platform.backupStatusAfter,
         runtime_status: runtime.status,
         runtime_error_count: runtime.errorCount,
         runtime_fatal_count: runtime.fatalCount,
@@ -114,6 +127,7 @@ export async function runSupportOperationsAgent(
       completedAt,
       reconcile,
       remediation,
+      platform,
       runtime,
       reportedToRun: report.ok && runtime.status === "incident",
       reportReason,
@@ -146,6 +160,7 @@ export async function runSupportOperationsAgentFromEnvironment() {
       completedAt: new Date().toISOString(),
       reconcile: { ok: false, scanned: 0, resolved: 0, escalated: 0, waiting: 0, failed: 0, error: "not_configured" },
       remediation: { ok: false, scanned: 0, eligible: 0, attempted: 0, succeeded: 0, noChange: 0, failed: 0, skippedCooldown: 0, skippedCustomDomain: 0, skippedAmbiguous: 0, error: "not_configured" },
+      platform: { ok: false, status: "failed" as const, repaired: 0, failed: 1, actions: [], backupStatusAfter: null },
       runtime: { checked: false, deploymentId: null, lookbackMinutes: 60, sampledLogs: 0, errorCount: 0, fatalCount: 0, http5xxCount: 0, truncated: false, status: "unknown" as const },
       reportedToRun: false,
       reportReason: "not_configured",
