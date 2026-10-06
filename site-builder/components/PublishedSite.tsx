@@ -4,7 +4,8 @@ import { siteDisclaimer, type SiteConfig } from "../lib/site-config";
 import SoundControl from "./SoundControl";
 import SiteModulesView from "./SiteModulesView";
 import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
-import { legalIsComplete } from "../lib/site-legal";\nimport PublicAnalyticsTracker from "./PublicAnalyticsTracker";
+import { legalIsComplete } from "../lib/site-legal";
+import PublicAnalyticsTracker from "./PublicAnalyticsTracker";
 
 export default function PublishedSite({
   config,
@@ -31,7 +32,8 @@ export default function PublishedSite({
   const base = routeBase ?? `/site/${encodeURIComponent(config.slug)}`;
   const pageHref = (slug: string) => slug ? `${base}/p/${encodeURIComponent(slug)}` : (base || "/");
   const { surface, ink } = surfaceInk(config.design);
-  const legalReady = legalIsComplete(config.legal, config.firstName, config.lastName);\n  const analyticsPagePath = pageSlug ? `/p/${encodeURIComponent(pageSlug)}` : "/";
+  const legalReady = legalIsComplete(config.legal, config.firstName, config.lastName);
+  const analyticsPagePath = pageSlug ? `/p/${encodeURIComponent(pageSlug)}` : "/";
   const backgroundImageStyle = {
     objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%`,
     ...(config.design.backgroundPhotoUrl
@@ -43,7 +45,8 @@ export default function PublishedSite({
   } as CSSProperties;
 
   return (
-    <div className="public-site" data-layout={config.design.layout} data-hero-layout={config.design.heroLayout} data-content-width={config.design.contentWidth} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>\n      <PublicAnalyticsTracker siteId={siteId} pagePath={analyticsPagePath} />
+    <div className="public-site" data-layout={config.design.layout} data-hero-layout={config.design.heroLayout} data-content-width={config.design.contentWidth} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
+      <PublicAnalyticsTracker siteId={siteId} pagePath={analyticsPagePath} />
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
