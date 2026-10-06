@@ -182,6 +182,18 @@ export type AdminBetaCohortMember = {
   feedbackCount: number;
   productEventCount: number;
   aiEventCount: number;
+  mission: {
+    essentialTested: boolean;
+    published: boolean;
+    essentialThenGrowth: boolean;
+    growthCockpitOpened: boolean;
+    analyticsOpened: boolean;
+    growthExplored: boolean;
+    feedbackSent: boolean;
+    completedCount: number;
+    percent: number;
+    nextAction: "essential" | "publish" | "compare" | "growth_explore" | "feedback" | "complete";
+  };
   betaStage: "invited" | "activated" | "building" | "published" | "complete";
   needsFollowUp: boolean;
   followUpReason: string | null;
@@ -195,6 +207,18 @@ export type AdminBetaCohort = {
   followUpRules: {
     invitationHours: number;
     inactivityHours: number;
+  };
+  missionSummary: {
+    averagePercent: number;
+    completed: number;
+    needsFollowUp: number;
+    byStep: {
+      essential: number;
+      published: number;
+      compared: number;
+      growthExplored: number;
+      feedback: number;
+    };
   };
   members: AdminBetaCohortMember[];
 };

@@ -4859,3 +4859,25 @@ button.active .step-label small{color:#63817f}
 @media(max-width:1080px){.beta-mission-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.beta-mission-steps{grid-template-columns:1fr 1fr}.beta-next-action{align-items:stretch;flex-direction:column}.beta-next-action .button{width:100%}}
 @media(max-width:520px){.beta-mission-steps{grid-template-columns:1fr}}
+
+
+/* Admin beta mission cockpit — mirrors the 5-step tester journey from real product events. */
+.admin-beta-mission-summary{display:grid;gap:11px;margin:18px 0;padding:16px;border:1px solid rgba(78,121,216,.16);border-radius:16px;background:linear-gradient(145deg,rgba(247,249,255,.86),rgba(255,255,255,.72))}
+.admin-beta-mission-summary-head{display:flex;justify-content:space-between;align-items:end;gap:18px}
+.admin-beta-mission-summary-head>div{display:flex;align-items:baseline;gap:10px}
+.admin-beta-mission-summary-head span{color:#64727a;font-size:.7rem;font-weight:760;text-transform:uppercase;letter-spacing:.05em}
+.admin-beta-mission-summary-head b{font-size:1.15rem;color:#334465}
+.admin-beta-mission-summary-head small{color:#6c7880}
+.admin-beta-mission-summary-track,.admin-beta-member-progress-track{height:7px;overflow:hidden;border-radius:999px;background:rgba(78,121,216,.09)}
+.admin-beta-mission-summary-track>span,.admin-beta-member-progress-track>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#0c9f96,#4e79d8)}
+.admin-beta-mission-step-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.admin-beta-mission-step-kpis span{display:grid;gap:2px;padding:9px 10px;border-radius:11px;background:rgba(255,255,255,.76);color:#67757c;font-size:.65rem}
+.admin-beta-mission-step-kpis b{color:#334465;font-size:.86rem}
+.admin-beta-member-progress{display:grid;gap:8px;min-width:240px}
+.admin-beta-member-progress-head{display:grid;gap:4px}
+.admin-beta-member-progress-head small{color:#66757c;font-size:.68rem;font-weight:680}
+.admin-beta-member-step-dots{display:flex;gap:5px}
+.admin-beta-member-step-dots i{display:grid;place-items:center;width:21px;height:21px;border-radius:50%;background:#eef0f2;color:#748088;font-size:.62rem;font-style:normal;font-weight:800}
+.admin-beta-member-step-dots i.done{background:#dff7f4;color:#087d76}
+@media(max-width:900px){.admin-beta-mission-step-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.admin-beta-mission-summary-head{align-items:flex-start;flex-direction:column}.admin-beta-mission-step-kpis{grid-template-columns:1fr 1fr}}
