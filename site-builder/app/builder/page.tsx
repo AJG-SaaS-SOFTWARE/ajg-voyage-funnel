@@ -1388,6 +1388,13 @@ export default function BuilderPage() {
           <span className={"cloud-pill builder-header-status " + (remoteMode ? "online" : "local")}>
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
+          {betaTester ? (
+            <BetaExperienceSwitch
+              inline
+              mode={betaExperienceMode}
+              onChange={changeBetaExperienceMode}
+            />
+          ) : null}
           {userEmail ? <Link href="/plans" className="button secondary builder-header-action">{tr("Mon offre", "My plan")}</Link> : null}
           {userEmail ? <Link href="/domains" className="button secondary builder-header-action">{tr("Domaines", "Domains")}</Link> : null}
           {userEmail ? <Link href="/data" className="button secondary builder-header-action">{tr("Mes données", "My data")}</Link> : null}
@@ -1400,13 +1407,6 @@ export default function BuilderPage() {
           ) : null}
         </div>
       </header>
-
-      {betaTester ? (
-        <BetaExperienceSwitch
-          mode={betaExperienceMode}
-          onChange={changeBetaExperienceMode}
-        />
-      ) : null}
 
       <div className="builder-layout premium-builder-layout">
         <aside className="step-nav premium-step-nav">
