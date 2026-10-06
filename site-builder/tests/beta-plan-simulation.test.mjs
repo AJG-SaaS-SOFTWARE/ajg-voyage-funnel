@@ -54,3 +54,18 @@ test("beta plan switches are instrumented without storing customer content", () 
   assert.match(metrics, /betaEssentialTested/);
   assert.match(metrics, /betaGrowthTested/);
 });
+
+
+test("beta mission progress is reconstructed from the tester's own telemetry", () => {
+  const analytics = fs.readFileSync(new URL("../lib/product-analytics.ts", import.meta.url), "utf8");
+  assert.match(analytics, /getMyBetaJourneyProgress/);
+  assert.match(analytics, /beta_essential_selected/);
+  assert.match(analytics, /beta_growth_selected/);
+  assert.match(analytics, /publish_success/);
+  assert.match(analytics, /user_feedback/);
+  assert.match(home, /betaJourney\.essentialTested/);
+  assert.match(home, /betaJourney\.growthTested/);
+  assert.match(home, /betaJourney\.essentialThenGrowth/);
+  assert.match(home, /betaJourney\.feedbackSent/);
+  assert.match(home, /getMyBetaJourneyProgress\(remoteSiteId\)/);
+});
