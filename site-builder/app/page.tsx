@@ -194,6 +194,12 @@ export default function Home() {
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     setBetaExperienceMode(mode);
     writeBetaExperienceMode(mode);
+    if (betaAccess.active && remoteStatus === "authenticated") {
+      void trackProductEvent(
+        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        remoteSiteId
+      );
+    }
   };
 
   const trackOnboardingPath = (path: "manual" | "ai") => {
