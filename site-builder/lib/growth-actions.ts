@@ -59,20 +59,32 @@ function specificMetric(
 
   if (opportunityKey === "cta") {
     const targetPath = pagePath || "/";
-    const page = summary.topPages.find((item) => item.pagePath === targetPath);
+    const pageRows = rows.filter((row) => row.pagePath === targetPath);
+    const views = pageRows
+      .filter((row) => row.eventName === "page_view")
+      .reduce((sum, row) => sum + row.count, 0);
+    const actions = pageRows
+      .filter((row) => row.eventName === "cta_click" || row.eventName === "form_submit")
+      .reduce((sum, row) => sum + row.count, 0);
     return {
       key: "page_action_rate",
-      value: page?.actionRate || 0,
-      sampleSize: page?.views || 0,
+      value: ratio(actions, views),
+      sampleSize: views,
       context: targetPath
     };
   }
 
   if (opportunityKey === "form") {
+    const starts = rows
+      .filter((row) => row.eventName === "form_start")
+      .reduce((sum, row) => sum + row.count, 0);
+    const submits = rows
+      .filter((row) => row.eventName === "form_submit")
+      .reduce((sum, row) => sum + row.count, 0);
     return {
       key: "form_completion_rate",
-      value: summary.contactCompletionRate ?? 0,
-      sampleSize: summary.formStarts,
+      value: ratio(submits, starts),
+      sampleSize: starts,
       context: null
     };
   }
