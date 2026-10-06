@@ -3,6 +3,7 @@ import { getCurrentUser } from "./supabase-site-repository";
 
 export type SiteAnalyticsEventName = "page_view" | "cta_click" | "form_start" | "form_submit";
 export type SiteAnalyticsSource = "direct" | "internal" | "search" | "social" | "referral" | "other";
+export type AnalyticsPeriodDays = 7 | 30 | 90;
 
 export type SiteAnalyticsRow = {
   day: string;
@@ -13,19 +14,6 @@ export type SiteAnalyticsRow = {
   count: number;
 };
 
-export type SiteAnalyticsSummary = {
-  views: number;
-  ctaClicks: number;
-  formStarts: number;
-  formSubmits: number;
-  actionRate: number;
-  contactCompletionRate: number | null;
-  topPages: Array<{ pagePath: string; views: number; ctaClicks: number; formSubmits: number }>;
-  sources: Array<{ source: SiteAnalyticsSource; views: number }>;
-  ctas: Array<{ label: string; clicks: number }>;
-  opportunities: AnalyticsOpportunity[];
-};
-
 export type AnalyticsOpportunity = {
   key: "cta" | "form" | "acquisition";
   priority: "high" | "medium";
@@ -33,19 +21,49 @@ export type AnalyticsOpportunity = {
   value: number;
 };
 
-export async function getMySiteAnalytics(siteId: string, days = 30): Promise<SiteAnalyticsRow[]> {
+export type SiteAnalyticsSummary = {
+  views: number;
+  ctaClicks: number;
+  formStarts: number;
+  formSubmits: number;
+  actionRate: number;
+  contactCompletionRate: number | null;
+  topPages: Array<{
+    pagePath: string;
+    views: number;
+    ctaClicks: number;
+    formSubmits: number;
+    actionRate: number;
+  }>;
+  sources: Array<{ source: SiteAnalyticsSource; views: number }>;
+  ctas: Array<{ label: string; clicks: number }>;
+  opportunities: AnalyticsOpportunity[];
+};
+
+export type AnalyticsComparison = {
+  current: SiteAnalyticsSummary;
+  previous: SiteAnalyticsSummary;
+  periodDays: AnalyticsPeriodDays;
+  deltas: {
+    views: number | null;
+    ctaClicks: number | null;
+    formSubmits: number | null;
+    actionRatePoints: number;
+  };
+};
+
+export async function getMySiteAnalytics(siteId: string, days = 180): Promise<SiteAnalyticsRow[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return [];
   const user = await getCurrentUser();
   if (!user) return [];
 
-  const safeDays = Math.min(90, Math.max(7, Math.round(days)));
+  const safeDays = Math.min(180, Math.max(7, Math.round(days)));
   const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
   since.setUTCDate(since.getUTCDate() - (safeDays - 1));
   const sinceDay = since.toISOString().slice(0, 10);
 
-  // The table is introduced by an additive migration. Keep this client read isolated
-  // until the generated database types are refreshed from the production schema.
   const analyticsClient = supabase as any;
   const { data, error } = await analyticsClient
     .from("site_analytics_daily")
@@ -67,6 +85,15 @@ export async function getMySiteAnalytics(siteId: string, days = 30): Promise<Sit
 
 function ratio(numerator: number, denominator: number) {
   return denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : 0;
+}
+
+function deltaPercent(current: number, previous: number): number | null {
+  if (previous <= 0) return current > 0 ? null : 0;
+  return Math.round(((current - previous) / previous) * 1000) / 10;
+}
+
+function dayKey(date: Date) {
+  return date.toISOString().slice(0, 10);
 }
 
 export function summarizeSiteAnalytics(rows: SiteAnalyticsRow[]): SiteAnalyticsSummary {
@@ -101,10 +128,14 @@ export function summarizeSiteAnalytics(rows: SiteAnalyticsRow[]): SiteAnalyticsS
   }
 
   const topPages = [...byPage.entries()]
-    .map(([pagePath, value]) => ({ pagePath, ...value }))
+    .map(([pagePath, value]) => ({
+      pagePath,
+      ...value,
+      actionRate: ratio(value.ctaClicks + value.formSubmits, value.views)
+    }))
     .filter((item) => item.views > 0)
     .sort((a, b) => b.views - a.views)
-    .slice(0, 6);
+    .slice(0, 8);
 
   const sources = [...bySource.entries()]
     .map(([source, sourceViews]) => ({ source, views: sourceViews }))
@@ -113,7 +144,7 @@ export function summarizeSiteAnalytics(rows: SiteAnalyticsRow[]): SiteAnalyticsS
   const ctas = [...byCta.entries()]
     .map(([label, clicks]) => ({ label, clicks }))
     .sort((a, b) => b.clicks - a.clicks)
-    .slice(0, 6);
+    .slice(0, 8);
 
   const opportunities: AnalyticsOpportunity[] = [];
 
@@ -155,5 +186,45 @@ export function summarizeSiteAnalytics(rows: SiteAnalyticsRow[]): SiteAnalyticsS
     sources,
     ctas,
     opportunities
+  };
+}
+
+export function compareSiteAnalytics(
+  rows: SiteAnalyticsRow[],
+  periodDays: AnalyticsPeriodDays,
+  now = new Date()
+): AnalyticsComparison {
+  const today = new Date(now);
+  today.setUTCHours(0, 0, 0, 0);
+
+  const currentStart = new Date(today);
+  currentStart.setUTCDate(currentStart.getUTCDate() - (periodDays - 1));
+
+  const previousEnd = new Date(currentStart);
+  previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
+
+  const previousStart = new Date(previousEnd);
+  previousStart.setUTCDate(previousStart.getUTCDate() - (periodDays - 1));
+
+  const currentStartKey = dayKey(currentStart);
+  const todayKey = dayKey(today);
+  const previousStartKey = dayKey(previousStart);
+  const previousEndKey = dayKey(previousEnd);
+
+  const currentRows = rows.filter((row) => row.day >= currentStartKey && row.day <= todayKey);
+  const previousRows = rows.filter((row) => row.day >= previousStartKey && row.day <= previousEndKey);
+  const current = summarizeSiteAnalytics(currentRows);
+  const previous = summarizeSiteAnalytics(previousRows);
+
+  return {
+    current,
+    previous,
+    periodDays,
+    deltas: {
+      views: deltaPercent(current.views, previous.views),
+      ctaClicks: deltaPercent(current.ctaClicks, previous.ctaClicks),
+      formSubmits: deltaPercent(current.formSubmits, previous.formSubmits),
+      actionRatePoints: Math.round((current.actionRate - previous.actionRate) * 10) / 10
+    }
   };
 }
