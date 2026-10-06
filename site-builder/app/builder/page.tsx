@@ -345,6 +345,7 @@ export default function BuilderPage() {
     premiumAccessHref === "/billing" ? tr("Régulariser mon accès", "Restore my access") : tr("Voir Growth / Création IA", "View Growth / AI Launch");
   const showAdvancedDiscovery = !siteArchitectCreateAvailable || !siteRevisionAvailable;
   const growthActive = siteEntitlements.planKey === "growth" && paidAiAccessActive;
+  const showGrowthRevisionWorkspace = siteRevisionAvailable && published;
 
   useEffect(() => {
     if (!ready || !remoteMode) return;
@@ -1749,7 +1750,7 @@ export default function BuilderPage() {
                   </div>
                 </details>
                 ) : null}
-                {siteRevisionAvailable ? (
+                {showGrowthRevisionWorkspace ? (
                 <details className="guided-writing-card ai-architect-card growth-revision-card">
                   <summary><span className="guided-writing-icon">↻</span><span><b>{tr("Modifier tout le site avec l’IA", "Revise the whole website with AI")}</b><small>{tr("Growth · demandez une évolution globale sans écraser automatiquement votre version actuelle.", "Growth · request a global revision without automatically overwriting your current version.")}</small></span><span className="guided-writing-badge">{tr("Aperçu avant application", "Preview before applying")}</span></summary>
                   <div className="guided-writing-body">
