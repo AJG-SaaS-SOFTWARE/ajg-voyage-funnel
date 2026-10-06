@@ -159,8 +159,8 @@ export default function PlansPage() {
             <p>
               {betaAccess.active
                 ? tr(
-                    "Accès BUILD + Growth complet offert pendant la bêta, sans abonnement Stripe ni conversion payante automatique.",
-                    "Full BUILD + Growth access included during beta, with no Stripe subscription or automatic paid conversion."
+                    "Vos droits BUILD + Growth complets restent actifs. Le mode affiché simule l’expérience client sans modifier Stripe ni vos droits réels.",
+                    "Your full BUILD + Growth rights remain active. The displayed mode simulates the customer experience without changing Stripe or your real entitlements."
                   )
                 : tr(
                     "Retrouvez ici les capacités actives de votre site, vos quotas et les options disponibles pour le faire évoluer.",
