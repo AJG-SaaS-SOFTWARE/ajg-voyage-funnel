@@ -325,6 +325,33 @@ export async function GET(request: Request) {
   const aiPath = pathStats("ai");
   const pathSelections = manualPath.selected + aiPath.selected;
 
+  const betaEssentialEvents = eventRows
+    .filter((item) => item.event_name === "beta_essential_selected")
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  const betaGrowthEvents = eventRows
+    .filter((item) => item.event_name === "beta_growth_selected")
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  const betaEssentialUsers = new Set(betaEssentialEvents.map((item) => item.user_id));
+  const betaGrowthUsers = new Set(betaGrowthEvents.map((item) => item.user_id));
+  const firstEssentialByUser = new Map<string, string>();
+  const firstGrowthByUser = new Map<string, string>();
+  for (const item of betaEssentialEvents) {
+    if (typeof item.user_id === "string" && !firstEssentialByUser.has(item.user_id)) {
+      firstEssentialByUser.set(item.user_id, item.created_at);
+    }
+  }
+  for (const item of betaGrowthEvents) {
+    if (typeof item.user_id === "string" && !firstGrowthByUser.has(item.user_id)) {
+      firstGrowthByUser.set(item.user_id, item.created_at);
+    }
+  }
+  const betaBothUsers = [...betaEssentialUsers].filter((userId) => betaGrowthUsers.has(userId));
+  const betaEssentialThenGrowthUsers = betaBothUsers.filter((userId) => {
+    const essentialAt = firstEssentialByUser.get(userId);
+    const growthAt = firstGrowthByUser.get(userId);
+    return Boolean(essentialAt && growthAt && essentialAt <= growthAt);
+  });
+
   const architectFirstRows = eventRows.filter(
     (item) => item.event_name === "architect_generated"
   );
@@ -432,6 +459,8 @@ export async function GET(request: Request) {
           ["architect_applied", "revision_applied"].includes(item.event_name)
         ).length,
         feedbackCount: siteFeedback.length,
+        betaEssentialTested: names.has("beta_essential_selected"),
+        betaGrowthTested: names.has("beta_growth_selected"),
         lastActivity: timestamps.sort().at(-1) || site.updated_at
       };
     })
@@ -498,6 +527,14 @@ export async function GET(request: Request) {
         aiShare: percent(aiPath.selected, pathSelections),
         manual: manualPath,
         ai: aiPath
+      },
+      betaExperience: {
+        essentialTesters: betaEssentialUsers.size,
+        growthTesters: betaGrowthUsers.size,
+        bothTested: betaBothUsers.length,
+        essentialThenGrowth: betaEssentialThenGrowthUsers.length,
+        completionRate: percent(betaBothUsers.length, Math.max(1, betaUsers.length)),
+        orderedCompletionRate: percent(betaEssentialThenGrowthUsers.length, Math.max(1, betaUsers.length))
       },
       ai: {
         generations: aiRows.length,
@@ -616,6 +653,7 @@ export async function GET(request: Request) {
         published: "Utilisateur distinct ayant déclenché une publication réussie.",
         onboardingSteps: "Utilisateurs distincts ayant atteint chaque étape d’ELTARA. Les écarts entre étapes permettent de localiser une friction sans stocker le contenu saisi.",
         onboardingPaths: "Premier choix explicite entre parcours manuel et Création IA, puis publication ultérieure et délai médian jusqu’à cette publication. Aucun contenu saisi n’est stocké dans cet événement.",
+        betaExperience: "Passages mesurés entre les simulations Essentiel et Growth. La mesure enregistre uniquement le mode choisi, l’utilisateur, le site et l’horodatage ; aucun contenu client.",
         aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
         architectAttempts: "Propositions Premium effectivement rendues au client ; aucun brief ni contenu client n’est enregistré dans les événements.",
         architectFailureRate: "Part des demandes Premium lancées qui échouent après réservation du quota et ne renvoient aucune proposition exploitable.",
