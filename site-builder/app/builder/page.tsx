@@ -1404,7 +1404,7 @@ export default function BuilderPage() {
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
           {betaTester && betaExperienceMode === "growth" && published ? (
-            <Link href="/growth" className="button primary builder-header-action builder-growth-shortcut">
+            <Link href="/growth" className="button primary builder-growth-shortcut">
               GROW <span aria-hidden="true">→</span>
             </Link>
           ) : null}
