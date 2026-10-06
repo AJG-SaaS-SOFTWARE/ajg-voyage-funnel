@@ -22,6 +22,18 @@ const followUpMigration = fs.readFileSync(
   new URL("../supabase/migrations/20261006171500_beta_followup_history.sql", import.meta.url),
   "utf8"
 );
+const agent = fs.readFileSync(
+  new URL("../lib/beta-operations-agent.ts", import.meta.url),
+  "utf8"
+);
+const agentRoute = fs.readFileSync(
+  new URL("../app/api/cron/beta-operations/route.ts", import.meta.url),
+  "utf8"
+);
+const vercelConfig = fs.readFileSync(
+  new URL("../vercel.json", import.meta.url),
+  "utf8"
+);
 
 test("beta cohort endpoint derives progress from existing operational data only", () => {
   assert.match(route, /from\("sites"\)/);
@@ -137,4 +149,32 @@ test("cohort suppresses duplicate reminders while waiting and escalates no-respo
   assert.match(admin, /Sans reprise/);
   assert.match(admin, /activité reprise/);
   assert.match(admin, /en attente de reprise/);
+});
+
+
+test("beta operations agent uses grants as the access source of truth and self-heals auth metadata", () => {
+  assert.match(agent, /activeGrant/);
+  assert.match(agent, /shouldBeBeta/);
+  assert.match(agent, /appMetadata\.ajg_beta = true/);
+  assert.match(agent, /appMetadata\.ajg_beta = false/);
+  assert.match(agent, /delete appMetadata\.beta_access_expires_at/);
+  assert.match(agent, /updateUserById/);
+});
+
+test("beta operations agent prioritizes follow-up states but never sends external messages", () => {
+  assert.match(agent, /followUpCandidates/);
+  assert.match(agent, /awaitingResume/);
+  assert.match(agent, /unresponsiveAfterFollowUp/);
+  assert.match(agent, /isDueAfter\(48/);
+  assert.match(agent, /isDueAfter\(72/);
+  assert.doesNotMatch(agent, /api\.resend\.com/);
+  assert.doesNotMatch(agent, /sendEmail/);
+});
+
+test("beta operations cron is secret-protected and scheduled daily", () => {
+  assert.match(agentRoute, /CRON_SECRET/);
+  assert.match(agentRoute, /authorization/);
+  assert.match(agentRoute, /runBetaOperationsAgentFromEnvironment/);
+  assert.match(vercelConfig, /\/api\/cron\/beta-operations/);
+  assert.match(vercelConfig, /5 7 \* \* \*/);
 });
