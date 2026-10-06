@@ -22,8 +22,14 @@ test("ELTARA exposes ESLint as a first-class CI gate", () => {
   assert.equal(packageJson.scripts.lint, "eslint .");
   assert.match(eslintConfig, /FlatCompat/);
   assert.match(eslintConfig, /next\/core-web-vitals/);
-  assert.match(eslintConfig, /next\/typescript/);
+  assert.doesNotMatch(eslintConfig, /next\/typescript/);
   assert.match(ci, /npm run lint/);
+});
+
+test("ELTARA scopes the Node-test exception instead of weakening product lint rules", () => {
+  assert.match(eslintConfig, /tests\/\*\*\/\*\.\{js,mjs,cjs,ts,tsx\}/);
+  assert.match(eslintConfig, /@next\/next\/no-assign-module-variable/);
+  assert.doesNotMatch(eslintConfig, /react\/no-unescaped-entities.*off/);
 });
 
 test("ELTARA pins the lint toolchain instead of relying on transient npx installs", () => {
