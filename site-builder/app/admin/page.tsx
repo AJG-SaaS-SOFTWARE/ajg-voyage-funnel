@@ -977,6 +977,7 @@ export default function AdminPage() {
                           <th>Événements</th>
                           <th>IA appliquée</th>
                           <th>Feedback</th>
+                          <th>Offres testées</th>
                           <th>Dernière activité</th>
                         </tr>
                       </thead>
@@ -988,6 +989,13 @@ export default function AdminPage() {
                             <td>{item.eventCount}</td>
                             <td>{item.aiApplyCount}</td>
                             <td>{item.feedbackCount}</td>
+                            <td>
+                              <small>
+                                {item.betaEssentialTested ? "Essentiel ✓" : "Essentiel —"}
+                                {" · "}
+                                {item.betaGrowthTested ? "Growth ✓" : "Growth —"}
+                              </small>
+                            </td>
                             <td>{new Date(item.lastActivity).toLocaleDateString("fr-FR")}</td>
                           </tr>
                         ))}
