@@ -68,6 +68,11 @@ type SupportOperationsRun = {
   remediation_succeeded: number;
   remediation_no_change: number;
   remediation_failed: number;
+  platform_status: "healthy" | "attention" | "failed" | "unknown";
+  platform_repaired: number;
+  platform_failed: number;
+  platform_actions: Array<{ action: string; status: string; code: string }>;
+  backup_status_after: string | null;
   runtime_status: "healthy" | "warning" | "incident" | "unknown";
   runtime_error_count: number;
   runtime_fatal_count: number;
@@ -267,15 +272,25 @@ export default function AdminSupportPage() {
                 <div className="admin-metrics">
                   <article><b>{agent.latest.reconcile_resolved}</b><span>tickets auto-résolus</span></article>
                   <article><b>{agent.latest.reconcile_escalated}</b><span>tickets escaladés</span></article>
-                  <article><b>{agent.latest.remediation_succeeded}</b><span>réparations réussies</span></article>
-                  <article><b>{agent.latest.remediation_failed + agent.latest.reconcile_failed}</b><span>échecs non résolus</span></article>
+                  <article><b>{agent.latest.remediation_succeeded + agent.latest.platform_repaired}</b><span>réparations réussies</span></article>
+                  <article><b>{agent.latest.remediation_failed + agent.latest.reconcile_failed + agent.latest.platform_failed}</b><span>échecs non résolus</span></article>
                   <article><b>{agent.latest.runtime_status === "incident" ? "INCIDENT" : agent.latest.runtime_status === "warning" ? "SURVEILLER" : agent.latest.runtime_status === "healthy" ? "SAIN" : "—"}</b><span>runtime production</span></article>
+                  <article><b>{agent.latest.platform_status === "healthy" ? "SAIN" : agent.latest.platform_status === "attention" ? "SURVEILLER" : agent.latest.platform_status === "failed" ? "ÉCHEC" : "—"}</b><span>auto-réparation plateforme</span></article>
                   <article><b>{agent.latest.reported_to_run ? "OUI" : "NON"}</b><span>incident transmis au cockpit</span></article>
                 </div>
                 <p className="plans-note">
                   Dernière exécution : {agent.latest.completed_at ? new Date(agent.latest.completed_at).toLocaleString("fr-FR") : "en cours"} ·
                   {" "}{agent.runs.length} exécution(s) récente(s) conservée(s).
                 </p>
+                {agent.latest.platform_actions?.some((action) => action.status === "succeeded") ? (
+                  <p className="plans-note">
+                    <strong>Corrections autonomes :</strong>{" "}
+                    {agent.latest.platform_actions
+                      .filter((action) => action.status === "succeeded")
+                      .map((action) => action.action === "private_storage_bootstrap" ? "Storage privé restauré" : action.action === "storage_backup_refresh" ? "sauvegarde rafraîchie" : action.code)
+                      .join(" · ")}
+                  </p>
+                ) : null}
                 {agent.latest.errors?.length ? (
                   <div className="support-run-agent-errors">
                     {agent.latest.errors.slice(0, 3).map((error) => <small key={error}>{error}</small>)}
