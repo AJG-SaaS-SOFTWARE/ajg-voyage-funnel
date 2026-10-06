@@ -4,6 +4,7 @@ import { FormEvent, useRef, useState } from "react";\nimport { recordPublicAnaly
 
 type Props = {
   siteId: string;
+  pagePath: string;
   email: string;
   english?: boolean;
   privacyHref?: string;
