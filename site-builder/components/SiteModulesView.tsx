@@ -6,7 +6,9 @@ import { defaultSiteModules, type SiteModuleKey, type SiteModules } from "../lib
 export default function SiteModulesView({
   modules,
   english = false,
-  siteId,\n  pagePath = "/",\n  privacyHref
+  siteId,
+  pagePath = "/",
+  privacyHref
 }: {
   modules: SiteModules;
   english?: boolean;
