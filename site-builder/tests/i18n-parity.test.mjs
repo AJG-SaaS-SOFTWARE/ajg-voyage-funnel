@@ -66,7 +66,7 @@ test("core builder surfaces expose English product copy", () => {
   assert.match(builder, /Create my website with AI/);
   assert.match(builder, /Final review/);
   assert.match(builder, /Publish website/);
-  assert.match(plans, /Full BUILD \+ Growth access included during beta/);
+  assert.match(plans, /Your full BUILD \+ Growth rights remain active/);
   assert.match(compliance, /Website legal information/);
   assert.match(modules, /Section order/);
 });
