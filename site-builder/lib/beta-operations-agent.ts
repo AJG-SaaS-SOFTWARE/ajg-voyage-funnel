@@ -103,7 +103,7 @@ async function listAllUsers(service: SupabaseClient) {
   return users;
 }
 
-export async function runBetaOperationsAgent(
+async function executeBetaOperationsAgent(
   service: SupabaseClient,
   now = Date.now()
 ): Promise<BetaOperationsAgentResult> {
@@ -287,6 +287,73 @@ export async function runBetaOperationsAgent(
   };
 }
 
+
+function runStatus(result: BetaOperationsAgentResult): "healthy" | "attention" | "failed" {
+  if (!result.ok || result.repairFailures > 0 || result.errors.length > 0) return "failed";
+  if (result.followUpCandidates > 0 || result.unresponsiveAfterFollowUp > 0) return "attention";
+  return "healthy";
+}
+
+export async function runBetaOperationsAgent(
+  service: SupabaseClient,
+  now = Date.now()
+) {
+  const startedAt = new Date(now).toISOString();
+  const { data: journal, error: journalError } = await service
+    .from("beta_operations_runs")
+    .insert({ started_at: startedAt, status: "running" })
+    .select("id")
+    .single();
+  if (journalError || !journal) {
+    throw journalError || new Error("beta_agent_journal_unavailable");
+  }
+
+  try {
+    const result = await executeBetaOperationsAgent(service, now);
+    const completedAt = new Date().toISOString();
+    const status = runStatus(result);
+    const { error: updateError } = await service
+      .from("beta_operations_runs")
+      .update({
+        completed_at: completedAt,
+        status,
+        scanned_users: result.scannedUsers,
+        grant_count: result.grantCount,
+        active_tester_count: result.activeTesterCount,
+        repaired_metadata: result.repairedMetadata,
+        revoked_stale_metadata: result.revokedStaleMetadata,
+        repair_failures: result.repairFailures,
+        follow_up_candidates: result.followUpCandidates,
+        awaiting_resume: result.awaitingResume,
+        unresponsive_after_followup: result.unresponsiveAfterFollowUp,
+        completed_missions: result.completedMissions,
+        errors: result.errors
+      })
+      .eq("id", journal.id);
+    if (updateError) throw updateError;
+
+    return {
+      ...result,
+      runId: journal.id as number,
+      runStatus: status,
+      startedAt,
+      completedAt
+    };
+  } catch (error) {
+    const completedAt = new Date().toISOString();
+    const message = error instanceof Error ? error.message : "unknown";
+    await service
+      .from("beta_operations_runs")
+      .update({
+        completed_at: completedAt,
+        status: "failed",
+        errors: [message]
+      })
+      .eq("id", journal.id);
+    throw error;
+  }
+}
+
 export async function runBetaOperationsAgentFromEnvironment() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -303,8 +370,12 @@ export async function runBetaOperationsAgentFromEnvironment() {
       awaitingResume: 0,
       unresponsiveAfterFollowUp: 0,
       completedMissions: 0,
-      errors: ["supabase_not_configured"]
-    } satisfies BetaOperationsAgentResult;
+      errors: ["supabase_not_configured"],
+      runId: null,
+      runStatus: "failed" as const,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString()
+    };
   }
 
   const service = createClient(url, serviceKey, {
