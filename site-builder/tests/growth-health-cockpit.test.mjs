@@ -6,6 +6,7 @@ import ts from "typescript";
 const helperSource = fs.readFileSync(new URL("../lib/growth-health.ts", import.meta.url), "utf8");
 const page = fs.readFileSync(new URL("../app/growth/page.tsx", import.meta.url), "utf8");
 const home = fs.readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+const plans = fs.readFileSync(new URL("../app/plans/page.tsx", import.meta.url), "utf8");
 
 const code = ts.transpileModule(helperSource, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
@@ -57,4 +58,11 @@ test("published Growth accounts receive a dashboard entry to the cockpit", () =>
   assert.match(home, /draft\?\.status === "published"/);
   assert.match(home, /planKey === "growth"/);
   assert.match(home, /href="\/growth"/);
+});
+
+
+test("active Growth offer exposes the cockpit from My plan", () => {
+  assert.match(plans, /displayedPlanKey === "growth"/);
+  assert.match(plans, /href="\/growth"/);
+  assert.match(plans, /Ouvrir le pilotage Growth/);
 });
