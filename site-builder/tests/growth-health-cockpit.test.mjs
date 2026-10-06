@@ -100,3 +100,25 @@ test("Growth keeps low-signal performance states explicit instead of inventing a
   assert.match(page, /postPublishPerformance\.status === "low_signal"/);
   assert.match(page, /Pas encore assez de trafic pour conclure/);
 });
+
+
+test("Growth can persist an opportunity, route it to Builder and measure the next publication", () => {
+  assert.match(page, /startGrowthAction/);
+  assert.match(page, /growthAction=/);
+  assert.match(page, /Agir et mesurer/);
+  assert.match(page, /Historique Growth/);
+  assert.match(page, /measureGrowthAction/);
+});
+
+test("Growth action storage is owner-scoped and publication-linked", () => {
+  const actionSource = fs.readFileSync(new URL("../lib/growth-actions.ts", import.meta.url), "utf8");
+  const builderSource = fs.readFileSync(new URL("../app/builder/page.tsx", import.meta.url), "utf8");
+  const migration = fs.readFileSync(new URL("../supabase/migrations/20261006110405_growth_action_measurement_history.sql", import.meta.url), "utf8");
+  assert.match(migration, /alter table public\.site_growth_actions enable row level security/);
+  assert.match(migration, /owners can create growth actions/);
+  assert.match(migration, /s\.owner_id = \(select auth\.uid\(\)\)/);
+  assert.match(actionSource, /baseline_action_rate/);
+  assert.match(actionSource, /fullDays < 3/);
+  assert.match(builderSource, /markGrowthActionPublished/);
+  assert.match(builderSource, /remote\.publishedAt/);
+});
