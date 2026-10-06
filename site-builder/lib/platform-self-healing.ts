@@ -23,6 +23,7 @@ export async function runPlatformSelfHealing(
   const actions: PlatformSelfHealingAction[] = [];
   let repaired = 0;
   let failed = 0;
+  let attention = false;
 
   const storage = await ensurePrivateStorageBucket(service);
   if (!storage.ok) {
@@ -74,6 +75,7 @@ export async function runPlatformSelfHealing(
       }
     } else {
       backupStatusAfter = before.status;
+      if (!before.configured) attention = true;
       actions.push({
         action: "storage_backup_refresh",
         status: "no_change",
@@ -90,7 +92,11 @@ export async function runPlatformSelfHealing(
   }
 
   const status =
-    failed > 0 ? (repaired > 0 ? "attention" : "failed") : "healthy";
+    failed > 0
+      ? (repaired > 0 ? "attention" : "failed")
+      : attention
+        ? "attention"
+        : "healthy";
 
   return {
     ok: status !== "failed",
