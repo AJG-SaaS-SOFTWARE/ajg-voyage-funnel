@@ -414,16 +414,16 @@ Objectif : le support humain devient l'exception.
 
 ### À faire
 
-- [ ] assistant support contextuel ayant accès uniquement aux diagnostics autorisés ;
-- [ ] base de connaissances FR/EN ;
+- [x] assistant support contextuel déterministe : utilise uniquement les clés/statuts du Health Center autorisés, sans transmettre le contenu du site ou du ticket à un LLM ;
+- [x] base de connaissances FR/EN : domaines/DNS, facturation, publication, quotas IA et export de données, avec liens directs vers les parcours ELTARA ;
 - [ ] aide liée à l'écran courant ;
 - [ ] explication automatique des erreurs ;
 - [x] bouton "Diagnostiquer mon site" : relance explicite des contrôles Health Center sans créer de ticket ;
 - [x] bouton "Corriger automatiquement" lorsque sûr : remédiation allowlistée et auditée du sous-domaine géré ;
-- [ ] parcours guidé domaine ;
-- [ ] parcours guidé facturation ;
+- [x] parcours guidé domaine : sous-domaine géré, ajout du domaine personnel, vérification DNS et garde-fou explicite contre la modification d’enregistrements non demandés ;
+- [x] parcours guidé facturation : état lisible, conséquences, régularisation Stripe et priorité à l’export selon la phase d’impayé ;
 - [ ] parcours guidé récupération de site ;
-- [ ] parcours guidé changement de formule ;
+- [x] parcours guidé changement de formule : Checkout pour un premier abonnement, portail Stripe pour un abonnement existant, avec garde-fou backend anti-double abonnement ;
 - [x] collecte structurée du motif avant toute demande humaine : catégorie, sujet, contexte utilisateur et diagnostic technique sont attachés avant escalade.
 
 ### Escalade humaine uniquement pour
