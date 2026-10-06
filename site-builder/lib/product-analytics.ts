@@ -4,6 +4,13 @@ import { getSupabaseBrowserClient } from "./supabase-browser";
 export type ProductEventName="builder_open"|"onboarding_manual_selected"|"onboarding_ai_selected"|"beta_essential_selected"|"beta_growth_selected"|"step_identity"|"step_story"|"step_design"|"step_booking"|"step_options"|"step_review"|"architect_generated"|"architect_regenerated"|"architect_refined"|"architect_failed"|"architect_applied"|"revision_applied"|"publish_success";
 export type FeedbackCategory="bug"|"idea"|"usability"|"quality"|"other";
 export type ArchitectQualityReason="need_mismatch"|"copy"|"structure"|"design"|"generic"|"other";
+export type BetaJourneyProgress={
+ essentialTested:boolean;
+ growthTested:boolean;
+ essentialThenGrowth:boolean;
+ published:boolean;
+ feedbackSent:boolean;
+};
 
 function clientTr(fr:string,en:string){
  return getProductLocale()==="en"?en:fr;
@@ -14,6 +21,38 @@ export async function trackProductEvent(eventName:ProductEventName,siteId?:strin
  const {data:{user}}=await supabase.auth.getUser();if(!user)return;
  const {error}=await supabase.from("product_events").insert({user_id:user.id,site_id:siteId||null,event_name:eventName});
  if(error) console.warn("AJG product event unavailable",error.message);
+}
+
+export async function getMyBetaJourneyProgress(siteId?:string|null):Promise<BetaJourneyProgress>{
+ const supabase=getSupabaseBrowserClient();
+ const empty={essentialTested:false,growthTested:false,essentialThenGrowth:false,published:false,feedbackSent:false};
+ if(!supabase)return empty;
+ const {data:{user}}=await supabase.auth.getUser();
+ if(!user)return empty;
+ const [{data:events,error:eventError},{data:feedback,error:feedbackError}]=await Promise.all([
+  supabase
+   .from("product_events")
+   .select("event_name,site_id,created_at")
+   .in("event_name",["beta_essential_selected","beta_growth_selected","publish_success"])
+   .order("created_at",{ascending:true}),
+  siteId
+   ? supabase.from("user_feedback").select("id").eq("site_id",siteId).limit(1)
+   : supabase.from("user_feedback").select("id").limit(1)
+ ]);
+ if(eventError||feedbackError)return empty;
+ const rows=events||[];
+ const essential=rows.filter((item)=>item.event_name==="beta_essential_selected");
+ const growth=rows.filter((item)=>item.event_name==="beta_growth_selected");
+ const firstEssential=essential[0]?.created_at?Date.parse(essential[0].created_at):NaN;
+ const firstGrowth=growth[0]?.created_at?Date.parse(growth[0].created_at):NaN;
+ const published=rows.some((item)=>item.event_name==="publish_success"&&(!siteId||item.site_id===siteId));
+ return {
+  essentialTested:essential.length>0,
+  growthTested:growth.length>0,
+  essentialThenGrowth:Number.isFinite(firstEssential)&&Number.isFinite(firstGrowth)&&firstEssential<=firstGrowth,
+  published,
+  feedbackSent:Boolean(feedback?.length)
+ };
 }
 
 export async function submitFeedback(input:{category:FeedbackCategory;rating?:number;message:string;siteId?:string|null}){
