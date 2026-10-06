@@ -35,3 +35,26 @@ test("analytics summaries wait for enough signal before suggesting actions", () 
   assert.match(analytics, /views >= 20/);
   assert.match(analytics, /dominantSource\.views \/ views >= 0\.8/);
 });
+
+
+test("analytics supports 7 30 90 day comparisons against the previous period", () => {
+  assert.match(page, /\(\[7, 30, 90\] as AnalyticsPeriodDays\[\]\)/);
+  assert.match(page, /compareSiteAnalytics\(rows, period\)/);
+  assert.match(analytics, /previousStart/);
+  assert.match(analytics, /deltaPercent/);
+  assert.match(analytics, /actionRatePoints/);
+});
+
+test("analytics exposes per-page conversion without inventing unique visitors", () => {
+  assert.match(page, /Conversion des pages/);
+  assert.match(page, /page\.ctaClicks \+ page\.formSubmits/);
+  assert.match(analytics, /actionRate: ratio\(value\.ctaClicks \+ value\.formSubmits, value\.views\)/);
+  assert.doesNotMatch(page, /visiteurs uniques|unique visitors/i);
+});
+
+test("Growth opportunities lead to concrete builder actions", () => {
+  assert.match(page, /if \(key === "cta"\) return "\/builder\?step=story"/);
+  assert.match(page, /if \(key === "form"\) return "\/builder\?step=options"/);
+  assert.match(page, /return "\/builder\?step=booking"/);
+  assert.match(page, /analytics-opportunity-action/);
+});
