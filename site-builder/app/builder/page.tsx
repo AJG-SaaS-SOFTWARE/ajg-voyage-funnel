@@ -479,7 +479,9 @@ export default function BuilderPage() {
     const focus = new URLSearchParams(window.location.search).get("focus");
     if (focus !== "architect") return;
     const timer = window.setTimeout(() => {
-      const node = document.getElementById("ai-site-architect");
+      const node =
+        document.getElementById("ai-site-architect") ||
+        document.getElementById("advanced-feature-discovery");
       if (node instanceof HTMLDetailsElement) node.open = true;
       node?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 120);
@@ -1546,7 +1548,7 @@ export default function BuilderPage() {
                 }} />
                 <ArchitectureEditor value={config.architecture} library={config.contentLibrary} onChange={(architecture) => update("architecture", architecture)} />
                 {showAdvancedDiscovery ? (
-                  <details className="advanced-discovery-card">
+                  <details id="advanced-feature-discovery" className="advanced-discovery-card">
                     <summary>
                       <span className="advanced-discovery-icon">✦</span>
                       <span>
