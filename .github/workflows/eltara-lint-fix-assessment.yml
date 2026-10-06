@@ -1,0 +1,50 @@
+name: ELTARA Lint Fix Assessment
+
+on:
+  push:
+    branches:
+      - feat/eltara-lint-fix-assessment
+    paths:
+      - ".github/workflows/eltara-lint-fix-assessment.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  assess:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site-builder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site-builder/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Measure safe ESLint auto-fix surface
+        run: |
+          npx eslint . --fix-dry-run --format json > /tmp/eltara-eslint-fix.json
+          node - <<'NODE'
+          const fs = require("fs");
+          const results = JSON.parse(fs.readFileSync("/tmp/eltara-eslint-fix.json", "utf8"));
+          const changed = results.filter((item) => typeof item.output === "string");
+          const relative = changed.map((item) => item.filePath.replace(process.cwd() + "/", ""));
+          const forbidden = relative.filter((file) =>
+            file.startsWith("../") ||
+            file.includes("supabase/") ||
+            file.endsWith(".sql") ||
+            file === "package.json" ||
+            file === "package-lock.json" ||
+            file.startsWith(".github/")
+          );
+          console.log(`AUTO_FIX_FILES=${changed.length}`);
+          console.log(`FORBIDDEN_FILES=${forbidden.length}`);
+          console.log("FILES=" + JSON.stringify(relative));
+          if (forbidden.length) {
+            console.error("Forbidden auto-fix surface: " + forbidden.join(", "));
+            process.exit(1);
+          }
+          NODE
