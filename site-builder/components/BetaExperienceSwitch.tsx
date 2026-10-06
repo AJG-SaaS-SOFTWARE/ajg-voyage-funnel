@@ -6,17 +6,19 @@ import { useProductLocale } from "../lib/product-i18n";
 export function BetaExperienceSwitch({
   mode,
   onChange,
-  compact = false
+  compact = false,
+  inline = false
 }: {
   mode: BetaExperienceMode;
   onChange: (mode: BetaExperienceMode) => void;
   compact?: boolean;
+  inline?: boolean;
 }) {
   const { tr } = useProductLocale();
 
   return (
-    <section className={"beta-experience-switch " + (compact ? "is-compact" : "")} aria-label={tr("Mode de test bêta", "Beta test mode")}>
-      <div className="beta-experience-copy">
+    <section className={"beta-experience-switch " + (compact ? "is-compact " : "") + (inline ? "is-inline" : "")} aria-label={tr("Mode de test bêta", "Beta test mode")}>
+      {inline ? <span className="beta-experience-inline-label">{tr("Mode bêta", "Beta mode")}</span> : <div className="beta-experience-copy">
         <span>ELTARA BETA</span>
         <div>
           <b>{tr("Tester l’expérience client", "Test the customer experience")}</b>
@@ -27,7 +29,7 @@ export function BetaExperienceSwitch({
             )}</small>
           ) : null}
         </div>
-      </div>
+      </div>}
       <div className="beta-experience-options" role="group" aria-label={tr("Offre simulée", "Simulated plan")}>
         <button
           type="button"
@@ -36,7 +38,7 @@ export function BetaExperienceSwitch({
           onClick={() => onChange("essential")}
         >
           <span>RUN</span>
-          <b>{tr("Essentiel", "Essential")}</b>
+          {!inline ? <b>{tr("Essentiel", "Essential")}</b> : null}
         </button>
         <button
           type="button"
@@ -44,8 +46,8 @@ export function BetaExperienceSwitch({
           aria-pressed={mode === "growth"}
           onClick={() => onChange("growth")}
         >
-          <span>RUN + GROW</span>
-          <b>Growth</b>
+          <span>{inline ? "GROW" : "RUN + GROW"}</span>
+          {!inline ? <b>Growth</b> : null}
         </button>
       </div>
     </section>
