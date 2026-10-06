@@ -7,11 +7,13 @@ export default function SiteModulesView({
   modules,
   english = false,
   siteId,
+  pagePath = "/",
   privacyHref
 }: {
   modules: SiteModules;
   english?: boolean;
   siteId?: string;
+  pagePath?: string;
   privacyHref?: string;
 }) {
   const gallery = modules.gallery.enabled ? modules.gallery.images.filter((image) => image.url) : [];
@@ -121,9 +123,9 @@ export default function SiteModulesView({
           <section className="site-module" id="contact">
             <h2>{titleFor("contact")}</h2>
             {siteId ? (
-              <PublicContactForm siteId={siteId} email={email} english={english} privacyHref={privacyHref} />
+              <PublicContactForm siteId={siteId} pagePath={pagePath} email={email} english={english} privacyHref={privacyHref} />
             ) : (
-              <a className="button primary" href={`mailto:${email}`}>{english ? "Send an email" : "Envoyer un e-mail"}</a>
+              <a className="button primary" data-eltara-analytics="contact_email" href={`mailto:${email}`}>{english ? "Send an email" : "Envoyer un e-mail"}</a>
             )}
           </section>
         ) : null;

@@ -1,16 +1,19 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import { recordPublicAnalytics } from "./PublicAnalyticsTracker";
 
 type Props = {
   siteId: string;
+  pagePath: string;
   email: string;
   english?: boolean;
   privacyHref?: string;
 };
 
-export default function PublicContactForm({ siteId, email, english = false, privacyHref }: Props) {
+export default function PublicContactForm({ siteId, pagePath, email, english = false, privacyHref }: Props) {
   const [sending, setSending] = useState(false);
+  const started = useRef(false);
   const [status, setStatus] = useState<{ state: "idle" | "success" | "error"; message: string }>({ state: "idle", message: "" });
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -48,6 +51,7 @@ export default function PublicContactForm({ siteId, email, english = false, priv
         const message = copy[code] || ["Envoi impossible pour le moment. Vous pouvez utiliser l’e-mail direct ci-dessous.", "Unable to send right now. You can use the direct email link below."];
         throw new Error(english ? message[1] : message[0]);
       }
+      recordPublicAnalytics(siteId, "form_submit", pagePath, "contact");
       event.currentTarget.reset();
       setStatus({
         state: "success",
@@ -64,7 +68,15 @@ export default function PublicContactForm({ siteId, email, english = false, priv
   }
 
   return (
-    <form className="public-contact-form" onSubmit={submit}>
+    <form
+      className="public-contact-form"
+      onSubmit={submit}
+      onFocusCapture={() => {
+        if (started.current) return;
+        started.current = true;
+        recordPublicAnalytics(siteId, "form_start", pagePath, "contact");
+      }}
+    >
       <label>
         {english ? "Name" : "Nom"}
         <input name="name" required maxLength={100} autoComplete="name" />
@@ -98,7 +110,7 @@ export default function PublicContactForm({ siteId, email, english = false, priv
         <button className="button primary" type="submit" disabled={sending}>
           {sending ? (english ? "Sending…" : "Envoi…") : (english ? "Send message" : "Envoyer le message")}
         </button>
-        <a className="public-contact-direct" href={`mailto:${email}`}>{english ? "Or send an email directly" : "Ou envoyer un e-mail directement"}</a>
+        <a className="public-contact-direct" data-eltara-analytics="contact_email" href={`mailto:${email}`}>{english ? "Or send an email directly" : "Ou envoyer un e-mail directement"}</a>
       </div>
       {status.state !== "idle" ? (
         <p className="public-contact-status" role="status" data-state={status.state}>{status.message}</p>

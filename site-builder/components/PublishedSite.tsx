@@ -5,6 +5,7 @@ import SoundControl from "./SoundControl";
 import SiteModulesView from "./SiteModulesView";
 import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
 import { legalIsComplete } from "../lib/site-legal";
+import PublicAnalyticsTracker from "./PublicAnalyticsTracker";
 
 export default function PublishedSite({
   config,
@@ -32,6 +33,7 @@ export default function PublishedSite({
   const pageHref = (slug: string) => slug ? `${base}/p/${encodeURIComponent(slug)}` : (base || "/");
   const { surface, ink } = surfaceInk(config.design);
   const legalReady = legalIsComplete(config.legal, config.firstName, config.lastName);
+  const analyticsPagePath = pageSlug ? `/p/${encodeURIComponent(pageSlug)}` : "/";
   const backgroundImageStyle = {
     objectPosition: `${config.design.backgroundPositionX}% ${config.design.backgroundPositionY}%`,
     ...(config.design.backgroundPhotoUrl
@@ -44,12 +46,13 @@ export default function PublishedSite({
 
   return (
     <div className="public-site" data-layout={config.design.layout} data-hero-layout={config.design.heroLayout} data-content-width={config.design.contentWidth} data-pattern={config.design.pattern} data-background={config.design.background} data-strength={config.design.patternStrength} style={{ "--site-accent": config.design.accent, "--site-accent-ink": readableInk(config.design.accent), "--site-pattern-color": config.design.patternColor || config.design.accent, "--site-surface": surface, "--site-ink": ink, "--site-muted": ink === "#ffffff" ? "#e5e9e8" : "#42545a", "--site-custom-background": surface } as CSSProperties}>
+      <PublicAnalyticsTracker siteId={siteId} pagePath={analyticsPagePath} />
       <header className="public-header">
         <strong>{config.brandName || config.firstName + " " + config.lastName}</strong>
         <nav>
           {config.architecture.mode === "multi" ? enabledPages.map((page) => <Link key={page.id} href={pageHref(page.slug)} aria-current={currentPage?.id === page.id ? "page" : undefined}>{page.title}</Link>) : null}
           {config.architecture.mode !== "multi" && config.aboutText.trim() ? <a href="#presentation">{english ? "About" : "Présentation"}</a> : null}
-          {hasBooking ? <a className="public-book" href={bookingHref} target="_blank" rel="noopener">{actionLabel} →</a> : null}
+          {hasBooking ? <a className="public-book" data-eltara-analytics="booking" href={bookingHref} target="_blank" rel="noopener">{actionLabel} →</a> : null}
         </nav>
       </header>
 
@@ -62,7 +65,7 @@ export default function PublishedSite({
             <h1>{config.heroTitle || (english ? "Discover another way to travel" : "Découvrez une autre façon de voyager")}</h1>
             <p>{config.heroSubtitle}</p>
             <div className="public-actions">
-              {hasBooking && config.design.showPrimaryButton ? <a className="button primary" href={bookingHref} target="_blank" rel="noopener">{actionLabel}</a> : null}
+              {hasBooking && config.design.showPrimaryButton ? <a className="button primary" data-eltara-analytics="booking" href={bookingHref} target="_blank" rel="noopener">{actionLabel}</a> : null}
               {config.aboutText.trim() ? <a className="button public-secondary" href="#presentation">{english ? "About me" : "Qui suis-je ?"}</a> : null}
             </div>
             {config.design.audio ? <SoundControl audio={config.design.audio} english={english} /> : null}
@@ -83,11 +86,11 @@ export default function PublishedSite({
         </section> : null}
 
         {pageAssets.length ? <section className="public-page-assets" aria-label={english ? "Selected content" : "Contenus sélectionnés"}>{pageAssets.map((asset) => asset ? <article key={asset.id}>{asset.kind === "image" && asset.url ? <img src={asset.url} alt={asset.name} /> : null}{asset.kind === "audio" && asset.url ? <audio controls preload="metadata" src={asset.url} /> : null}{asset.kind === "text" && asset.text ? <><h2>{asset.name}</h2><p>{asset.text}</p></> : null}{asset.kind === "document" && asset.url ? <a href={asset.url} target="_blank" rel="noreferrer">{asset.name}</a> : null}</article> : null)}</section> : null}
-        {isHome ? <SiteModulesView modules={config.design.modules} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
-        {currentPage?.kind === "gallery" ? <SiteModulesView modules={{ ...config.design.modules, order: ["gallery"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
-        {currentPage?.kind === "faq" ? <SiteModulesView modules={{ ...config.design.modules, order: ["faq"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
-        {currentPage?.kind === "contact" ? <SiteModulesView modules={{ ...config.design.modules, order: ["contact"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
-        {currentPage?.kind === "services" ? <SiteModulesView modules={{ ...config.design.modules, order: ["benefits", "figures"] }} english={english} siteId={siteId} privacyHref={`${base}/confidentialite`} /> : null}
+        {isHome ? <SiteModulesView modules={config.design.modules} english={english} siteId={siteId} pagePath={analyticsPagePath} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "gallery" ? <SiteModulesView modules={{ ...config.design.modules, order: ["gallery"] }} english={english} siteId={siteId} pagePath={analyticsPagePath} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "faq" ? <SiteModulesView modules={{ ...config.design.modules, order: ["faq"] }} english={english} siteId={siteId} pagePath={analyticsPagePath} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "contact" ? <SiteModulesView modules={{ ...config.design.modules, order: ["contact"] }} english={english} siteId={siteId} pagePath={analyticsPagePath} privacyHref={`${base}/confidentialite`} /> : null}
+        {currentPage?.kind === "services" ? <SiteModulesView modules={{ ...config.design.modules, order: ["benefits", "figures"] }} english={english} siteId={siteId} pagePath={analyticsPagePath} privacyHref={`${base}/confidentialite`} /> : null}
 
       </main>
 
@@ -95,8 +98,8 @@ export default function PublishedSite({
         <strong>{config.brandName}</strong>
         {siteDisclaimer(config) ? <p>{siteDisclaimer(config)}</p> : null}
         {instagramHref || facebookHref ? <div className="public-socials">
-          {instagramHref ? <a href={instagramHref} target="_blank" rel="noopener noreferrer">Instagram</a> : null}
-          {facebookHref ? <a href={facebookHref} target="_blank" rel="noopener noreferrer">Facebook</a> : null}
+          {instagramHref ? <a data-eltara-analytics="social_instagram" href={instagramHref} target="_blank" rel="noopener noreferrer">Instagram</a> : null}
+          {facebookHref ? <a data-eltara-analytics="social_facebook" href={facebookHref} target="_blank" rel="noopener noreferrer">Facebook</a> : null}
         </div> : null}
         {config.affiliation === "mwr" && (config.design.showMwrLogo || config.design.showTravelAdvantageLogo) ? <div className="public-brand-marks">
           {config.design.showMwrLogo ? <img src="/logos/mwr-life-independent.svg" alt={english ? "MWR Life — independent distributor" : "MWR Life — distributeur indépendant"} /> : null}
