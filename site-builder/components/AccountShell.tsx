@@ -66,6 +66,13 @@ export function AccountShell({
                 <small>{tr("Créer et modifier votre site", "Create and edit your website")}</small>
               </span>
             </Link>
+            <Link href="/growth" className="account-nav-growth">
+              <span aria-hidden="true">↗</span>
+              <span>
+                <b>Growth</b>
+                <small>{tr("Piloter et améliorer votre site", "Manage and improve your website")}</small>
+              </span>
+            </Link>
 
             <span className="account-nav-label account-nav-account-label">{tr("Votre compte", "Your account")}</span>
             {accountLinks.map((item) => (
