@@ -34,6 +34,14 @@ const vercelConfig = fs.readFileSync(
   new URL("../vercel.json", import.meta.url),
   "utf8"
 );
+const agentAdminRoute = fs.readFileSync(
+  new URL("../app/api/admin/beta-operations/route.ts", import.meta.url),
+  "utf8"
+);
+const runJournalMigration = fs.readFileSync(
+  new URL("../supabase/migrations/20261006174000_beta_operations_run_journal.sql", import.meta.url),
+  "utf8"
+);
 
 test("beta cohort endpoint derives progress from existing operational data only", () => {
   assert.match(route, /from\("sites"\)/);
@@ -177,4 +185,36 @@ test("beta operations cron is secret-protected and scheduled daily", () => {
   assert.match(agentRoute, /runBetaOperationsAgentFromEnvironment/);
   assert.match(vercelConfig, /\/api\/cron\/beta-operations/);
   assert.match(vercelConfig, /5 7 \* \* \*/);
+});
+
+
+test("beta operations agent journals each run and persists self-healing outcomes", () => {
+  assert.match(runJournalMigration, /create table if not exists public\.beta_operations_runs/);
+  assert.match(runJournalMigration, /enable row level security/);
+  assert.match(runJournalMigration, /revoke all on public\.beta_operations_runs from anon, authenticated/);
+  assert.match(runJournalMigration, /grant select, insert, update, delete on public\.beta_operations_runs to service_role/);
+  assert.match(agent, /from\("beta_operations_runs"\)/);
+  assert.match(agent, /status: "running"/);
+  assert.match(agent, /runStatus/);
+  assert.match(agent, /repaired_metadata/);
+  assert.match(agent, /revoked_stale_metadata/);
+});
+
+test("admin can inspect or manually run the beta agent without exposing service role access", () => {
+  assert.match(agentAdminRoute, /role\?\.role !== "admin"/);
+  assert.match(agentAdminRoute, /runBetaOperationsAgent/);
+  assert.match(agentAdminRoute, /limit\(14\)/);
+  assert.match(adminClient, /getAdminBetaOperationsStatus/);
+  assert.match(adminClient, /adminRunBetaOperationsAgent/);
+  assert.match(admin, /Agent RUN bêta/);
+  assert.match(admin, /Exécuter maintenant/);
+  assert.match(admin, /Intervention requise/);
+});
+
+test("beta agent only raises supervision when unresolved work remains", () => {
+  assert.match(agentAdminRoute, /attentionRequired/);
+  assert.match(agentAdminRoute, /latest\.status === "failed"/);
+  assert.match(agentAdminRoute, /latest\.repair_failures > 0/);
+  assert.match(agentAdminRoute, /latest\.unresponsive_after_followup > 0/);
+  assert.match(admin, /ne vous remonte que ce qu’il ne peut pas résoudre sans décision humaine/);
 });
