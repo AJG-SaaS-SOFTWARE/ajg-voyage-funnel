@@ -210,7 +210,7 @@ export default function AdminSupportPage() {
       description="Les demandes sont enrichies par un diagnostic serveur avant traitement humain. Les causes répétitives devront être converties en automatisations."
     >
       {state === "loading" ? <p>Chargement…</p> : null}
-      {state === "denied" ? <section className="panel"><h2>Accès restreint</h2><p>Votre compte n'a pas le rôle administrateur.</p></section> : null}
+      {state === "denied" ? <section className="panel"><h2>Accès restreint</h2><p>Votre compte n’a pas le rôle administrateur.</p></section> : null}
       {state === "ready" ? (
         <>
           {platform ? (
