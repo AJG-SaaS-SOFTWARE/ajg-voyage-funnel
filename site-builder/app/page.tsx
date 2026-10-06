@@ -288,8 +288,8 @@ export default function Home() {
               <span>{onboarding && onboarding.completeCount >= 2 ? "✓" : "1"}</span>
               <div><b>{tr("Tester d’abord Essentiel", "Test Essential first")}</b><small>{tr("Créez et modifiez le site avec les fonctions du parcours RUN.", "Create and edit the website with the RUN journey capabilities.")}</small></div>
             </li>
-            <li className={draft?.status === "published" ? "done" : ""}>
-              <span>{draft?.status === "published" ? "✓" : "2"}</span>
+            <li className={betaExperienceMode === "growth" ? "done" : ""}>
+              <span>{betaExperienceMode === "growth" ? "✓" : "2"}</span>
               <div><b>{tr("Passer ensuite en Growth", "Then switch to Growth")}</b><small>{tr("Activez le mode Growth et testez les fonctions avancées sans toucher à Stripe.", "Enable Growth mode and test advanced capabilities without touching Stripe.")}</small></div>
             </li>
             <li>
