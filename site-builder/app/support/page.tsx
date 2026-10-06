@@ -41,6 +41,14 @@ export default function SupportPage() {
   const [repairing, setRepairing] = useState(false);
   const [topic, setTopic] = useState("");
   const submitting = useRef(false);
+  const requestIdentity = useRef<{ id: string; payload: string } | null>(null);
+  const confirmedRequest = useRef<string | null>(null);
+
+  function draftPayload() {
+    return JSON.stringify({ category, subject: subject.trim(), message: message.trim() });
+  }
+  const latestDraft = useRef("");
+  latestDraft.current = draftPayload();
 
   async function token() {
     const supabase = getSupabaseBrowserClient();
@@ -65,6 +73,16 @@ export default function SupportPage() {
       return;
     }
     if (!response.ok) throw new Error(body?.error || tr("Support indisponible.", "Support is unavailable."));
+    const pending = requestIdentity.current;
+    if (pending && Array.isArray(body?.tickets) && body.tickets.some((ticket: Ticket) => ticket.id === pending.id)) {
+      confirmedRequest.current = pending.id;
+      requestIdentity.current = null;
+      if (latestDraft.current === pending.payload) {
+        setSubject("");
+        setMessage("");
+      }
+      setNotice(tr("Votre demande a été retrouvée et est enregistrée. Aucun nouvel envoi n’est nécessaire.", "Your request was found and is saved. No new submission is needed."));
+    }
     setPayload(body);
     setState("ready");
   }
@@ -84,19 +102,31 @@ export default function SupportPage() {
     submitting.current = true;
     setBusy(true);
     setNotice("");
+    let activeRequestId: string | null = null;
     try {
       const accessToken = await token();
       if (!accessToken) {
         setState("guest");
         return;
       }
+      const submittedPayload = draftPayload();
+      const retrying = Boolean(requestIdentity.current);
+      if (requestIdentity.current && requestIdentity.current.payload !== submittedPayload) {
+        throw new Error(tr(
+          "Un envoi précédent reste à vérifier. Actualisez vos demandes avant d’envoyer un autre contenu.",
+          "A previous submission still needs checking. Refresh your requests before sending different content."
+        ));
+      }
+      requestIdentity.current ??= { id: crypto.randomUUID(), payload: submittedPayload };
+      const requestId = requestIdentity.current.id;
+      activeRequestId = requestId;
       const response = await fetch("/api/support/tickets", {
         method: "POST",
         headers: {
           Authorization: "Bearer " + accessToken,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ category, subject, message }),
+        body: JSON.stringify({ ...JSON.parse(submittedPayload), requestId }),
         cache: "no-store"
       }).catch(() => {
         throw new Error(tr(
@@ -106,6 +136,9 @@ export default function SupportPage() {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
+        // These responses are emitted before insertion by this API. They can
+        // release a first attempt, never an earlier uncertain submission.
+        if (!retrying && [400, 401, 429].includes(response.status)) requestIdentity.current = null;
         if (response.status === 401) setState("guest");
         if (response.status >= 500) {
           throw new Error(tr(
@@ -115,14 +148,18 @@ export default function SupportPage() {
         }
         throw new Error(body?.error || tr("Création impossible.", "Unable to create the ticket."));
       }
-      if (response.status !== 201 || typeof body?.ticket?.id !== "string" || !body.ticket.id) {
+      if (response.status !== 201 || body?.ticket?.id !== requestId) {
         throw new Error(tr(
           "L’envoi n’a pas pu être confirmé. Actualisez vos demandes avant de réessayer.",
           "Submission could not be confirmed. Refresh your requests before trying again."
         ));
       }
-      setSubject("");
-      setMessage("");
+      confirmedRequest.current = requestId;
+      requestIdentity.current = null;
+      if (latestDraft.current === submittedPayload) {
+        setSubject("");
+        setMessage("");
+      }
       const confirmation =
         body?.ticket?.status === "waiting_customer"
           ? tr("Demande enregistrée. Retrouvez l’action proposée dans « Mes demandes » avant escalade.", "Request saved. Find the suggested action in My requests before escalation.")
@@ -138,7 +175,9 @@ export default function SupportPage() {
         ));
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : tr("Création impossible.", "Unable to create the ticket."));
+      setNotice(activeRequestId && confirmedRequest.current === activeRequestId
+        ? tr("Votre demande a été retrouvée et est enregistrée. Aucun nouvel envoi n’est nécessaire.", "Your request was found and is saved. No new submission is needed.")
+        : error instanceof Error ? error.message : tr("Création impossible.", "Unable to create the ticket."));
     } finally {
       submitting.current = false;
       setBusy(false);
@@ -290,7 +329,7 @@ export default function SupportPage() {
           )}</p>
           <form className="feedback-form" onSubmit={submit} aria-busy={busy}>
             <label>{tr("Motif", "Category")}
-              <select value={category} onChange={(event) => setCategory(event.target.value)}>
+              <select value={category} disabled={busy} onChange={(event) => setCategory(event.target.value)}>
                 <option value="bug">{tr("Problème ou dysfonctionnement", "Problem or malfunction")}</option>
                 <option value="domain">{tr("Domaine / DNS", "Domain / DNS")}</option>
                 <option value="publication">{tr("Publication", "Publishing")}</option>
@@ -301,10 +340,10 @@ export default function SupportPage() {
               </select>
             </label>
             <label>{tr("Sujet", "Subject")}
-              <input required minLength={3} maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} />
+              <input required minLength={3} maxLength={160} disabled={busy} value={subject} onChange={(event) => setSubject(event.target.value)} />
             </label>
             <label className="feedback-message">{tr("Décrivez ce que vous essayiez de faire", "Describe what you were trying to do")}
-              <textarea required minLength={10} rows={5} maxLength={4000} value={message} onChange={(event) => setMessage(event.target.value)} />
+              <textarea required minLength={10} rows={5} maxLength={4000} disabled={busy} value={message} onChange={(event) => setMessage(event.target.value)} />
             </label>
             <button className="button primary" disabled={busy || subject.trim().length < 3 || message.trim().length < 10}>
               {busy ? tr("Envoi…", "Sending…") : tr("Envoyer ma demande", "Send my request")}

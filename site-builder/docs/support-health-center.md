@@ -126,3 +126,13 @@ Définitions :
 - **remédiations** : tentatives, succès, échecs et codes de résultat issus de `support_remediation_runs`.
 
 Les compteurs utilisent des identifiants dédupliqués : plusieurs diagnostics ou changements d'état d'un même ticket ne gonflent pas artificiellement le nombre de demandes humaines.
+
+## Reprise d’un envoi dont le résultat est incertain
+
+Le formulaire attribue un UUID v4 à un envoi et conserve cette référence en mémoire tant que son résultat reste incertain. Une reprise manuelle du même contenu réutilise `requestId` ; aucun retry automatique n’est ajouté. Les champs sont désactivés pendant l’envoi. Un contenu différent reste bloqué tant que l’envoi précédent n’a pas été retrouvé ou confirmé.
+
+L’API accepte cette référence comme clé primaire existante du ticket, sans migration ni upsert. Elle recherche d’abord le ticket avec `id` **et** `user_id` du compte authentifié. Un ticket existant est renvoyé avec son état courant, sans nouveau diagnostic, nouvel événement ou nouvelle remontée Run. Un contenu différent avec la même référence reçoit HTTP409. Les plafonds de nouvelles demandes restent actifs ; une reprise déjà persistée peut être retrouvée même si ces plafonds sont désormais atteints.
+
+Deux insertions concurrentes avec la même référence ne peuvent créer qu’une ligne grâce à la clé primaire. Après un conflit ou une réponse d’insertion perdue, une nouvelle lecture peut confirmer la persistance. Une erreur de lecture, une liste vide ou une réponse perdue ne confirme jamais l’absence distante et ne remplace pas la référence. La confirmation HTTP201 doit porter exactement l’ID envoyé. Un rafraîchissement positif de « Mes demandes » peut également retrouver l’envoi, sans effacer un nouveau brouillon de contenu différent.
+
+Limites : les anciens clients sans `requestId` conservent leur comportement ; la référence du formulaire ne survit pas au rechargement ou à la fermeture de l’onglet. Deux envois qui utilisent des références distinctes ne sont pas dédupliqués. La concurrence de création est couverte par des tests des handlers réels avec un stockage isolé simulant la contrainte ; aucun ticket client réel n’est créé pour ces tests. Un crash après insertion peut encore laisser l’audit ou le reporting Run incomplet : cette reprise confirme le ticket et ne réémet pas ces effets. Il ne s’agit pas d’une livraison exactement une fois de toute la chaîne, et une outbox durable des effets secondaires reste à concevoir.

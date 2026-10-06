@@ -9,6 +9,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const categories = new Set(["bug","domain","publication","billing","ai","data","other"]);
+const ticketColumns = "id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at";
+const requestIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function bearer(request: Request) {
   return request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
@@ -60,10 +62,42 @@ export async function POST(request: Request) {
   const subject = typeof body?.subject === "string" ? body.subject.trim() : "";
   const message = typeof body?.message === "string" ? body.message.trim() : "";
   const preferredSiteId = typeof body?.siteId === "string" ? body.siteId : null;
+  const requestId = typeof body?.requestId === "string" ? body.requestId.toLowerCase() : null;
 
-  if (!categories.has(category) || subject.length < 3 || subject.length > 160 || message.length < 10 || message.length > 4000) {
+  if ((body?.requestId !== undefined && (!requestId || !requestIdPattern.test(requestId)))
+    || !categories.has(category) || subject.length < 3 || subject.length > 160 || message.length < 10 || message.length > 4000) {
     return NextResponse.json({ error: "Demande invalide." }, { status: 400 });
   }
+
+  // This is a lookup of the authenticated owner's ticket, never an upsert.
+  // A missing row is not proof that an earlier request has stopped remotely.
+  const service = auth.service;
+  const userId = auth.user.id;
+  async function replay() {
+    if (!requestId) return null;
+    const { data: existing, error: lookupError } = await service
+      .from("support_tickets")
+      .select(ticketColumns)
+      .eq("id", requestId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (lookupError) {
+      return NextResponse.json({ error: "Vérification de la demande indisponible." }, { status: 503 });
+    }
+    if (!existing) return null;
+    if (existing.category !== category || existing.subject !== subject || existing.message !== message
+      || (preferredSiteId !== null && existing.site_id !== preferredSiteId)) {
+      return NextResponse.json({ error: "Cette référence correspond à une autre demande. Actualisez vos demandes." }, { status: 409 });
+    }
+    return NextResponse.json({
+      ticket: existing,
+      health: { siteId: existing.site_id, diagnosis: existing.diagnosis },
+      replayed: true
+    }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
+  }
+
+  const previous = await replay();
+  if (previous) return previous;
 
   const since = new Date(Date.now() - 60_000).toISOString();
   const [{ count: recentCount, error: recentError }, { count: openCount, error: openError }] = await Promise.all([
@@ -98,6 +132,7 @@ export async function POST(request: Request) {
   const { data: ticket, error } = await auth.service
     .from("support_tickets")
     .insert({
+      ...(requestId ? { id: requestId } : {}),
       user_id: auth.user.id,
       site_id: health.siteId,
       category,
@@ -111,7 +146,13 @@ export async function POST(request: Request) {
     .select("id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at")
     .single();
 
-  if (error || !ticket) return NextResponse.json({ error: "Création du ticket impossible." }, { status: 503 });
+  if (error || !ticket) {
+    // Covers both a concurrent primary-key conflict and a lost insert response.
+    // Never generate a different ID or replay downstream effects here.
+    const recovered = await replay();
+    if (recovered) return recovered;
+    return NextResponse.json({ error: "Création du ticket non confirmée. Vérifiez vos demandes avant de réessayer." }, { status: 503 });
+  }
 
   await recordSupportEvent(auth.service, {
     ticketId: ticket.id,
