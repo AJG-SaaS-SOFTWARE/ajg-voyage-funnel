@@ -199,10 +199,14 @@ test("invoice webhook branch is independent from outbound Stripe subscription re
     new URL("../app/api/billing/stripe-webhook/route.ts", import.meta.url),
     "utf8"
   );
-  const invoiceBranch = source.slice(
-    source.indexOf('if (event.type === "invoice.paid"'),
-    source.indexOf('return NextResponse.json({ received: true, result: "ignored" });')
+  const start = source.indexOf('if (event.type === "invoice.paid"');
+  const end = source.indexOf(
+    'return NextResponse.json({ received: true, result: "ignored" });',
+    start
   );
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+  const invoiceBranch = source.slice(start, end);
   assert.ok(invoiceBranch.includes("bindAndApplyInvoice"));
   assert.ok(!invoiceBranch.includes("retrieveStripeSubscription"));
 });
