@@ -78,7 +78,7 @@ test("Growth explains every non-healthy check instead of using the support page 
 
 test("Growth ranks performance opportunities with deterministic impact and confidence", () => {
   assert.match(page, /Opportunités classées par impact et confiance/);
-  assert.match(page, /item\.score\/100/);
+  assert.match(page, /\{item\.score\}\/100/);
   assert.match(page, /item\.impact/);
   assert.match(page, /item\.confidence/);
   assert.match(analyticsSource, /opportunities\.sort\(\(a, b\) => b\.score - a\.score\)/);
