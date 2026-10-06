@@ -86,6 +86,34 @@ export async function downloadMySiteExport(siteId?: string) {
 }
 
 
+export async function downloadMySiteRecoveryJson(siteId?: string) {
+  const locale = getProductLocale();
+  const tr = (fr: string, en: string) => locale === "en" ? en : fr;
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error(tr("Supabase n’est pas configuré.", "Supabase is not configured."));
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) throw new Error(tr("Votre session a expiré.", "Your session has expired."));
+  const site = await getMySite(siteId);
+  if (!site) throw new Error(tr("Site introuvable.", "Website not found."));
+  const response = await fetch(
+    `/api/export/site?siteId=${encodeURIComponent(site.id)}&format=json`,
+    { headers: { Authorization: `Bearer ${session.access_token}`, "X-AJG-Locale": locale }, cache: "no-store" }
+  );
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || tr("Export de restauration impossible.", "Recovery export unavailable."));
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `eltara-recovery-${site.slug || "site"}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 async function openStripeBillingPath(
   path: "/api/billing/checkout" | "/api/billing/portal",
   siteId: string,
