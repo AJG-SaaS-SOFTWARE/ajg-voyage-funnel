@@ -409,12 +409,41 @@ export async function GET(request: Request) {
     }))
     .sort((a, b) => b.count - a.count);
 
-  const ratings = feedbackRows
-    .map((item) => item.rating)
-    .filter((rating): rating is number => typeof rating === "number");
-  const averageRating = ratings.length
-    ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
-    : null;
+  const averageRatingFor = (rows: typeof feedbackRows) => {
+    const ratings = rows
+      .map((item) => item.rating)
+      .filter((rating): rating is number => typeof rating === "number");
+    return ratings.length
+      ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
+      : null;
+  };
+  const averageRating = averageRatingFor(feedbackRows);
+
+  const betaModeEvents = eventRows
+    .filter((item) => ["beta_essential_selected", "beta_growth_selected"].includes(item.event_name))
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+
+  const feedbackWithExperience = feedbackRows.map((item) => {
+    const feedbackAt = Date.parse(String(item.created_at));
+    const candidates = betaModeEvents.filter((event) => {
+      if (event.user_id !== item.user_id) return false;
+      const eventAt = Date.parse(String(event.created_at));
+      if (!Number.isFinite(eventAt) || !Number.isFinite(feedbackAt) || eventAt > feedbackAt) return false;
+      if (item.site_id && event.site_id && event.site_id !== item.site_id) return false;
+      return true;
+    });
+    const latest = candidates.at(-1);
+    const experience =
+      latest?.event_name === "beta_growth_selected"
+        ? "growth"
+        : latest?.event_name === "beta_essential_selected"
+          ? "essential"
+          : "unknown";
+    return { ...item, experience };
+  });
+  const essentialFeedbackRows = feedbackWithExperience.filter((item) => item.experience === "essential");
+  const growthFeedbackRows = feedbackWithExperience.filter((item) => item.experience === "growth");
+  const unknownFeedbackRows = feedbackWithExperience.filter((item) => item.experience === "unknown");
 
   const publishedSites = new Set(
     eventRows
@@ -638,7 +667,18 @@ export async function GET(request: Request) {
         averageRating,
         open: feedbackRows.filter((item) =>
           ["new", "reviewed", "planned"].includes(item.status)
-        ).length
+        ).length,
+        byExperience: {
+          essential: {
+            count: essentialFeedbackRows.length,
+            averageRating: averageRatingFor(essentialFeedbackRows)
+          },
+          growth: {
+            count: growthFeedbackRows.length,
+            averageRating: averageRatingFor(growthFeedbackRows)
+          },
+          unknown: unknownFeedbackRows.length
+        }
       },
       sites: {
         active: new Set(eventRows.map((item) => item.site_id).filter(Boolean)).size,
@@ -654,6 +694,7 @@ export async function GET(request: Request) {
         onboardingSteps: "Utilisateurs distincts ayant atteint chaque étape d’ELTARA. Les écarts entre étapes permettent de localiser une friction sans stocker le contenu saisi.",
         onboardingPaths: "Premier choix explicite entre parcours manuel et Création IA, puis publication ultérieure et délai médian jusqu’à cette publication. Aucun contenu saisi n’est stocké dans cet événement.",
         betaExperience: "Passages mesurés entre les simulations Essentiel et Growth. La mesure enregistre uniquement le mode choisi, l’utilisateur, le site et l’horodatage ; aucun contenu client.",
+        feedbackByExperience: "Contexte Essentiel/Growth attribué à un retour à partir du dernier mode bêta sélectionné avant l’envoi pour le même utilisateur et, lorsqu’il est disponible, le même site. Aucun contenu du retour n’est utilisé pour cette attribution.",
         aiGenerations: "Générations IA réellement consommées dans le ledger serveur.",
         architectAttempts: "Propositions Premium effectivement rendues au client ; aucun brief ni contenu client n’est enregistré dans les événements.",
         architectFailureRate: "Part des demandes Premium lancées qui échouent après réservation du quota et ne renvoient aucune proposition exploitable.",
