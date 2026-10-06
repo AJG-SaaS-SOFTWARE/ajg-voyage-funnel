@@ -17,8 +17,10 @@ Free preview users cannot:
 - attach a custom domain;
 - export a recovery archive;
 - collect live public leads;
-- consume full BUILD / AI Launch operations;
+- consume any AI generation operation before an active paid entitlement;
 - receive the Growth annual AI Launch benefit before successful payment.
+
+Invited Beta Testers are the explicit exception: their beta entitlement resolves to `growth / active`, so the full test path remains available without creating a Stripe subscription.
 
 There is no Stripe free trial for Site Builder Growth. The conversion path is preview first, paid subscription before production hosting.
 
