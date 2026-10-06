@@ -122,3 +122,36 @@ test("Growth action storage is owner-scoped and publication-linked", () => {
   assert.match(builderSource, /markGrowthActionPublished/);
   assert.match(builderSource, /remote\.publishedAt/);
 });
+
+
+test("tracked Growth actions use the KPI that matches the detected opportunity", () => {
+  const actionSource = fs.readFileSync(new URL("../lib/growth-actions.ts", import.meta.url), "utf8");
+  const migration = fs.readFileSync(new URL("../supabase/migrations/20261006112600_growth_action_specific_metric_baseline.sql", import.meta.url), "utf8");
+
+  assert.match(migration, /page_action_rate/);
+  assert.match(migration, /form_completion_rate/);
+  assert.match(migration, /source_concentration/);
+  assert.match(actionSource, /baseline_metric_key: metric\.key/);
+  assert.match(actionSource, /baseline_metric_value: metric\.value/);
+  assert.match(actionSource, /baseline_sample_size: metric\.sampleSize/);
+  assert.match(actionSource, /row\.pagePath === targetPath/);
+  assert.match(actionSource, /row\.eventName === "form_start"/);
+  assert.match(actionSource, /dominantSource/);
+});
+
+test("acquisition improvement is intentionally inverse to CTA and form improvement", () => {
+  const actionSource = fs.readFileSync(new URL("../lib/growth-actions.ts", import.meta.url), "utf8");
+  assert.match(actionSource, /metricKey === "source_concentration"/);
+  assert.match(actionSource, /deltaPoints <= -threshold \? "improved"/);
+  assert.match(actionSource, /deltaPoints >= threshold \? "declined"/);
+  assert.match(actionSource, /return deltaPoints >= threshold \? "improved"/);
+});
+
+test("Growth history displays specific baseline and post-publication KPI values", () => {
+  assert.match(page, /Taux d’action de la page/);
+  assert.match(page, /Complétion du formulaire/);
+  assert.match(page, /Concentration de la source principale/);
+  assert.match(page, /measurement\.baselineMetricValue/);
+  assert.match(page, /measurement\.afterMetricValue/);
+  assert.match(page, /measurement\.metricDeltaPoints/);
+});
