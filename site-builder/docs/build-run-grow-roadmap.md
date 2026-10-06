@@ -422,7 +422,7 @@ Objectif : le support humain devient l'exception.
 - [x] bouton "Corriger automatiquement" lorsque sûr : remédiation allowlistée et auditée du sous-domaine géré ;
 - [x] parcours guidé domaine : sous-domaine géré, ajout du domaine personnel, vérification DNS et garde-fou explicite contre la modification d’enregistrements non demandés ;
 - [x] parcours guidé facturation : état lisible, conséquences, régularisation Stripe et priorité à l’export selon la phase d’impayé ;
-- [ ] parcours guidé récupération de site ;
+- [ ] parcours guidé récupération de site : première étape livrée pour restaurer de façon réversible la configuration JSON du même site dans un brouillon ; restauration complète des médias/journaux depuis l’archive TAR.GZ encore à finaliser ;
 - [x] parcours guidé changement de formule : Checkout pour un premier abonnement, portail Stripe pour un abonnement existant, avec garde-fou backend anti-double abonnement ;
 - [x] collecte structurée du motif avant toute demande humaine : catégorie, sujet, contexte utilisateur et diagnostic technique sont attachés avant escalade.
 
