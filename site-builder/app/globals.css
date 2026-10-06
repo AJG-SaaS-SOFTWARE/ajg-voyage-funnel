@@ -4908,3 +4908,20 @@ button.active .step-label small{color:#63817f}
 .beta-follow-up-history.is-resumed{color:#087d76}
 .beta-follow-up-history.is-overdue{color:#a64a3c}
 .admin-beta-operational-actions button:disabled{opacity:.55;cursor:not-allowed}
+
+
+/* Autonomous beta RUN journal and supervision. */
+.admin-beta-agent{display:grid;gap:13px;margin:18px 0;padding:17px;border:1px solid rgba(12,159,150,.18);border-radius:16px;background:linear-gradient(145deg,rgba(240,251,249,.86),rgba(255,255,255,.78))}
+.admin-beta-agent.needs-attention{border-color:rgba(181,91,54,.22);background:linear-gradient(145deg,rgba(255,247,241,.9),rgba(255,255,255,.78))}
+.admin-beta-agent.unknown{border-color:rgba(78,121,216,.16);background:linear-gradient(145deg,rgba(247,249,255,.88),rgba(255,255,255,.78))}
+.admin-beta-agent-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.admin-beta-agent-head>div{display:grid;gap:5px}
+.admin-beta-agent-head h3{margin:0;color:#30445a;font-size:1rem}
+.admin-beta-agent-head p,.admin-beta-agent-empty{margin:0;max-width:850px;color:#6d7980;font-size:.75rem;line-height:1.55}
+.admin-beta-agent-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.admin-beta-agent-kpis span{display:grid;gap:3px;padding:10px;border-radius:11px;background:rgba(255,255,255,.8);color:#68757c;font-size:.66rem}
+.admin-beta-agent-kpis b{color:#334465;font-size:.92rem}
+.admin-beta-agent-meta{display:flex;gap:14px;flex-wrap:wrap;color:#738087;font-size:.66rem;font-weight:650}
+.admin-beta-agent-errors{display:grid;gap:5px;padding:10px;border-radius:10px;background:rgba(177,66,50,.07);color:#973e32}
+@media(max-width:900px){.admin-beta-agent-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){.admin-beta-agent-head{flex-direction:column}.admin-beta-agent-head .button{width:100%}.admin-beta-agent-kpis{grid-template-columns:1fr 1fr}}
