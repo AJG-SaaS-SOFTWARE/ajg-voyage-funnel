@@ -1,0 +1,43 @@
+name: ELTARA ESLint Baseline Lock
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/eltara-eslint-baseline
+    paths:
+      - ".github/workflows/eltara-eslint-baseline-lock.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site-builder
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/eltara-eslint-baseline
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site-builder/package-lock.json
+      - name: Install pinned ESLint baseline
+        run: npm install --save-dev --save-exact eslint@9 eslint-config-next@15.5.26
+      - name: Verify ESLint runtime
+        run: npx eslint --version
+      - name: Commit package metadata
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No package metadata changes."
+            exit 0
+          fi
+          git config user.name "AJG Baseline Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "ELTARA: pin ESLint baseline dependencies"
+          git push origin HEAD:feat/eltara-eslint-baseline
