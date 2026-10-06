@@ -4,6 +4,7 @@ import { createHmac } from "node:crypto";
 import fs from "node:fs";
 import {
   normalizeStripeSubscriptionStatus,
+  stripePeriodEnd,
   stripeSubscriptionIdFromInvoice,
   verifyStripeWebhookSignature
 } from "../lib/stripe-billing.ts";
@@ -76,6 +77,30 @@ test("invoice subscription resolution supports the current parent object graph",
     }),
     "sub_expanded"
   );
+});
+
+test("subscription period end supports legacy root and current item object graphs", () => {
+  const legacyUnix = 1793994744;
+  const currentUnix = 1796673144;
+
+  assert.equal(
+    stripePeriodEnd({ current_period_end: legacyUnix }),
+    new Date(legacyUnix * 1000).toISOString()
+  );
+  assert.equal(
+    stripePeriodEnd({
+      items: { data: [{ current_period_end: currentUnix }] }
+    }),
+    new Date(currentUnix * 1000).toISOString()
+  );
+  assert.equal(
+    stripePeriodEnd({
+      current_period_end: legacyUnix,
+      items: { data: [{ current_period_end: currentUnix }] }
+    }),
+    new Date(legacyUnix * 1000).toISOString()
+  );
+  assert.equal(stripePeriodEnd({ items: { data: [] } }), null);
 });
 
 test("Stripe webhook route reads raw body before JSON parsing", () => {
