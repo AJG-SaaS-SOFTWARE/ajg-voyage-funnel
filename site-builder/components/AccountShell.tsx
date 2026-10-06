@@ -22,6 +22,14 @@ export function AccountShell({
   children: ReactNode;
 }) {
   const { locale, tr } = useProductLocale();
+  const contextTopic: Record<AccountSection, { topic: string; labelFr: string; labelEn: string }> = {
+    plans: { topic: "billing", labelFr: "Comprendre mon offre", labelEn: "Understand my plan" },
+    billing: { topic: "billing", labelFr: "Résoudre un problème de facturation", labelEn: "Resolve a billing issue" },
+    domains: { topic: "domain", labelFr: "Aide domaine & DNS", labelEn: "Domain & DNS help" },
+    messages: { topic: "publishing", labelFr: "Aide formulaire & publication", labelEn: "Form & publishing help" },
+    data: { topic: "data", labelFr: "Aide export & données", labelEn: "Export & data help" }
+  };
+  const currentHelp = contextTopic[active];
   const accountLinks: Array<{ href: string; label: string; section: AccountSection }> = [
     { href: "/plans", label: tr("Mon offre", "My plan"), section: "plans" },
     { href: "/billing", label: tr("Facturation", "Billing"), section: "billing" },
@@ -68,6 +76,15 @@ export function AccountShell({
               </Link>
             ))}
           </nav>
+
+          <Link className="account-context-help" href={`/support?topic=${currentHelp.topic}`}>
+            <span aria-hidden="true">?</span>
+            <span>
+              <b>{locale === "en" ? currentHelp.labelEn : currentHelp.labelFr}</b>
+              <small>{tr("Aide liée à cet écran", "Help for this screen")}</small>
+            </span>
+            <span aria-hidden="true">→</span>
+          </Link>
 
           <Link className="account-pricing-link" href={locale === "en" ? "/pricing" : "/tarifs"}>
             <span>

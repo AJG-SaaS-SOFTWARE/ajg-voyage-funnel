@@ -6,6 +6,7 @@ import { getMyDomains, getMySite, getMySites, removeCustomDomain, requestCustomD
 import { freeEntitlements, getMySiteEntitlements, type SubscriptionEntitlements } from "../../lib/subscription";
 import { useProductLocale } from "../../lib/product-i18n";
 import { domainGuide } from "../../lib/domain-guidance";
+import { CustomerErrorHelp } from "../../components/CustomerErrorHelp";
 
 export default function DomainsPage() {
   const { locale, tr } = useProductLocale();
@@ -59,6 +60,7 @@ export default function DomainsPage() {
     <section className="domain-list">{domains.map(domain=><article className="domain-row" key={domain.id}><div><b>{domain.hostname}</b><p>{domain.kind==="managed_subdomain"?tr("Sous-domaine ELTARA", "ELTARA subdomain"):tr("Domaine personnalisé", "Custom domain")} · {domain.verificationStatus==="verified"?tr("Vérifié", "Verified"):domain.verificationStatus==="failed"?tr("Échec de vérification", "Verification failed"):tr("En attente de vérification", "Verification pending")}</p></div>{domain.kind==="custom_domain"&&domain.verificationStatus!=="verified"?<div><button className="text-button" disabled={busy} onClick={()=>void verify(domain)}>{tr("Vérifier", "Verify")}</button><button className="text-button" disabled={busy} onClick={()=>void remove(domain.id)}>{tr("Retirer", "Remove")}</button></div>:domain.kind==="managed_subdomain"&&domain.verificationStatus!=="verified"?<small>{tr("Préparation en cours par ELTARA", "ELTARA setup in progress")}</small>:null}</article>)}</section>
     <form className="domain-form" onSubmit={submit}><div><p className="eyebrow">{tr("Domaine personnalisé", "Custom domain")}</p><h2>{tr("Ajouter votre domaine", "Add your domain")}</h2><p>{plan.customDomain?tr("Votre offre permet cette fonctionnalité.", "Your plan includes this feature."):tr("Disponible avec Essentiel et Growth.", "Available with Essential and Growth.")}</p></div><div className="domain-controls"><input value={hostname} onChange={e=>setHostname(e.target.value)} placeholder="exemple.fr" disabled={!plan.customDomain||busy}/><button className="button primary" disabled={!plan.customDomain||busy||!hostname.trim()}>{busy?tr("Enregistrement…", "Saving…"):tr("Ajouter", "Add")}</button></div></form>
     {message?<p className="account-note" role="status">{message}</p>:null}
+    <CustomerErrorHelp message={message} />
     <p className="account-note">{tr("Le sous-domaine ELTARA est administré par la plateforme. Pour un domaine personnel, ELTARA ne le marque jamais comme vérifié au simple enregistrement : le rattachement Vercel et la vérification DNS doivent réussir avant activation.", "The ELTARA subdomain is managed by the platform. For a personal domain, ELTARA never marks it as verified just because it was registered: the Vercel connection and DNS verification must succeed before activation.")}</p>
   </AccountShell>;
 }

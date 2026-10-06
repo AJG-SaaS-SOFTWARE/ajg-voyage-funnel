@@ -416,8 +416,8 @@ Objectif : le support humain devient l'exception.
 
 - [x] assistant support contextuel déterministe : utilise uniquement les clés/statuts du Health Center autorisés, sans transmettre le contenu du site ou du ticket à un LLM ;
 - [x] base de connaissances FR/EN : domaines/DNS, facturation, publication, quotas IA et export de données, avec liens directs vers les parcours ELTARA ;
-- [ ] aide liée à l'écran courant ;
-- [ ] explication automatique des erreurs ;
+- [x] aide liée à l'écran courant : chaque écran Compte propose un accès contextuel vers la bonne catégorie du Support Center ;
+- [x] explication automatique des erreurs : règles déterministes bilingues relient les erreurs courantes à une cause probable et à l’écran d’action adapté, sans LLM ;
 - [x] bouton "Diagnostiquer mon site" : relance explicite des contrôles Health Center sans créer de ticket ;
 - [x] bouton "Corriger automatiquement" lorsque sûr : remédiation allowlistée et auditée du sous-domaine géré ;
 - [x] parcours guidé domaine : sous-domaine géré, ajout du domaine personnel, vérification DNS et garde-fou explicite contre la modification d’enregistrements non demandés ;
