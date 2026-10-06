@@ -6,12 +6,12 @@ import { defaultSiteModules, type SiteModuleKey, type SiteModules } from "../lib
 export default function SiteModulesView({
   modules,
   english = false,
-  siteId,
-  privacyHref
+  siteId,\n  pagePath = "/",\n  privacyHref
 }: {
   modules: SiteModules;
   english?: boolean;
   siteId?: string;
+  pagePath?: string;
   privacyHref?: string;
 }) {
   const gallery = modules.gallery.enabled ? modules.gallery.images.filter((image) => image.url) : [];
