@@ -17,6 +17,9 @@ const bilingualEmergencyFallbacks = new Set([
 const highRiskFrench =
   /\b(?:Accueil|Adresse|Aucun|Aucune|Annuler|Brouillon|Chargement|Connexion|Continuer|Corriger|Créer|Données|Domaine|Domaines|Enregistrer|Envoyer|Erreur|Facturation|Fermer|Français|Indisponible|Modifier|Navigateur|Prêt|Publié|Réessayer|Retour|Sauvegarder|Supprimer|Voir)\b/i;
 
+const highRiskEnglish =
+  /\b(?:Address|Back|Billing|Cancel|Close|Continue|Create|Data|Delete|Domain|Domains|Draft|Edit|Error|Fix|Home|Loading|Published|Ready|Retry|Save|Send|Sign in|Unavailable|View)\b/i;
+
 function customerTsxFiles() {
   const files = [];
   const visit = (dir) => {
@@ -69,7 +72,7 @@ function displayedLiteral(node) {
   return null;
 }
 
-test("customer JSX has no high-risk raw French literals outside localization contexts", () => {
+function languageLeakFindings(pattern) {
   const findings = [];
 
   for (const file of customerTsxFiles()) {
@@ -87,7 +90,7 @@ test("customer JSX has no high-risk raw French literals outside localization con
 
       if (
         literal &&
-        highRiskFrench.test(literal) &&
+        pattern.test(literal) &&
         !insideLocalizedContext(node) &&
         !languageSelectorLabel &&
         !bilingualEmergencyFallbacks.has(normalizedFile)
@@ -101,10 +104,25 @@ test("customer JSX has no high-risk raw French literals outside localization con
     visit(ast);
   }
 
+  return findings;
+}
+
+test("customer JSX has no high-risk raw French literals outside localization contexts", () => {
+  const findings = languageLeakFindings(highRiskFrench);
   assert.deepEqual(
     findings,
     [],
     "Raw French customer-facing literals detected outside tr(...) or an explicit locale branch:\n" +
+      findings.join("\n")
+  );
+});
+
+test("customer JSX has no high-risk raw English literals outside localization contexts", () => {
+  const findings = languageLeakFindings(highRiskEnglish);
+  assert.deepEqual(
+    findings,
+    [],
+    "Raw English customer-facing literals detected outside tr(...) or an explicit locale branch:\n" +
       findings.join("\n")
   );
 });
