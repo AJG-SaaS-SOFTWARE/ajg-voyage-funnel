@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +11,8 @@ function bearer(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishable =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -21,12 +24,12 @@ export async function GET(request: Request) {
 
   if (!url || !publishable || !serviceKey) {
     return NextResponse.json(
-      { error: "Diagnostic indisponible." },
+      { error: tr("Diagnostic indisponible.", "Diagnostics unavailable.") },
       { status: 503 }
     );
   }
   if (!token) {
-    return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+    return NextResponse.json({ error: tr("Connexion requise.", "Sign-in required.") }, { status: 401 });
   }
 
   const userClient = createClient(url, publishable, {
@@ -39,7 +42,7 @@ export async function GET(request: Request) {
   } = await userClient.auth.getUser(token);
 
   if (userError || !user) {
-    return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+    return NextResponse.json({ error: tr("Connexion requise.", "Sign-in required.") }, { status: 401 });
   }
 
   const siteId = new URL(request.url).searchParams.get("siteId") || null;
@@ -49,7 +52,7 @@ export async function GET(request: Request) {
 
   const health = await diagnoseSupportHealth(service, user.id, siteId);
   if (siteId && health.siteId !== siteId) {
-    return NextResponse.json({ error: "Site introuvable." }, { status: 404 });
+    return NextResponse.json({ error: tr("Site introuvable.", "Website not found.") }, { status: 404 });
   }
 
   return NextResponse.json(

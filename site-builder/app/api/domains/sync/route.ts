@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     data: { user }
   } = await userClient.auth.getUser(bearer);
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: tr("Connexion requise.", "Sign-in required.") }, { status: 401 });
   }
 
   const body = (await request.json()) as Body;

@@ -4,6 +4,7 @@ import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
 import { supportReconcileDecision } from "../../../../lib/support-reconcile-policy";
 import { recordSupportEvent } from "../../../../lib/support-events";
 import { reportSupportTicketToRun } from "../../../../lib/run-intake-reporting";
+import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,27 +18,30 @@ function bearer(request: Request) {
 }
 
 async function context(request: Request) {
+  const locale = requestProductLocale(request);
+  const tr = (fr: string, en: string) => localize(locale, fr, en);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   const token = bearer(request);
-  if (!url || !publishable || !serviceKey) return { response: NextResponse.json({ error: "Support indisponible." }, { status: 503 }) };
-  if (!token) return { response: NextResponse.json({ error: "Connexion requise." }, { status: 401 }) };
+  if (!url || !publishable || !serviceKey) return { response: NextResponse.json({ error: tr("Support indisponible.", "Support unavailable.") }, { status: 503 }) };
+  if (!token) return { response: NextResponse.json({ error: tr("Connexion requise.", "Sign-in required.") }, { status: 401 }) };
 
   const userClient = createClient(url, publishable, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
   const { data: { user }, error } = await userClient.auth.getUser(token);
-  if (error || !user) return { response: NextResponse.json({ error: "Connexion requise." }, { status: 401 }) };
+  if (error || !user) return { response: NextResponse.json({ error: tr("Connexion requise.", "Sign-in required.") }, { status: 401 }) };
 
   const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  return { user, service };
+  return { user, service, tr };
 }
 
 export async function GET(request: Request) {
   const auth = await context(request);
   if ("response" in auth) return auth.response;
+  const tr = auth.tr;
 
   const [{ data: tickets, error: ticketError }, health] = await Promise.all([
     auth.service
@@ -49,13 +53,14 @@ export async function GET(request: Request) {
     diagnoseSupportHealth(auth.service, auth.user.id)
   ]);
 
-  if (ticketError) return NextResponse.json({ error: "Tickets indisponibles." }, { status: 503 });
+  if (ticketError) return NextResponse.json({ error: tr("Tickets indisponibles.", "Tickets unavailable.") }, { status: 503 });
   return NextResponse.json({ health, tickets: tickets || [] }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function POST(request: Request) {
   const auth = await context(request);
   if ("response" in auth) return auth.response;
+  const tr = auth.tr;
 
   const body = await request.json().catch(() => null);
   const category = typeof body?.category === "string" ? body.category : "other";
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
 
   if ((body?.requestId !== undefined && (!requestId || !requestIdPattern.test(requestId)))
     || !categories.has(category) || subject.length < 3 || subject.length > 160 || message.length < 10 || message.length > 4000) {
-    return NextResponse.json({ error: "Demande invalide." }, { status: 400 });
+    return NextResponse.json({ error: tr("Demande invalide.", "Invalid request.") }, { status: 400 });
   }
 
   // This is a lookup of the authenticated owner's ticket, never an upsert.
@@ -82,12 +87,12 @@ export async function POST(request: Request) {
       .eq("user_id", userId)
       .maybeSingle();
     if (lookupError) {
-      return NextResponse.json({ error: "Vérification de la demande indisponible." }, { status: 503 });
+      return NextResponse.json({ error: tr("Vérification de la demande indisponible.", "Request verification unavailable.") }, { status: 503 });
     }
     if (!existing) return null;
     if (existing.category !== category || existing.subject !== subject || existing.message !== message
       || (preferredSiteId !== null && existing.site_id !== preferredSiteId)) {
-      return NextResponse.json({ error: "Cette référence correspond à une autre demande. Actualisez vos demandes." }, { status: 409 });
+      return NextResponse.json({ error: tr("Cette référence correspond à une autre demande. Actualisez vos demandes.", "This reference belongs to a different request. Refresh your requests.") }, { status: 409 });
     }
     return NextResponse.json({
       ticket: existing,
@@ -114,13 +119,13 @@ export async function POST(request: Request) {
   ]);
 
   if (recentError || openError) {
-    return NextResponse.json({ error: "Contrôle du support indisponible." }, { status: 503 });
+    return NextResponse.json({ error: tr("Contrôle du support indisponible.", "Support checks unavailable.") }, { status: 503 });
   }
   if ((recentCount || 0) >= 3) {
-    return NextResponse.json({ error: "Trop de demandes rapprochées. Réessayez dans une minute." }, { status: 429 });
+    return NextResponse.json({ error: tr("Trop de demandes rapprochées. Réessayez dans une minute.", "Too many requests in a short period. Try again in one minute.") }, { status: 429 });
   }
   if ((openCount || 0) >= 25) {
-    return NextResponse.json({ error: "Trop de demandes sont déjà ouvertes sur ce compte." }, { status: 429 });
+    return NextResponse.json({ error: tr("Trop de demandes sont déjà ouvertes sur ce compte.", "Too many requests are already open on this account.") }, { status: 429 });
   }
 
   const health = await diagnoseSupportHealth(auth.service, auth.user.id, preferredSiteId);
@@ -151,7 +156,7 @@ export async function POST(request: Request) {
     // Never generate a different ID or replay downstream effects here.
     const recovered = await replay();
     if (recovered) return recovered;
-    return NextResponse.json({ error: "Création du ticket non confirmée. Vérifiez vos demandes avant de réessayer." }, { status: 503 });
+    return NextResponse.json({ error: tr("Création du ticket non confirmée. Vérifiez vos demandes avant de réessayer.", "Ticket creation could not be confirmed. Check your requests before trying again.") }, { status: 503 });
   }
 
   await recordSupportEvent(auth.service, {
@@ -182,11 +187,12 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const auth = await context(request);
   if ("response" in auth) return auth.response;
+  const tr = auth.tr;
 
   const body = await request.json().catch(() => null);
   const id = typeof body?.id === "string" ? body.id : "";
   if (!id) {
-    return NextResponse.json({ error: "Ticket invalide." }, { status: 400 });
+    return NextResponse.json({ error: tr("Ticket invalide.", "Invalid ticket.") }, { status: 400 });
   }
 
   const { data: current, error: currentError } = await auth.service
@@ -197,14 +203,14 @@ export async function PATCH(request: Request) {
     .maybeSingle();
 
   if (currentError) {
-    return NextResponse.json({ error: "Ticket indisponible." }, { status: 503 });
+    return NextResponse.json({ error: tr("Ticket indisponible.", "Ticket unavailable.") }, { status: 503 });
   }
   if (!current) {
-    return NextResponse.json({ error: "Ticket introuvable." }, { status: 404 });
+    return NextResponse.json({ error: tr("Ticket introuvable.", "Ticket not found.") }, { status: 404 });
   }
   if (current.status !== "waiting_customer") {
     return NextResponse.json(
-      { error: "Ce ticket n’attend plus une action de votre part." },
+      { error: tr("Ce ticket n’attend plus une action de votre part.", "This ticket no longer requires an action from you.") },
       { status: 409 }
     );
   }
@@ -245,11 +251,11 @@ export async function PATCH(request: Request) {
     .maybeSingle();
 
   if (updateError) {
-    return NextResponse.json({ error: "Nouveau diagnostic impossible." }, { status: 503 });
+    return NextResponse.json({ error: tr("Nouveau diagnostic impossible.", "Unable to run a new diagnosis.") }, { status: 503 });
   }
   if (!ticket) {
     return NextResponse.json(
-      { error: "Le ticket a été modifié pendant le diagnostic. Actualisez la page." },
+      { error: tr("Le ticket a été modifié pendant le diagnostic. Actualisez la page.", "The ticket changed during diagnosis. Refresh the page.") },
       { status: 409 }
     );
   }
