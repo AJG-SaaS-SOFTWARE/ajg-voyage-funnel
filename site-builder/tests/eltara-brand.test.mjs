@@ -26,6 +26,14 @@ test("core customer-facing product surfaces no longer expose the legacy product 
     "app/login/page.tsx",
     "app/beta-access/page.tsx",
     "app/builder/page.tsx",
+    "app/plans/page.tsx",
+    "app/billing/page.tsx",
+    "app/domains/page.tsx",
+    "app/data/page.tsx",
+    "app/growth/page.tsx",
+    "app/analytics/page.tsx",
+    "app/support/page.tsx",
+    "app/messages/page.tsx",
     "components/PricingPage.tsx",
     "components/AccountShell.tsx",
     "components/AdminShell.tsx",
@@ -39,7 +47,7 @@ test("core customer-facing product surfaces no longer expose the legacy product 
   ];
 
   for (const path of paths) {
-    assert.doesNotMatch(read(path), /AJG Site Builder|AJG Builder/);
+    assert.doesNotMatch(read(path), /AJG Site Builder|AJG Builder|Wellness CRM/);
   }
 });
 
