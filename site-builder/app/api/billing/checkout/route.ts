@@ -10,6 +10,7 @@ import {
   createStripeSubscriptionCheckout
 } from "../../../../lib/stripe-billing";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
+import { commercialCheckoutReadiness } from "../../../../lib/commercial-checkout-readiness";
 
 export const runtime = "nodejs";
 
@@ -58,6 +59,26 @@ export async function POST(request: Request) {
           "Stripe payments are not open yet. Beta access remains free."
         ),
         code: "checkout_disabled"
+      },
+      { status: 503 }
+    );
+  }
+
+  const commercialReadiness = await commercialCheckoutReadiness();
+  if (!commercialReadiness.ok) {
+    console.error("ELTARA Checkout blocked by commercial readiness", {
+      reasonCount: commercialReadiness.reasons.length,
+      failedStripeChecks: commercialReadiness.stripeAudit
+        .filter((item) => !item.ok)
+        .map((item) => item.key)
+    });
+    return NextResponse.json(
+      {
+        error: tr(
+          "Le paiement n’est pas encore disponible : les contrôles de mise en vente ne sont pas tous validés.",
+          "Payment is not available yet: commercial launch checks are not all validated."
+        ),
+        code: "commercial_readiness_blocked"
       },
       { status: 503 }
     );
