@@ -90,6 +90,8 @@ test("release E2E cron uses a disposable admin identity and always removes it", 
     /\.from\("user_roles"\)[\s\S]*\.delete\(\)[\s\S]*\.eq\("user_id", userId\)/
   );
   assert.match(route, /service\.auth\.admin\.deleteUser\(userId\)/);
+  assert.match(route, /service\.auth\.admin\.updateUserById\(userId/);
+  assert.match(route, /ban_duration: "876000h"/);
 });
 
 test("release E2E cron reuses the authenticated Builder engine for missing locales only", () => {
