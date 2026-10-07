@@ -170,6 +170,25 @@ test("authentication and beta invitation preserve the chosen locale across email
 });
 
 
+test("customer-facing dates never fall back to the browser locale implicitly", () => {
+  const support = read("app/support/page.tsx");
+  const home = read("app/page.tsx");
+  const plans = read("app/plans/page.tsx");
+  const messages = read("app/messages/page.tsx");
+  const billing = read("app/billing/page.tsx");
+  const data = read("app/data/page.tsx");
+
+  assert.match(
+    support,
+    /toLocaleDateString\(locale === "en" \? "en-GB" : "fr-FR"\)/
+  );
+
+  for (const source of [support, home, plans, messages, billing, data]) {
+    assert.doesNotMatch(source, /\.toLocaleDateString\(\s*\)/);
+    assert.doesNotMatch(source, /\.toLocaleString\(\s*\)/);
+  }
+});
+
 test("billing notification catalogue covers every customer state in both languages", () => {
   const source = read("app/api/cron/billing-notifications/route.ts");
   for (const key of [
