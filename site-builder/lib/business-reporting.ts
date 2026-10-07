@@ -6,6 +6,11 @@ import {
   commercialCheckoutReadiness,
   commercialConfigurationReadiness
 } from "./commercial-checkout-readiness";
+import { auditOpenAiRuntimeCached } from "./openai-readiness";
+import {
+  releaseE2ERunDecision,
+  type ReleaseE2ERunSnapshot
+} from "./release-e2e-policy";
 
 type BuilderSubscriptionRow = {
   plan_key: string;
@@ -219,6 +224,61 @@ export async function buildBuilderBusinessReport() {
     )
   ]);
 
+  const openAiRuntime = await auditOpenAiRuntimeCached();
+  const deploymentSha = (
+    process.env.AJG_RELEASE_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    ""
+  ).trim();
+
+  let e2eMirrorState: "validated" | "pending" | "blocked" | "unavailable" =
+    deploymentSha ? "pending" : "unavailable";
+  let validatedLocales = 0;
+
+  if (deploymentSha) {
+    let unavailable = false;
+    let retryBudgetExhausted = false;
+
+    for (const locale of ["fr", "en"] as const) {
+      const { data, error } = await service
+        .from("builder_e2e_runs")
+        .select("status,completed_at")
+        .eq("deployment_sha", deploymentSha)
+        .eq("locale", locale)
+        .eq("include_ai", true)
+        .order("started_at", { ascending: false })
+        .limit(10);
+
+      if (error) {
+        unavailable = true;
+        continue;
+      }
+
+      const decision = releaseE2ERunDecision(
+        (data || []) as ReleaseE2ERunSnapshot[]
+      );
+      if (decision.reason === "already_validated") validatedLocales += 1;
+      if (decision.reason === "retry_budget_exhausted") {
+        retryBudgetExhausted = true;
+      }
+    }
+
+    e2eMirrorState = unavailable
+      ? "unavailable"
+      : retryBudgetExhausted
+        ? "blocked"
+        : validatedLocales === 2
+          ? "validated"
+          : "pending";
+  }
+
+  const betaRuntime = {
+    openAi: openAiRuntime.status,
+    e2eMirror: e2eMirrorState,
+    validatedLocales,
+    requiredLocales: 2
+  } as const;
+
   const commercialConfig = commercialConfigurationReadiness();
   const commercial = await commercialCheckoutReadiness();
   const checkoutEnabled =
@@ -238,13 +298,17 @@ export async function buildBuilderBusinessReport() {
   const status =
     failedProviderEvents > 0 ||
     commercialLaunchState === "blocked" ||
-    betaOperations.status === "failed"
+    betaOperations.status === "failed" ||
+    betaRuntime.openAi === "blocker" ||
+    betaRuntime.e2eMirror === "blocked"
       ? "critical"
       : recurring.pastDueCustomers > 0 ||
           failed30d > 0 ||
           recurring.unmappedActivePrices > 0 ||
           betaOperations.status === "attention" ||
-          betaOperations.status === "unavailable"
+          betaOperations.status === "unavailable" ||
+          betaRuntime.openAi === "warn" ||
+          ["pending", "unavailable"].includes(betaRuntime.e2eMirror)
         ? "warning"
         : "healthy";
 
@@ -253,15 +317,25 @@ export async function buildBuilderBusinessReport() {
       ? "Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme."
       : failedProviderEvents > 0
         ? `${failedProviderEvents} événement(s) Stripe Builder nécessitent une reprise automatique.`
-        : betaOperations.status === "failed"
-          ? "L’agent de suivi bêta ELTARA est en échec et nécessite une intervention technique."
-          : betaOperations.status === "attention"
-            ? `${betaOperations.followUpCandidates} relance(s) Beta Tester à préparer · ${betaOperations.unresponsiveAfterFollowUp} sans reprise après relance.`
-            : betaOperations.status === "unavailable"
-              ? "Le dernier état agrégé du suivi bêta ELTARA est indisponible."
-              : recurring.unmappedActivePrices > 0
-                ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
-                : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
+        : betaRuntime.openAi === "blocker"
+          ? "Le fournisseur IA refuse la configuration runtime ELTARA ; une intervention sur le credential serveur est requise."
+          : betaRuntime.e2eMirror === "blocked"
+            ? "Le miroir E2E FR/EN du déploiement courant a épuisé son budget de reprises automatiques."
+            : betaOperations.status === "failed"
+              ? "L’agent de suivi bêta ELTARA est en échec et nécessite une intervention technique."
+              : betaRuntime.openAi === "warn"
+                ? "Le contrôle fournisseur IA est temporairement incertain."
+                : betaRuntime.e2eMirror === "pending"
+                  ? `Validation E2E miroir en attente : ${betaRuntime.validatedLocales}/${betaRuntime.requiredLocales} locale(s) validée(s).`
+                  : betaRuntime.e2eMirror === "unavailable"
+                    ? "L’état E2E miroir du déploiement courant est indisponible."
+                    : betaOperations.status === "attention"
+                      ? `${betaOperations.followUpCandidates} relance(s) Beta Tester à préparer · ${betaOperations.unresponsiveAfterFollowUp} sans reprise après relance.`
+                      : betaOperations.status === "unavailable"
+                        ? "Le dernier état agrégé du suivi bêta ELTARA est indisponible."
+                        : recurring.unmappedActivePrices > 0
+                          ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
+                          : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
 
   return {
     status,
@@ -295,6 +369,7 @@ export async function buildBuilderBusinessReport() {
       stripeRuntimeReady
     },
     betaOperations,
+    betaRuntime,
     detail,
     checkedAt: new Date().toISOString()
   } as const;
