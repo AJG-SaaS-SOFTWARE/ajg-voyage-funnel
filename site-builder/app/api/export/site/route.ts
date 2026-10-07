@@ -242,7 +242,7 @@ export async function GET(request: Request) {
         failures.push({
           bucket: item.bucket,
           path: item.path,
-          reason: error?.message || "Download failed"
+          reason: error?.message || tr("Téléchargement impossible", "Download failed")
         });
         continue;
       }
