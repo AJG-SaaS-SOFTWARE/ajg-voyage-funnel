@@ -22,9 +22,14 @@ test("production release validates structural FR/EN before the full AI mirror", 
   assert.match(workflow, /vercel@60\.1\.3 crons run \/api\/cron\/release-e2e-structural/);
   assert.match(workflow, /vercel@60\.1\.3 crons run \/api\/cron\/release-e2e/);
   assert.match(workflow, /--token "\$VERCEL_TOKEN"/);
+  assert.match(workflow, /vercel@60\.1\.3 link/);
+  assert.match(workflow, /--project "\$VERCEL_PROJECT_ID"/);
+  assert.match(workflow, /--yes/);
   assert.match(workflow, /\.vercel\/project\.json/);
-  assert.match(workflow, /JSON\.stringify\(\{ orgId, projectId \}\)/);
+  assert.match(workflow, /payload\?\.orgId !== process\.env\.VERCEL_ORG_ID/);
+  assert.match(workflow, /payload\?\.projectId !== process\.env\.VERCEL_PROJECT_ID/);
   assert.match(workflow, /rm -rf \.vercel/);
+  assert.doesNotMatch(workflow, /JSON\.stringify\(\{ orgId, projectId \}\)/);
 });
 
 test("post-release structural and AI E2E failures never invoke rollback", () => {
