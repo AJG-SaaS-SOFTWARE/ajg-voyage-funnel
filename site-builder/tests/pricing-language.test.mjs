@@ -18,6 +18,10 @@ const middleware = fs.readFileSync(
   new URL("../middleware.ts", import.meta.url),
   "utf8"
 );
+const layout = fs.readFileSync(
+  new URL("../app/layout.tsx", import.meta.url),
+  "utf8"
+);
 
 test("pricing content declares its page language", () => {
   assert.ok(pricing.includes('lang={locale}'));
@@ -31,9 +35,19 @@ test("pricing routes expose reciprocal language alternates", () => {
   assert.ok(pricingFr.includes('en: `${base}/pricing`'));
 });
 
-test("middleware returns HTTP content language for public pricing routes", () => {
-  assert.ok(middleware.includes('pathname==="/pricing"'));
-  assert.ok(middleware.includes('set("Content-Language","en")'));
-  assert.ok(middleware.includes('pathname==="/tarifs"'));
-  assert.ok(middleware.includes('set("Content-Language","fr")'));
+test("middleware forwards explicit pricing locale and returns matching HTTP content language", () => {
+  assert.ok(middleware.includes('pathname==="/pricing"?"en"'));
+  assert.ok(middleware.includes('pathname==="/tarifs"?"fr"'));
+  assert.ok(middleware.includes('requestHeaders.set("x-ajg-product-locale",explicitLocale)'));
+  assert.ok(middleware.includes('NextResponse.next({request:{headers:requestHeaders}})'));
+  assert.ok(middleware.includes('response.headers.set("Content-Language",explicitLocale)'));
+});
+
+test("root layout prioritizes explicit pricing locale over cookie and browser language", () => {
+  assert.ok(layout.includes('headerStore.get("x-ajg-product-locale")'));
+  assert.ok(layout.includes('explicitLocale === "en" || explicitLocale === "fr"'));
+  assert.ok(
+    layout.indexOf('explicitLocale === "en" || explicitLocale === "fr"') <
+      layout.indexOf('cookieLocale === "en" || cookieLocale === "fr"')
+  );
 });
