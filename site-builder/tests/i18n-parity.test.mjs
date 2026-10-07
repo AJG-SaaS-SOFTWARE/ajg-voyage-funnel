@@ -194,6 +194,8 @@ test("customer-facing AI creation terminology follows the canonical glossary", (
   for (const source of [builder, aiWrite]) {
     assert.doesNotMatch(source, /architecte premium/i);
     assert.doesNotMatch(source, /premium site architect/i);
+    assert.doesNotMatch(source, /[Ll]’Architecte/);
+    assert.doesNotMatch(source, /\b[Tt]he Site Architect\b/);
   }
 
   assert.match(builder, /Création IA/);
