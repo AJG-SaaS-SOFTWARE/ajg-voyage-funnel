@@ -22,6 +22,8 @@ jobs:
     env:
       BASE_URL: https://eltara.ajgsolutionsgroup.com
       PLAYWRIGHT_VERSION: 1.55.0
+      REVIEW_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      SURFACE_SET_VERSION: customer-core-v1
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,6 +46,7 @@ jobs:
             local path="$4"
             local slug="$5"
 
+            curl --fail --silent --show-error --location --max-time 15 "${BASE_URL}${path}" --output /dev/null
             npx --yes playwright@${PLAYWRIGHT_VERSION} screenshot               --browser chromium               --lang "$locale"               --viewport-size "$viewport"               --full-page               --wait-for-timeout 1200               "${BASE_URL}${path}"               "artifacts/eltara-visual-review/${slug}-${suffix}.png"
           }
 
@@ -65,7 +68,45 @@ jobs:
 
           count="$(find artifacts/eltara-visual-review -type f -name '*.png' | wc -l | tr -d ' ')"
           test "$count" = "24"
-          echo "Captured $count ELTARA FR/EN desktop/mobile screenshots." >> "$GITHUB_STEP_SUMMARY"
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const crypto = require("node:crypto");
+
+          const directory = "artifacts/eltara-visual-review";
+          const files = fs.readdirSync(directory)
+            .filter((name) => name.endsWith(".png"))
+            .sort()
+            .map((name) => {
+              const bytes = fs.readFileSync(path.join(directory, name));
+              return {
+                name,
+                bytes: bytes.length,
+                sha256: crypto.createHash("sha256").update(bytes).digest("hex")
+              };
+            });
+
+          if (files.length !== 24) {
+            throw new Error(`Expected 24 screenshots, got ${files.length}`);
+          }
+
+          fs.writeFileSync(
+            path.join(directory, "manifest.json"),
+            JSON.stringify({
+              product: "ELTARA",
+              deploymentSha: process.env.REVIEW_SHA,
+              surfaceSetVersion: process.env.SURFACE_SET_VERSION,
+              baseUrl: process.env.BASE_URL,
+              capturedAt: new Date().toISOString(),
+              screenshotCount: files.length,
+              files
+            }, null, 2) + "\n"
+          );
+          NODE
+
+          sha256sum artifacts/eltara-visual-review/*.png > artifacts/eltara-visual-review/SHA256SUMS
+          echo "Captured $count ELTARA FR/EN desktop/mobile screenshots with auditable SHA-256 evidence." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload visual review evidence
         uses: actions/upload-artifact@v4

@@ -36,6 +36,19 @@ test("visual review captures mirrored FR EN desktop and mobile evidence", () => 
   }
 
   assert.match(workflow, /test "\$count" = "24"/);
+  assert.match(workflow, /curl --fail --silent --show-error --location --max-time 15/);
+});
+
+test("visual review evidence is SHA-bound and tamper-evident", () => {
+  assert.match(workflow, /REVIEW_SHA:/);
+  assert.match(workflow, /SURFACE_SET_VERSION: customer-core-v1/);
+  assert.match(workflow, /manifest\.json/);
+  assert.match(workflow, /deploymentSha: process\.env\.REVIEW_SHA/);
+  assert.match(workflow, /surfaceSetVersion: process\.env\.SURFACE_SET_VERSION/);
+  assert.match(workflow, /crypto\.createHash\("sha256"\)/);
+  assert.match(workflow, /screenshotCount: files\.length/);
+  assert.match(workflow, /sha256sum artifacts\/eltara-visual-review\/\*\.png/);
+  assert.match(workflow, /SHA256SUMS/);
 });
 
 test("visual review is deterministic, read-only and retains evidence", () => {
