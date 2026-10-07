@@ -5,6 +5,7 @@ import {
   releaseE2ERunDecision,
   type ReleaseE2ERunSnapshot
 } from "./release-e2e-policy";
+import { auditOpenAiRuntimeCached } from "./openai-readiness";
 
 type Locale = "fr" | "en";
 
@@ -41,6 +42,28 @@ export async function runReleaseE2EMirror(
       status: 503,
       body: { error: "Release E2E automation unavailable", mode: mode.label }
     };
+  }
+
+  if (mode.includeAi) {
+    const openAiRuntime = await auditOpenAiRuntimeCached(60_000);
+    if (openAiRuntime.status === "blocker") {
+      return {
+        status: 200,
+        body: {
+          ok: false,
+          sha,
+          mode: mode.label,
+          includeAi: true,
+          executed: false,
+          blocked: true,
+          reason: "provider_blocked",
+          provider: {
+            openAi: openAiRuntime.status,
+            detail: openAiRuntime.detail
+          }
+        }
+      };
+    }
   }
 
   const service = createClient(url, serviceKey, {

@@ -431,19 +431,23 @@ export async function GET(request: Request) {
       checks.push({
         key: "builder-e2e-mirror",
         label: "E2E Builder · miroir FR + EN",
-        status: journalError
-          ? "blocker"
-          : mirrorValidated
-            ? "pass"
-            : retryBudgetExhausted
-              ? "blocker"
-              : "warn",
+        status: openAiAudit.status === "blocker"
+          ? "deferred"
+          : journalError
+            ? "blocker"
+            : mirrorValidated
+              ? "pass"
+              : retryBudgetExhausted
+                ? "blocker"
+                : "warn",
         scope: "beta",
-        detail: journalError
-          ? "Impossible de lire le journal E2E Builder."
-          : mirrorValidated
-            ? `Parité E2E FR + EN validée pour le SHA ${deploymentSha?.slice(0, 12)}…`
-            : `Validation miroir incomplète pour le SHA courant ${deploymentSha?.slice(0, 12)}… : ${stateDetail}.`
+        detail: openAiAudit.status === "blocker"
+          ? "E2E IA différé : la readiness OpenAI est bloquée. Le budget de retries E2E n’est pas consommé tant que le credential provider n’est pas rétabli."
+          : journalError
+            ? "Impossible de lire le journal E2E Builder."
+            : mirrorValidated
+              ? `Parité E2E FR + EN validée pour le SHA ${deploymentSha?.slice(0, 12)}…`
+              : `Validation miroir incomplète pour le SHA courant ${deploymentSha?.slice(0, 12)}… : ${stateDetail}.`
       });
     } else {
       checks.push({
