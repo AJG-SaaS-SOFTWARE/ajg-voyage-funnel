@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "../../../../lib/app-url";
 import { getStorageBackupStatus } from "../../../../lib/storage-backup";
-import { commercialLegalMissing, commercialLegalProfile } from "../../../../lib/commercial-legal";
-import { auditStripeRuntime } from "../../../../lib/stripe-readiness";
+import { commercialConfigurationReadiness } from "../../../../lib/commercial-checkout-readiness";
+import { auditStripeRuntimeCached } from "../../../../lib/stripe-readiness";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -85,24 +85,7 @@ export async function GET(request: Request) {
   const serviceKey =
     process.env.SUPABASE_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const commercialLegal = commercialLegalProfile();
-  const commercialLegalMissingFields = commercialLegalMissing(commercialLegal);
-  const legalApproved =
-    process.env.AJG_COMMERCIAL_LEGAL_READY?.trim().toLowerCase() === "true";
-  const taxApproved =
-    process.env.AJG_COMMERCIAL_TAX_READY?.trim().toLowerCase() === "true";
-  const vatRegime = process.env.AJG_VAT_REGIME?.trim().toLowerCase() || "unconfirmed";
-  const stripeTaxEnabled =
-    process.env.AJG_STRIPE_TAX_ENABLED?.trim().toLowerCase() === "true";
-  const taxCode = process.env.AJG_STRIPE_TAX_CODE?.trim() || "";
-  const market = process.env.AJG_COMMERCIAL_MARKET?.trim().toUpperCase() || "B2B";
-  const taxConfigurationValid =
-    market === "B2B" &&
-    taxCode === "txcd_10103001" &&
-    (
-      (vatRegime === "franchise_base" && !stripeTaxEnabled) ||
-      (vatRegime === "vat_registered" && stripeTaxEnabled && present(process.env.AJG_VAT_NUMBER))
-    );
+  const commercialConfig = commercialConfigurationReadiness();
 
   const checks: ReadinessCheck[] = [
     check(
@@ -169,16 +152,12 @@ export async function GET(request: Request) {
     check(
       "billing-provider",
       "Stripe Billing · catalogue runtime",
-      present(process.env.STRIPE_RESTRICTED_KEY || process.env.STRIPE_SECRET_KEY) &&
-        present(process.env.STRIPE_WEBHOOK_SECRET) &&
-        present(process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID) &&
-        present(process.env.STRIPE_ESSENTIAL_ANNUAL_PRICE_ID) &&
-        present(process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID) &&
-        present(process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID) &&
-        present(process.env.STRIPE_AI_LAUNCH_PRICE_ID),
+      commercialConfig.stripe.ok,
       "commercial",
-      "Clé API Stripe, secret webhook, 4 Price IDs récurrents Essentiel/Growth et Price Création IA configurés.",
-      "Runtime Stripe incomplet : clé API, secret webhook, Price Essentiel/Growth ou Price Création IA manquant.",
+      "Clé API Stripe, secret webhook, catalogue Essentiel/Growth/Création IA et Customer Portal configurés.",
+      commercialConfig.stripe.missing.length
+        ? `Runtime Stripe incomplet : ${commercialConfig.stripe.missing.join(", ")}.`
+        : "Runtime Stripe incomplet.",
       "deferred"
     ),
     check(
@@ -204,33 +183,23 @@ export async function GET(request: Request) {
     check(
       "commercial-legal",
       "Commercial · juridique",
-      legalApproved && commercialLegalMissingFields.length === 0,
+      commercialConfig.legal.ok,
       "commercial",
       "Identité vendeur, mentions légales, confidentialité et conditions commerciales complètes et explicitement validées.",
-      commercialLegalMissingFields.length
-        ? `Identité juridique incomplète : ${commercialLegalMissingFields.join(", ")}.`
+      commercialConfig.legal.missing.length
+        ? `Identité juridique incomplète : ${commercialConfig.legal.missing.join(", ")}.`
         : "Les pages sont complètes mais AJG_COMMERCIAL_LEGAL_READY n’est pas encore activé.",
       "deferred"
     ),
     check(
       "commercial-tax",
       "Commercial · fiscalité",
-      taxApproved && taxConfigurationValid,
+      commercialConfig.tax.ok,
       "commercial",
-      vatRegime === "franchise_base"
+      commercialConfig.tax.vatRegime === "franchise_base"
         ? "Régime franchise en base confirmé : Stripe Tax reste volontairement désactivé."
         : "Régime TVA collectée confirmé : Stripe Tax est activé avec TVA intracommunautaire renseignée.",
-      vatRegime === "unconfirmed"
-        ? "Régime TVA non confirmé : choisir franchise_base ou vat_registered avant encaissement."
-        : vatRegime === "franchise_base" && stripeTaxEnabled
-          ? "Incohérence fiscale : Stripe Tax doit rester désactivé sous franchise en base."
-          : vatRegime === "vat_registered" && !present(process.env.AJG_VAT_NUMBER)
-            ? "Numéro de TVA intracommunautaire manquant pour le régime vat_registered."
-            : vatRegime === "vat_registered" && !stripeTaxEnabled
-              ? "Stripe Tax doit être explicitement activé pour le régime vat_registered."
-              : taxCode !== "txcd_10103001" || market !== "B2B"
-                ? "Le profil fiscal de lancement doit rester B2B avec le tax code SaaS Business Use validé."
-                : "Configuration fiscale complète mais AJG_COMMERCIAL_TAX_READY n’est pas encore activé.",
+      commercialConfig.tax.reason,
       "deferred"
     ),
     check(
@@ -244,18 +213,9 @@ export async function GET(request: Request) {
     )
   ];
 
-  const stripeRuntimeConfigured =
-    present(process.env.STRIPE_RESTRICTED_KEY || process.env.STRIPE_SECRET_KEY) &&
-    present(process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID) &&
-    present(process.env.STRIPE_ESSENTIAL_ANNUAL_PRICE_ID) &&
-    present(process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID) &&
-    present(process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID) &&
-    present(process.env.STRIPE_AI_LAUNCH_PRICE_ID) &&
-    present(process.env.STRIPE_PORTAL_CONFIGURATION_ID);
-
-  if (stripeRuntimeConfigured) {
+  if (commercialConfig.stripe.ok) {
     try {
-      const stripeAudit = await auditStripeRuntime();
+      const stripeAudit = await auditStripeRuntimeCached();
       for (const item of stripeAudit) {
         checks.push({
           key: item.key,
