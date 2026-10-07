@@ -37,3 +37,22 @@ test("Builder report does not invent churn or trial conversion", () => {
   assert.match(source, /churn30dPct: null/);
   assert.match(source, /trialConversion30dPct: null/);
 });
+
+
+test("Builder report exposes only aggregate commercial launch readiness", () => {
+  assert.match(source, /commercialLaunch:/);
+  assert.match(source, /state: commercialLaunchState/);
+  assert.match(source, /checkoutEnabled/);
+  assert.match(source, /blockerCount: commercial\.reasons\.length/);
+  assert.match(source, /legalReady: commercialConfig\.legal\.ok/);
+  assert.match(source, /taxReady: commercialConfig\.tax\.ok/);
+  assert.match(source, /stripeConfigured: commercialConfig\.stripe\.ok/);
+  assert.match(source, /stripeRuntimeReady/);
+  assert.doesNotMatch(source, /commercialLaunch:\s*{[^}]*reasons/s);
+});
+
+test("Builder report treats an enabled but non-ready Checkout as critical", () => {
+  assert.match(source, /commercialLaunchState === "blocked"/);
+  assert.match(source, /failedProviderEvents > 0 \|\| commercialLaunchState === "blocked"/);
+  assert.match(source, /Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme/);
+});
