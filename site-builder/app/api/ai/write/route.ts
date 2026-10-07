@@ -359,7 +359,7 @@ export async function POST(request: Request) {
     siteId = ownedSites![0].id;
   }
   const { data: capabilities, error: capabilityError } = await auth.supabase.rpc("get_my_site_capabilities", { p_site_id: siteId });
-  if (capabilityError) return NextResponse.json({ error: "Impossible de vérifier les droits du site." }, { status: 503 });
+  if (capabilityError) return NextResponse.json({ error: tr("Impossible de vérifier les droits du site.", "Unable to verify website permissions.") }, { status: 503 });
   const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
   if (!capability?.can_generate_ai) return NextResponse.json({ error: tr("Les fonctions IA sont temporairement indisponibles pour ce site. Vous pouvez régulariser l’accès depuis votre espace de facturation.", "AI features are temporarily unavailable for this website. You can restore access from Billing.") }, { status: 402 });
 
@@ -860,7 +860,7 @@ export async function POST(request: Request) {
         ? tr("L’IA n’a pas pu structurer les textes. Réessayez.", "AI could not structure the copy. Try again.")
         : field === "moduleDraft"
           ? tr("L’IA n’a pas pu structurer cette rubrique. Réessayez.", "AI could not structure this section. Try again.")
-          : "L'IA n'a pas renvoyé de texte exploitable. Reformulez votre demande.";
+          : tr("L'IA n'a pas renvoyé de texte exploitable. Reformulez votre demande.", "AI did not return usable text. Rephrase your request.");
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
