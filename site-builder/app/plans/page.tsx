@@ -21,6 +21,7 @@ import {
 import { getMySites } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
 import { formatProductNumber } from "../../lib/product-format";
+import { productPlanLabel } from "../../lib/product-plan-label";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 import { trackProductEvent } from "../../lib/product-analytics";
 
@@ -163,7 +164,7 @@ export default function PlansPage() {
                 {betaAccess.active ? "Beta Tester" : tr("Accès actif", "Active access")}
               </span>
             </div>
-            <h2>{betaAccess.active ? (betaExperienceMode === "essential" ? tr("Essentiel · mode test", "Essential · test mode") : tr("Growth · mode test", "Growth · test mode")) : current.planName}</h2>
+            <h2>{betaAccess.active ? (betaExperienceMode === "essential" ? tr("Essentiel · mode test", "Essential · test mode") : tr("Growth · mode test", "Growth · test mode")) : productPlanLabel(current.planKey, locale)}</h2>
             <p>
               {betaAccess.active
                 ? tr(

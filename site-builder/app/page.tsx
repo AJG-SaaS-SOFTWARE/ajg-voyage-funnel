@@ -6,6 +6,7 @@ import { loadDraft, resetDraft, type BuilderDraft } from "../lib/site-store";
 import { isSupabaseConfigured } from "../lib/supabase-browser";
 import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
 import { useProductLocale } from "../lib/product-i18n";
+import { productPlanLabel } from "../lib/product-plan-label";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { EltaraMark } from "../components/EltaraBrand";
 import { BetaExperienceSwitch } from "../components/BetaExperienceSwitch";
@@ -57,7 +58,6 @@ export default function Home() {
   const [draft, setDraft] = useState<BuilderDraft | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<"checking" | "guest" | "authenticated" | "local">("checking");
   const [email, setEmail] = useState("");
-  const [planName, setPlanName] = useState("");
   const [planKey, setPlanKey] = useState<"free" | "essential" | "growth">("free");
   const [entitlementActive, setEntitlementActive] = useState(false);
   const [canCreateWithAi, setCanCreateWithAi] = useState(false);
@@ -103,7 +103,6 @@ export default function Home() {
           getMySite(),
           getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
         ]);
-        let resolvedPlanName = "";
         let resolvedPlanKey: "free" | "essential" | "growth" = "free";
         let resolvedEntitlementActive = false;
         let resolvedCanCreateWithAi = false;
@@ -114,13 +113,11 @@ export default function Home() {
               getMySiteEntitlements(remote.id),
               getMySiteAiAccess(remote.id)
             ]);
-            resolvedPlanName = entitlements.planName;
             resolvedPlanKey = entitlements.planKey;
             resolvedEntitlementActive = ["active", "trialing"].includes(entitlements.status);
             resolvedCanCreateWithAi = aiAccess.canCreateSite;
           } else {
             const entitlements = await getMyEntitlements();
-            resolvedPlanName = entitlements.planName;
             resolvedPlanKey = entitlements.planKey;
             resolvedEntitlementActive = ["active", "trialing"].includes(entitlements.status);
           }
@@ -131,7 +128,6 @@ export default function Home() {
         if (!cancelled) {
           setEmail(user.email || "");
           setRemoteStatus("authenticated");
-          setPlanName(resolvedPlanName);
           setPlanKey(resolvedPlanKey);
           setEntitlementActive(resolvedEntitlementActive);
           setCanCreateWithAi(resolvedCanCreateWithAi);
@@ -193,7 +189,7 @@ export default function Home() {
     ? betaExperienceMode === "essential"
       ? tr("Essentiel · mode test", "Essential · test mode")
       : tr("Growth · mode test", "Growth · test mode")
-    : planName;
+    : productPlanLabel(planKey, locale);
   const growthExperienceAvailable =
     entitlementActive &&
     draft?.status === "published" &&
