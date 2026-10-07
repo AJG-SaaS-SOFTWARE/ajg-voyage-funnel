@@ -65,3 +65,35 @@ test("published missing-page metadata follows the website language", async () =>
   assert.match(domain, /site\.config\.language==="en"\?"Page not found":"Page introuvable"/);
   assert.match(subpage, /Website not found \/ Site introuvable/);
 });
+
+
+test("slug-based legal routes use the same localized metadata helper as custom domains", async () => {
+  const { readFileSync } = await import("node:fs");
+  const routes = [
+    ["mentions-legales", "mentions-legales"],
+    ["confidentialite", "confidentialite"],
+    ["cookies", "cookies"]
+  ];
+
+  for (const [folder, key] of routes) {
+    const source = readFileSync(
+      new URL(`../app/site/[slug]/${folder}/page.tsx`, import.meta.url),
+      "utf8"
+    );
+    assert.match(source, /buildPublicMetadata/);
+    assert.match(source, /legalMetadataLabel/);
+    assert.match(source, new RegExp(`pageTitle: legalMetadataLabel\\(site\\.config, "${key}"\\)`));
+    assert.match(source, /index: false/);
+  }
+
+  const legal = readFileSync(
+    new URL("../app/site/[slug]/mentions-legales/page.tsx", import.meta.url),
+    "utf8"
+  );
+  const privacy = readFileSync(
+    new URL("../app/site/[slug]/confidentialite/page.tsx", import.meta.url),
+    "utf8"
+  );
+  assert.doesNotMatch(legal, /title: `Mentions légales \|/);
+  assert.doesNotMatch(privacy, /title: `Confidentialité \|/);
+});

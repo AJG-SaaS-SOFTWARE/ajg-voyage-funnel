@@ -4,6 +4,7 @@ import { PrivacyPage } from "../../../../components/SiteLegalPages";
 import { getPublicSite, publicSiteUrl } from "../../../../lib/public-site";
 import { legalIsComplete } from "../../../../lib/site-legal";
 import { publicRouteBase } from "../../../../lib/public-request";
+import { buildPublicMetadata, legalMetadataLabel } from "../../../../lib/public-metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +13,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const site = await getPublicSite(slug);
   if (!site) return { title: "Site introuvable", robots: { index: false, follow: false } };
   return {
-    title: `Confidentialité | ${site.config.brandName}`,
-    alternates: { canonical: `${await publicSiteUrl(site.id, slug)}/confidentialite` },
-    robots: { index: false, follow: true }
+    ...buildPublicMetadata(site.config, {
+      canonical: `${await publicSiteUrl(site.id, slug)}/confidentialite`,
+      pageTitle: legalMetadataLabel(site.config, "confidentialite"),
+      index: false
+    })
   };
 }
 

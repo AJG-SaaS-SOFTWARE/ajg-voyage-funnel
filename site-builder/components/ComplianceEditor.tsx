@@ -136,7 +136,7 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
 
       {affiliation === "mwr" ? (
         <div className="compliance-mwr-note">
-          <b>Profil MWR Life</b>
+          <b>{tr("Profil MWR Life", "MWR Life profile")}</b>
           <p>{tr("Ces informations légales complètent la mention d’indépendance MWR Life ; elles ne la remplacent pas.", "This legal information complements the MWR Life independence disclosure; it does not replace it.")}</p>
         </div>
       ) : null}
