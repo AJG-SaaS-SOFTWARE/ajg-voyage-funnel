@@ -702,7 +702,7 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       if (error instanceof AiBudgetError) throw error;
-      console.error("Premium Site Architect failed", error);
+      console.error("AI Site Architect failed", error);
       if (premiumRequestId) {
         if (heavyAiReserved) {
           try {

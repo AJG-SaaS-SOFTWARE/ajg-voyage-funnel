@@ -967,7 +967,7 @@ export default function BuilderPage() {
     }
 
     if (!same(revisionProposal.architecture, config.architecture)) {
-      changes.push("Architecture / pages");
+      changes.push(tr("Architecture / pages", "Architecture / pages"));
     }
 
     if (
@@ -1006,7 +1006,7 @@ export default function BuilderPage() {
         items: config.design.modules.faq.items
       })
     ) {
-      changes.push("FAQ");
+      changes.push(tr("FAQ", "FAQ"));
     }
 
     if (

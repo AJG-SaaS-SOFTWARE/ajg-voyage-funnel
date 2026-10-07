@@ -216,9 +216,15 @@ test("revision summary labels are localized in both interface languages", () => 
   assert.match(builder, /changes\.push\(tr\("Accueil", "Home"\)\)/);
   assert.match(builder, /changes\.push\(tr\("Direction visuelle", "Visual direction"\)\)/);
   assert.match(builder, /changes\.push\(tr\("Avantages", "Benefits"\)\)/);
+  assert.match(builder, /changes\.push\(tr\("Architecture \/ pages", "Architecture \/ pages"\)\)/);
+  assert.match(builder, /changes\.push\(tr\("FAQ", "FAQ"\)\)/);
+
   assert.doesNotMatch(builder, /changes\.push\("Accueil"\)/);
   assert.doesNotMatch(builder, /changes\.push\("Direction visuelle"\)/);
   assert.doesNotMatch(builder, /changes\.push\("Avantages"\)/);
+  assert.doesNotMatch(builder, /changes\.push\("Architecture \/ pages"\)/);
+  assert.doesNotMatch(builder, /changes\.push\("FAQ"\)/);
+
 });
 
 test("English Builder core has no known French-only residuals in customer paths", () => {
