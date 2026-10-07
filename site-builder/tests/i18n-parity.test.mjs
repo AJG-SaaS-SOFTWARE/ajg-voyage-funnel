@@ -90,6 +90,22 @@ test("keeps the synchronized commercial pricing grid bilingual", () => {
 });
 
 
+test("global metadata follows the same server locale and the manifest stays language-neutral", () => {
+  const layout = read("app/layout.tsx");
+  const manifest = read("app/manifest.ts");
+
+  assert.match(layout, /async function requestLocale\(\): Promise<ProductLocale>/);
+  assert.match(layout, /export async function generateMetadata\(\): Promise<Metadata>/);
+  assert.match(layout, /ELTARA turns your activity into a professional digital presence/);
+  assert.match(layout, /ELTARA transforme votre activité en présence digitale professionnelle/);
+  assert.match(layout, /Build, publish and improve your professional website/);
+  assert.match(layout, /Élevez votre présence digitale/);
+  assert.match(layout, /const initialLocale = await requestLocale\(\)/);
+
+  assert.match(manifest, /ELTARA · BUILD · RUN · GROW · by AJG Horizon/);
+  assert.doesNotMatch(manifest, /Élevez votre présence digitale avec un espace guidé/);
+});
+
 test("server-seeded locale avoids a French-first render for English users", () => {
   const layout = read("app/layout.tsx");
   const provider = read("components/ProductLocaleProvider.tsx");
