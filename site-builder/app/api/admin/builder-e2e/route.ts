@@ -238,7 +238,8 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-AJG-Locale": locale
         },
         body: JSON.stringify({
           field: "siteArchitect",
