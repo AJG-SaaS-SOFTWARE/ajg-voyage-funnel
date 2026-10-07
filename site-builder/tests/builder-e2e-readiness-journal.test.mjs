@@ -46,8 +46,17 @@ test("release readiness only accepts mirrored AI E2E success for the current SHA
   assert.match(readiness, /\.from\("builder_e2e_runs"\)/);
   assert.match(readiness, /\.eq\("deployment_sha", deploymentSha!\)/);
   assert.match(readiness, /\.eq\("include_ai", true\)/);
-  assert.match(readiness, /\.eq\("status", "success"\)/);
+  assert.match(readiness, /\.select\("status,completed_at"\)/);
   assert.match(readiness, /\(\["fr", "en"\] as const\)/);
+  assert.match(readiness, /releaseE2ERunDecision\(rows\)/);
   assert.match(readiness, /key: "builder-e2e-mirror"/);
-  assert.match(readiness, /mirrorValidated \? "pass" : "warn"/);
+  assert.match(readiness, /mirrorValidated[\s\S]*"pass"/);
+});
+
+test("release readiness escalates an exhausted autonomous E2E budget", () => {
+  assert.match(readiness, /retryBudgetExhausted/);
+  assert.match(readiness, /retry_budget_exhausted/);
+  assert.match(readiness, /"blocker"/);
+  assert.match(readiness, /bloqué après 3 échecs/);
+  assert.match(readiness, /Impossible de lire le journal E2E Builder/);
 });
