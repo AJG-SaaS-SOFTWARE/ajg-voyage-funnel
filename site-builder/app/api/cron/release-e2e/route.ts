@@ -188,7 +188,13 @@ export async function GET(request: NextRequest) {
 
       const { error: userCleanupError } =
         await service.auth.admin.deleteUser(userId);
-      if (userCleanupError) cleanupOk = false;
+      if (userCleanupError) {
+        cleanupOk = false;
+        await service.from("user_roles").delete().eq("user_id", userId);
+        await service.auth.admin.updateUserById(userId, {
+          ban_duration: "876000h"
+        });
+      }
     }
   }
 
