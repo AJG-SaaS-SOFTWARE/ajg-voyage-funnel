@@ -92,6 +92,19 @@ test("both release E2E routes use shared dual authorization without weakening CR
   assert.match(structuralRoute, /label: "structural"/);
 });
 
+test("full AI release E2E performs a read-only OpenAI preflight before creating test users", () => {
+  assert.match(fullRoute, /auditOpenAiRuntime\(\)/);
+  assert.match(fullRoute, /providerStatus: openAiAudit\.status/);
+  assert.match(fullRoute, /OpenAI runtime preflight failed/);
+  assert.match(fullRoute, /status: 503/);
+  assert.doesNotMatch(structuralRoute, /auditOpenAiRuntime/);
+
+  const auditIndex = fullRoute.indexOf("auditOpenAiRuntime()");
+  const runnerIndex = fullRoute.indexOf("runReleaseE2EMirror(appOrigin");
+  assert.ok(auditIndex >= 0);
+  assert.ok(runnerIndex > auditIndex);
+});
+
 test("shared release E2E runner binds journal evidence to SHA, locale and mode", () => {
   assert.match(runner, /process\.env\.VERCEL_GIT_COMMIT_SHA/);
   assert.match(runner, /\.eq\("deployment_sha", sha\)/);
