@@ -69,6 +69,13 @@ function insideLocalizedContext(node) {
   return false;
 }
 
+function templateStaticText(node) {
+  return [
+    node.head.text,
+    ...node.templateSpans.map((span) => span.literal.text)
+  ].join(" ");
+}
+
 function displayedLiteral(node) {
   if (ts.isJsxText(node)) return node.getText();
 
@@ -80,7 +87,7 @@ function displayedLiteral(node) {
     if (ts.isJsxAttribute(node.parent)) {
       const name = node.parent.name.getText();
       if (["placeholder", "title", "aria-label", "alt"].includes(name)) {
-        return ts.isTemplateExpression(node) ? node.getText() : node.text;
+        return ts.isTemplateExpression(node) ? templateStaticText(node) : node.text;
       }
       return null;
     }
@@ -90,10 +97,10 @@ function displayedLiteral(node) {
       if (attribute && ts.isJsxAttribute(attribute)) {
         const name = attribute.name.getText();
         return ["placeholder", "title", "aria-label", "alt"].includes(name)
-          ? (ts.isTemplateExpression(node) ? node.getText() : node.text)
+          ? (ts.isTemplateExpression(node) ? templateStaticText(node) : node.text)
           : null;
       }
-      return ts.isTemplateExpression(node) ? node.getText() : node.text;
+      return ts.isTemplateExpression(node) ? templateStaticText(node) : node.text;
     }
   }
 
@@ -227,6 +234,23 @@ test("template literals rendered directly in JSX are inspected", () => {
   };
   visit(source);
   assert.match(literal || "", /Voir/);
+});
+
+test("localized expressions inside template literals do not leak their source strings into the scanner", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const title = "x"; const tr = (fr, en) => en; const node = <span aria-label={`${tr("Écouter", "Listen to")} ${title}`} />;',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  let literal = null;
+  const visit = (node) => {
+    if (ts.isTemplateExpression(node)) literal = displayedLiteral(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(literal?.trim(), "");
 });
 
 test("template literals used only for non-visible JSX attributes are ignored", () => {
