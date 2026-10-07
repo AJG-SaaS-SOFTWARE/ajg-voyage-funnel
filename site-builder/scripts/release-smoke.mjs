@@ -112,8 +112,8 @@ try {
   );
   await expectMirroredLocale(
     "/data",
-    ["Mes données", "Votre compte", "Confidentialité & données", "Exportez vos données"],
-    ["My data", "Your account", "Privacy & data", "Export your data"]
+    ["Mes données", "Votre compte", "Confidentialité", "Exportez vos données"],
+    ["My data", "Your account", "Privacy", "Export your data"]
   );
   await expectLocalizedHtml(
     "/pricing",
