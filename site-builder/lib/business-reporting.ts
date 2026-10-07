@@ -2,6 +2,10 @@ import "server-only";
 
 import { authorizedReportingRequest } from "./cockpit-reporting-auth";
 import { billingServiceClient } from "./server-billing";
+import {
+  commercialCheckoutReadiness,
+  commercialConfigurationReadiness
+} from "./commercial-checkout-readiness";
 
 type BuilderSubscriptionRow = {
   plan_key: string;
@@ -181,8 +185,24 @@ export async function buildBuilderBusinessReport() {
     )
   ]);
 
+  const commercialConfig = commercialConfigurationReadiness();
+  const commercial = await commercialCheckoutReadiness();
+  const checkoutEnabled =
+    process.env.AJG_BILLING_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
+  const stripeRuntimeReady =
+    commercial.stripeAudit.length > 0 &&
+    commercial.stripeAudit.every((item) => item.ok);
+  const commercialLaunchState =
+    checkoutEnabled && commercial.ok
+      ? "open"
+      : checkoutEnabled && !commercial.ok
+        ? "blocked"
+        : commercial.ok
+          ? "ready"
+          : "closed";
+
   const status =
-    failedProviderEvents > 0
+    failedProviderEvents > 0 || commercialLaunchState === "blocked"
       ? "critical"
       : recurring.pastDueCustomers > 0 ||
           failed30d > 0 ||
@@ -191,11 +211,13 @@ export async function buildBuilderBusinessReport() {
         : "healthy";
 
   const detail =
-    failedProviderEvents > 0
-      ? `${failedProviderEvents} événement(s) Stripe Builder nécessitent une reprise automatique.`
-      : recurring.unmappedActivePrices > 0
-        ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
-        : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
+    commercialLaunchState === "blocked"
+      ? "Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme."
+      : failedProviderEvents > 0
+        ? `${failedProviderEvents} événement(s) Stripe Builder nécessitent une reprise automatique.`
+        : recurring.unmappedActivePrices > 0
+          ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
+          : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
 
   return {
     status,
@@ -218,6 +240,15 @@ export async function buildBuilderBusinessReport() {
       connectOnboardingPending: 0,
       connectChargesDisabled: 0,
       connectPayoutsDisabled: 0
+    },
+    commercialLaunch: {
+      state: commercialLaunchState,
+      checkoutEnabled,
+      blockerCount: commercial.reasons.length,
+      legalReady: commercialConfig.legal.ok,
+      taxReady: commercialConfig.tax.ok,
+      stripeConfigured: commercialConfig.stripe.ok,
+      stripeRuntimeReady
     },
     detail,
     checkedAt: new Date().toISOString()
