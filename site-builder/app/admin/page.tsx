@@ -139,6 +139,7 @@ export default function AdminPage() {
   const [builderE2ERunning, setBuilderE2ERunning] = useState(false);
   const [builderE2ELocale, setBuilderE2ELocale] = useState<"fr" | "en">("fr");
   const [builderE2EResult, setBuilderE2EResult] = useState<BuilderE2EResult | null>(null);
+  const [builderE2EMirrorResults, setBuilderE2EMirrorResults] = useState<BuilderE2EResult[] | null>(null);
   const [builderE2EError, setBuilderE2EError] = useState("");
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
@@ -256,6 +257,7 @@ export default function AdminPage() {
     setMessage("");
     setBuilderE2EError("");
     setBuilderE2EResult(null);
+    setBuilderE2EMirrorResults(null);
     setBuilderE2ERunning(true);
     try {
       const result = await adminRunBuilderE2E(true, builderE2ELocale);
@@ -264,6 +266,26 @@ export default function AdminPage() {
     } catch (error) {
       setBuilderE2EError(
         error instanceof Error ? error.message : "Recette E2E impossible."
+      );
+    } finally {
+      setBuilderE2ERunning(false);
+    }
+  };
+
+  const runBuilderE2EMirror = async () => {
+    setMessage("");
+    setBuilderE2EError("");
+    setBuilderE2EResult(null);
+    setBuilderE2EMirrorResults(null);
+    setBuilderE2ERunning(true);
+    try {
+      const fr = await adminRunBuilderE2E(true, "fr");
+      const en = await adminRunBuilderE2E(true, "en");
+      setBuilderE2EMirrorResults([fr, en]);
+      await load();
+    } catch (error) {
+      setBuilderE2EError(
+        error instanceof Error ? error.message : "Recette E2E miroir FR + EN impossible."
       );
     } finally {
       setBuilderE2ERunning(false);
@@ -1622,21 +1644,49 @@ export default function AdminPage() {
               onClick={() => void runBuilderE2E()}
             >
               {builderE2ERunning
-                ? `Recette E2E ${builderE2ELocale.toUpperCase()} en cours…`
+                ? "Recette E2E en cours…"
                 : builderE2EResult?.locale === builderE2ELocale
                   ? `Recette E2E ${builderE2ELocale.toUpperCase()} validée ✓`
                   : `Lancer la recette E2E complète · ${builderE2ELocale.toUpperCase()}`}
             </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={builderE2ERunning}
+              onClick={() => void runBuilderE2EMirror()}
+            >
+              {builderE2ERunning
+                ? "Validation en cours…"
+                : builderE2EMirrorResults?.length === 2
+                  ? "Parité E2E FR + EN validée ✓"
+                  : "Valider FR + EN"}
+            </button>
           </div>
           <p className="admin-readiness-meta">
-            Ce contrôle consomme exactement une génération IA réelle. Le droit Pro est limité
-            au site temporaire de recette et disparaît avec lui. Ton offre réelle, le site existant,
-            le feedback et les médias hors recette ne sont pas modifiés.
+            La recette individuelle consomme une génération IA réelle ; la validation miroir en consomme deux,
+            une par langue. Chaque droit Pro est limité à son site temporaire et disparaît avec lui.
+            Ton offre réelle, le site existant, le feedback et les médias hors recette ne sont pas modifiés.
           </p>
           {builderE2EError ? (
             <p className="plans-note" role="alert" data-state="error">
               {builderE2EError}
             </p>
+          ) : null}
+          {builderE2EMirrorResults?.length === 2 ? (
+            <div className="readiness-list">
+              {builderE2EMirrorResults.map((result) => (
+                <article className="readiness-row pass" key={result.locale}>
+                  <div className="readiness-row-heading">
+                    <span>
+                      <b>Parcours complet {result.locale.toUpperCase()}</b>
+                      <small>{result.steps.filter((item) => item.status === "pass").length} contrôles validés</small>
+                    </span>
+                    <em>Validé</em>
+                  </div>
+                  <p>Création, IA, média, publication, rendu public, feedback, export et nettoyage terminés.</p>
+                </article>
+              ))}
+            </div>
           ) : null}
           {builderE2EResult ? (
             <div className="readiness-list">
