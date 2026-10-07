@@ -1532,7 +1532,7 @@ export default function BuilderPage() {
                     <div className="slug-field premium-slug-field">
                       <input
                         value={config.slug}
-                        placeholder="julie-martin"
+                        placeholder={tr("julie-martin", "jane-smith")}
                         onChange={(e) => {
                           setSlugTouched(true);
                           update("slug", slugify(e.target.value));
@@ -2144,7 +2144,7 @@ export default function BuilderPage() {
                     autoComplete="url"
                     aria-invalid={bookingLinkStatus === "invalid"}
                     aria-describedby="booking-link-feedback"
-                    placeholder="https://calendly.com/votre-nom/30min"
+                    placeholder={tr("https://calendly.com/votre-nom/30min", "https://calendly.com/your-name/30min")}
                     value={config.bookingUrl}
                     onChange={(e) => update("bookingUrl", e.target.value)}
                   />
@@ -2297,7 +2297,7 @@ export default function BuilderPage() {
 
                 <div className="quality-summary-card">
                   <div className="quality-summary-head">
-                    <div><span className="mini">ELTARA QUALITY CHECK</span><strong>{qualityPassed}/{qualityChecks.length} {tr("contrôles réussis", "checks passed")}</strong></div>
+                    <div><span className="mini">{tr("CONTRÔLE QUALITÉ ELTARA", "ELTARA QUALITY CHECK")}</span><strong>{qualityPassed}/{qualityChecks.length} {tr("contrôles réussis", "checks passed")}</strong></div>
                     <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} ${tr(qualityWarnings > 1 ? "améliorations" : "amélioration", qualityWarnings > 1 ? "improvements" : "improvement")}` : tr("Prêt ✓", "Ready ✓")}</span>
                   </div>
                   <div className="quality-check-list">
