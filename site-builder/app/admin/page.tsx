@@ -137,6 +137,7 @@ export default function AdminPage() {
   const [backupRunning, setBackupRunning] = useState(false);
   const [backupMessage, setBackupMessage] = useState("");
   const [builderE2ERunning, setBuilderE2ERunning] = useState(false);
+  const [builderE2ELocale, setBuilderE2ELocale] = useState<"fr" | "en">("fr");
   const [builderE2EResult, setBuilderE2EResult] = useState<BuilderE2EResult | null>(null);
   const [builderE2EError, setBuilderE2EError] = useState("");
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
@@ -257,7 +258,7 @@ export default function AdminPage() {
     setBuilderE2EResult(null);
     setBuilderE2ERunning(true);
     try {
-      const result = await adminRunBuilderE2E(true);
+      const result = await adminRunBuilderE2E(true, builderE2ELocale);
       setBuilderE2EResult(result);
       await load();
     } catch (error) {
@@ -1603,6 +1604,17 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="builder-actions">
+            <label>
+              Langue de recette
+              <select
+                value={builderE2ELocale}
+                disabled={builderE2ERunning}
+                onChange={(event) => setBuilderE2ELocale(event.target.value as "fr" | "en")}
+              >
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+              </select>
+            </label>
             <button
               type="button"
               className="button primary"
@@ -1610,10 +1622,10 @@ export default function AdminPage() {
               onClick={() => void runBuilderE2E()}
             >
               {builderE2ERunning
-                ? "Recette E2E en cours…"
-                : builderE2EResult
-                  ? "Recette E2E validée ✓"
-                  : "Lancer la recette E2E complète"}
+                ? `Recette E2E ${builderE2ELocale.toUpperCase()} en cours…`
+                : builderE2EResult?.locale === builderE2ELocale
+                  ? `Recette E2E ${builderE2ELocale.toUpperCase()} validée ✓`
+                  : `Lancer la recette E2E complète · ${builderE2ELocale.toUpperCase()}`}
             </button>
           </div>
           <p className="admin-readiness-meta">
@@ -1634,7 +1646,7 @@ export default function AdminPage() {
                   key={item.key}
                 >
                   <div className="readiness-row-heading">
-                    <span><b>{item.label}</b><small>E2E</small></span>
+                    <span><b>{item.label}</b><small>E2E · {builderE2EResult.locale.toUpperCase()}</small></span>
                     <em>{item.status === "pass" ? "Validé" : "Ignoré"}</em>
                   </div>
                   <p>{item.detail}</p>
