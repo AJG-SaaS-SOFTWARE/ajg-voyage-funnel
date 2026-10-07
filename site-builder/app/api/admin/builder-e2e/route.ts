@@ -430,6 +430,40 @@ export async function POST(request: NextRequest) {
       detail: "La route publique dynamique retourne le site publié et son contenu attendu."
     });
 
+    currentStage = "republish";
+    const republishMarker = tr(
+      `Mise à jour E2E ${suffix}`,
+      `E2E update ${suffix}`
+    );
+    const { error: republishError } = await userClient
+      .from("sites")
+      .update({
+        hero_title: republishMarker,
+        status: "published",
+        published_at: new Date().toISOString()
+      })
+      .eq("id", siteId)
+      .eq("owner_id", user.id);
+    if (republishError) throw republishError;
+
+    const republishedResponse = await fetch(new URL(`/site/${slug}`, request.url), {
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(15000)
+    });
+    const republishedHtml = await republishedResponse.text();
+    if (!republishedResponse.ok || !republishedHtml.includes(republishMarker)) {
+      throw new Error(
+        `Republish validation returned HTTP ${republishedResponse.status} without the updated public content.`
+      );
+    }
+    steps.push({
+      key: "republish",
+      label: "Republication",
+      status: "pass",
+      detail: "Une seconde version modifiée est publiée puis relue depuis la route publique avec le nouveau contenu."
+    });
+
     currentStage = "feedback";
     const { data: feedback, error: feedbackError } = await userClient
       .from("user_feedback")
