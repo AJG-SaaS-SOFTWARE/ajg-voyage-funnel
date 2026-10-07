@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
+import { formatProductNumber } from "../../lib/product-format";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 import { getMySites } from "../../lib/supabase-site-repository";
 import {
@@ -475,12 +476,12 @@ export default function GrowthPage() {
                           )
                         : item.key === "form"
                           ? tr(
-                              `${item.evidenceCount} démarrages de formulaire observés, pour ${item.value.toFixed(1)}% de complétion.`,
-                              `${item.evidenceCount} form starts observed, with ${item.value.toFixed(1)}% completion.`
+                              `${item.evidenceCount} démarrages de formulaire observés, pour ${formatProductNumber(item.value, locale, 1, 1)}% de complétion.`,
+                              `${item.evidenceCount} form starts observed, with ${formatProductNumber(item.value, locale, 1, 1)}% completion.`
                             )
                           : tr(
-                              `${item.value.toFixed(1)}% des visites viennent de la même catégorie de source sur ${item.evidenceCount} vues.`,
-                              `${item.value.toFixed(1)}% of visits come from the same source category across ${item.evidenceCount} views.`
+                              `${formatProductNumber(item.value, locale, 1, 1)}% des visites viennent de la même catégorie de source sur ${item.evidenceCount} vues.`,
+                              `${formatProductNumber(item.value, locale, 1, 1)}% of visits come from the same source category across ${item.evidenceCount} views.`
                             )}</p>
                       <button className="text-link growth-action-button" type="button" disabled={actionBusy} onClick={() => void actOnOpportunity(item)}>
                         {actionBusy ? tr("Préparation…", "Preparing…") : tr("Agir et mesurer", "Act and measure")} →

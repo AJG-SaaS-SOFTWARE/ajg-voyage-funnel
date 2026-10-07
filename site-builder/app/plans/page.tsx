@@ -20,6 +20,7 @@ import {
 } from "../../lib/subscription";
 import { getMySites } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
+import { formatProductNumber } from "../../lib/product-format";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 import { trackProductEvent } from "../../lib/product-analytics";
 
@@ -255,7 +256,7 @@ export default function PlansPage() {
                 <small>{tr("Médias et documents", "Media and documents")}</small>
               </div>
             </div>
-            <h3>{(storage.usedBytes / 1024 / 1024).toFixed(storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} MB</h3>
+            <h3>{formatProductNumber(storage.usedBytes / 1024 / 1024, locale, storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1, storage.usedBytes > 10 * 1024 * 1024 ? 0 : 1)} MB</h3>
             <p>{tr("sur", "of")} {storage.limitMb} MB {tr("disponibles", "available")}</p>
             <div
               className="account-meter"

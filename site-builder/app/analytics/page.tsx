@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
+import { formatProductNumber } from "../../lib/product-format";
 import { getMySites, type RemoteSite } from "../../lib/supabase-site-repository";
 import { getMyBetaAccess, getMySiteEntitlements } from "../../lib/subscription";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
@@ -43,11 +44,13 @@ const ctaLabel = (label: string, tr: (fr: string, en: string) => string) => {
 function DeltaBadge({
   value,
   unit = "%",
-  tr
+  tr,
+  locale
 }: {
   value: number | null;
   unit?: "%" | "pt";
   tr: (fr: string, en: string) => string;
+  locale: "fr" | "en";
 }) {
   if (value === null) {
     return <span className="analytics-delta neutral">{tr("Nouveau", "New")}</span>;
@@ -56,7 +59,7 @@ function DeltaBadge({
   const negative = value < 0;
   return (
     <span className={"analytics-delta " + (positive ? "up" : negative ? "down" : "neutral")}>
-      {positive ? "+" : ""}{value.toFixed(1)}{unit === "%" ? "%" : " pt"}
+      {positive ? "+" : ""}{formatProductNumber(value, locale, 1, 1)}{unit === "%" ? "%" : " pt"}
     </span>
   );
 }
@@ -67,7 +70,7 @@ function pageLabel(path: string, tr: (fr: string, en: string) => string) {
 }
 
 export default function AnalyticsPage() {
-  const { tr } = useProductLocale();
+  const { locale, tr } = useProductLocale();
   const [sites, setSites] = useState<RemoteSite[]>([]);
   const [siteId, setSiteId] = useState("");
   const [rows, setRows] = useState<SiteAnalyticsRow[]>([]);
@@ -193,23 +196,23 @@ export default function AnalyticsPage() {
         <>
           <section className="analytics-metrics" aria-label={tr("Indicateurs principaux", "Key metrics")}>
             <article>
-              <div><small>{tr("Visites", "Views")}</small><DeltaBadge value={comparison.deltas.views} tr={tr} /></div>
+              <div><small>{tr("Visites", "Views")}</small><DeltaBadge value={comparison.deltas.views} tr={tr} locale={locale} /></div>
               <strong>{summary.views}</strong>
               <span>{tr("pages vues", "page views")}</span>
             </article>
             <article>
-              <div><small>{tr("Actions", "Actions")}</small><DeltaBadge value={comparison.deltas.ctaClicks} tr={tr} /></div>
+              <div><small>{tr("Actions", "Actions")}</small><DeltaBadge value={comparison.deltas.ctaClicks} tr={tr} locale={locale} /></div>
               <strong>{summary.ctaClicks}</strong>
               <span>{tr("clics sur vos CTA", "CTA clicks")}</span>
             </article>
             <article>
-              <div><small>{tr("Contacts", "Contacts")}</small><DeltaBadge value={comparison.deltas.formSubmits} tr={tr} /></div>
+              <div><small>{tr("Contacts", "Contacts")}</small><DeltaBadge value={comparison.deltas.formSubmits} tr={tr} locale={locale} /></div>
               <strong>{summary.formSubmits}</strong>
               <span>{tr("formulaires envoyés", "forms submitted")}</span>
             </article>
             <article>
-              <div><small>{tr("Taux d’action", "Action rate")}</small><DeltaBadge value={comparison.deltas.actionRatePoints} unit="pt" tr={tr} /></div>
-              <strong>{summary.actionRate.toFixed(1)}%</strong>
+              <div><small>{tr("Taux d’action", "Action rate")}</small><DeltaBadge value={comparison.deltas.actionRatePoints} unit="pt" tr={tr} locale={locale} /></div>
+              <strong>{formatProductNumber(summary.actionRate, locale, 1, 1)}%</strong>
               <span>{tr("actions / visites", "actions / views")}</span>
             </article>
           </section>
@@ -271,7 +274,7 @@ export default function AnalyticsPage() {
                   </div>
                   {summary.formStarts > 0 ? (
                     <p className="analytics-form-rate">
-                      {tr("Formulaire complété :", "Form completion:")} <b>{summary.contactCompletionRate?.toFixed(1)}%</b>
+                      {tr("Formulaire complété :", "Form completion:")} <b>{summary.contactCompletionRate === null ? "—" : formatProductNumber(summary.contactCompletionRate, locale, 1, 1)}%</b>
                       <span>{summary.formSubmits}/{summary.formStarts}</span>
                     </p>
                   ) : null}
@@ -298,7 +301,7 @@ export default function AnalyticsPage() {
                       <b>{pageLabel(page.pagePath, tr)}</b>
                       <span>{page.views}</span>
                       <span>{page.ctaClicks + page.formSubmits}</span>
-                      <strong>{page.actionRate.toFixed(1)}%</strong>
+                      <strong>{formatProductNumber(page.actionRate, locale, 1, 1)}%</strong>
                     </div>
                   ))}
                 </div>
@@ -337,16 +340,16 @@ export default function AnalyticsPage() {
                         <>
                           <h3>{tr("Le formulaire perd une partie des visiteurs", "The form loses some visitors")}</h3>
                           <p>{tr(
-                            `Seulement ${item.value.toFixed(1)}% des formulaires commencés sont envoyés. Simplifiez le parcours ou clarifiez ce qui se passe après l’envoi.`,
-                            `Only ${item.value.toFixed(1)}% of started forms are submitted. Simplify the journey or clarify what happens after submission.`
+                            `Seulement ${formatProductNumber(item.value, locale, 1, 1)}% des formulaires commencés sont envoyés. Simplifiez le parcours ou clarifiez ce qui se passe après l’envoi.`,
+                            `Only ${formatProductNumber(item.value, locale, 1, 1)}% of started forms are submitted. Simplify the journey or clarify what happens after submission.`
                           )}</p>
                         </>
                       ) : (
                         <>
                           <h3>{tr("Le trafic dépend fortement d’une seule source", "Traffic relies heavily on one source")}</h3>
                           <p>{tr(
-                            `${item.value.toFixed(1)}% des visites viennent de la même catégorie de source. Diversifiez les points d’entrée et les liens diffusés.`,
-                            `${item.value.toFixed(1)}% of visits come from the same source category. Diversify entry points and shared links.`
+                            `${formatProductNumber(item.value, locale, 1, 1)}% des visites viennent de la même catégorie de source. Diversifiez les points d’entrée et les liens diffusés.`,
+                            `${formatProductNumber(item.value, locale, 1, 1)}% of visits come from the same source category. Diversify entry points and shared links.`
                           )}</p>
                         </>
                       )}
