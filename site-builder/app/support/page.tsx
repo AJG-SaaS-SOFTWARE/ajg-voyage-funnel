@@ -455,7 +455,7 @@ export default function SupportPage() {
               <ul>
                 {payload.tickets.map((ticket) => (
                   <li key={ticket.id}>
-                    <strong>{ticket.subject}</strong> · {ticket.status} · {new Date(ticket.created_at).toLocaleDateString()}
+                    <strong>{ticket.subject}</strong> · {ticket.status} · {new Date(ticket.created_at).toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR")}
                     <br />
                     <span>{ticket.message}</span>
                     {ticket.client_action ? <><br /><b>{tr("Action proposée :", "Suggested action:")}</b> {ticket.client_action}</> : null}
