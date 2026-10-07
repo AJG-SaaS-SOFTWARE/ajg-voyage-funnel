@@ -45,6 +45,50 @@ async function getPublicRoute(path) {
   return response;
 }
 
+async function getCanonicalPage(path) {
+  const response = await getPublicRoute(path);
+  if (response.status === 200) return response;
+
+  const canonicalUrl = new URL(path, "https://eltara.ajgsolutionsgroup.com");
+  const canonical = await fetch(canonicalUrl, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(10000)
+  });
+  if (canonical.status !== 200) {
+    const body = await canonical.text().catch(() => "");
+    throw new Error(
+      `${path}: canonical ELTARA page expected 200, got ${canonical.status}\n${body.slice(0, 1200)}`
+    );
+  }
+  return canonical;
+}
+
+async function verifyLocalizedPage(path, {
+  locale,
+  htmlLang,
+  title,
+  legalHref
+}) {
+  const response = await getCanonicalPage(path);
+  const contentLanguage = (response.headers.get("content-language") || "").toLowerCase();
+  if (contentLanguage !== locale) {
+    throw new Error(
+      `${path}: expected Content-Language ${locale}, got ${contentLanguage || "missing"}`
+    );
+  }
+
+  const body = await response.text();
+  if (!body.includes(`<html lang="${htmlLang}"`)) {
+    throw new Error(`${path}: expected html lang ${htmlLang}`);
+  }
+  if (!body.includes(title)) {
+    throw new Error(`${path}: expected localized title ${title}`);
+  }
+  if (!body.includes(`href="${legalHref}"`)) {
+    throw new Error(`${path}: expected localized legal link ${legalHref}`);
+  }
+}
+
 const health = await get("/api/health", [200]);
 const payload = await health.json();
 if (!payload?.ok || payload?.database !== "ok") {
@@ -64,6 +108,18 @@ if (expectedSha) {
 await getPublicRoute("/login");
 await getPublicRoute("/plans");
 await getPublicRoute("/billing");
+await verifyLocalizedPage("/tarifs", {
+  locale: "fr",
+  htmlLang: "fr",
+  title: "Créez. Gérez. Faites progresser.",
+  legalHref: "/mentions-legales"
+});
+await verifyLocalizedPage("/pricing", {
+  locale: "en",
+  htmlLang: "en",
+  title: "Build. Run. Grow.",
+  legalHref: "/legal"
+});
 await get("/api/ci-route-that-does-not-exist", [404]);
 await get("/api/export/site?siteId=ci&format=archive", [401]);
 await get("/api/admin/release-readiness", [401]);
