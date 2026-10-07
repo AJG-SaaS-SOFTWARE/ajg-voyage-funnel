@@ -20,6 +20,24 @@ const base = {
   provider: "stripe", hasBillingAccount: true
 };
 
+test("every customer billing state has an explicit French and English label", () => {
+  const expected = {
+    free: ["Gratuit", "Free"],
+    trial: ["Essai", "Trial"],
+    active: ["Actif", "Active"],
+    grace: ["Paiement à régulariser", "Payment needs attention"],
+    restricted: ["Accès restreint", "Access restricted"],
+    public_suspended: ["Site public suspendu", "Public website suspended"],
+    retention: ["Fenêtre de récupération", "Recovery window"],
+    closed: ["Accès clôturé", "Access closed"]
+  };
+
+  for (const [state, [fr, en]] of Object.entries(expected)) {
+    assert.equal(billingStateLabel(state, "fr"), fr);
+    assert.equal(billingStateLabel(state, "en"), en);
+  }
+});
+
 test("active billing state is readable and keeps management optional", () => {
   assert.equal(billingStateLabel("active", "fr"), "Actif");
   const steps = billingGuide(base);
