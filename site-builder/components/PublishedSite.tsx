@@ -107,7 +107,7 @@ export default function PublishedSite({
         </div> : null}
         {(config.design.heroImage || config.design.audio) ? <div className="public-credits">
           {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">Image : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}
-          {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">Son : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}
+          {config.design.audio ? <a href={config.design.audio.sourceUrl} target="_blank" rel="noopener noreferrer">{english ? "Sound" : "Son"} : {config.design.audio.title} — {config.design.audio.creator} ↗</a> : null}
         </div> : null}
         {legalReady ? <nav className="public-legal-links" aria-label={english ? "Legal information" : "Informations légales"}>
           <Link href={`${base}/mentions-legales` || "/mentions-legales"}>{english ? "Legal notice" : "Mentions légales"}</Link>
