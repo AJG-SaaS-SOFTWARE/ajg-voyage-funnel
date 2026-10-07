@@ -85,3 +85,30 @@ test("missing beta journal degrades reporting without exposing or inventing test
   assert.match(source, /checkedAt: null/);
   assert.match(source, /dernier état agrégé du suivi bêta ELTARA est indisponible/);
 });
+
+
+test("Builder report exposes aggregate beta runtime readiness without deployment identity", () => {
+  assert.match(source, /auditOpenAiRuntimeCached\(\)/);
+  assert.match(source, /from\("builder_e2e_runs"\)/);
+  assert.match(source, /releaseE2ERunDecision/);
+  assert.match(source, /betaRuntime = \{/);
+  assert.match(source, /openAi: openAiRuntime\.status/);
+  assert.match(source, /e2eMirror: e2eMirrorState/);
+  assert.match(source, /validatedLocales/);
+  assert.match(source, /requiredLocales: 2/);
+  assert.match(source, /betaRuntime,/);
+  assert.doesNotMatch(source, /betaRuntime = \{[^}]*deploymentSha/s);
+});
+
+test("Builder report escalates invalid AI runtime and exhausted mirrored E2E", () => {
+  assert.match(source, /betaRuntime\.openAi === "blocker"/);
+  assert.match(source, /betaRuntime\.e2eMirror === "blocked"/);
+  assert.match(source, /fournisseur IA refuse la configuration runtime ELTARA/);
+  assert.match(source, /miroir E2E FR\/EN du déploiement courant a épuisé son budget/);
+});
+
+test("Builder report treats pending or unavailable mirrored E2E as warning, not automatic critical", () => {
+  assert.match(source, /\["pending", "unavailable"\]\.includes\(betaRuntime\.e2eMirror\)/);
+  assert.match(source, /Validation E2E miroir en attente/);
+  assert.match(source, /état E2E miroir du déploiement courant est indisponible/);
+});
