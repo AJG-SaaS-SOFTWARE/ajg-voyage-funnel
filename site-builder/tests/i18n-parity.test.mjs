@@ -140,6 +140,19 @@ test("Builder quality and publish summary labels are localized", () => {
   assert.doesNotMatch(builder, /: "Navigateur local"}/);
 });
 
+test("guided Builder and compliance labels are localized", () => {
+  const builder = read("app/builder/page.tsx");
+  const compliance = read("components/ComplianceEditor.tsx");
+
+  assert.match(
+    builder,
+    /tr\("Vous pourrez modifier chaque phrase ensuite\.", "You can edit every sentence afterwards\."\)/
+  );
+  assert.doesNotMatch(builder, /\n\s*Vous pourrez modifier chaque phrase ensuite\./);
+  assert.match(compliance, /tr\("Profil MWR Life", "MWR Life profile"\)/);
+  assert.doesNotMatch(compliance, /<b>Profil MWR Life<\/b>/);
+});
+
 test("English Builder core has no known French-only residuals in customer paths", () => {
   const builder = read("app/builder/page.tsx");
   const privacyApi = read("app/api/privacy/erasure/request/route.ts");
