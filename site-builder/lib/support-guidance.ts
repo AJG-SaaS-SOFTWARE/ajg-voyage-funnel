@@ -255,3 +255,58 @@ export function supportGuidanceForDiagnosis(checks: SupportCheck[], locale: Loca
     .filter((item): item is SupportGuidance => Boolean(item))
     .slice(0, 4);
 }
+
+
+export type SupportCheckDisplay = {
+  title: string;
+  detail: string;
+  action: string | null;
+};
+
+export function supportCheckDisplay(
+  check: SupportCheck,
+  locale: Locale
+): SupportCheckDisplay {
+  if (locale === "fr") {
+    return {
+      title: check.label,
+      detail: check.detail,
+      action: check.clientAction || null
+    };
+  }
+
+  const entry = copy[check.key]?.en;
+  if (!entry) {
+    return {
+      title: "Technical check",
+      detail:
+        check.status === "healthy"
+          ? "No issue detected by this check."
+          : check.status === "action"
+            ? "An action is recommended for this check."
+            : "A technical incident was detected by this check.",
+      action: null
+    };
+  }
+
+  return {
+    title: entry.title,
+    detail:
+      check.status === "healthy"
+        ? "No issue detected by this check."
+        : entry.why,
+    action: check.status === "healthy" ? null : entry.action
+  };
+}
+
+const ticketStatusCopy: Record<string, { fr: string; en: string }> = {
+  diagnosed: { fr: "Diagnostic effectué", en: "Diagnosed" },
+  waiting_customer: { fr: "Action requise", en: "Action required" },
+  in_progress: { fr: "En cours", en: "In progress" },
+  resolved: { fr: "Résolu", en: "Resolved" },
+  closed: { fr: "Fermé", en: "Closed" }
+};
+
+export function supportTicketStatusLabel(status: string, locale: Locale) {
+  return ticketStatusCopy[status]?.[locale] || (locale === "en" ? "In review" : "En cours de traitement");
+}
