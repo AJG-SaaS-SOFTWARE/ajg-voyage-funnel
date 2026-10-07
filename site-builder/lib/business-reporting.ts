@@ -142,6 +142,40 @@ export async function buildBuilderBusinessReport() {
     (subscriptions || []) as BuilderSubscriptionRow[]
   );
 
+  const { data: latestBetaRun, error: betaRunError } = await service
+    .from("beta_operations_runs")
+    .select(
+      "completed_at,status,active_tester_count,follow_up_candidates,awaiting_resume,unresponsive_after_followup,completed_missions,repair_failures"
+    )
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const betaOperations = betaRunError || !latestBetaRun
+    ? {
+        status: "unavailable" as const,
+        activeTesterCount: 0,
+        followUpCandidates: 0,
+        awaitingResume: 0,
+        unresponsiveAfterFollowUp: 0,
+        completedMissions: 0,
+        checkedAt: null
+      }
+    : {
+        status:
+          latestBetaRun.status === "failed"
+            ? ("failed" as const)
+            : latestBetaRun.status === "attention"
+              ? ("attention" as const)
+              : ("healthy" as const),
+        activeTesterCount: latestBetaRun.active_tester_count || 0,
+        followUpCandidates: latestBetaRun.follow_up_candidates || 0,
+        awaitingResume: latestBetaRun.awaiting_resume || 0,
+        unresponsiveAfterFollowUp: latestBetaRun.unresponsive_after_followup || 0,
+        completedMissions: latestBetaRun.completed_missions || 0,
+        checkedAt: latestBetaRun.completed_at || null
+      };
+
   const [
     successful30d,
     failed30d,
@@ -202,11 +236,15 @@ export async function buildBuilderBusinessReport() {
           : "closed";
 
   const status =
-    failedProviderEvents > 0 || commercialLaunchState === "blocked"
+    failedProviderEvents > 0 ||
+    commercialLaunchState === "blocked" ||
+    betaOperations.status === "failed"
       ? "critical"
       : recurring.pastDueCustomers > 0 ||
           failed30d > 0 ||
-          recurring.unmappedActivePrices > 0
+          recurring.unmappedActivePrices > 0 ||
+          betaOperations.status === "attention" ||
+          betaOperations.status === "unavailable"
         ? "warning"
         : "healthy";
 
@@ -215,9 +253,15 @@ export async function buildBuilderBusinessReport() {
       ? "Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme."
       : failedProviderEvents > 0
         ? `${failedProviderEvents} événement(s) Stripe Builder nécessitent une reprise automatique.`
-        : recurring.unmappedActivePrices > 0
-          ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
-          : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
+        : betaOperations.status === "failed"
+          ? "L’agent de suivi bêta ELTARA est en échec et nécessite une intervention technique."
+          : betaOperations.status === "attention"
+            ? `${betaOperations.followUpCandidates} relance(s) Beta Tester à préparer · ${betaOperations.unresponsiveAfterFollowUp} sans reprise après relance.`
+            : betaOperations.status === "unavailable"
+              ? "Le dernier état agrégé du suivi bêta ELTARA est indisponible."
+              : recurring.unmappedActivePrices > 0
+                ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
+                : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
 
   return {
     status,
@@ -250,6 +294,7 @@ export async function buildBuilderBusinessReport() {
       stripeConfigured: commercialConfig.stripe.ok,
       stripeRuntimeReady
     },
+    betaOperations,
     detail,
     checkedAt: new Date().toISOString()
   } as const;
