@@ -25,6 +25,10 @@ const runner = fs.readFileSync(
   new URL("../lib/release-e2e-runner.ts", import.meta.url),
   "utf8"
 );
+const auth = fs.readFileSync(
+  new URL("../lib/release-e2e-auth.ts", import.meta.url),
+  "utf8"
+);
 const fullRoute = fs.readFileSync(
   new URL("../app/api/cron/release-e2e/route.ts", import.meta.url),
   "utf8"
@@ -70,12 +74,17 @@ test("release E2E policy enforces cooldown and a hard retry budget", () => {
   );
 });
 
-test("both release E2E cron routes are secret-protected and use the shared runner", () => {
+test("both release E2E routes use shared dual authorization without weakening CRON_SECRET", () => {
+  assert.match(auth, /process\.env\.CRON_SECRET/);
+  assert.match(auth, /process\.env\.AJG_RELEASE_E2E_TOKEN_HASH/);
+  assert.match(auth, /createHash\("sha256"\)/);
+  assert.match(auth, /timingSafeEqual/);
+  assert.match(auth, /authorization\.startsWith\("Bearer "\)/);
+
   for (const route of [fullRoute, structuralRoute]) {
-    assert.match(route, /process\.env\.CRON_SECRET/);
-    assert.match(route, /authorization ===/);
-    assert.match(route, /Bearer/);
+    assert.match(route, /releaseE2EAuthorized\(request\)/);
     assert.match(route, /runReleaseE2EMirror\(appOrigin/);
+    assert.doesNotMatch(route, /process\.env\.CRON_SECRET/);
   }
   assert.match(fullRoute, /includeAi: true/);
   assert.match(fullRoute, /label: "full"/);
