@@ -418,6 +418,52 @@ export async function GET(request: Request) {
       });
     }
 
+    if (present(deploymentSha)) {
+      const { data: visualReviews, error: visualReviewError } = await service
+        .from("release_visual_reviews")
+        .select("locale,viewport,approved,reviewed_at")
+        .eq("deployment_sha", deploymentSha!)
+        .eq("surface_set_version", "customer-core-v1");
+
+      const approvedKeys = new Set(
+        (visualReviews || [])
+          .filter((item) => item.approved === true)
+          .map((item) => `${item.locale}:${item.viewport}`)
+      );
+      const requiredVisualReviews = [
+        "fr:desktop",
+        "fr:mobile",
+        "en:desktop",
+        "en:mobile"
+      ];
+      const missingVisualReviews = requiredVisualReviews.filter(
+        (key) => !approvedKeys.has(key)
+      );
+
+      checks.push({
+        key: "visual-review-fr-en",
+        label: "Revue visuelle · FR/EN desktop + mobile",
+        status:
+          !visualReviewError && missingVisualReviews.length === 0
+            ? "pass"
+            : "warn",
+        scope: "commercial",
+        detail: visualReviewError
+          ? "Impossible de lire le journal de revue visuelle."
+          : missingVisualReviews.length === 0
+            ? `Revue visuelle complète pour le SHA ${deploymentSha?.slice(0, 12)}…`
+            : `Revue visuelle incomplète pour le SHA courant : ${missingVisualReviews.join(", ")}.`
+      });
+    } else {
+      checks.push({
+        key: "visual-review-fr-en",
+        label: "Revue visuelle · FR/EN desktop + mobile",
+        status: "warn",
+        scope: "commercial",
+        detail: "Impossible de rattacher la revue visuelle à un déploiement sans SHA courant."
+      });
+    }
+
     const { data: managedDomain, error: managedDomainError } = await service
       .from("domains")
       .select("hostname")

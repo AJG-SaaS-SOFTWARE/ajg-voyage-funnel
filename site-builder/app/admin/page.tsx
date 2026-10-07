@@ -14,6 +14,7 @@ import {
   adminRunStorageBackup,
   adminSetFeedbackStatus,
   adminSetPlan,
+  adminSetVisualReview,
   adminSyncManagedDomain,
   getAdminBetaCohort,
   getAdminBetaMetrics,
@@ -23,6 +24,7 @@ import {
   getAdminMetrics,
   getAdminSites,
   getAdminStorageBackupStatus,
+  getAdminVisualReview,
   getReleaseReadiness,
   isCurrentUserAdmin,
   type AdminBetaCohort,
@@ -34,6 +36,7 @@ import {
   type AdminMetrics,
   type AdminSiteRow,
   type AdminStorageBackupStatus,
+  type AdminVisualReviewStatus,
   type BuilderE2EResult,
   type ReleaseReadiness,
   type ReleaseReadinessCheck
@@ -141,6 +144,8 @@ export default function AdminPage() {
   const [builderE2EResult, setBuilderE2EResult] = useState<BuilderE2EResult | null>(null);
   const [builderE2EMirrorResults, setBuilderE2EMirrorResults] = useState<BuilderE2EResult[] | null>(null);
   const [builderE2EError, setBuilderE2EError] = useState("");
+  const [visualReview, setVisualReview] = useState<AdminVisualReviewStatus | null>(null);
+  const [visualReviewBusy, setVisualReviewBusy] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
   const [message, setMessage] = useState("");
 
@@ -159,13 +164,14 @@ export default function AdminPage() {
     setMetrics(nextMetrics);
     setFeedback(nextFeedback);
 
-    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextBetaAgentStatus, nextManagedDomains, nextBackupStatus] = await Promise.all([
+    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextBetaAgentStatus, nextManagedDomains, nextBackupStatus, nextVisualReview] = await Promise.all([
       getReleaseReadiness().catch(() => null),
       getAdminBetaMetrics().catch(() => null),
       getAdminBetaCohort().catch(() => null),
       getAdminBetaOperationsStatus().catch(() => null),
       getAdminManagedDomains().catch(() => []),
-      getAdminStorageBackupStatus().catch(() => null)
+      getAdminStorageBackupStatus().catch(() => null),
+      getAdminVisualReview().catch(() => null)
     ]);
     setReadiness(nextReadiness);
     setBetaMetrics(nextBetaMetrics);
@@ -173,6 +179,7 @@ export default function AdminPage() {
     setBetaAgentStatus(nextBetaAgentStatus);
     setManagedDomains(nextManagedDomains);
     setBackupStatus(nextBackupStatus);
+    setVisualReview(nextVisualReview);
 
     setState("ready");
   };
@@ -498,6 +505,34 @@ export default function AdminPage() {
       setMessage(error instanceof Error ? error.message : "Exécution de l’agent bêta impossible.");
     } finally {
       setBetaAgentRunning(false);
+    }
+  };
+
+  const saveVisualReview = async (
+    locale: "fr" | "en",
+    viewport: "desktop" | "mobile",
+    approved: boolean
+  ) => {
+    const key = `${locale}:${viewport}`;
+    setMessage("");
+    setVisualReviewBusy(key);
+    try {
+      await adminSetVisualReview(locale, viewport, approved);
+      const [nextVisualReview, nextReadiness] = await Promise.all([
+        getAdminVisualReview(),
+        getReleaseReadiness()
+      ]);
+      setVisualReview(nextVisualReview);
+      setReadiness(nextReadiness);
+      setMessage(
+        approved
+          ? `Revue visuelle ${locale.toUpperCase()} · ${viewport} enregistrée pour le SHA courant.`
+          : `Validation visuelle ${locale.toUpperCase()} · ${viewport} retirée.`
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Revue visuelle impossible.");
+    } finally {
+      setVisualReviewBusy(null);
     }
   };
 
@@ -1704,6 +1739,66 @@ export default function AdminPage() {
               ))}
             </div>
           ) : null}
+        </section>
+      ) : null}
+
+      {state === "ready" ? (
+        <section className="panel admin-readiness">
+          <div className="admin-readiness-heading">
+            <div>
+              <p className="eyebrow">Parité visuelle</p>
+              <h2>Revue FR/EN · desktop + mobile</h2>
+              <p>
+                Après inspection des surfaces client principales — accueil, Builder, offre,
+                facturation, domaines, données, Growth, Analytics, Support et messages —
+                enregistrez le résultat pour le SHA actuellement déployé. Un nouveau déploiement
+                rend automatiquement ces validations obsolètes.
+              </p>
+            </div>
+            <div className="readiness-summary">
+              <span className={visualReview?.complete ? "pass" : "warn"}>
+                {visualReview?.complete ? "4/4 validées" : `${visualReview?.reviews.filter((item) => item.approved).length || 0}/4 validées`}
+              </span>
+            </div>
+          </div>
+          <div className="beta-gate-grid">
+            {(["fr", "en"] as const).flatMap((locale) =>
+              (["desktop", "mobile"] as const).map((viewport) => {
+                const key = `${locale}:${viewport}`;
+                const review = visualReview?.reviews.find(
+                  (item) => item.locale === locale && item.viewport === viewport
+                );
+                const approved = review?.approved === true;
+                return (
+                  <article className={approved ? "pass" : "warn"} key={key}>
+                    <b>{approved ? "✓" : "○"} {locale.toUpperCase()} · {viewport}</b>
+                    <span>
+                      {approved && review
+                        ? `Validé le ${new Date(review.reviewed_at).toLocaleString("fr-FR")}`
+                        : "À contrôler sur le SHA courant."}
+                    </span>
+                    <button
+                      type="button"
+                      className="button secondary readiness-action"
+                      disabled={visualReviewBusy !== null || !visualReview}
+                      onClick={() => void saveVisualReview(locale, viewport, !approved)}
+                    >
+                      {visualReviewBusy === key
+                        ? "Enregistrement…"
+                        : approved
+                          ? "Retirer la validation"
+                          : "Marquer validé"}
+                    </button>
+                  </article>
+                );
+              })
+            )}
+          </div>
+          <p className="admin-readiness-meta">
+            SHA : <code>{visualReview?.deploymentSha?.slice(0, 12) || "indisponible"}</code>
+            {" · "}jeu de surfaces : <code>{visualReview?.surfaceSetVersion || "customer-core-v1"}</code>.
+            Ce contrôle atteste une revue humaine ; il ne remplace pas les E2E automatisés.
+          </p>
         </section>
       ) : null}
 
