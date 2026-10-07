@@ -2303,7 +2303,7 @@ export default function BuilderPage() {
                     {qualityChecks.map((check) => <button type="button" key={check.label} className={`quality-check ${check.status}`} onClick={() => { setStep(check.step); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                       <span>{check.status === "pass" ? "✓" : "!"}</span>
                       <p><b>{check.label}</b><small>{check.detail}</small></p>
-                      <i>{check.status === "pass" ? "Voir →" : "Corriger →"}</i>
+                      <i>{check.status === "pass" ? tr("Voir →", "View →") : tr("Corriger →", "Fix →")}</i>
                     </button>)}
                   </div>
                   <p className="quality-note">{tr("Les recommandations n’empêchent pas la publication. Les erreurs indispensables restent bloquantes au-dessus.", "Recommendations do not block publishing. Required errors above remain blocking.")}</p>
@@ -2336,8 +2336,8 @@ export default function BuilderPage() {
 
                 <div className="publish-summary premium-publish-summary">
                   <div><span>{tr("Lien du site après publication", "Website link after publishing")}</span><strong>{betaPublicUrl}</strong></div>
-                  <div><span>{tr("Langue", "Language")}</span><strong>{config.language === "both" ? "Français (bilingue à venir)" : config.language.toUpperCase()}</strong></div>
-                  <div><span>{tr("Stockage", "Storage")}</span><strong>{remoteMode ? "Supabase Cloud" : "Navigateur local"}</strong></div>
+                  <div><span>{tr("Langue", "Language")}</span><strong>{config.language === "both" ? tr("Français (bilingue à venir)", "French (bilingual coming soon)") : config.language.toUpperCase()}</strong></div>
+                  <div><span>{tr("Stockage", "Storage")}</span><strong>{remoteMode ? "Supabase Cloud" : tr("Navigateur local", "Local browser")}</strong></div>
                   <div><span>{tr("État", "Status")}</span><strong>{published ? tr("Publié", "Published") : tr("Prêt à publier", "Ready to publish")}</strong></div>
                 </div>
 
