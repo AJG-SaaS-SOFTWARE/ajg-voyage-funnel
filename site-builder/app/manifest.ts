@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "ELTARA — by AJG Horizon",
     short_name: "ELTARA",
-    description: "Élevez votre présence digitale avec un espace guidé pour créer, publier et faire évoluer votre site professionnel.",
+    description: "ELTARA · BUILD · RUN · GROW · by AJG Horizon",
     start_url: "/",
     display: "standalone",
     background_color: "#F6F6F3",
