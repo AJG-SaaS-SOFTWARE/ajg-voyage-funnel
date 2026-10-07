@@ -1883,8 +1883,8 @@ export default function BuilderPage() {
 
                   <div className="guided-writing-body">
                     <p className="guided-writing-intro">
-                      {tr("Pas besoin de savoir rédiger un site. Répondez comme vous parleriez à quelqu’un.", "You do not need to know how to write a website. Answer as you would speak to someone.")}
-                      Vous pourrez modifier chaque phrase ensuite.
+                      {tr("Pas besoin de savoir rédiger un site. Répondez comme vous parleriez à quelqu’un.", "You do not need to know how to write a website. Answer as you would speak to someone.")}{" "}
+                      {tr("Vous pourrez modifier chaque phrase ensuite.", "You can edit every sentence afterwards.")}
                     </p>
 
                     <label className="guided-question">
