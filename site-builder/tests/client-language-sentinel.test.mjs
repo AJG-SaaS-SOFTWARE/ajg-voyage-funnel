@@ -10,6 +10,10 @@ const excludedPrefixes = [
   path.normalize("app/api")
 ];
 
+const bilingualEmergencyFallbacks = new Set([
+  path.normalize("app/site/[slug]/error.tsx")
+]);
+
 const highRiskFrench =
   /\b(?:Accueil|Adresse|Aucun|Aucune|Annuler|Brouillon|Chargement|Connexion|Continuer|Corriger|Créer|Données|Domaine|Domaines|Enregistrer|Envoyer|Erreur|Facturation|Fermer|Français|Indisponible|Modifier|Navigateur|Prêt|Publié|Réessayer|Retour|Sauvegarder|Supprimer|Voir)\b/i;
 
@@ -74,10 +78,19 @@ test("customer JSX has no high-risk raw French literals outside localization con
 
     const visit = (node) => {
       const literal = displayedLiteral(node);
+      const normalizedFile = path.normalize(file);
+      const languageSelectorLabel =
+        (literal === "Français" || literal === "English") &&
+        node.parent &&
+        ts.isJsxElement(node.parent) &&
+        node.parent.openingElement.tagName.getText() === "option";
+
       if (
         literal &&
         highRiskFrench.test(literal) &&
-        !insideLocalizedContext(node)
+        !insideLocalizedContext(node) &&
+        !languageSelectorLabel &&
+        !bilingualEmergencyFallbacks.has(normalizedFile)
       ) {
         const { line } = ast.getLineAndCharacterOfPosition(node.getStart(ast));
         findings.push(`${file}:${line + 1}: ${literal.trim().slice(0, 120)}`);
@@ -94,4 +107,13 @@ test("customer JSX has no high-risk raw French literals outside localization con
     "Raw French customer-facing literals detected outside tr(...) or an explicit locale branch:\n" +
       findings.join("\n")
   );
+});
+
+
+test("public-site emergency error fallback is deliberately bilingual when site locale is unavailable", () => {
+  const errorPage = fs.readFileSync("app/site/[slug]/error.tsx", "utf8");
+  assert.match(errorPage, /Site momentanément indisponible · Website temporarily unavailable/);
+  assert.match(errorPage, /Un service technique ne répond pas correctement/);
+  assert.match(errorPage, /This website is temporarily unavailable/);
+  assert.match(errorPage, /Réessayer · Try again/);
 });
