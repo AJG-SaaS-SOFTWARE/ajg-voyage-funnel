@@ -23,6 +23,7 @@ jobs:
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_T1xBMzY6HJCAkUStrmkUgj60
+      VERCEL_TEAM_SLUG: ajg-saas-software
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
       PRODUCTION_ALIAS: ajg-site-builder.vercel.app
       PUBLIC_DOMAIN: eltara.ajgsolutionsgroup.com
@@ -431,7 +432,7 @@ jobs:
           npx --yes vercel@60.1.3 link \
             --yes \
             --token "$VERCEL_TOKEN" \
-            --scope "$VERCEL_ORG_ID" \
+            --scope "$VERCEL_TEAM_SLUG" \
             --project "ajg-site-builder"
 
           node -e '
