@@ -59,7 +59,11 @@ function harness({ rows = [], recent = 0, open = 0, lookupFails = false,
     "../../../../lib/support-health-server": { diagnoseSupportHealth: async () => { stats.diagnoses++; return structuredClone(health); } },
     "../../../../lib/support-reconcile-policy": { supportReconcileDecision() { throw new Error("Unexpected PATCH"); } },
     "../../../../lib/support-events": { recordSupportEvent: async (_service, event) => { stats.events.push(event); if (auditThrows) throw new Error("Synthetic audit crash"); } },
-    "../../../../lib/run-intake-reporting": { reportSupportTicketToRun: async (report) => { stats.reports.push(report); return { ok: true }; } }
+    "../../../../lib/run-intake-reporting": { reportSupportTicketToRun: async (report) => { stats.reports.push(report); return { ok: true }; } },
+    "../../../../lib/server-locale": {
+      requestProductLocale: () => "fr",
+      localize: (locale, fr, en) => locale === "en" ? en : fr
+    }
   };
   const module = { exports: {} };
   new Function("require", "module", "exports", "process", code)(
