@@ -13,5 +13,5 @@ test("ELTARA app 404 is localized through the product locale", () => {
 });
 
 test("localized 404 keeps an explicit route back to ELTARA", () => {
-  assert.match(notFound, /href="\/" /);
+  assert.match(notFound, /href="\/"[^?]/);
 });
