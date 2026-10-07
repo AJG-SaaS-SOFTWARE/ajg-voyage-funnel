@@ -44,6 +44,7 @@ export async function verifyReportingProvider(metadataPath, environment = proces
     const url = new URL("https://api.vercel.com/v1/projects/" +
       encodeURIComponent(environment.VERCEL_PROJECT_ID) + "/env/" + encodeURIComponent(matches[0].id));
     url.searchParams.set("teamId", environment.VERCEL_ORG_ID);
+    url.searchParams.set("decrypt", "true");
     const response = await request(url, {
       headers: { Authorization: "Bearer " + environment.VERCEL_TOKEN },
       signal: AbortSignal.timeout(15000),
