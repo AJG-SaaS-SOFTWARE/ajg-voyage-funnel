@@ -36,6 +36,7 @@ import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import { supportCheckDisplay } from "../../lib/support-guidance";
 import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
+import { preferredPublishedRootDomain } from "../../lib/published-domain";
 import { markGrowthActionPublished } from "../../lib/growth-actions";
 import {
   getCurrentUser,
@@ -1508,10 +1509,10 @@ export default function BuilderPage() {
 
                 <div className="grid two">
                   <Field label={tr("Prénom", "First name")}>
-                    <input spellCheck placeholder="Ex. Julie" value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
+                    <input spellCheck placeholder={tr("Ex. Julie", "e.g. Julie")} value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
                   </Field>
                   <Field label={tr("Nom", "Last name")}>
-                    <input spellCheck placeholder="Ex. Martin" value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
+                    <input spellCheck placeholder={tr("Ex. Martin", "e.g. Martin")} value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
                   </Field>
                 </div>
 
@@ -1531,13 +1532,13 @@ export default function BuilderPage() {
                     <div className="slug-field premium-slug-field">
                       <input
                         value={config.slug}
-                        placeholder="julie-martin"
+                        placeholder={tr("julie-martin", "jane-smith")}
                         onChange={(e) => {
                           setSlugTouched(true);
                           update("slug", slugify(e.target.value));
                         }}
                       />
-                      <span>.voyage…</span>
+                      <span>.{preferredPublishedRootDomain()}</span>
                     </div>
                   </Field>
 
@@ -2004,7 +2005,7 @@ export default function BuilderPage() {
                   <div><b>{tr("Votre présentation", "Your introduction")}</b><p>{tr("Quelques lignes suffisent si elles sonnent juste et restent personnelles.", "A few lines are enough when they feel authentic and personal.")}</p></div>
                 </div>
                 <Field label={tr("Titre de la rubrique", "Section title")} hint={tr("Facultatif. Votre nom est utilisé si ce champ reste vide.", "Optional. Your name is used if this field is left empty.")}>
-                  <input spellCheck maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
+                  <input spellCheck maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder={tr("Ex. Mon histoire", "e.g. My story")} />
                 </Field>
                 <AiTextAssistant
                   field="aboutHeading"
@@ -2143,7 +2144,7 @@ export default function BuilderPage() {
                     autoComplete="url"
                     aria-invalid={bookingLinkStatus === "invalid"}
                     aria-describedby="booking-link-feedback"
-                    placeholder="https://calendly.com/votre-nom/30min"
+                    placeholder={tr("https://calendly.com/votre-nom/30min", "https://calendly.com/your-name/30min")}
                     value={config.bookingUrl}
                     onChange={(e) => update("bookingUrl", e.target.value)}
                   />
@@ -2296,7 +2297,7 @@ export default function BuilderPage() {
 
                 <div className="quality-summary-card">
                   <div className="quality-summary-head">
-                    <div><span className="mini">ELTARA QUALITY CHECK</span><strong>{qualityPassed}/{qualityChecks.length} {tr("contrôles réussis", "checks passed")}</strong></div>
+                    <div><span className="mini">{tr("CONTRÔLE QUALITÉ ELTARA", "ELTARA QUALITY CHECK")}</span><strong>{qualityPassed}/{qualityChecks.length} {tr("contrôles réussis", "checks passed")}</strong></div>
                     <span className={qualityWarnings ? "quality-score warning" : "quality-score done"}>{qualityWarnings ? `${qualityWarnings} ${tr(qualityWarnings > 1 ? "améliorations" : "amélioration", qualityWarnings > 1 ? "improvements" : "improvement")}` : tr("Prêt ✓", "Ready ✓")}</span>
                   </div>
                   <div className="quality-check-list">

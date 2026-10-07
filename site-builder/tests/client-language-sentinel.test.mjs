@@ -76,6 +76,38 @@ function templateStaticText(node) {
   ].join(" ");
 }
 
+function insideAriaHiddenContext(node) {
+  let current = node.parent;
+  while (current) {
+    if (ts.isJsxElement(current)) {
+      const attribute = current.openingElement.attributes.properties.find(
+        (item) =>
+          ts.isJsxAttribute(item) &&
+          item.name.getText() === "aria-hidden"
+      );
+      if (
+        attribute &&
+        (!attribute.initializer ||
+          (ts.isStringLiteral(attribute.initializer) && attribute.initializer.text === "true") ||
+          (ts.isJsxExpression(attribute.initializer) &&
+            attribute.initializer.expression?.kind === ts.SyntaxKind.TrueKeyword))
+      ) {
+        return true;
+      }
+    }
+    if (ts.isJsxSelfClosingElement(current)) {
+      const attribute = current.attributes.properties.find(
+        (item) =>
+          ts.isJsxAttribute(item) &&
+          item.name.getText() === "aria-hidden"
+      );
+      if (attribute) return true;
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
 function displayedLiteral(node) {
   if (ts.isJsxText(node)) return node.getText();
 
@@ -115,7 +147,7 @@ function languageLeakFindings(pattern) {
     const ast = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
 
     const visit = (node) => {
-      const literal = displayedLiteral(node);
+      const literal = insideAriaHiddenContext(node) ? null : displayedLiteral(node);
       const normalizedFile = path.normalize(file);
       const languageSelectorLabel =
         (literal === "Français" || literal === "English") &&
@@ -142,6 +174,32 @@ function languageLeakFindings(pattern) {
   return findings;
 }
 
+const neutralVisibleLiteralPatterns = [
+  /^ELTARA(?: · by AJG Horizon| Beta Tester| · Growth| Support Center)?$/i,
+  /^(?:BUILD|RUN|GROW|GROWTH|RUN \+ GROW|BUILD → RUN → GROW|Growth)$/i,
+  /^(?:QA|AI|MB|pt|pt ·|\/min)$/i,
+  /^(?:Mobile|Architecture|Bug|Email|SIREN|DPO\s*:?)$/i,
+  /^(?:Instagram|Facebook|Cookies|YouTube|Website)$/i,
+  /^(?:Image|Site|Contact)\s*:$/i,
+  /^(?:FR|EN)$/i,
+  /^Health Center$/i,
+  /^ELTARA ·$/,
+  /^by AJG Horizon$/i,
+  /^· hero$/i,
+  /^· CC0$/i,
+  /^Code HEX$/i,
+  /^Logo (?:MWR Life|Travel Advantage) « Independent Distributor »$/,
+  /^https?:\/\//i,
+  /^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/,
+];
+
+function unclassifiedVisibleLiteralFindings() {
+  return languageLeakFindings(/[A-Za-zÀ-ÿŒœÆæ]{2,}/).filter((finding) => {
+    const literal = finding.replace(/^.*?:\d+:\s*/, "");
+    return !neutralVisibleLiteralPatterns.some((pattern) => pattern.test(literal));
+  });
+}
+
 test("customer JSX has no high-risk raw French literals outside localization contexts", () => {
   const findings = languageLeakFindings(highRiskFrench);
   assert.deepEqual(
@@ -158,6 +216,16 @@ test("customer JSX has no accented French literals outside localization contexts
     findings,
     [],
     "Accented French customer-facing literals detected outside tr(...) or an explicit locale branch:\n" +
+      findings.join("\n")
+  );
+});
+
+test("customer-visible literals outside localization are explicitly classified", () => {
+  const findings = unclassifiedVisibleLiteralFindings();
+  assert.deepEqual(
+    findings,
+    [],
+    "Unclassified customer-facing literals detected outside localization contexts:\n" +
       findings.join("\n")
   );
 });
@@ -251,6 +319,25 @@ test("localized expressions inside template literals do not leak their source st
   };
   visit(source);
   assert.equal(literal?.trim(), "");
+});
+
+test("aria-hidden customer text is excluded from the visible-language inventory", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const node = <label aria-hidden="true">Texte caché<input /></label>;',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  let hidden = false;
+  const visit = (node) => {
+    if (ts.isJsxText(node) && /Texte caché/.test(node.getText())) {
+      hidden = insideAriaHiddenContext(node);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(hidden, true);
 });
 
 test("template literals used only for non-visible JSX attributes are ignored", () => {
