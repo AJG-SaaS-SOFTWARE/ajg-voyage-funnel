@@ -9,7 +9,7 @@ export default function PublicSiteError({
   return (
     <main className="not-found" role="alert">
       <p className="eyebrow">Disponibilité du site · Website availability</p>
-      <h1>Site momentanément indisponible</h1>
+      <h1>Site momentanément indisponible · Website temporarily unavailable</h1>
       <p>
         Un service technique ne répond pas correctement. Le site n’a pas été supprimé :
         réessayez dans quelques instants.
