@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deterministicQualityIssues } from "../lib/premium-site-architect.ts";
+import {
+  deterministicQualityIssues,
+  quantitativeEvidenceText
+} from "../lib/premium-site-architect.ts";
 
 function proposal(overrides = {}) {
   const base = {
@@ -353,3 +356,106 @@ test("unsupported model meta copy is blocked unless explicitly grounded in clien
   );
 });
 
+
+
+test("numeric grounding evidence excludes technical identifiers URLs and design metadata", () => {
+  const evidence = quantitativeEvidenceText(
+    {
+      apiKey: "test",
+      mode: "revision",
+      language: "French",
+      affiliationRules: "",
+      instruction: "Améliore la clarté sans inventer de chiffres.",
+      firstName: "Alex",
+      brandName: "Studio",
+      architectBrief: "Une activité créative locale.",
+      revisionRequest: "Rendre le message plus direct.",
+      editorialContext: "Aucune donnée chiffrée fournie.",
+      currentText: "Un accompagnement simple.",
+      existingProposal: {
+        heroTagline: "Création attentive",
+        heroTitle: "Un site clair",
+        heroSubtitle: "Une présence simple et crédible.",
+        aboutHeading: "À propos",
+        aboutText: "Une approche personnalisée.",
+        bookingLabel: "Parler du projet",
+        faq: { title: "Questions", items: [] },
+        benefits: { title: "Bénéfices", items: [] },
+        architecture: {
+          pages: [
+            {
+              id: "page-2026",
+              slug: "offre-90",
+              title: "Accueil",
+              enabled: true
+            }
+          ]
+        },
+        design: {
+          accent: "#123456",
+          contentWidth: "1200"
+        }
+      }
+    },
+    [
+      {
+        id: "asset-2025",
+        name: "Portrait",
+        text: "",
+        notes: "Photo fournie par le client.",
+        sourceUrl: "https://example.com/media/75"
+      }
+    ]
+  );
+
+  assert.doesNotMatch(evidence, /2026|2025|123456|1200|\/75\b|offre-90/);
+});
+
+test("numeric grounding evidence preserves genuine editorial numbers", () => {
+  const evidence = quantitativeEvidenceText(
+    {
+      apiKey: "test",
+      mode: "create",
+      language: "French",
+      affiliationRules: "",
+      instruction: "Créer une proposition fidèle.",
+      firstName: "Alex",
+      brandName: "Studio 54",
+      architectBrief: "Le client propose 3 formules et indique 10 ans d'expérience."
+    },
+    [
+      {
+        id: "asset-999",
+        name: "Offre 2",
+        text: "Pack de 5 séances.",
+        sourceUrl: "https://example.com/404"
+      }
+    ]
+  );
+
+  assert.match(evidence, /54/);
+  assert.match(evidence, /3 formules/);
+  assert.match(evidence, /10 ans/);
+  assert.match(evidence, /Offre 2/);
+  assert.match(evidence, /5 séances/);
+  assert.doesNotMatch(evidence, /999|404/);
+});
+
+test("quantitative checks cover section and page titles as visible copy", () => {
+  const value = proposal({
+    faq: {
+      title: "FAQ 90 %",
+      items: [
+        {
+          question: "Comment préparer la séance ?",
+          answer: "Nous échangeons en amont."
+        }
+      ]
+    }
+  });
+  assert.ok(codes(value).includes("unsupported_quantitative_claim"));
+
+  const pageValue = proposal();
+  pageValue.architecture.pages[0].title = "Accueil 2027";
+  assert.ok(codes(pageValue).includes("unsupported_quantitative_claim"));
+});
