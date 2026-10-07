@@ -33,6 +33,7 @@ import { optimizeBackgroundImage, optimizeImage } from "../../lib/optimize-image
 import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import { legalMissingFields } from "../../lib/site-legal";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
+import { supportCheckDisplay } from "../../lib/support-guidance";
 import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
 import { markGrowthActionPublished } from "../../lib/growth-actions";
@@ -2396,12 +2397,15 @@ export default function BuilderPage() {
                     {postPublishHealth ? (
                       <>
                         <ul className="post-publish-health-checks">
-                          {postPublishHealth.checks.map((check) => (
-                            <li key={check.key} className={check.status}>
-                              <span aria-hidden="true">{check.status === "healthy" ? "✓" : check.status === "incident" ? "×" : "!"}</span>
-                              <div><b>{check.label}</b><small>{check.detail}</small></div>
-                            </li>
-                          ))}
+                          {postPublishHealth.checks.map((check) => {
+                            const display = supportCheckDisplay(check, locale);
+                            return (
+                              <li key={check.key} className={check.status}>
+                                <span aria-hidden="true">{check.status === "healthy" ? "✓" : check.status === "incident" ? "×" : "!"}</span>
+                                <div><b>{display.title}</b><small>{display.detail}</small></div>
+                              </li>
+                            );
+                          })}
                         </ul>
                         <div className="actions">
                           {postPublishHealth.clientAction ? (
