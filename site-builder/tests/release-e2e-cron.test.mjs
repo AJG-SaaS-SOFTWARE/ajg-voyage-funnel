@@ -92,6 +92,21 @@ test("both release E2E routes use shared dual authorization without weakening CR
   assert.match(structuralRoute, /label: "structural"/);
 });
 
+test("full release E2E defers before creating identities when OpenAI is blocked", () => {
+  assert.match(runner, /auditOpenAiRuntimeCached\(60_000\)/);
+  assert.match(runner, /if \(mode\.includeAi\)/);
+  assert.match(runner, /openAiRuntime\.status === "blocker"/);
+  assert.match(runner, /reason: "provider_blocked"/);
+  assert.match(runner, /executed: false/);
+  assert.match(runner, /blocked: true/);
+
+  const preflightIndex = runner.indexOf("auditOpenAiRuntimeCached(60_000)");
+  const createClientIndex = runner.indexOf("const service = createClient");
+  const createUserIndex = runner.indexOf("service.auth.admin.createUser");
+  assert.ok(preflightIndex >= 0 && preflightIndex < createClientIndex);
+  assert.ok(preflightIndex < createUserIndex);
+});
+
 test("shared release E2E runner binds journal evidence to SHA, locale and mode", () => {
   assert.match(runner, /process\.env\.VERCEL_GIT_COMMIT_SHA/);
   assert.match(runner, /\.eq\("deployment_sha", sha\)/);
