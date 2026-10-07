@@ -52,7 +52,7 @@ test("admin UI can run the full authenticated Builder E2E sequentially in both l
 });
 
 test("mirrored E2E exposes the complete commercial-language journey without opening Checkout", () => {
-  for (const key of ["auth", "create", "billing", "ai", "media", "publish", "domains", "public", "feedback", "data", "cleanup"]) {
+  for (const key of ["auth", "create", "billing", "ai", "media", "publish", "domains", "public", "republish", "feedback", "data", "cleanup"]) {
     assert.match(route, new RegExp(`key: "${key}"`));
   }
   assert.match(route, /Managed domain readback failed/);
@@ -60,6 +60,16 @@ test("mirrored E2E exposes the complete commercial-language journey without open
   assert.match(route, /Archive TAR\.GZ réelle générée avec succès/);
   assert.match(route, /sans ouvrir Checkout/);
   assert.doesNotMatch(route, /\/api\/billing\/checkout/);
+});
+
+test("E2E performs a real second publish and validates updated public content", () => {
+  assert.match(route, /currentStage = "republish"/);
+  assert.match(route, /Mise à jour E2E/);
+  assert.match(route, /E2E update/);
+  assert.match(route, /hero_title: republishMarker/);
+  assert.match(route, /republishedHtml\.includes\(republishMarker\)/);
+  assert.match(route, /key: "republish"/);
+  assert.match(route, /Republish validation returned HTTP/);
 });
 
 test("mirrored E2E only reports parity after both isolated runs succeeded", () => {
