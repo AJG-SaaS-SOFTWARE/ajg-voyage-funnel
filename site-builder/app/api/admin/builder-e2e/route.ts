@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const includeAi = body?.includeAi === true;
+  const locale: "fr" | "en" = body?.locale === "en" ? "en" : "fr";
+  const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const steps: Step[] = [
     {
       key: "auth",
@@ -89,17 +91,20 @@ export async function POST(request: NextRequest) {
         owner_id: user.id,
         slug,
         status: "draft",
-        primary_language: "fr",
-        enabled_languages: ["fr"],
+        primary_language: locale,
+        enabled_languages: [locale],
         brand_name: marker,
         first_name: "Test",
         last_name: "E2E",
         hero_title: marker,
-        hero_subtitle: "Site temporaire de validation technique ELTARA.",
-        hero_tagline: "Validation interne",
-        about_heading: "À propos du test",
-        about_text: "Ce site temporaire vérifie le parcours réel d’ELTARA. Il est supprimé automatiquement à la fin du contrôle.",
-        booking_label: "Continuer",
+        hero_subtitle: tr("Site temporaire de validation technique ELTARA.", "Temporary ELTARA technical validation website."),
+        hero_tagline: tr("Validation interne", "Internal validation"),
+        about_heading: tr("À propos du test", "About this test"),
+        about_text: tr(
+          "Ce site temporaire vérifie le parcours réel d’ELTARA. Il est supprimé automatiquement à la fin du contrôle.",
+          "This temporary website validates the real ELTARA journey. It is automatically deleted at the end of the check."
+        ),
+        booking_label: tr("Continuer", "Continue"),
         booking_url: "",
         instagram_url: "",
         facebook_url: "",
@@ -191,16 +196,20 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           field: "siteArchitect",
           siteId,
-          instruction:
+          instruction: tr(
             "Crée une proposition simple de site vitrine pour valider le fonctionnement technique. N'invente aucune donnée commerciale, chiffre, témoignage ou certification.",
+            "Create a simple showcase website proposal to validate the technical workflow. Do not invent commercial data, figures, testimonials or certifications."
+          ),
           currentText: "",
           context: {
-            language: "fr",
+            language: locale,
             affiliation: "independent",
             firstName: "Test",
             brandName: marker,
-            architectBrief:
+            architectBrief: tr(
               "Site interne de validation ELTARA pour une activité indépendante fictive. Objectif : vérifier la génération structurée, la publication et le rendu, sans donnée commerciale réelle.",
+              "Internal ELTARA validation website for a fictional independent business. Goal: validate structured generation, publishing and rendering without real commercial data."
+            ),
             contentLibrary: []
           }
         }),
@@ -295,20 +304,23 @@ export async function POST(request: NextRequest) {
     const heroSubtitle =
       typeof proposal?.heroSubtitle === "string" && proposal.heroSubtitle.trim()
         ? proposal.heroSubtitle.trim().slice(0, 420)
-        : "Site temporaire de validation technique ELTARA.";
+        : tr("Site temporaire de validation technique ELTARA.", "Temporary ELTARA technical validation website.");
     const aboutText =
       typeof proposal?.aboutText === "string" && proposal.aboutText.trim()
         ? proposal.aboutText.trim().slice(0, 1800)
-        : "Ce site temporaire vérifie le parcours réel d’ELTARA et sera supprimé automatiquement.";
+        : tr(
+            "Ce site temporaire vérifie le parcours réel d’ELTARA et sera supprimé automatiquement.",
+            "This temporary website validates the real ELTARA journey and will be automatically deleted."
+          );
     const architecture = {
       mode: "single",
       pages: [
         {
           id: "home",
           slug: "",
-          title: "Accueil",
+          title: tr("Accueil", "Home"),
           kind: "home",
-          purpose: "Validation E2E",
+          purpose: tr("Validation E2E", "E2E validation"),
           enabled: true,
           assetIds: [assetId]
         }
@@ -319,7 +331,7 @@ export async function POST(request: NextRequest) {
         {
           id: assetId,
           kind: "image",
-          name: "Image E2E",
+          name: tr("Image E2E", "E2E image"),
           url: promoted.url,
           text: "",
           rights: "owned",
@@ -372,8 +384,13 @@ export async function POST(request: NextRequest) {
       signal: AbortSignal.timeout(15000)
     });
     const publicHtml = await publicResponse.text();
-    if (!publicResponse.ok || (!publicHtml.includes(marker) && !publicHtml.includes(heroTitle))) {
-      throw new Error(`Public site validation returned HTTP ${publicResponse.status} without the expected content.`);
+    const expectedPublicText = locale === "en" ? "Temporary ELTARA technical validation website." : "Site temporaire de validation technique ELTARA.";
+    if (
+      !publicResponse.ok ||
+      (!publicHtml.includes(marker) && !publicHtml.includes(heroTitle)) ||
+      (!proposal && !publicHtml.includes(expectedPublicText))
+    ) {
+      throw new Error(`Public site validation returned HTTP ${publicResponse.status} without the expected ${locale.toUpperCase()} content.`);
     }
     steps.push({
       key: "public",
@@ -513,6 +530,7 @@ export async function POST(request: NextRequest) {
     {
       ok: true,
       includeAi,
+      locale,
       steps
     },
     {
