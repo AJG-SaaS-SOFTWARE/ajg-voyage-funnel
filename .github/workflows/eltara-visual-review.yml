@@ -1,0 +1,76 @@
+name: ELTARA Visual Review
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - ELTARA Production Release
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eltara-visual-review
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: https://eltara.ajgsolutionsgroup.com
+      PLAYWRIGHT_VERSION: 1.55.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Install Chromium for deterministic visual capture
+        run: npx --yes playwright@${PLAYWRIGHT_VERSION} install --with-deps chromium
+
+      - name: Capture FR and EN desktop/mobile surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/eltara-visual-review
+
+          capture() {
+            local locale="$1"
+            local viewport="$2"
+            local suffix="$3"
+            local path="$4"
+            local slug="$5"
+
+            npx --yes playwright@${PLAYWRIGHT_VERSION} screenshot               --browser chromium               --lang "$locale"               --viewport-size "$viewport"               --full-page               --wait-for-timeout 1200               "${BASE_URL}${path}"               "artifacts/eltara-visual-review/${slug}-${suffix}.png"
+          }
+
+          for surface in             "home:/"             "login:/login"; do
+            slug="${surface%%:*}"
+            path="${surface#*:}"
+            capture "fr-FR" "1440,1000" "fr-desktop" "$path" "$slug"
+            capture "fr-FR" "390,844" "fr-mobile" "$path" "$slug"
+            capture "en-US" "1440,1000" "en-desktop" "$path" "$slug"
+            capture "en-US" "390,844" "en-mobile" "$path" "$slug"
+          done
+
+          for surface in             "legal-fr:/mentions-legales"             "privacy-fr:/confidentialite"             "terms-fr:/cgv"             "cancel-fr:/resilier"             "legal-en:/legal"             "privacy-en:/privacy"             "terms-en:/terms"             "cancel-en:/cancel"; do
+            slug="${surface%%:*}"
+            path="${surface#*:}"
+            capture "fr-FR" "1440,1000" "desktop" "$path" "$slug"
+            capture "fr-FR" "390,844" "mobile" "$path" "$slug"
+          done
+
+          count="$(find artifacts/eltara-visual-review -type f -name '*.png' | wc -l | tr -d ' ')"
+          test "$count" = "24"
+          echo "Captured $count ELTARA FR/EN desktop/mobile screenshots." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload visual review evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: eltara-visual-review-${{ github.event.workflow_run.head_sha || github.sha }}
+          path: artifacts/eltara-visual-review
+          if-no-files-found: error
+          retention-days: 14
