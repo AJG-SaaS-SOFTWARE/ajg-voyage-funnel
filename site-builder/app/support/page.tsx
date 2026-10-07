@@ -6,7 +6,11 @@ import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
-import { supportGuidanceForDiagnosis } from "../../lib/support-guidance";
+import {
+  supportCheckDisplay,
+  supportGuidanceForDiagnosis,
+  supportTicketStatusLabel
+} from "../../lib/support-guidance";
 import { supportArticlesForLocale } from "../../lib/support-knowledge";
 
 type Ticket = {
@@ -365,15 +369,18 @@ export default function SupportPage() {
                   : tr("Un incident technique est détecté", "A technical incident was detected")}
             </h2>
             <ul>
-              {health.checks.map((check) => (
-                <li key={check.key}>
-                  <strong>
-                    {check.status === "healthy" ? "✓" : check.status === "action" ? "○" : "×"} {check.label}
-                  </strong>
-                  {" — "}{check.detail}
-                  {check.clientAction ? <span> {check.clientAction}</span> : null}
-                </li>
-              ))}
+              {health.checks.map((check) => {
+                const display = supportCheckDisplay(check, locale);
+                return (
+                  <li key={check.key}>
+                    <strong>
+                      {check.status === "healthy" ? "✓" : check.status === "action" ? "○" : "×"} {display.title}
+                    </strong>
+                    {" — "}{display.detail}
+                    {display.action ? <span> {display.action}</span> : null}
+                  </li>
+                );
+              })}
             </ul>
             <div className="actions">
               <button
@@ -455,10 +462,19 @@ export default function SupportPage() {
               <ul>
                 {payload.tickets.map((ticket) => (
                   <li key={ticket.id}>
-                    <strong>{ticket.subject}</strong> · {ticket.status} · {new Date(ticket.created_at).toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR")}
+                    <strong>{ticket.subject}</strong> · {supportTicketStatusLabel(ticket.status, locale)} · {new Date(ticket.created_at).toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR")}
                     <br />
                     <span>{ticket.message}</span>
-                    {ticket.client_action ? <><br /><b>{tr("Action proposée :", "Suggested action:")}</b> {ticket.client_action}</> : null}
+                    {ticket.client_action ? (
+                      <>
+                        <br />
+                        <b>{tr("Action proposée :", "Suggested action:")}</b>{" "}
+                        {locale === "en"
+                          ? supportGuidanceForDiagnosis(ticket.diagnosis.checks, locale)[0]?.action ||
+                            tr("Relancez le diagnostic depuis cette demande.", "Run the diagnosis again from this request.")
+                          : ticket.client_action}
+                      </>
+                    ) : null}
                     {ticket.status === "waiting_customer" ? (
                       <>
                         <br />
