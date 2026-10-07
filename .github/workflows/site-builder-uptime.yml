@@ -16,17 +16,13 @@ jobs:
             https://ajg-site-builder.vercel.app/api/health
 
       - name: Check ELTARA public domain
-        continue-on-error: true
         run: |
           if ! getent hosts eltara.ajgsolutionsgroup.com > /tmp/eltara-hosts.txt 2>/dev/null; then
-            echo "::warning::eltara.ajgsolutionsgroup.com is not resolvable yet. Core ELTARA production remains healthy on the managed Vercel alias."
-            exit 0
+            echo "::error::eltara.ajgsolutionsgroup.com is not resolvable."
+            exit 1
           fi
-          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
-            https://eltara.ajgsolutionsgroup.com/api/health > /dev/null || {
-              echo "::warning::ELTARA public domain resolves but HTTPS/health is not ready."
-              exit 0
-            }
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 --retry-all-errors \
+            https://eltara.ajgsolutionsgroup.com/api/health > /dev/null
 
       - name: Check ELTARA published canary site
         continue-on-error: true
