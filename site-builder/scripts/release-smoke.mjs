@@ -102,18 +102,18 @@ try {
   );
   await expectMirroredLocale(
     "/billing",
-    ["Facturation", "Votre compte"],
-    ["Billing", "Your account"]
+    ["Facturation", "Votre compte", "Votre accès ELTARA", "Facturation & récupération"],
+    ["Billing", "Your account", "Your ELTARA access", "Billing & recovery"]
   );
   await expectMirroredLocale(
     "/domains",
-    ["Domaines", "Votre compte"],
-    ["Domains", "Your account"]
+    ["Domaines", "Votre compte", "Mettre votre domaine en ligne, étape par étape", "Domaine personnalisé"],
+    ["Domains", "Your account", "Put your domain online, step by step", "Custom domain"]
   );
   await expectMirroredLocale(
     "/data",
-    ["Mes données", "Votre compte"],
-    ["My data", "Your account"]
+    ["Mes données", "Votre compte", "Confidentialité & données", "Exportez vos données"],
+    ["My data", "Your account", "Privacy & data", "Export your data"]
   );
   await expectLocalizedHtml(
     "/pricing",
@@ -129,28 +129,28 @@ try {
   );
   await expectMirroredLocale(
     "/builder",
-    ["Chargement de votre espace…"],
-    ["Loading your workspace…"]
+    ["Chargement de votre espace…", "Aperçu", "Mon offre", "Mes données"],
+    ["Loading your workspace…", "Preview", "My plan", "My data"]
   );
   await expectMirroredLocale(
     "/growth",
-    ["Piloter la santé de votre site", "Préparation du cockpit Growth…"],
-    ["Manage your website health", "Preparing the Growth cockpit…"]
+    ["Piloter la santé de votre site", "Préparation du cockpit Growth…", "Disponibilité & accès"],
+    ["Manage your website health", "Preparing the Growth cockpit…", "Availability & access"]
   );
   await expectMirroredLocale(
     "/analytics",
-    ["Comprenez ce qui se passe sur votre site", "Chargement des analytics…"],
-    ["Understand what happens on your website", "Loading analytics…"]
+    ["Comprenez ce qui se passe sur votre site", "Chargement des analytics…", "Période d’analyse"],
+    ["Understand what happens on your website", "Loading analytics…", "Analytics period"]
   );
   await expectMirroredLocale(
     "/support",
-    ["Aide et demandes", "Diagnostic en cours…"],
-    ["Help and requests", "Running diagnosis…"]
+    ["Aide et demandes", "Diagnostic en cours…", "Nouvelle demande"],
+    ["Help and requests", "Running diagnosis…", "New request"]
   );
   await expectMirroredLocale(
     "/messages",
-    ["Messages reçus", "Chargement des messages…"],
-    ["Received messages", "Loading messages…"]
+    ["Messages reçus", "Chargement des messages…", "Aucun message"],
+    ["Received messages", "Loading messages…", "No messages"]
   );
   await expectStatus("/ci-route-that-does-not-exist", 404);
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
