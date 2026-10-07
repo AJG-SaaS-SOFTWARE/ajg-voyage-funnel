@@ -1470,7 +1470,7 @@ export default function BuilderPage() {
           </div>
 
           <div className="step-nav-footer">
-            <span>Site</span>
+            <span>{tr("Site", "Website")}</span>
             <strong>{config.brandName || tr("Nouveau site", "New website")}</strong>
             <small>{config.slug ? publicPath : tr("Adresse à définir", "Address to define")}</small>
           </div>
