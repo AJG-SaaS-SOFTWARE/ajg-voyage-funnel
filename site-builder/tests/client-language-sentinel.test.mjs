@@ -20,6 +20,9 @@ const highRiskFrench =
 const highRiskEnglish =
   /\b(?:Address|Back|Billing|Cancel|Close|Continue|Create|Data|Delete|Domain|Domains|Draft|Edit|Error|Fix|Home|Loading|Published|Ready|Retry|Save|Send|Sign in|Unavailable|View)\b/i;
 
+const accentedFrench =
+  /[àâçéèêëîïôùûüÿœæ]/i;
+
 function customerTsxFiles() {
   const files = [];
   const visit = (dir) => {
@@ -138,6 +141,16 @@ test("customer JSX has no high-risk raw French literals outside localization con
     findings,
     [],
     "Raw French customer-facing literals detected outside tr(...) or an explicit locale branch:\n" +
+      findings.join("\n")
+  );
+});
+
+test("customer JSX has no accented French literals outside localization contexts", () => {
+  const findings = languageLeakFindings(accentedFrench);
+  assert.deepEqual(
+    findings,
+    [],
+    "Accented French customer-facing literals detected outside tr(...) or an explicit locale branch:\n" +
       findings.join("\n")
   );
 });
