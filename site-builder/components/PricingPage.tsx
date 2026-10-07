@@ -64,7 +64,7 @@ const copy = {
     },
     launch: {
       badge: "BUILD",
-      name: "Création IA complète",
+      name: "Création IA",
       price: "49 €",
       suffix: "une fois",
       description:
@@ -139,7 +139,7 @@ const copy = {
     },
     launch: {
       badge: "BUILD",
-      name: "Full AI Launch",
+      name: "AI Launch",
       price: "€49",
       suffix: "one time",
       description:
