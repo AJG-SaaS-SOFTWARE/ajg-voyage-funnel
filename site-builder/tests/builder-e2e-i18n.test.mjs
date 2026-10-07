@@ -53,7 +53,7 @@ test("admin UI can run the full authenticated Builder E2E sequentially in both l
 
 test("mirrored E2E exposes the complete commercial-language journey without opening Checkout", () => {
   for (const key of ["auth", "create", "billing", "ai", "media", "publish", "domains", "public", "feedback", "data", "cleanup"]) {
-    assert.match(route, new RegExp(`key: "\${key}"`));
+    assert.match(route, new RegExp(`key: "${key}"`));
   }
   assert.match(route, /Managed domain readback failed/);
   assert.match(route, /verification_status !== "verified"/);
