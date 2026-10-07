@@ -8,6 +8,10 @@ import {
   aiFinopsMonitorReadiness,
   aiFinopsPolicyReadiness
 } from "../../../../lib/ai-finops-readiness";
+import {
+  releaseE2ERunDecision,
+  type ReleaseE2ERunSnapshot
+} from "../../../../lib/release-e2e-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -383,30 +387,60 @@ export async function GET(request: Request) {
     }
 
     if (present(deploymentSha)) {
-      const [frRun, enRun] = await Promise.all(
+      const mirrorRuns = await Promise.all(
         (["fr", "en"] as const).map(async (locale) => {
           const { data, error } = await service
             .from("builder_e2e_runs")
-            .select("completed_at,deployment_sha,locale,include_ai,status")
+            .select("status,completed_at")
             .eq("deployment_sha", deploymentSha!)
             .eq("locale", locale)
             .eq("include_ai", true)
-            .eq("status", "success")
-            .order("completed_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          return error ? null : data;
+            .order("started_at", { ascending: false })
+            .limit(10);
+
+          const rows = (data || []) as ReleaseE2ERunSnapshot[];
+          const success = rows.find((row) => row.status === "success") || null;
+          const decision = releaseE2ERunDecision(rows);
+
+          return { locale, error, success, decision };
         })
       );
-      const mirrorValidated = Boolean(frRun && enRun);
+
+      const journalError = mirrorRuns.some((item) => item.error);
+      const mirrorValidated = mirrorRuns.every((item) => item.success);
+      const retryBudgetExhausted = mirrorRuns.some(
+        (item) => item.decision.reason === "retry_budget_exhausted"
+      );
+
+      const stateDetail = mirrorRuns
+        .map((item) => {
+          if (item.success) return `${item.locale.toUpperCase()} ✓`;
+          if (item.decision.reason === "retry_budget_exhausted") {
+            return `${item.locale.toUpperCase()} bloqué après 3 échecs`;
+          }
+          if (item.decision.reason === "cooldown") {
+            return `${item.locale.toUpperCase()} en cooldown avant retry`;
+          }
+          return `${item.locale.toUpperCase()} manquant`;
+        })
+        .join(" · ");
+
       checks.push({
         key: "builder-e2e-mirror",
         label: "E2E Builder · miroir FR + EN",
-        status: mirrorValidated ? "pass" : "warn",
+        status: journalError
+          ? "blocker"
+          : mirrorValidated
+            ? "pass"
+            : retryBudgetExhausted
+              ? "blocker"
+              : "warn",
         scope: "beta",
-        detail: mirrorValidated
-          ? `FR validé ${frRun?.completed_at}; EN validé ${enRun?.completed_at}; SHA ${deploymentSha?.slice(0, 12)}…`
-          : `Validation miroir incomplète pour le SHA courant ${deploymentSha?.slice(0, 12)}… : ${frRun ? "FR ✓" : "FR manquant"} · ${enRun ? "EN ✓" : "EN manquant"}.`
+        detail: journalError
+          ? "Impossible de lire le journal E2E Builder."
+          : mirrorValidated
+            ? `Parité E2E FR + EN validée pour le SHA ${deploymentSha?.slice(0, 12)}…`
+            : `Validation miroir incomplète pour le SHA courant ${deploymentSha?.slice(0, 12)}… : ${stateDetail}.`
       });
     } else {
       checks.push({
