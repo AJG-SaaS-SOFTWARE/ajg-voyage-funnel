@@ -185,15 +185,30 @@ export async function GET(request: NextRequest) {
       }
     }
   } catch (error) {
-    results.push({
-      locale: pending[0]?.locale || "fr",
-      ok: false,
-      status: 500,
-      detail:
-        error instanceof Error
-          ? error.message.slice(0, 300)
-          : "Release E2E automation failed"
-    });
+    const detail =
+      error instanceof Error
+        ? error.message.slice(0, 300)
+        : "Release E2E automation failed";
+
+    for (const plan of pending) {
+      await service.from("builder_e2e_runs").insert({
+        locale: plan.locale,
+        include_ai: true,
+        deployment_sha: sha,
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        failure_stage: "orchestrator",
+        detail,
+        steps: []
+      });
+
+      results.push({
+        locale: plan.locale,
+        ok: false,
+        status: 500,
+        detail
+      });
+    }
   } finally {
     if (userId) {
       const { error: roleCleanupError } = await service
