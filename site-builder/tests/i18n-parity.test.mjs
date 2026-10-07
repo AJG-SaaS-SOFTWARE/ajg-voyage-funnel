@@ -192,8 +192,8 @@ test("customer-facing AI creation terminology follows the canonical glossary", (
   assert.match(aiWrite, /The AI Site Architect/);
 
   for (const source of [builder, aiWrite]) {
-    assert.doesNotMatch(source, /L’Architecte Premium/);
-    assert.doesNotMatch(source, /The Premium Site Architect/);
+    assert.doesNotMatch(source, /architecte premium/i);
+    assert.doesNotMatch(source, /premium site architect/i);
   }
 
   assert.match(builder, /Création IA/);
@@ -207,6 +207,16 @@ test("customer-facing AI creation terminology follows the canonical glossary", (
     assert.doesNotMatch(source, /Création IA complète/);
     assert.doesNotMatch(source, /Full AI Launch/);
   }
+});
+
+test("revision summary labels are localized in both interface languages", () => {
+  const builder = read("app/builder/page.tsx");
+  assert.match(builder, /changes\.push\(tr\("Accueil", "Home"\)\)/);
+  assert.match(builder, /changes\.push\(tr\("Direction visuelle", "Visual direction"\)\)/);
+  assert.match(builder, /changes\.push\(tr\("Avantages", "Benefits"\)\)/);
+  assert.doesNotMatch(builder, /changes\.push\("Accueil"\)/);
+  assert.doesNotMatch(builder, /changes\.push\("Direction visuelle"\)/);
+  assert.doesNotMatch(builder, /changes\.push\("Avantages"\)/);
 });
 
 test("English Builder core has no known French-only residuals in customer paths", () => {

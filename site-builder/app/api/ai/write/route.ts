@@ -454,7 +454,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          tr("Votre brief est encore trop court pour lancer l’Architecte Premium. Ajoutez quelques précisions sur votre activité, votre public ou l’objectif du site.", "Your brief is still too short to launch the Premium Site Architect. Add a few details about your activity, audience or website goal.")
+          tr("Votre brief est encore trop court pour lancer le Concepteur IA. Ajoutez quelques précisions sur votre activité, votre public ou l’objectif du site.", "Your brief is still too short to launch the AI Site Architect. Add a few details about your activity, audience or website goal.")
       },
       { status: 400 }
     );

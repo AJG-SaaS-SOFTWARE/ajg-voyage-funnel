@@ -952,7 +952,7 @@ export default function BuilderPage() {
       revisionProposal.heroTitle !== config.heroTitle ||
       revisionProposal.heroSubtitle !== config.heroSubtitle
     ) {
-      changes.push("Accueil");
+      changes.push(tr("Accueil", "Home"));
     }
 
     if (
@@ -984,7 +984,7 @@ export default function BuilderPage() {
         }
       )
     ) {
-      changes.push("Direction visuelle");
+      changes.push(tr("Direction visuelle", "Visual direction"));
     }
 
     const currentEnabledModules = config.design.modules.order.filter(
@@ -1015,7 +1015,7 @@ export default function BuilderPage() {
         items: config.design.modules.benefits.items
       })
     ) {
-      changes.push("Avantages");
+      changes.push(tr("Avantages", "Benefits"));
     }
 
     return changes;
