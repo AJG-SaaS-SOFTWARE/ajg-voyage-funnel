@@ -61,14 +61,21 @@ function insideLocalizedContext(node) {
 
 function displayedLiteral(node) {
   if (ts.isJsxText(node)) return node.getText();
+
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
-    if (ts.isJsxAttribute(node.parent)) return node.text;
-    let current = node.parent;
-    while (current && !ts.isJsxElement(current) && !ts.isJsxSelfClosingElement(current)) {
-      if (ts.isJsxExpression(current)) return node.text;
-      current = current.parent;
+    if (ts.isJsxAttribute(node.parent)) {
+      const name = node.parent.name.getText();
+      if (["placeholder", "title", "aria-label", "alt"].includes(name)) {
+        return node.text;
+      }
+      return null;
+    }
+
+    if (node.parent?.kind === ts.SyntaxKind.JsxExpression) {
+      return node.text;
     }
   }
+
   return null;
 }
 
