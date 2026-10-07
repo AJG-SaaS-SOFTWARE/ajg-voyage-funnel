@@ -39,12 +39,20 @@ export async function verifyReportingProvider(metadataPath, environment = proces
     const matches = rows.filter(row => row.key === "AJG_COCKPIT_REPORTING_TOKEN" &&
       Array.isArray(row.target) && row.target.includes("production"));
     if (!matches.length) return { status: "disabled" };
-    if (matches.length !== 1 || !matches[0].id || !environment.VERCEL_TOKEN ||
+    if (matches.length !== 1 || !environment.VERCEL_TOKEN ||
         !environment.VERCEL_PROJECT_ID || !environment.VERCEL_ORG_ID) throw new Error("invalid_provider_configuration");
+
+    // Vercel sensitive variables are intentionally write-only after creation.
+    // Their existence/target is the only safe pre-deploy assertion; runtime
+    // connectivity is verified after promotion by the Cockpit healthcheck.
+    if (matches[0].type === "sensitive") {
+      return { status: "ready" };
+    }
+
+    if (!matches[0].id) throw new Error("invalid_provider_configuration");
     const url = new URL("https://api.vercel.com/v1/projects/" +
       encodeURIComponent(environment.VERCEL_PROJECT_ID) + "/env/" + encodeURIComponent(matches[0].id));
     url.searchParams.set("teamId", environment.VERCEL_ORG_ID);
-    url.searchParams.set("decrypt", "true");
     const response = await request(url, {
       headers: { Authorization: "Bearer " + environment.VERCEL_TOKEN },
       signal: AbortSignal.timeout(15000),
