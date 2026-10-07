@@ -127,6 +127,19 @@ test("client-side repository, image and feedback errors are localized", () => {
   assert.doesNotMatch(analytics, /throw new Error\("Connexion requise\."/);
 });
 
+test("Builder quality and publish summary labels are localized", () => {
+  const builder = read("app/builder/page.tsx");
+
+  assert.match(builder, /tr\("Voir →", "View →"\)/);
+  assert.match(builder, /tr\("Corriger →", "Fix →"\)/);
+  assert.match(builder, /tr\("Français \(bilingue à venir\)", "French \(bilingual coming soon\)"\)/);
+  assert.match(builder, /tr\("Navigateur local", "Local browser"\)/);
+
+  assert.doesNotMatch(builder, /\? "Voir →" : "Corriger →"/);
+  assert.doesNotMatch(builder, /\? "Français \(bilingue à venir\)" : config\.language/);
+  assert.doesNotMatch(builder, /: "Navigateur local"}/);
+});
+
 test("English Builder core has no known French-only residuals in customer paths", () => {
   const builder = read("app/builder/page.tsx");
   const privacyApi = read("app/api/privacy/erasure/request/route.ts");
