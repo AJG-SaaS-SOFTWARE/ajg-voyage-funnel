@@ -58,14 +58,14 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
         </label>
         <label>
           <span>{tr("Nom commercial", "Trade name")} <em>{tr("facultatif", "optional")}</em></span>
-          <input value={value.tradeName} onChange={(e) => update("tradeName", e.target.value)} placeholder="Ex. AJG Voyage" />
+          <input value={value.tradeName} onChange={(e) => update("tradeName", e.target.value)} placeholder={tr("Ex. AJG Voyage", "e.g. AJG Studio")} />
         </label>
       </div>
 
       {value.publisherType === "company" ? (
         <div className="compliance-grid">
-          <label><span>{tr("Forme juridique", "Legal form")}</span><input value={value.legalForm} onChange={(e) => update("legalForm", e.target.value)} placeholder="Ex. SAS, SARL, EURL…" /></label>
-          <label><span>{tr("Capital social", "Share capital")}</span><input value={value.shareCapital} onChange={(e) => update("shareCapital", e.target.value)} placeholder="Ex. 10 000 €" /></label>
+          <label><span>{tr("Forme juridique", "Legal form")}</span><input value={value.legalForm} onChange={(e) => update("legalForm", e.target.value)} placeholder={tr("Ex. SAS, SARL, EURL…", "e.g. Ltd, LLC…")} /></label>
+          <label><span>{tr("Capital social", "Share capital")}</span><input value={value.shareCapital} onChange={(e) => update("shareCapital", e.target.value)} placeholder={tr("Ex. 10 000 €", "e.g. €10,000")} /></label>
         </div>
       ) : null}
 
@@ -76,7 +76,7 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
       </label>
 
       <div className="compliance-grid">
-        <label><span>{tr("E-mail professionnel", "Business email")}</span><input type="email" value={value.email} onChange={(e) => update("email", e.target.value)} placeholder="contact@exemple.fr" /></label>
+        <label><span>{tr("E-mail professionnel", "Business email")}</span><input type="email" value={value.email} onChange={(e) => update("email", e.target.value)} placeholder={tr("contact@exemple.fr", "contact@example.com")} /></label>
         <label><span>{tr("Téléphone professionnel", "Business phone")}</span><input type="tel" value={value.phone} onChange={(e) => update("phone", e.target.value)} placeholder="+33 …" /></label>
       </div>
 
@@ -84,12 +84,12 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
         <label><span>SIREN</span><input value={value.siren} onChange={(e) => update("siren", e.target.value)} placeholder={tr("9 chiffres", "9 digits")} inputMode="numeric" /></label>
         <label>
           <span>{value.activityKind === "artisan" ? tr("Immatriculation RNE", "RNE registration") : tr("Immatriculation RCS / RNE", "RCS / RNE registration")} {["commercial","artisan"].includes(value.activityKind) ? "" : <em>{tr("si applicable", "if applicable")}</em>}</span>
-          <input value={value.registrationDetails} onChange={(e) => update("registrationDetails", e.target.value)} placeholder="Ex. RCS Rodez 123 456 789 / RNE 123 456 789" />
+          <input value={value.registrationDetails} onChange={(e) => update("registrationDetails", e.target.value)} placeholder={tr("Ex. RCS Rodez 123 456 789 / RNE 123 456 789", "e.g. Company registration 123456789")} />
         </label>
       </div>
 
       <div className="compliance-grid">
-        <label><span>{tr("N° TVA intracommunautaire", "EU VAT number")} <em>{tr("si applicable", "if applicable")}</em></span><input value={value.vatNumber} onChange={(e) => update("vatNumber", e.target.value)} placeholder="Ex. FR…" /></label>
+        <label><span>{tr("N° TVA intracommunautaire", "EU VAT number")} <em>{tr("si applicable", "if applicable")}</em></span><input value={value.vatNumber} onChange={(e) => update("vatNumber", e.target.value)} placeholder={tr("Ex. FR…", "e.g. GB…")} /></label>
         <label>
           <span>{tr("Directeur de la publication", "Publication director")}</span>
           <input value={value.publicationDirector} onChange={(e) => update("publicationDirector", e.target.value)} placeholder={value.publisherType === "individual" ? effectiveName || tr("Prénom Nom", "First Last") : tr("Nom du représentant légal", "Legal representative name")} />
@@ -108,7 +108,7 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
             <label><span>{tr("Titre professionnel", "Professional title")}</span><input value={value.professionalTitle} onChange={(e) => update("professionalTitle", e.target.value)} placeholder={tr("Titre professionnel exact", "Exact professional title")} /></label>
             <label><span>{tr("Ordre / organisme professionnel", "Professional body / association")}</span><input value={value.professionalBody} onChange={(e) => update("professionalBody", e.target.value)} placeholder={tr("Nom de l’ordre ou organisme", "Name of professional body")} /></label>
           </div>
-          <label className="compliance-full"><span>{tr("Autorité ayant délivré l’autorisation", "Authorizing authority")} <em>si applicable</em></span><input value={value.authorizationAuthority} onChange={(e) => update("authorizationAuthority", e.target.value)} placeholder={tr("Nom et adresse de l’autorité", "Authority name and address")} /></label>
+          <label className="compliance-full"><span>{tr("Autorité ayant délivré l’autorisation", "Authorizing authority")} <em>{tr("si applicable", "if applicable")}</em></span><input value={value.authorizationAuthority} onChange={(e) => update("authorizationAuthority", e.target.value)} placeholder={tr("Nom et adresse de l’autorité", "Authority name and address")} /></label>
           <label className="compliance-full"><span>{tr("Règles professionnelles applicables", "Applicable professional rules")}</span><textarea rows={3} value={value.professionalRules} onChange={(e) => update("professionalRules", e.target.value)} placeholder={tr("Référence ou lien vers les règles professionnelles applicables", "Reference or link to applicable professional rules")} /></label>
         </div>
       ) : null}
