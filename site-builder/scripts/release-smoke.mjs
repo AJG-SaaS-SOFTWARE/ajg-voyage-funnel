@@ -152,6 +152,21 @@ try {
     ["Messages reçus", "Chargement des messages…"],
     ["Received messages", "Loading messages…"]
   );
+  await expectMirroredLocale(
+    "/feedback",
+    ["Votre retour améliore ELTARA", "Type de retour", "Envoyer mon retour"],
+    ["Your feedback improves ELTARA", "Feedback type", "Send feedback"]
+  );
+  await expectMirroredLocale(
+    "/preview",
+    ["Aperçu du site", "Modifier", "Aperçu · domaine cible :"],
+    ["Website preview", "Edit", "Preview · target domain:"]
+  );
+  await expectMirroredLocale(
+    "/beta-access",
+    ["Accès bêta sur invitation", "Changer de compte", "Retour à l’accueil"],
+    ["Invitation-only beta access", "Use another account", "Back to home"]
+  );
   await expectStatus("/ci-route-that-does-not-exist", 404);
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   await expectStatus("/api/admin/release-readiness", 401);
