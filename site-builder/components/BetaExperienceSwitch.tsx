@@ -27,7 +27,7 @@ export function BetaExperienceSwitch({
     >
       {!inline ? (
         <div className="beta-experience-copy">
-          <span>ELTARA BETA</span>
+          <span>{tr("ELTARA BÊTA", "ELTARA BETA")}</span>
           <div>
             <b>{tr("Tester l’expérience client", "Test the customer experience")}</b>
             {!compact ? (
