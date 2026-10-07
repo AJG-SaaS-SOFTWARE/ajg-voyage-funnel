@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useProductLocale } from "../../lib/product-i18n";
+import { formatProductNumber } from "../../lib/product-format";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { EltaraBrand } from "../../components/EltaraBrand";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
@@ -1059,8 +1060,8 @@ export default function BuilderPage() {
       step: "options"
     });
     const { surface, ink } = surfaceInk(config.design);
-    checks.push({ label: tr("Lisibilité des rubriques", "Section readability"), detail: `${tr("Contraste du fond et du texte :", "Background/text contrast:")} ${contrastRatio(surface, ink).toFixed(1)}:1.`, status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn", step: "design" });
-    checks.push({ label: tr("Contraste du bouton", "Button contrast"), detail: `${tr("Texte du bouton adapté à la couleur choisie", "Button text adapted to the selected color")} (${contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink).toFixed(1)}:1).`, status: "pass", step: "design" });
+    checks.push({ label: tr("Lisibilité des rubriques", "Section readability"), detail: `${tr("Contraste du fond et du texte :", "Background/text contrast:")} ${formatProductNumber(contrastRatio(surface, ink), locale, 1, 1)}:1.`, status: contrastRatio(surface, ink) >= 4.5 ? "pass" : "warn", step: "design" });
+    checks.push({ label: tr("Contraste du bouton", "Button contrast"), detail: `${tr("Texte du bouton adapté à la couleur choisie", "Button text adapted to the selected color")} (${formatProductNumber(contrastRatio(config.design.accent, surfaceInk({ ...config.design, customBackgroundColor: config.design.accent }).ink), locale, 1, 1)}:1).`, status: "pass", step: "design" });
     const allText = [config.heroTagline, config.heroTitle, config.heroSubtitle, config.aboutHeading, config.aboutText].filter((value) => value.trim());
     const normalized = allText.map((value) => value.trim().toLowerCase().replace(/[.!?]+$/, ""));
     checks.push({ label: tr("Répétitions évidentes", "Obvious repetition"), detail: new Set(normalized).size === normalized.length ? tr("Aucun texte identique entre les champs principaux.", "No identical copy appears across the main fields.") : tr("Deux champs contiennent le même texte : diversifiez-les.", "Two fields contain the same text: make them more distinct."), status: new Set(normalized).size === normalized.length ? "pass" : "warn", step: "story" });
