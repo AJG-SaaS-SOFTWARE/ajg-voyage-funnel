@@ -385,19 +385,19 @@ jobs:
           exit 1
 
       - name: Verify ELTARA public domain without rolling back code
-        continue-on-error: true
         shell: bash
         run: |
           if ! getent hosts "$PUBLIC_DOMAIN" > /tmp/eltara-domain-hosts.txt 2>/dev/null; then
-            echo "::warning::$PUBLIC_DOMAIN is not resolvable yet. Production code remains verified on $PRODUCTION_ALIAS; DNS must be completed at the external DNS provider."
-            echo "ELTARA public domain pending DNS: $PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+            echo "::error::$PUBLIC_DOMAIN is not resolvable. The application artifact remains deployed, but the official domain is unhealthy."
+            echo "ELTARA public domain DNS failure: $PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
-          if ! curl --fail --silent --show-error --retry 4 --retry-delay 2 --retry-all-errors             "https://$PUBLIC_DOMAIN/api/health" > /tmp/eltara-public-health.json; then
-            echo "::warning::$PUBLIC_DOMAIN resolves but its HTTPS health check is not ready yet."
-            echo "ELTARA public domain resolves but HTTPS/health is pending: $PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+          if ! curl --fail --silent --show-error --retry 4 --retry-delay 2 --retry-all-errors \
+            "https://$PUBLIC_DOMAIN/api/health" > /tmp/eltara-public-health.json; then
+            echo "::error::$PUBLIC_DOMAIN resolves but HTTPS /api/health is unavailable. The application artifact remains deployed."
+            echo "ELTARA public domain HTTPS/health failure: $PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
           echo "ELTARA public domain is live: https://$PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
