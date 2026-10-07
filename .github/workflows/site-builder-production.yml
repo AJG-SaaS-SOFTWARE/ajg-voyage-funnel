@@ -402,6 +402,26 @@ jobs:
 
           echo "ELTARA public domain is live: https://$PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Run mirrored FR/EN release E2E for deployed SHA
+        shell: bash
+        run: |
+          echo "Triggering guarded ELTARA release E2E for $GITHUB_SHA."
+
+          set +e
+          npx --yes vercel@60.1.3 crons run /api/cron/release-e2e \
+            --token "$VERCEL_TOKEN" \
+            2>&1 | tee /tmp/eltara-release-e2e.log
+          CRON_EXIT=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$CRON_EXIT" -ne 0 ]; then
+            echo "::error::Mirrored FR/EN release E2E failed for $GITHUB_SHA. Production remains deployed; no automatic rollback is requested for this post-release validation failure."
+            cat /tmp/eltara-release-e2e.log
+            exit "$CRON_EXIT"
+          fi
+
+          echo "Mirrored FR/EN release E2E passed or was already validated for $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify managed-domain HTTPS canary when available
         continue-on-error: true
         shell: bash
