@@ -35,5 +35,9 @@ test("deployment verifier checks visible 404 copy in both product locales", () =
   assert.match(source, /verifyLocalizedNotFound\("fr", "Page introuvable"\)/);
   assert.match(source, /verifyLocalizedNotFound\("en", "Page not found"\)/);
   assert.match(source, /"Accept-Language": locale === "en"/);
+  assert.match(source, /response\.status === 307 \|\| response\.status === 308/);
+  assert.match(source, /redirected\.hostname !== "eltara\.ajgsolutionsgroup\.com"/);
+  assert.match(source, /redirected\.pathname !== path/);
+  assert.match(source, /fetch\(redirected, \{/);
   assert.match(source, /native English Next\.js fallback leaked into French rendering/);
 });
