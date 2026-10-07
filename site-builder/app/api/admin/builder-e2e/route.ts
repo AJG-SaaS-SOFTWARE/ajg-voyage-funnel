@@ -72,6 +72,45 @@ export async function POST(request: NextRequest) {
       detail: "Session Supabase et rôle administrateur validés."
     }
   ];
+  const deploymentSha =
+    process.env.AJG_RELEASE_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    null;
+  const { data: journalRun, error: journalStartError } = await service
+    .from("builder_e2e_runs")
+    .insert({
+      locale,
+      include_ai: includeAi,
+      deployment_sha: deploymentSha,
+      status: "running",
+      steps
+    })
+    .select("id")
+    .single();
+
+  if (journalStartError || !journalRun) {
+    return NextResponse.json(
+      { error: "E2E validation journal unavailable" },
+      { status: 503 }
+    );
+  }
+
+  const journalRunId = journalRun.id;
+  const finishJournal = async (
+    status: "success" | "failed" | "cleanup_failed",
+    stage: string | null,
+    detail: string | null
+  ) =>
+    service
+      .from("builder_e2e_runs")
+      .update({
+        completed_at: new Date().toISOString(),
+        status,
+        failure_stage: stage,
+        detail: detail ? detail.slice(0, 500) : null,
+        steps
+      })
+      .eq("id", journalRunId);
 
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   const slug = `ajg-e2e-${suffix}`;
@@ -538,8 +577,14 @@ export async function POST(request: NextRequest) {
       if (error) cleanupOk = false;
     }
 
+    const { error: journalError } = await finishJournal(
+      cleanupOk ? "failed" : "cleanup_failed",
+      currentStage,
+      failure.detail
+    );
+
     return NextResponse.json(
-      { ...failure, cleanupOk },
+      { ...failure, cleanupOk, journalOk: !journalError },
       {
         status: 500,
         headers: {
@@ -568,11 +613,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (!cleanupOk) {
+    const { error: journalError } = await finishJournal(
+      "cleanup_failed",
+      "cleanup",
+      "E2E validation passed but temporary-resource cleanup failed."
+    );
     return NextResponse.json(
       {
         error: "ELTARA E2E validation passed but cleanup failed",
         stage: "cleanup",
-        steps
+        steps,
+        journalOk: !journalError
       },
       {
         status: 500,
@@ -591,11 +642,25 @@ export async function POST(request: NextRequest) {
     detail: "Site, domaine, feedback et médias temporaires supprimés."
   });
 
+  const { error: journalError } = await finishJournal("success", null, null);
+  if (journalError) {
+    return NextResponse.json(
+      {
+        error: "ELTARA E2E validation passed but journal persistence failed",
+        stage: "journal",
+        steps
+      },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json(
     {
       ok: true,
       includeAi,
       locale,
+      deploymentSha,
+      journalRunId,
       steps
     },
     {
