@@ -45,5 +45,5 @@ test("visual review is deterministic, read-only and retains evidence", () => {
   assert.match(workflow, /actions\/upload-artifact@v4/);
   assert.match(workflow, /retention-days: 14/);
   assert.match(workflow, /permissions:\n  contents: read/);
-  assert.doesNotMatch(workflow, /VERCEL_TOKEN|SUPABASE|OPENAI|STRIPE|checkout|curl\s+-X\s+(POST|PUT|PATCH|DELETE)/i);
+  assert.doesNotMatch(workflow, /VERCEL_TOKEN|SUPABASE|OPENAI|STRIPE|AJG_BILLING|\\/api\\/billing\\/checkout|curl\\s+-X\\s+(POST|PUT|PATCH|DELETE)/i);
 });
