@@ -106,3 +106,22 @@ test("provider validates sensitive production metadata without decrypting the se
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+
+test("production release validates sensitive reporting without decrypting it", () => {
+  const workflow = readFileSync(
+    new URL("../../.github/workflows/site-builder-production.yml", import.meta.url),
+    "utf8"
+  );
+  const verifier = readFileSync(
+    new URL("../scripts/verify-reporting-config.mjs", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(workflow, /decrypt=false/);
+  assert.doesNotMatch(workflow, /decrypt=true/);
+  assert.doesNotMatch(verifier, /decrypt["']?\s*,?\s*["']?true/);
+  assert.match(workflow, /api\/health\/builder-reporting/);
+  assert.match(workflow, /Verify Cockpit can read private Builder reporting/);
+  assert.match(workflow, /no automatic rollback is requested for this integration failure/);
+});
