@@ -4,6 +4,7 @@ import { appBaseUrl } from "../../../../lib/app-url";
 import { getStorageBackupStatus } from "../../../../lib/storage-backup";
 import { commercialConfigurationReadiness } from "../../../../lib/commercial-checkout-readiness";
 import { auditStripeRuntimeCached } from "../../../../lib/stripe-readiness";
+import { auditOpenAiRuntimeCached } from "../../../../lib/openai-readiness";
 import {
   aiFinopsMonitorReadiness,
   aiFinopsPolicyReadiness
@@ -113,14 +114,7 @@ export async function GET(request: Request) {
       "Secret serveur présent.",
       "SUPABASE_SECRET_KEY manque côté serveur."
     ),
-    check(
-      "openai",
-      "Assistant IA",
-      present(process.env.OPENAI_API_KEY),
-      "beta",
-      "Clé serveur OpenAI présente.",
-      "OPENAI_API_KEY manque : les fonctions IA serveur seront indisponibles."
-    ),
+
     check(
       "resend",
       "Notifications email",
@@ -220,6 +214,15 @@ export async function GET(request: Request) {
       "deferred"
     )
   ];
+
+  const openAiAudit = await auditOpenAiRuntimeCached();
+  checks.push({
+    key: "openai",
+    label: "Assistant IA",
+    status: openAiAudit.status,
+    scope: "beta",
+    detail: openAiAudit.detail
+  });
 
   if (commercialConfig.stripe.ok) {
     try {

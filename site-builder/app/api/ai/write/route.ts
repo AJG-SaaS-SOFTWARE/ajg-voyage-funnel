@@ -6,6 +6,7 @@ import { normalizeStandardStructuredOutput, sanitizeStandardText, selectStandard
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
 import { AiBudgetError, createBudgetedProviderFetch } from "../../../../lib/ai-provider-budget";
 import { estimateAiCostUsdMicros } from "../../../../lib/ai-cost";
+import { isOpenAiUnavailableError } from "../../../../lib/openai-readiness";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -725,9 +726,10 @@ export async function POST(request: Request) {
       }
       await recordPremiumArchitectFailure(auth.user.id, siteId);
       if (error instanceof PremiumArchitectError) {
-        const unavailable =
-          error.code === "credit_balance_exhausted" ||
-          error.code === "insufficient_quota";
+        const unavailable = isOpenAiUnavailableError(
+          error.code,
+          error.status
+        );
         return NextResponse.json(
           {
             error: unavailable
@@ -811,7 +813,7 @@ export async function POST(request: Request) {
   if (!response.ok) {
     const code = data?.error?.code || "unknown";
     console.error("OpenAI text generation failed", { status: response.status, code });
-    const unavailable = code === "credit_balance_exhausted" || code === "insufficient_quota";
+    const unavailable = isOpenAiUnavailableError(code, response.status);
     return NextResponse.json(
       {
         error: unavailable

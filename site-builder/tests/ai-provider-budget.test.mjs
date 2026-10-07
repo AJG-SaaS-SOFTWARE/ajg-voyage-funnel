@@ -94,6 +94,7 @@ test('writer refunds standard quota only when no usable result is returned', asy
         '../../../../lib/ai-provider-budget': { AiBudgetError, createBudgetedProviderFetch: ctx => createBudgetedProviderFetch(ctx, provider) },
         '../../../../lib/premium-site-architect': { PremiumArchitectError: class extends Error {} },
         '../../../../lib/server-locale': { requestProductLocale: () => 'en', localize: (_, fr, en) => en },
+        '../../../../lib/openai-readiness': { isOpenAiUnavailableError: (code, status) => ['expired_secret_key', 'invalid_api_key', 'credit_balance_exhausted', 'insufficient_quota'].includes(code) || status === 401 || status === 403 },
         '../../../../lib/standard-ai-writer': {
           selectStandardContextEntries: (_, entries) => entries,
           standardStructuredFormat: () => null,
