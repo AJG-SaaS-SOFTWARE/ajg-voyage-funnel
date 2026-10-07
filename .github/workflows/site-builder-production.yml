@@ -23,7 +23,6 @@ jobs:
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_T1xBMzY6HJCAkUStrmkUgj60
-      VERCEL_TEAM_SLUG: ajg-saas-software
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
       PRODUCTION_ALIAS: ajg-site-builder.vercel.app
       PUBLIC_DOMAIN: eltara.ajgsolutionsgroup.com
@@ -236,6 +235,17 @@ jobs:
         run: |
           node scripts/verify-reporting-config.mjs --provider /tmp/vercel-production-envs.json
 
+      - name: Prepare ephemeral release E2E credential
+        shell: bash
+        run: |
+          RELEASE_E2E_TOKEN="$(openssl rand -hex 32)"
+          RELEASE_E2E_TOKEN_HASH="$(printf '%s' "$RELEASE_E2E_TOKEN" | sha256sum | awk '{print $1}')"
+
+          echo "::add-mask::$RELEASE_E2E_TOKEN"
+          echo "AJG_RELEASE_E2E_TOKEN=$RELEASE_E2E_TOKEN" >> "$GITHUB_ENV"
+          echo "AJG_RELEASE_E2E_TOKEN_HASH=$RELEASE_E2E_TOKEN_HASH" >> "$GITHUB_ENV"
+          echo "Prepared an ephemeral SHA-bound release E2E credential; only its hash will reach the deployment." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Capture current production rollback target
         id: previous
         shell: bash
@@ -278,6 +288,7 @@ jobs:
             --token "$VERCEL_TOKEN" \
             --project "$VERCEL_PROJECT_ID" \
             --env "AJG_RELEASE_SHA=$GITHUB_SHA" \
+            --env "AJG_RELEASE_E2E_TOKEN_HASH=$AJG_RELEASE_E2E_TOKEN_HASH" \
             2>&1 | tee /tmp/vercel-deploy.log
           DEPLOY_EXIT=${PIPESTATUS[0]}
           set -e
@@ -425,46 +436,25 @@ jobs:
 
           echo "Cockpit successfully validated its private ELTARA reporting credential." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Link ELTARA project context for Vercel Cron CLI
-        shell: bash
-        run: |
-          rm -rf .vercel
-          npx --yes vercel@60.1.3 link \
-            --yes \
-            --token "$VERCEL_TOKEN" \
-            --scope "$VERCEL_TEAM_SLUG" \
-            --project "ajg-site-builder"
-
-          node -e '
-            const fs = require("node:fs");
-            const payload = JSON.parse(fs.readFileSync(".vercel/project.json", "utf8"));
-            if (
-              payload?.orgId !== process.env.VERCEL_ORG_ID ||
-              payload?.projectId !== process.env.VERCEL_PROJECT_ID
-            ) {
-              console.error("Vercel CLI linked an unexpected project.");
-              process.exit(1);
-            }
-          '
-
-          echo "Vercel CLI linked the ephemeral release workspace to ELTARA." >> "$GITHUB_STEP_SUMMARY"
-
       - name: Run structural FR/EN release E2E for deployed SHA
         shell: bash
         run: |
           echo "Triggering structural ELTARA release E2E for $GITHUB_SHA."
 
           set +e
-          npx --yes vercel@60.1.3 crons run /api/cron/release-e2e-structural \
-            --token "$VERCEL_TOKEN" \
-            2>&1 | tee /tmp/eltara-release-e2e-structural.log
-          CRON_EXIT=${PIPESTATUS[0]}
+          HTTP_CODE="$(curl --silent --show-error \
+            --max-time 220 \
+            --output /tmp/eltara-release-e2e-structural.json \
+            --write-out "%{http_code}" \
+            "https://$PRODUCTION_ALIAS/api/cron/release-e2e-structural" \
+            -H "Authorization: Bearer $AJG_RELEASE_E2E_TOKEN")"
+          CURL_EXIT=$?
           set -e
 
-          if [ "$CRON_EXIT" -ne 0 ]; then
-            echo "::error::Structural FR/EN release E2E failed for $GITHUB_SHA. Production remains deployed; no automatic rollback is requested for this post-release validation failure."
-            cat /tmp/eltara-release-e2e-structural.log
-            exit "$CRON_EXIT"
+          if [ "$CURL_EXIT" -ne 0 ] || [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Structural FR/EN release E2E failed for $GITHUB_SHA (curl=$CURL_EXIT, HTTP=$HTTP_CODE). Production remains deployed; no automatic rollback is requested for this post-release validation failure."
+            cat /tmp/eltara-release-e2e-structural.json 2>/dev/null || true
+            exit 1
           fi
 
           echo "Structural FR/EN release E2E passed or was already validated for $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
@@ -475,16 +465,19 @@ jobs:
           echo "Triggering full AI ELTARA release E2E for $GITHUB_SHA."
 
           set +e
-          npx --yes vercel@60.1.3 crons run /api/cron/release-e2e \
-            --token "$VERCEL_TOKEN" \
-            2>&1 | tee /tmp/eltara-release-e2e.log
-          CRON_EXIT=${PIPESTATUS[0]}
+          HTTP_CODE="$(curl --silent --show-error \
+            --max-time 340 \
+            --output /tmp/eltara-release-e2e.json \
+            --write-out "%{http_code}" \
+            "https://$PRODUCTION_ALIAS/api/cron/release-e2e" \
+            -H "Authorization: Bearer $AJG_RELEASE_E2E_TOKEN")"
+          CURL_EXIT=$?
           set -e
 
-          if [ "$CRON_EXIT" -ne 0 ]; then
-            echo "::error::Full AI FR/EN release E2E failed for $GITHUB_SHA. Production remains deployed; no automatic rollback is requested for this post-release validation failure."
-            cat /tmp/eltara-release-e2e.log
-            exit "$CRON_EXIT"
+          if [ "$CURL_EXIT" -ne 0 ] || [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Full AI FR/EN release E2E failed for $GITHUB_SHA (curl=$CURL_EXIT, HTTP=$HTTP_CODE). Production remains deployed; no automatic rollback is requested for this post-release validation failure."
+            cat /tmp/eltara-release-e2e.json 2>/dev/null || true
+            exit 1
           fi
 
           echo "Full AI FR/EN release E2E passed or was already validated for $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
