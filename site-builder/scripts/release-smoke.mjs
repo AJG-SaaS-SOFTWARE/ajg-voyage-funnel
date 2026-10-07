@@ -47,6 +47,42 @@ async function expectStatus(path, expected, init = {}) {
   }
 }
 
+
+async function expectLocalizedHtml(path, locale, expectedText, forbiddenText) {
+  console.log("Smoke locale:", locale, path);
+  const response = await fetch(origin + path, {
+    redirect: "manual",
+    headers: {
+      cookie: `ajg_builder_language=${locale}`,
+      "accept-language": locale === "en" ? "en-GB,en;q=0.9" : "fr-FR,fr;q=0.9"
+    },
+    signal: AbortSignal.timeout(8000)
+  });
+  if (response.status !== 200) {
+    throw new Error(`${path} (${locale}): expected HTTP 200, got ${response.status}`);
+  }
+
+  const html = await response.text();
+  if (!html.includes(`lang="${locale}"`)) {
+    throw new Error(`${path} (${locale}): root html lang is not ${locale}`);
+  }
+  for (const text of expectedText) {
+    if (!html.includes(text)) {
+      throw new Error(`${path} (${locale}): missing expected text "${text}"`);
+    }
+  }
+  for (const text of forbiddenText) {
+    if (html.includes(text)) {
+      throw new Error(`${path} (${locale}): unexpected opposite-locale text "${text}"`);
+    }
+  }
+}
+
+async function expectMirroredLocale(path, frExpected, enExpected) {
+  await expectLocalizedHtml(path, "fr", frExpected, enExpected);
+  await expectLocalizedHtml(path, "en", enExpected, frExpected);
+}
+
 try {
   await waitUntilReady();
   await expectStatus("/login", 200);
@@ -54,6 +90,31 @@ try {
   await expectStatus("/tarifs", 200);
   await expectStatus("/pricing", 200);
   await expectStatus("/billing", 200);
+  await expectMirroredLocale(
+    "/login",
+    ["Connexion", "Adresse email", "Recevoir mon lien de connexion"],
+    ["Sign in", "Email address", "Send me a sign-in link"]
+  );
+  await expectMirroredLocale(
+    "/plans",
+    ["Mon offre", "Votre compte"],
+    ["My plan", "Your account"]
+  );
+  await expectMirroredLocale(
+    "/billing",
+    ["Facturation", "Votre compte"],
+    ["Billing", "Your account"]
+  );
+  await expectMirroredLocale(
+    "/domains",
+    ["Domaines", "Votre compte"],
+    ["Domains", "Your account"]
+  );
+  await expectMirroredLocale(
+    "/data",
+    ["Mes données", "Votre compte"],
+    ["My data", "Your account"]
+  );
   await expectStatus("/ci-route-that-does-not-exist", 404);
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   await expectStatus("/api/admin/release-readiness", 401);
