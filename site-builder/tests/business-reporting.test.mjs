@@ -8,7 +8,7 @@ const route = fs.readFileSync(new URL("../app/api/health/business/route.ts", imp
 test("Builder Cockpit report is private and aggregate-only", () => {
   assert.match(route, /AJG_COCKPIT_REPORTING_TOKEN/);
   assert.match(route, /authorization/);
-  assert.doesNotMatch(source, /owner_id|site_id|provider_customer_id|provider_subscription_id/);
+  assert.doesNotMatch(source, /owner_id|user_id|email|site_id|provider_customer_id|provider_subscription_id/);
   assert.doesNotMatch(source, /select\("\*"\)/);
 });
 
@@ -55,4 +55,31 @@ test("Builder report treats an enabled but non-ready Checkout as critical", () =
   assert.match(source, /commercialLaunchState === "blocked"/);
   assert.match(source, /failedProviderEvents > 0 \|\| commercialLaunchState === "blocked"/);
   assert.match(source, /Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme/);
+});
+
+
+test("Builder report exposes only aggregate beta-operations state", () => {
+  assert.match(source, /from\("beta_operations_runs"\)/);
+  assert.match(source, /active_tester_count/);
+  assert.match(source, /follow_up_candidates/);
+  assert.match(source, /awaiting_resume/);
+  assert.match(source, /unresponsive_after_followup/);
+  assert.match(source, /completed_missions/);
+  assert.match(source, /betaOperations,/);
+  assert.doesNotMatch(source, /betaOperations:\s*{[^}]*\b(?:user|email|site|owner)\b/s);
+});
+
+test("Builder report turns beta agent state into aggregate operational severity", () => {
+  assert.match(source, /betaOperations\.status === "failed"/);
+  assert.match(source, /betaOperations\.status === "attention"/);
+  assert.match(source, /betaOperations\.status === "unavailable"/);
+  assert.match(source, /relance\(s\) Beta Tester à préparer/);
+  assert.match(source, /sans reprise après relance/);
+});
+
+test("missing beta journal degrades reporting without exposing or inventing tester identities", () => {
+  assert.match(source, /status: "unavailable" as const/);
+  assert.match(source, /activeTesterCount: 0/);
+  assert.match(source, /checkedAt: null/);
+  assert.match(source, /dernier état agrégé du suivi bêta ELTARA est indisponible/);
 });
