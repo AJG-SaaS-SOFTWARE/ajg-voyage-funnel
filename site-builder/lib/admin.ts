@@ -80,10 +80,14 @@ export type BuilderE2EStep = {
 export type BuilderE2EResult = {
   ok: true;
   includeAi: boolean;
+  locale: "fr" | "en";
   steps: BuilderE2EStep[];
 };
 
-export async function adminRunBuilderE2E(includeAi: boolean): Promise<BuilderE2EResult> {
+export async function adminRunBuilderE2E(
+  includeAi: boolean,
+  locale: "fr" | "en" = "fr"
+): Promise<BuilderE2EResult> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { data: { session }, error } = await supabase.auth.getSession();
@@ -95,7 +99,7 @@ export async function adminRunBuilderE2E(includeAi: boolean): Promise<BuilderE2E
       Authorization: `Bearer ${session.access_token}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ includeAi }),
+    body: JSON.stringify({ includeAi, locale }),
     cache: "no-store"
   });
   const body = await response.json().catch(() => null);
