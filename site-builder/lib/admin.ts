@@ -111,6 +111,53 @@ export async function adminRunBuilderE2E(
   return body as BuilderE2EResult;
 }
 
+export type AdminVisualReview = {
+  locale: "fr" | "en";
+  viewport: "desktop" | "mobile";
+  approved: boolean;
+  reviewed_at: string;
+  deployment_sha: string;
+  surface_set_version: string;
+};
+
+export type AdminVisualReviewStatus = {
+  deploymentSha: string;
+  surfaceSetVersion: string;
+  complete: boolean;
+  reviews: AdminVisualReview[];
+};
+
+export async function getAdminVisualReview(): Promise<AdminVisualReviewStatus> {
+  const token = await adminSessionToken();
+  const response = await fetch("/api/admin/visual-review", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Revue visuelle indisponible.");
+  return body as AdminVisualReviewStatus;
+}
+
+export async function adminSetVisualReview(
+  locale: "fr" | "en",
+  viewport: "desktop" | "mobile",
+  approved: boolean
+): Promise<AdminVisualReview> {
+  const token = await adminSessionToken();
+  const response = await fetch("/api/admin/visual-review", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ locale, viewport, approved }),
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.error || "Enregistrement de la revue visuelle impossible.");
+  return body.review as AdminVisualReview;
+}
+
 export type AdminManagedDomain = {
   id: string;
   siteId: string;
