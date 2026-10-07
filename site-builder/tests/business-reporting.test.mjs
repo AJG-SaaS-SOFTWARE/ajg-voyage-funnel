@@ -53,7 +53,9 @@ test("Builder report exposes only aggregate commercial launch readiness", () => 
 
 test("Builder report treats an enabled but non-ready Checkout as critical", () => {
   assert.match(source, /commercialLaunchState === "blocked"/);
-  assert.match(source, /failedProviderEvents > 0 \|\| commercialLaunchState === "blocked"/);
+  assert.match(source, /failedProviderEvents > 0/);
+  assert.match(source, /commercialLaunchState === "blocked"/);
+  assert.match(source, /betaOperations\.status === "failed"/);
   assert.match(source, /Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme/);
 });
 
