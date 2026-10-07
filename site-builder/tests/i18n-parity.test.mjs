@@ -169,6 +169,19 @@ test("guided Builder and compliance labels are localized", () => {
   assert.doesNotMatch(compliance, /<b>Profil MWR Life<\/b>/);
 });
 
+test("customer website selectors use the same Site / Website terminology", () => {
+  const billing = read("app/billing/page.tsx");
+  const domains = read("app/domains/page.tsx");
+  const builder = read("app/builder/page.tsx");
+
+  for (const source of [billing, domains, builder]) {
+    assert.match(source, /tr\("Site", "Website"\)/);
+  }
+  assert.doesNotMatch(billing, /<label>Site<select/);
+  assert.doesNotMatch(domains, /<label>Site<select/);
+  assert.doesNotMatch(builder, /<span>Site<\/span>/);
+});
+
 test("English Builder core has no known French-only residuals in customer paths", () => {
   const builder = read("app/builder/page.tsx");
   const privacyApi = read("app/api/privacy/erasure/request/route.ts");
