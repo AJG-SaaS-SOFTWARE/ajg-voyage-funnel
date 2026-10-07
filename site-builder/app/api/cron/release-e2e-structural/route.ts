@@ -3,7 +3,7 @@ import { runReleaseE2EMirror } from "../../../../lib/release-e2e-runner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 180;
 
 function cronAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET || "";
@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
   ).replace(/\/$/, "");
 
   const result = await runReleaseE2EMirror(appOrigin, {
-    includeAi: true,
-    label: "full"
+    includeAi: false,
+    label: "structural"
   });
 
   return NextResponse.json(result.body, { status: result.status });

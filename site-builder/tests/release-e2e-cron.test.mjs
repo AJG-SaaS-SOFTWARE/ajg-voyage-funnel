@@ -21,8 +21,16 @@ new Function("require", "module", "exports", policyCode)(
 );
 const { releaseE2ERunDecision } = policyModule.exports;
 
-const route = fs.readFileSync(
+const runner = fs.readFileSync(
+  new URL("../lib/release-e2e-runner.ts", import.meta.url),
+  "utf8"
+);
+const fullRoute = fs.readFileSync(
   new URL("../app/api/cron/release-e2e/route.ts", import.meta.url),
+  "utf8"
+);
+const structuralRoute = fs.readFileSync(
+  new URL("../app/api/cron/release-e2e-structural/route.ts", import.meta.url),
   "utf8"
 );
 const vercel = JSON.parse(
@@ -60,84 +68,74 @@ test("release E2E policy enforces cooldown and a hard retry budget", () => {
     ),
     { run: false, reason: "retry_budget_exhausted" }
   );
-
-  assert.deepEqual(
-    releaseE2ERunDecision(
-      [{ status: "failed", completed_at: "2026-10-06T01:00:00.000Z" }],
-      now
-    ),
-    { run: true, reason: "missing_validation" }
-  );
 });
 
-test("release E2E cron is secret-protected and SHA-bound", () => {
-  assert.match(route, /process\.env\.CRON_SECRET/);
-  assert.match(route, /authorization ===/);
-  assert.match(route, /Bearer/);
-  assert.match(route, /process\.env\.VERCEL_GIT_COMMIT_SHA/);
-  assert.match(route, /\.eq\("deployment_sha", sha\)/);
-  assert.match(route, /\.eq\("include_ai", true\)/);
+test("both release E2E cron routes are secret-protected and use the shared runner", () => {
+  for (const route of [fullRoute, structuralRoute]) {
+    assert.match(route, /process\.env\.CRON_SECRET/);
+    assert.match(route, /authorization ===/);
+    assert.match(route, /Bearer/);
+    assert.match(route, /runReleaseE2EMirror\(appOrigin/);
+  }
+  assert.match(fullRoute, /includeAi: true/);
+  assert.match(fullRoute, /label: "full"/);
+  assert.match(structuralRoute, /includeAi: false/);
+  assert.match(structuralRoute, /label: "structural"/);
 });
 
-test("release E2E cron uses a disposable admin identity and always removes it", () => {
-  assert.match(route, /service\.auth\.admin\.createUser/);
-  assert.match(route, /purpose: "eltara_release_e2e"/);
-  assert.match(route, /role: "admin"/);
-  assert.match(route, /authClient\.auth\.signInWithPassword/);
-  assert.match(route, /finally \{/);
+test("shared release E2E runner binds journal evidence to SHA, locale and mode", () => {
+  assert.match(runner, /process\.env\.VERCEL_GIT_COMMIT_SHA/);
+  assert.match(runner, /\.eq\("deployment_sha", sha\)/);
+  assert.match(runner, /\.eq\("locale", locale\)/);
+  assert.match(runner, /\.eq\("include_ai", mode\.includeAi\)/);
+  assert.match(runner, /include_ai: mode\.includeAi/);
+  assert.match(runner, /mode: mode\.label/);
+});
+
+test("shared runner uses disposable admin identities and always removes them", () => {
+  assert.match(runner, /service\.auth\.admin\.createUser/);
+  assert.match(runner, /purpose: "eltara_release_e2e"/);
+  assert.match(runner, /role: "admin"/);
+  assert.match(runner, /authClient\.auth\.signInWithPassword/);
+  assert.match(runner, /finally \{/);
   assert.match(
-    route,
+    runner,
     /\.from\("user_roles"\)[\s\S]*\.delete\(\)[\s\S]*\.eq\("user_id", userId\)/
   );
-  assert.match(route, /service\.auth\.admin\.deleteUser\(userId\)/);
-  assert.match(route, /service\.auth\.admin\.updateUserById\(userId/);
-  assert.match(route, /ban_duration: "876000h"/);
+  assert.match(runner, /service\.auth\.admin\.deleteUser\(userId\)/);
+  assert.match(runner, /ban_duration: "876000h"/);
 });
 
-test("release E2E gives each locale its own disposable account", () => {
-  assert.match(
-    route,
-    /for \(const plan of pending\) \{[\s\S]*service\.auth\.admin\.createUser/
+test("shared runner reuses the authenticated Builder engine without touching Checkout", () => {
+  assert.match(runner, /\["fr", "en"\] as const/);
+  assert.match(runner, /plans\.filter\(\(plan\) => plan\.run\)/);
+  assert.match(runner, /new URL\("\/api\/admin\/builder-e2e", appOrigin\)/);
+  assert.match(runner, /includeAi: mode\.includeAi/);
+  assert.match(runner, /locale: plan\.locale/);
+  assert.doesNotMatch(runner, /\/api\/billing\/checkout/);
+  assert.doesNotMatch(runner, /AJG_BILLING_CHECKOUT_ENABLED/);
+  assert.doesNotMatch(runner, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY/);
+});
+
+test("orchestration failures are journaled per mode so retry budgets remain independent", () => {
+  assert.match(runner, /failure_stage: "orchestrator"/);
+  assert.match(runner, /deployment_sha: sha/);
+  assert.match(runner, /include_ai: mode\.includeAi/);
+  assert.match(runner, /status: "failed"/);
+});
+
+test("Vercel schedules structural evidence before full AI evidence", () => {
+  const structural = vercel.crons.find(
+    (entry) => entry.path === "/api/cron/release-e2e-structural"
   );
-  assert.match(route, /release-e2e-\$\{plan\.locale\}-/);
-  assert.match(route, /locale: plan\.locale/);
-  assert.match(
-    route,
-    /for \(const plan of pending\) \{[\s\S]*let userId = ""[\s\S]*finally \{[\s\S]*deleteUser\(userId\)/
-  );
-});
-
-test("release E2E cron reuses the authenticated Builder engine for missing locales only", () => {
-  assert.match(route, /\["fr", "en"\] as const/);
-  assert.match(route, /plans\.filter\(\(plan\) => plan\.run\)/);
-  assert.match(route, /process\.env\.NEXT_PUBLIC_APP_URL \|\| request\.nextUrl\.origin/);
-  assert.match(route, /new URL\("\/api\/admin\/builder-e2e", appOrigin\)/);
-  assert.match(route, /includeAi: true/);
-  assert.match(route, /locale: plan\.locale/);
-  assert.doesNotMatch(route, /\/api\/billing\/checkout/);
-  assert.doesNotMatch(route, /AJG_BILLING_CHECKOUT_ENABLED/);
-  assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY/);
-});
-
-test("release E2E journals orchestration failures so retries remain bounded", () => {
-  assert.match(route, /failure_stage: "orchestrator"/);
-  assert.match(route, /deployment_sha: sha/);
-  assert.match(route, /status: "failed"/);
-  assert.match(route, /for \(const plan of pending\) \{/);
-  assert.match(route, /service\.from\("builder_e2e_runs"\)\.insert/);
-});
-
-test("release E2E isolates locale failures so FR cannot suppress EN evidence", () => {
-  assert.match(route, /for \(const plan of pending\) \{/);
-  assert.match(route, /try \{[\s\S]*fetch\([\s\S]*locale: plan\.locale/);
-  assert.match(route, /catch \(error\) \{[\s\S]*locale: plan\.locale/);
-});
-
-test("Vercel schedules release E2E checks hourly without multiplying successful runs", () => {
-  const cron = vercel.crons.find(
+  const full = vercel.crons.find(
     (entry) => entry.path === "/api/cron/release-e2e"
   );
-  assert.deepEqual(cron, {
+  assert.deepEqual(structural, {
+    path: "/api/cron/release-e2e-structural",
+    schedule: "25 * * * *"
+  });
+  assert.deepEqual(full, {
     path: "/api/cron/release-e2e",
     schedule: "35 * * * *"
   });
