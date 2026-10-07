@@ -731,18 +731,18 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error: unavailable
-              ? tr("L’Architecte Premium est momentanément indisponible. Votre demande n’a pas été générée.", "The Premium Site Architect is temporarily unavailable. Your request was not generated.")
+              ? tr("Le Concepteur IA est momentanément indisponible. Votre demande n’a pas été générée.", "The AI Site Architect is temporarily unavailable. Your request was not generated.")
               : error.code === "quality_gate_failed"
                 ? tr("La proposition n’a pas passé le contrôle qualité final. Elle n’a donc pas été affichée. Complétez le brief si nécessaire puis relancez la génération.", "The proposal did not pass the final quality check, so it was not displayed. Add more detail to your brief if needed, then generate again.")
                 : error.status === 429
-                  ? tr("L’Architecte Premium reçoit trop de demandes. Réessayez dans quelques instants.", "The Premium Site Architect is receiving too many requests. Try again in a few moments.")
-                  : tr("L’Architecte Premium n’a pas pu finaliser la proposition. Réessayez dans quelques instants.", "The Premium Site Architect could not finalize the proposal. Try again in a few moments.")
+                  ? tr("Le Concepteur IA reçoit trop de demandes. Réessayez dans quelques instants.", "The AI Site Architect is receiving too many requests. Try again in a few moments.")
+                  : tr("Le Concepteur IA n’a pas pu finaliser la proposition. Réessayez dans quelques instants.", "The AI Site Architect could not finalize the proposal. Try again in a few moments.")
           },
           { status: unavailable ? 503 : 502 }
         );
       }
       return NextResponse.json(
-        { error: tr("L’Architecte Premium n’a pas pu finaliser la proposition. Réessayez.", "The Premium Site Architect could not finalize the proposal. Try again.") },
+        { error: tr("Le Concepteur IA n’a pas pu finaliser la proposition. Réessayez.", "The AI Site Architect could not finalize the proposal. Try again.") },
         { status: 502 }
       );
     }
