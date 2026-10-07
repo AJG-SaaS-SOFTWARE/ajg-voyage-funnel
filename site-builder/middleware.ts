@@ -31,10 +31,15 @@ export function middleware(request:NextRequest){
  }
  const isAppHost=hostname===appHostname||publishedRootDomains().includes(hostname)||hostname==="localhost"||hostname.endsWith(".vercel.app");
  if(isAppHost){
-   const response=NextResponse.next();
-   if(request.nextUrl.pathname==="/pricing")response.headers.set("Content-Language","en");
-   if(request.nextUrl.pathname==="/tarifs")response.headers.set("Content-Language","fr");
-   return response;
+   const explicitLocale=request.nextUrl.pathname==="/pricing"?"en":request.nextUrl.pathname==="/tarifs"?"fr":null;
+   if(explicitLocale){
+     const requestHeaders=new Headers(request.headers);
+     requestHeaders.set("x-ajg-product-locale",explicitLocale);
+     const response=NextResponse.next({request:{headers:requestHeaders}});
+     response.headers.set("Content-Language",explicitLocale);
+     return response;
+   }
+   return NextResponse.next();
  }
  const url=request.nextUrl.clone();
  url.pathname="/domain/"+encodeURIComponent(hostname)+(request.nextUrl.pathname==="/"?"":request.nextUrl.pathname);
