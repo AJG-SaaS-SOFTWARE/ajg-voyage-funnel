@@ -102,18 +102,18 @@ try {
   );
   await expectMirroredLocale(
     "/billing",
-    ["Facturation", "Votre compte"],
-    ["Billing", "Your account"]
+    ["Facturation", "Votre compte", "Votre accès ELTARA", "récupération"],
+    ["Billing", "Your account", "Your ELTARA access", "recovery"]
   );
   await expectMirroredLocale(
     "/domains",
-    ["Domaines", "Votre compte"],
-    ["Domains", "Your account"]
+    ["Domaines", "Votre compte", "Mettre votre domaine en ligne, étape par étape", "Domaine personnalisé"],
+    ["Domains", "Your account", "Put your domain online, step by step", "Custom domain"]
   );
   await expectMirroredLocale(
     "/data",
-    ["Mes données", "Votre compte"],
-    ["My data", "Your account"]
+    ["Mes données", "Votre compte", "Confidentialité", "Exportez vos données"],
+    ["My data", "Your account", "Privacy", "Export your data"]
   );
   await expectLocalizedHtml(
     "/pricing",
@@ -139,8 +139,8 @@ try {
   );
   await expectMirroredLocale(
     "/analytics",
-    ["Comprenez ce qui se passe sur votre site", "Chargement des analytics…"],
-    ["Understand what happens on your website", "Loading analytics…"]
+    ["Comprenez ce qui se passe sur votre site", "Chargement des analytics…", "Période d’analyse"],
+    ["Understand what happens on your website", "Loading analytics…", "Analytics period"]
   );
   await expectMirroredLocale(
     "/support",

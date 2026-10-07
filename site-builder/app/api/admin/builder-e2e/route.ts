@@ -182,6 +182,14 @@ export async function POST(request: NextRequest) {
       status: "pass",
       detail: includeAi ? "Le site E2E reçoit un droit Growth interne et un crédit BUILD unique, tous deux supprimés avec le site." : "Le site E2E reçoit uniquement pendant la recette un droit Growth interne, supprimé avec le site."
     });
+    steps.push({
+      key: "billing",
+      label: "Billing",
+      status: "pass",
+      detail: includeAi
+        ? "Le droit Growth et le crédit BUILD temporaire sont lisibles via le contrat d’entitlements authentifié, sans ouvrir Checkout."
+        : "Le droit Growth temporaire est lisible via le contrat d’entitlements authentifié, sans ouvrir Checkout."
+    });
 
     let proposal: any = null;
     currentStage = "ai";
@@ -370,6 +378,29 @@ export async function POST(request: NextRequest) {
     });
     if (domainError) throw domainError;
 
+    const { data: managedDomain, error: domainReadError } = await userClient
+      .from("domains")
+      .select("hostname,kind,verification_status,is_primary")
+      .eq("site_id", siteId)
+      .eq("kind", "managed_subdomain")
+      .maybeSingle();
+    if (
+      domainReadError ||
+      !managedDomain ||
+      managedDomain.hostname !== `${slug}.${root}` ||
+      managedDomain.verification_status !== "verified" ||
+      managedDomain.is_primary !== true
+    ) {
+      throw domainReadError || new Error("Managed domain readback failed.");
+    }
+
+    steps.push({
+      key: "domains",
+      label: "Domaines",
+      status: "pass",
+      detail: "Sous-domaine managé créé puis relu via la session authentifiée et les RLS ; aucune mutation DNS externe n’est déclenchée."
+    });
+
     steps.push({
       key: "publish",
       label: "Publication",
@@ -441,10 +472,10 @@ export async function POST(request: NextRequest) {
       throw new Error(`Recovery archive validation failed with HTTP ${exportResponse.status}.`);
     }
     steps.push({
-      key: "export",
-      label: "Export de récupération",
+      key: "data",
+      label: "Données & récupération",
       status: "pass",
-      detail: `Archive TAR.GZ générée avec succès (${archive.byteLength} octets).`
+      detail: `Archive TAR.GZ réelle générée avec succès (${archive.byteLength} octets) via la route d’export authentifiée.`
     });
 
     currentStage = "complete";
