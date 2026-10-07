@@ -83,6 +83,13 @@ function displayedLiteral(node) {
     }
 
     if (node.parent?.kind === ts.SyntaxKind.JsxExpression) {
+      const attribute = node.parent.parent;
+      if (attribute && ts.isJsxAttribute(attribute)) {
+        const name = attribute.name.getText();
+        return ["placeholder", "title", "aria-label", "alt"].includes(name)
+          ? (ts.isTemplateExpression(node) ? node.getText() : node.text)
+          : null;
+      }
       return ts.isTemplateExpression(node) ? node.getText() : node.text;
     }
   }
@@ -207,4 +214,38 @@ test("template literals rendered directly in JSX are inspected", () => {
   };
   visit(source);
   assert.match(literal || "", /Voir/);
+});
+
+test("template literals used only for non-visible JSX attributes are ignored", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const status = "ready"; const node = <span className={`billing-view ${status}`}>ok</span>;',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  let literal = "unset";
+  const visit = (node) => {
+    if (ts.isTemplateExpression(node)) literal = displayedLiteral(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(literal, null);
+});
+
+test("template literals used for visible accessibility attributes remain inspected", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const value = "x"; const node = <span aria-label={`View ${value}`} />;',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  let literal = null;
+  const visit = (node) => {
+    if (ts.isTemplateExpression(node)) literal = displayedLiteral(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.match(literal || "", /View/);
 });
