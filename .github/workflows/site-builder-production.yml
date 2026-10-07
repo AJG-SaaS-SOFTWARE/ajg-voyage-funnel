@@ -424,6 +424,26 @@ jobs:
 
           echo "Cockpit successfully validated its private ELTARA reporting credential." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Link ELTARA project context for Vercel Cron CLI
+        shell: bash
+        run: |
+          rm -rf .vercel
+          mkdir -p .vercel
+          node -e '
+            const fs = require("node:fs");
+            const orgId = process.env.VERCEL_ORG_ID || "";
+            const projectId = process.env.VERCEL_PROJECT_ID || "";
+            if (!orgId.startsWith("team_") || !projectId.startsWith("prj_")) {
+              console.error("Missing Vercel project identity for Cron CLI.");
+              process.exit(1);
+            }
+            fs.writeFileSync(
+              ".vercel/project.json",
+              JSON.stringify({ orgId, projectId })
+            );
+          '
+          echo "Ephemeral Vercel project context created for release Cron validation." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run structural FR/EN release E2E for deployed SHA
         shell: bash
         run: |
