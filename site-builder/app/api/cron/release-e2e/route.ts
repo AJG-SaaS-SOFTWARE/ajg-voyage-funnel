@@ -9,6 +9,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
+type Locale = "fr" | "en";
+
+function cronAuthorized(request: Request) {
+  const secret = process.env.CRON_SECRET || "";
+  const authorization = request.headers.get("authorization") || "";
+  return Boolean(secret) && authorization === `Bearer ${secret}`;
+}
+
 function deploymentSha() {
   return (
     process.env.AJG_RELEASE_SHA ||
