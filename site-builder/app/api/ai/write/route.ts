@@ -70,6 +70,53 @@ const writableFields = {
 
 type WritableField = keyof typeof writableFields;
 
+const englishWritableFields: Record<WritableField, { name: string; constraint: string }> = {
+  heroTagline: {
+    name: "the short line above the main headline",
+    constraint: "One very short sentence, maximum 90 characters."
+  },
+  heroTitle: {
+    name: "the main homepage headline",
+    constraint: "A clear, natural headline, ideally 4 to 10 words, maximum 90 characters."
+  },
+  heroSubtitle: {
+    name: "the introduction below the main headline",
+    constraint: "Two or three short, simple, human sentences, maximum 420 characters."
+  },
+  aboutHeading: {
+    name: "the personal introduction section heading",
+    constraint: "A short, natural heading, maximum 100 characters."
+  },
+  aboutText: {
+    name: "the personal introduction",
+    constraint: "Human copy of 70 to 130 words, using short paragraphs when useful."
+  },
+  guidedDraft: {
+    name: "the website's main copy set",
+    constraint: "Return exactly five fields in the requested JSON structure: heroTagline, heroTitle, heroSubtitle, aboutHeading, aboutText."
+  },
+  qualityReview: {
+    name: "the website editorial review",
+    constraint: "Return JSON with issues and suggested field replacements, never overwrite user content."
+  },
+  siteRevision: {
+    name: "a full website revision",
+    constraint: "Return the same structured JSON as siteArchitect. Never publish automatically and never invent facts, testimonials, numbers, prices, contact details, credentials, claims or asset IDs."
+  },
+  siteArchitect: {
+    name: "a complete website plan",
+    constraint: "Return only the exact JSON structure requested. The proposal is a draft and must never be published automatically."
+  },
+  moduleDraft: {
+    name: "an optional website section",
+    constraint: "Return only the JSON structure requested for the specified module type."
+  },
+  bookingLabel: {
+    name: "the booking button label",
+    constraint: "A very short action phrase, maximum 45 characters."
+  }
+};
+
 function clean(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
@@ -367,6 +414,10 @@ export async function POST(request: Request) {
     .map(([key, value]) => `${key}: ${value}`)
     .join("\n");
   const fieldSpec = writableFields[field];
+  const localizedFieldSpec =
+    language === "English"
+      ? { ...fieldSpec, ...englishWritableFields[field] }
+      : fieldSpec;
 
   const complianceRules = affiliation === "mwr"
     ? "The member is an independent MWR Life Lifestyle Ambassador. Do not present the site as official. Do not invent prices, discounts, savings, guarantees, income claims, affiliations, certifications or product capabilities. Mention MWR Life or Travel Advantage only when the user's request or existing text makes it relevant."
@@ -698,9 +749,9 @@ export async function POST(request: Request) {
   }
 
   const prompt = [
-    `Field to write: ${fieldSpec.name}.`,
-    `Goal: ${fieldSpec.purpose}`,
-    `Hard constraint: ${fieldSpec.constraint}`,
+    `Field to write: ${localizedFieldSpec.name}.`,
+    `Goal: ${localizedFieldSpec.purpose}`,
+    `Hard constraint: ${localizedFieldSpec.constraint}`,
     `Language: ${language}.`,
     firstName ? `First name: ${firstName}.` : "",
     brandName ? `Site/brand name: ${brandName}.` : "",
