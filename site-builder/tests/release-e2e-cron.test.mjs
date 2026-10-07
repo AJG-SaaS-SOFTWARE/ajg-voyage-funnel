@@ -94,6 +94,19 @@ test("release E2E cron uses a disposable admin identity and always removes it", 
   assert.match(route, /ban_duration: "876000h"/);
 });
 
+test("release E2E gives each locale its own disposable account", () => {
+  assert.match(
+    route,
+    /for \(const plan of pending\) \{[\s\S]*service\.auth\.admin\.createUser/
+  );
+  assert.match(route, /release-e2e-\$\{plan\.locale\}-/);
+  assert.match(route, /locale: plan\.locale/);
+  assert.match(
+    route,
+    /for \(const plan of pending\) \{[\s\S]*let userId = ""[\s\S]*finally \{[\s\S]*deleteUser\(userId\)/
+  );
+});
+
 test("release E2E cron reuses the authenticated Builder engine for missing locales only", () => {
   assert.match(route, /\["fr", "en"\] as const/);
   assert.match(route, /plans\.filter\(\(plan\) => plan\.run\)/);

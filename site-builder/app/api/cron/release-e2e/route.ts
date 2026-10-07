@@ -91,13 +91,6 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-  const email = `release-e2e-${sha.slice(0, 12)}-${suffix}@example.invalid`;
-  const password =
-    crypto.randomUUID().replace(/-/g, "") +
-    crypto.randomUUID().replace(/-/g, "");
-
-  let userId = "";
   let cleanupOk = true;
   const results: Array<{
     locale: Locale;
@@ -105,92 +98,85 @@ export async function GET(request: NextRequest) {
     status: number;
     detail: string;
   }> = [];
+  const appOrigin = (
+    process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
+  ).replace(/\/$/, "");
 
-  try {
-    const { data: created, error: createError } =
-      await service.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          purpose: "eltara_release_e2e",
-          deployment_sha: sha
-        }
-      });
+  for (const plan of pending) {
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    const email = `release-e2e-${plan.locale}-${sha.slice(0, 12)}-${suffix}@example.invalid`;
+    const password =
+      crypto.randomUUID().replace(/-/g, "") +
+      crypto.randomUUID().replace(/-/g, "");
+    let userId = "";
 
-    if (createError || !created.user) {
-      throw createError || new Error("temporary_admin_creation_failed");
-    }
-    userId = created.user.id;
-
-    const { error: roleError } = await service.from("user_roles").insert({
-      user_id: userId,
-      role: "admin"
-    });
-    if (roleError) throw roleError;
-
-    const authClient = createClient(url, publishable, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    });
-    const { data: sessionData, error: signInError } =
-      await authClient.auth.signInWithPassword({ email, password });
-
-    const accessToken = sessionData.session?.access_token;
-    if (signInError || !accessToken) {
-      throw signInError || new Error("temporary_admin_sign_in_failed");
-    }
-
-    const appOrigin = (
-      process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-    ).replace(/\/$/, "");
-
-    for (const plan of pending) {
-      try {
-        const response = await fetch(
-          new URL("/api/admin/builder-e2e", appOrigin),
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              includeAi: true,
-              locale: plan.locale
-            }),
-            cache: "no-store",
-            signal: AbortSignal.timeout(150000)
+    try {
+      const { data: created, error: createError } =
+        await service.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            purpose: "eltara_release_e2e",
+            deployment_sha: sha,
+            locale: plan.locale
           }
-        );
+        });
 
-        const body = await response.json().catch(() => null);
-        results.push({
-          locale: plan.locale,
-          ok: response.ok && body?.ok === true,
-          status: response.status,
-          detail: response.ok
-            ? "validated"
-            : String(body?.error || "E2E validation failed").slice(0, 300)
-        });
-      } catch (error) {
-        results.push({
-          locale: plan.locale,
-          ok: false,
-          status: 503,
-          detail:
-            error instanceof Error
-              ? error.message.slice(0, 300)
-              : "E2E validation request failed"
-        });
+      if (createError || !created.user) {
+        throw createError || new Error("temporary_admin_creation_failed");
       }
-    }
-  } catch (error) {
-    const detail =
-      error instanceof Error
-        ? error.message.slice(0, 300)
-        : "Release E2E automation failed";
+      userId = created.user.id;
 
-    for (const plan of pending) {
+      const { error: roleError } = await service.from("user_roles").insert({
+        user_id: userId,
+        role: "admin"
+      });
+      if (roleError) throw roleError;
+
+      const authClient = createClient(url, publishable, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+      const { data: sessionData, error: signInError } =
+        await authClient.auth.signInWithPassword({ email, password });
+
+      const accessToken = sessionData.session?.access_token;
+      if (signInError || !accessToken) {
+        throw signInError || new Error("temporary_admin_sign_in_failed");
+      }
+
+      const response = await fetch(
+        new URL("/api/admin/builder-e2e", appOrigin),
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            includeAi: true,
+            locale: plan.locale
+          }),
+          cache: "no-store",
+          signal: AbortSignal.timeout(150000)
+        }
+      );
+
+      const body = await response.json().catch(() => null);
+      results.push({
+        locale: plan.locale,
+        ok: response.ok && body?.ok === true,
+        status: response.status,
+        detail: response.ok
+          ? "validated"
+          : String(body?.error || "E2E validation failed").slice(0, 300)
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message.slice(0, 300)
+          : "Release E2E automation failed";
+
       await service.from("builder_e2e_runs").insert({
         locale: plan.locale,
         include_ai: true,
@@ -208,23 +194,23 @@ export async function GET(request: NextRequest) {
         status: 500,
         detail
       });
-    }
-  } finally {
-    if (userId) {
-      const { error: roleCleanupError } = await service
-        .from("user_roles")
-        .delete()
-        .eq("user_id", userId);
-      if (roleCleanupError) cleanupOk = false;
+    } finally {
+      if (userId) {
+        const { error: roleCleanupError } = await service
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId);
+        if (roleCleanupError) cleanupOk = false;
 
-      const { error: userCleanupError } =
-        await service.auth.admin.deleteUser(userId);
-      if (userCleanupError) {
-        cleanupOk = false;
-        await service.from("user_roles").delete().eq("user_id", userId);
-        await service.auth.admin.updateUserById(userId, {
-          ban_duration: "876000h"
-        });
+        const { error: userCleanupError } =
+          await service.auth.admin.deleteUser(userId);
+        if (userCleanupError) {
+          cleanupOk = false;
+          await service.from("user_roles").delete().eq("user_id", userId);
+          await service.auth.admin.updateUserById(userId, {
+            ban_duration: "876000h"
+          });
+        }
       }
     }
   }
