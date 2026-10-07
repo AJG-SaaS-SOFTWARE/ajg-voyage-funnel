@@ -29,3 +29,11 @@ test("deployment locale smoke follows only the validated ELTARA canonical host",
   assert.match(source, /new URL\(path, "https:\/\/eltara\.ajgsolutionsgroup\.com"\)/);
   assert.match(source, /canonical ELTARA page expected 200/);
 });
+
+
+test("deployment verifier checks visible 404 copy in both product locales", () => {
+  assert.match(source, /verifyLocalizedNotFound\("fr", "Page introuvable"\)/);
+  assert.match(source, /verifyLocalizedNotFound\("en", "Page not found"\)/);
+  assert.match(source, /"Accept-Language": locale === "en"/);
+  assert.match(source, /native English Next\.js fallback leaked into French rendering/);
+});

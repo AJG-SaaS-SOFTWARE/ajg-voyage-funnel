@@ -89,6 +89,28 @@ async function verifyLocalizedPage(path, {
   }
 }
 
+async function verifyLocalizedNotFound(locale, expectedText) {
+  const response = await fetch(baseUrl + "/ci-page-that-does-not-exist", {
+    redirect: "manual",
+    headers: { "Accept-Language": locale === "en" ? "en-GB,en;q=0.9" : "fr-FR,fr;q=0.9" },
+    signal: AbortSignal.timeout(10000)
+  });
+  if (response.status !== 404) {
+    throw new Error(`404 page: expected 404 for ${locale}, got ${response.status}`);
+  }
+
+  const body = await response.text();
+  if (!body.includes(`<html lang="${locale}"`)) {
+    throw new Error(`404 page: expected html lang ${locale}`);
+  }
+  if (!body.includes(expectedText)) {
+    throw new Error(`404 page: expected localized copy ${expectedText}`);
+  }
+  if (locale === "fr" && body.includes("This page could not be found.")) {
+    throw new Error("404 page: native English Next.js fallback leaked into French rendering");
+  }
+}
+
 const health = await get("/api/health", [200]);
 const payload = await health.json();
 if (!payload?.ok || payload?.database !== "ok") {
@@ -120,6 +142,8 @@ await verifyLocalizedPage("/pricing", {
   title: "Build. Run. Grow.",
   legalHref: "/legal"
 });
+await verifyLocalizedNotFound("fr", "Page introuvable");
+await verifyLocalizedNotFound("en", "Page not found");
 await get("/api/ci-route-that-does-not-exist", [404]);
 await get("/api/export/site?siteId=ci&format=archive", [401]);
 await get("/api/admin/release-readiness", [401]);
