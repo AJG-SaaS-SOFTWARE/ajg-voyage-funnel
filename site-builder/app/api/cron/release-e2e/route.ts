@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import {
+  releaseE2ERunDecision,
+  type ReleaseE2ERunSnapshot
+} from "../../../../lib/release-e2e-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
-
-const MAX_FAILURES_PER_LOCALE = 3;
-const RETRY_COOLDOWN_MS = 6 * 60 * 60 * 1000;
-
-type Locale = "fr" | "en";
-type RunSnapshot = {
-  status: string;
-  completed_at: string | null;
-};
-
-function cronAuthorized(request: Request) {
-  const secret = process.env.CRON_SECRET || "";
-  const auth = request.headers.get("authorization") || "";
-  return Boolean(secret) && auth === `Bearer ${secret}`;
-}
 
 function deploymentSha() {
   return (
@@ -26,35 +15,6 @@ function deploymentSha() {
     process.env.VERCEL_GIT_COMMIT_SHA ||
     ""
   ).trim();
-}
-
-function runDecision(rows: RunSnapshot[], now = Date.now()) {
-  if (rows.some((row) => row.status === "success")) {
-    return { run: false, reason: "already_validated" as const };
-  }
-
-  const failures = rows.filter((row) =>
-    ["failed", "cleanup_failed"].includes(row.status)
-  );
-  if (failures.length >= MAX_FAILURES_PER_LOCALE) {
-    return { run: false, reason: "retry_budget_exhausted" as const };
-  }
-
-  const latestFailure = failures
-    .map((row) => row.completed_at)
-    .filter((value): value is string => Boolean(value))
-    .map((value) => Date.parse(value))
-    .filter(Number.isFinite)
-    .sort((a, b) => b - a)[0];
-
-  if (
-    latestFailure &&
-    now - latestFailure < RETRY_COOLDOWN_MS
-  ) {
-    return { run: false, reason: "cooldown" as const };
-  }
-
-  return { run: true, reason: "missing_validation" as const };
 }
 
 export async function GET(request: NextRequest) {
@@ -107,7 +67,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const decision = runDecision((data || []) as RunSnapshot[]);
+    const decision = releaseE2ERunDecision(
+      (data || []) as ReleaseE2ERunSnapshot[]
+    );
     plans.push({ locale, run: decision.run, reason: decision.reason });
   }
 
@@ -239,5 +201,3 @@ export async function GET(request: NextRequest) {
     { status: allOk ? 200 : 503 }
   );
 }
-
-export { runDecision };
