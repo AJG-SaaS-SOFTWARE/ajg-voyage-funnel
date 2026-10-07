@@ -71,6 +71,7 @@ test("provider verifies only reporting and fails closed without disclosing error
     const request = async (url, options) => {
       assert.equal(url.pathname, "/v1/projects/prj_test/env/env_test");
       assert.equal(url.searchParams.get("teamId"), "team_test");
+      assert.equal(url.searchParams.get("decrypt"), "true");
       assert.equal(options.headers.Authorization, "Bearer " + env.VERCEL_TOKEN);
       assert.ok(options.signal);
       return { ok: true, json: async () => ({ key: "AJG_COCKPIT_REPORTING_TOKEN", decrypted: true, value: "x".repeat(32) }) };
