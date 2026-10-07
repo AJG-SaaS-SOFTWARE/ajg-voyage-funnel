@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   });
   const { data: { user }, error: userError } = await userClient.auth.getUser(token);
   if (userError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: tr("Connexion requise.", "Sign-in required.") }, { status: 401 });
   }
 
   const requestUrl = new URL(request.url);
