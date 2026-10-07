@@ -8,14 +8,17 @@ import "./ajg-design-system.css";
 async function requestLocale(): Promise<ProductLocale> {
   const cookieStore = await cookies();
   const headerStore = await headers();
+  const explicitLocale = headerStore.get("x-ajg-product-locale");
   const cookieLocale = cookieStore.get("ajg_builder_language")?.value;
   const browserLanguage = headerStore.get("accept-language") ?? "";
 
-  return cookieLocale === "en" || cookieLocale === "fr"
-    ? cookieLocale
-    : browserLanguage.toLowerCase().startsWith("en")
-      ? "en"
-      : "fr";
+  return explicitLocale === "en" || explicitLocale === "fr"
+    ? explicitLocale
+    : cookieLocale === "en" || cookieLocale === "fr"
+      ? cookieLocale
+      : browserLanguage.toLowerCase().startsWith("en")
+        ? "en"
+        : "fr";
 }
 
 export async function generateMetadata(): Promise<Metadata> {
