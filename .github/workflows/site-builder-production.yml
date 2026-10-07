@@ -26,6 +26,7 @@ jobs:
       VERCEL_PROJECT_ID: prj_RUtVL1fXzOqY8dHetb6U2dp07Ygn
       PRODUCTION_ALIAS: ajg-site-builder.vercel.app
       PUBLIC_DOMAIN: eltara.ajgsolutionsgroup.com
+      COCKPIT_REPORTING_HEALTH: https://ajg-infra-cockpit.vercel.app/api/health/builder-reporting
 
     steps:
       - uses: actions/checkout@v4
@@ -401,6 +402,27 @@ jobs:
           fi
 
           echo "ELTARA public domain is live: https://$PUBLIC_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify Cockpit can read private Builder reporting
+        shell: bash
+        run: |
+          if ! curl --fail --silent --show-error --retry 4 --retry-delay 2 --retry-all-errors \
+            "$COCKPIT_REPORTING_HEALTH" > /tmp/eltara-builder-reporting-health.json; then
+            echo "::error::Cockpit cannot validate ELTARA private reporting with its runtime credential. The application artifact remains deployed; no automatic rollback is requested for this integration failure."
+            echo "Cockpit → ELTARA private reporting health failed." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const payload = JSON.parse(fs.readFileSync("/tmp/eltara-builder-reporting-health.json", "utf8"));
+            if (payload?.ok !== true || payload?.service !== "builder-reporting") {
+              console.error("Cockpit reporting health payload is invalid.");
+              process.exit(1);
+            }
+          '
+
+          echo "Cockpit successfully validated its private ELTARA reporting credential." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run structural FR/EN release E2E for deployed SHA
         shell: bash

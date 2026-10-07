@@ -31,7 +31,7 @@ export function verifyReportingFile(path, metadataPath) {
   }
 }
 
-export async function verifyReportingProvider(metadataPath, environment = process.env, request = fetch) {
+export async function verifyReportingProvider(metadataPath) {
   try {
     const payload = JSON.parse(readFileSync(metadataPath, "utf8"));
     const rows = Array.isArray(payload) ? payload : payload.envs || payload.data;
@@ -39,21 +39,17 @@ export async function verifyReportingProvider(metadataPath, environment = proces
     const matches = rows.filter(row => row.key === "AJG_COCKPIT_REPORTING_TOKEN" &&
       Array.isArray(row.target) && row.target.includes("production"));
     if (!matches.length) return { status: "disabled" };
-    if (matches.length !== 1 || !matches[0].id || !environment.VERCEL_TOKEN ||
-        !environment.VERCEL_PROJECT_ID || !environment.VERCEL_ORG_ID) throw new Error("invalid_provider_configuration");
-    const url = new URL("https://api.vercel.com/v1/projects/" +
-      encodeURIComponent(environment.VERCEL_PROJECT_ID) + "/env/" + encodeURIComponent(matches[0].id));
-    url.searchParams.set("teamId", environment.VERCEL_ORG_ID);
-    url.searchParams.set("decrypt", "true");
-    const response = await request(url, {
-      headers: { Authorization: "Bearer " + environment.VERCEL_TOKEN },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!response.ok) throw new Error("provider_request_failed");
-    const row = await response.json();
-    if (row.key !== "AJG_COCKPIT_REPORTING_TOKEN" || row.decrypted !== true ||
-        typeof row.value !== "string" || !row.value) throw new Error("configured_token_unreadable");
-    return validateReportingConfiguration({ AJG_COCKPIT_REPORTING_TOKEN: row.value });
+    if (matches.length !== 1) throw new Error("duplicate_provider_configuration");
+
+    const row = matches[0];
+    if (!row.id || row.type !== "sensitive") {
+      throw new Error("invalid_provider_configuration");
+    }
+
+    // A sensitive Vercel variable intentionally withholds its value when decrypt=false.
+    // Pre-publication validation therefore checks metadata only. Runtime credential
+    // alignment is verified after publication through the Cockpit healthcheck.
+    return { status: "ready" };
   } catch {
     throw new Error("reporting_configuration_preflight_failed");
   }
