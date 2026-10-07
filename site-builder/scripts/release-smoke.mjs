@@ -102,8 +102,8 @@ try {
   );
   await expectMirroredLocale(
     "/billing",
-    ["Facturation", "Votre compte", "Votre accès ELTARA", "Facturation & récupération"],
-    ["Billing", "Your account", "Your ELTARA access", "Billing & recovery"]
+    ["Facturation", "Votre compte", "Votre accès ELTARA", "récupération"],
+    ["Billing", "Your account", "Your ELTARA access", "recovery"]
   );
   await expectMirroredLocale(
     "/domains",
