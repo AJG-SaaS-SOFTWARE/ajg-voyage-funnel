@@ -36,6 +36,7 @@ import type { SupportDiagnosis } from "../../lib/support-diagnostics";
 import { supportCheckDisplay } from "../../lib/support-guidance";
 import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
+import { preferredPublishedRootDomain } from "../../lib/published-domain";
 import { markGrowthActionPublished } from "../../lib/growth-actions";
 import {
   getCurrentUser,
@@ -1508,10 +1509,10 @@ export default function BuilderPage() {
 
                 <div className="grid two">
                   <Field label={tr("Prénom", "First name")}>
-                    <input spellCheck placeholder="Ex. Julie" value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
+                    <input spellCheck placeholder={tr("Ex. Julie", "e.g. Julie")} value={config.firstName} onChange={(e) => updateIdentityName("firstName", e.target.value)} />
                   </Field>
                   <Field label={tr("Nom", "Last name")}>
-                    <input spellCheck placeholder="Ex. Martin" value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
+                    <input spellCheck placeholder={tr("Ex. Martin", "e.g. Martin")} value={config.lastName} onChange={(e) => updateIdentityName("lastName", e.target.value)} />
                   </Field>
                 </div>
 
@@ -1537,7 +1538,7 @@ export default function BuilderPage() {
                           update("slug", slugify(e.target.value));
                         }}
                       />
-                      <span>.voyage…</span>
+                      <span>.{preferredPublishedRootDomain()}</span>
                     </div>
                   </Field>
 
@@ -2004,7 +2005,7 @@ export default function BuilderPage() {
                   <div><b>{tr("Votre présentation", "Your introduction")}</b><p>{tr("Quelques lignes suffisent si elles sonnent juste et restent personnelles.", "A few lines are enough when they feel authentic and personal.")}</p></div>
                 </div>
                 <Field label={tr("Titre de la rubrique", "Section title")} hint={tr("Facultatif. Votre nom est utilisé si ce champ reste vide.", "Optional. Your name is used if this field is left empty.")}>
-                  <input spellCheck maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder="Ex. Mon histoire" />
+                  <input spellCheck maxLength={100} value={config.aboutHeading} onChange={(e) => update("aboutHeading", e.target.value)} placeholder={tr("Ex. Mon histoire", "e.g. My story")} />
                 </Field>
                 <AiTextAssistant
                   field="aboutHeading"
