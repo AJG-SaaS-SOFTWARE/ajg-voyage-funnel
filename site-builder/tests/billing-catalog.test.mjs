@@ -8,6 +8,7 @@ const stripe = fs.readFileSync(new URL("../lib/stripe-billing.ts", import.meta.u
 const subscription = fs.readFileSync(new URL("../lib/subscription.ts", import.meta.url), "utf8");
 const aiRoute = fs.readFileSync(new URL("../app/api/ai/write/route.ts", import.meta.url), "utf8");
 const readiness = fs.readFileSync(new URL("../app/api/admin/release-readiness/route.ts", import.meta.url), "utf8");
+const commercialReadiness = fs.readFileSync(new URL("../lib/commercial-checkout-readiness.ts", import.meta.url), "utf8");
 const env = fs.readFileSync(new URL("../.env.example", import.meta.url), "utf8");
 
 test("billing catalogue supports BUILD RUN GROW", () => {
@@ -67,11 +68,11 @@ test("commercial readiness requires the complete new catalogue and cost guardrai
     "STRIPE_GROWTH_ANNUAL_PRICE_ID",
     "STRIPE_AI_LAUNCH_PRICE_ID",
     "STRIPE_PORTAL_CONFIGURATION_ID",
-    "AJG_AI_LAUNCH_OPERATIONS",
     "AJG_COMMERCIAL_LEGAL_READY",
-    "AJG_COMMERCIAL_TAX_READY",
-    "AJG_BILLING_CHECKOUT_ENABLED"
-  ]) assert.ok(readiness.includes(key), key);
+    "AJG_COMMERCIAL_TAX_READY"
+  ]) assert.ok(commercialReadiness.includes(key), key);
+  assert.ok(readiness.includes("AJG_AI_LAUNCH_OPERATIONS"));
+  assert.ok(readiness.includes("AJG_BILLING_CHECKOUT_ENABLED"));
   assert.ok(stripe.includes("STRIPE_PORTAL_CONFIGURATION_ID"));
 });
 
@@ -80,10 +81,10 @@ test("B2B checkout collects billing identity but automatic tax remains explicitl
   assert.ok(stripe.includes('tax_id_collection: { enabled: true, required: "if_supported" }'));
   assert.ok(stripe.includes("AJG_STRIPE_TAX_ENABLED"));
   assert.ok(stripe.includes('commercial_market: "b2b"'));
-  assert.ok(readiness.includes("AJG_VAT_REGIME"));
-  assert.ok(readiness.includes("franchise_base"));
-  assert.ok(readiness.includes("vat_registered"));
-  assert.ok(readiness.includes("txcd_10103001"));
+  assert.ok(commercialReadiness.includes("AJG_VAT_REGIME"));
+  assert.ok(commercialReadiness.includes("franchise_base"));
+  assert.ok(commercialReadiness.includes("vat_registered"));
+  assert.ok(commercialReadiness.includes("txcd_10103001"));
 });
 
 

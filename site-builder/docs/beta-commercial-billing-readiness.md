@@ -64,3 +64,19 @@ Do not switch to live Stripe billing until these checks are complete:
 - sandbox checkout, failed payment, recovery and cancellation proofs archived;
 - Cockpit visibility for subscriptions, failed payments, support tickets and beta status;
 - VAT / Stripe Tax decision validated before collecting live payments.
+
+
+## Commercial activation gate
+
+`AJG_BILLING_CHECKOUT_ENABLED=true` is necessary but no longer sufficient to accept payments.
+
+Before ELTARA creates any Stripe Checkout Session, the server now fails closed unless all of the following are true:
+
+- the legal profile is complete and `AJG_COMMERCIAL_LEGAL_READY=true`;
+- the tax profile is explicitly approved with `AJG_COMMERCIAL_TAX_READY=true`, B2B market, the expected SaaS Business Use tax code, and a coherent VAT regime;
+- the Stripe API credential, webhook secret, five commercial prices, and controlled Customer Portal are configured;
+- a read-only runtime audit confirms the remote Stripe prices, products, intervals, amounts and Customer Portal behavior.
+
+The same local rules feed the admin release-readiness panel. Remote Stripe checks are parallelized and cached briefly to keep Checkout latency bounded while preserving fail-closed behavior.
+
+The beta switch remains `AJG_BILLING_CHECKOUT_ENABLED=false` until explicit commercial approval.

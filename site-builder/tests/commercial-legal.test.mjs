@@ -21,11 +21,12 @@ test("commercial legal pages exist in French and English", () => {
 
 test("legal readiness cannot rely on a boolean flag alone", () => {
   const readiness = fs.readFileSync(
-    new URL("../app/api/admin/release-readiness/route.ts", import.meta.url),
+    new URL("../lib/commercial-checkout-readiness.ts", import.meta.url),
     "utf8"
   );
-  assert.ok(readiness.includes("commercialLegalMissingFields.length === 0"));
+  assert.ok(readiness.includes("legalMissing.length === 0"));
   assert.ok(readiness.includes("AJG_COMMERCIAL_LEGAL_READY"));
+  assert.ok(readiness.includes("commercialLegalMissing(profile)"));
 });
 
 test("seller identity and consumer gates are documented", () => {

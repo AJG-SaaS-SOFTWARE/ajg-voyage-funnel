@@ -78,6 +78,13 @@ const EXPECTED_PRICES: ExpectedPrice[] = [
   }
 ];
 
+let cachedAudit:
+  | {
+      expiresAt: number;
+      value: StripeRuntimeAuditItem[];
+    }
+  | null = null;
+
 function validatePrice(
   expected: ExpectedPrice,
   price: StripePriceSnapshot
@@ -107,46 +114,44 @@ function validatePrice(
   };
 }
 
-export async function auditStripeRuntime(): Promise<StripeRuntimeAuditItem[]> {
-  const items: StripeRuntimeAuditItem[] = [];
-
-  for (const expected of EXPECTED_PRICES) {
-    const priceId = process.env[expected.env]?.trim();
-    if (!priceId) {
-      items.push({
-        key: `stripe-price-${expected.env.toLowerCase()}`,
-        label: `Stripe · ${expected.label}`,
-        ok: false,
-        detail: `${expected.env} manquant.`
-      });
-      continue;
-    }
-
-    try {
-      const price = await stripeRequest<StripePriceSnapshot>(
-        `/prices/${encodeURIComponent(priceId)}`,
-        { method: "GET", params: { expand: ["product"] } }
-      );
-      items.push(validatePrice(expected, price));
-    } catch {
-      items.push({
-        key: `stripe-price-${expected.env.toLowerCase()}`,
-        label: `Stripe · ${expected.label}`,
-        ok: false,
-        detail: `${expected.label} inaccessible avec la clé Stripe configurée.`
-      });
-    }
+async function auditExpectedPrice(
+  expected: ExpectedPrice
+): Promise<StripeRuntimeAuditItem> {
+  const priceId = process.env[expected.env]?.trim();
+  if (!priceId) {
+    return {
+      key: `stripe-price-${expected.env.toLowerCase()}`,
+      label: `Stripe · ${expected.label}`,
+      ok: false,
+      detail: `${expected.env} manquant.`
+    };
   }
 
+  try {
+    const price = await stripeRequest<StripePriceSnapshot>(
+      `/prices/${encodeURIComponent(priceId)}`,
+      { method: "GET", params: { expand: ["product"] } }
+    );
+    return validatePrice(expected, price);
+  } catch {
+    return {
+      key: `stripe-price-${expected.env.toLowerCase()}`,
+      label: `Stripe · ${expected.label}`,
+      ok: false,
+      detail: `${expected.label} inaccessible avec la clé Stripe configurée.`
+    };
+  }
+}
+
+async function auditPortal(): Promise<StripeRuntimeAuditItem> {
   const portalId = process.env.STRIPE_PORTAL_CONFIGURATION_ID?.trim();
   if (!portalId) {
-    items.push({
+    return {
       key: "stripe-portal-runtime",
       label: "Stripe · Customer Portal",
       ok: false,
       detail: "STRIPE_PORTAL_CONFIGURATION_ID manquant."
-    });
-    return items;
+    };
   }
 
   try {
@@ -163,22 +168,44 @@ export async function auditStripeRuntime(): Promise<StripeRuntimeAuditItem[]> {
       portal.features?.subscription_cancel?.mode === "at_period_end" &&
       portal.features?.subscription_update?.enabled === true;
 
-    items.push({
+    return {
       key: "stripe-portal-runtime",
       label: "Stripe · Customer Portal",
       ok,
       detail: ok
         ? "Customer Portal ELTARA actif, modification et résiliation en fin de période validées."
         : "La configuration Customer Portal ne correspond pas au contrat ELTARA attendu."
-    });
+    };
   } catch {
-    items.push({
+    return {
       key: "stripe-portal-runtime",
       label: "Stripe · Customer Portal",
       ok: false,
       detail: "Customer Portal inaccessible avec la clé Stripe configurée."
-    });
+    };
+  }
+}
+
+export async function auditStripeRuntime(): Promise<StripeRuntimeAuditItem[]> {
+  const [prices, portal] = await Promise.all([
+    Promise.all(EXPECTED_PRICES.map(auditExpectedPrice)),
+    auditPortal()
+  ]);
+  return [...prices, portal];
+}
+
+export async function auditStripeRuntimeCached(
+  ttlMs = 300_000
+): Promise<StripeRuntimeAuditItem[]> {
+  const now = Date.now();
+  if (cachedAudit && cachedAudit.expiresAt > now) {
+    return cachedAudit.value;
   }
 
-  return items;
+  const value = await auditStripeRuntime();
+  cachedAudit = {
+    expiresAt: now + Math.max(10_000, ttlMs),
+    value
+  };
+  return value;
 }
