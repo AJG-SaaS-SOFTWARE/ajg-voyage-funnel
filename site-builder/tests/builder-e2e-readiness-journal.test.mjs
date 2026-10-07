@@ -60,3 +60,11 @@ test("release readiness escalates an exhausted autonomous E2E budget", () => {
   assert.match(readiness, /bloqué après 3 échecs/);
   assert.match(readiness, /Impossible de lire le journal E2E Builder/);
 });
+
+
+test("release readiness defers mirrored AI E2E while OpenAI itself is blocked", () => {
+  assert.match(readiness, /openAiAudit\.status === "blocker"/);
+  assert.match(readiness, /\? "deferred"/);
+  assert.match(readiness, /E2E IA différé/);
+  assert.match(readiness, /budget de retries E2E n’est pas consommé/);
+});
