@@ -681,6 +681,64 @@ function normalizeComparable(value: string) {
     .replace(/\s+/g, " ");
 }
 
+function proposalEditorialEvidence(value: unknown) {
+  const proposal = value as any;
+  if (!proposal || typeof proposal !== "object") return [] as string[];
+
+  return [
+    clean(proposal.heroTagline, 200),
+    clean(proposal.heroTitle, 200),
+    clean(proposal.heroSubtitle, 800),
+    clean(proposal.aboutHeading, 200),
+    clean(proposal.aboutText, 2500),
+    clean(proposal.bookingLabel, 120),
+    clean(proposal?.faq?.title, 200),
+    ...(Array.isArray(proposal?.faq?.items)
+      ? proposal.faq.items.flatMap((item: any) => [
+          clean(item?.question, 300),
+          clean(item?.answer, 1500)
+        ])
+      : []),
+    clean(proposal?.benefits?.title, 200),
+    ...(Array.isArray(proposal?.benefits?.items)
+      ? proposal.benefits.items.flatMap((item: any) => [
+          clean(item?.title, 200),
+          clean(item?.text, 800)
+        ])
+      : []),
+    ...(Array.isArray(proposal?.architecture?.pages)
+      ? proposal.architecture.pages
+          .filter((page: any) => page?.enabled !== false)
+          .map((page: any) => clean(page?.title, 160))
+      : [])
+  ].filter(Boolean);
+}
+
+export function quantitativeEvidenceText(
+  input: PremiumArchitectInput,
+  assets: PremiumArchitectAsset[]
+) {
+  const evidence = [
+    clean(input.firstName, 120),
+    clean(input.brandName, 200),
+    clean(input.architectBrief, 7000),
+    clean(input.revisionRequest, 2000),
+    clean(input.instruction, 2400),
+    clean(input.editorialContext, 5000),
+    clean(input.currentText, 5000),
+    ...assets.flatMap((asset) => [
+      clean(asset.name, 200),
+      clean(asset.text, 2000),
+      clean(asset.notes, 800)
+    ]),
+    ...(input.mode === "revision"
+      ? proposalEditorialEvidence(input.existingProposal)
+      : [])
+  ];
+
+  return evidence.filter(Boolean).join("\n");
+}
+
 export function deterministicQualityIssues(
   proposal: PremiumArchitectCore,
   sourceEvidenceText = ""
@@ -696,6 +754,14 @@ export function deterministicQualityIssues(
     ["aboutHeading", proposal.aboutHeading],
     ["aboutText", proposal.aboutText],
     ["bookingLabel", proposal.bookingLabel],
+    ["faqTitle", proposal.faq.title],
+    ["benefitsTitle", proposal.benefits.title],
+    ...proposal.architecture.pages
+      .filter((page) => page.enabled)
+      .map((page, index) => [
+        `page-title-${index + 1}`,
+        page.title
+      ] as const),
     ...proposal.faq.items.map((item, index) => [
       `faq-${index + 1}`,
       `${item.question} ${item.answer}`
@@ -1270,7 +1336,7 @@ export async function generatePremiumSiteArchitect(
     existingProposal: input.mode === "revision" ? input.existingProposal || null : null,
     contentLibrary: assets
   };
-  const sourceEvidenceText = JSON.stringify(sourceContext);
+  const sourceEvidenceText = quantitativeEvidenceText(input, assets);
 
   const revisionScopeRules =
     input.mode === "revision"
