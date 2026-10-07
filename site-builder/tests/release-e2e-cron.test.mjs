@@ -106,6 +106,14 @@ test("release E2E cron reuses the authenticated Builder engine for missing local
   assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY/);
 });
 
+test("release E2E journals orchestration failures so retries remain bounded", () => {
+  assert.match(route, /failure_stage: "orchestrator"/);
+  assert.match(route, /deployment_sha: sha/);
+  assert.match(route, /status: "failed"/);
+  assert.match(route, /for \(const plan of pending\) \{/);
+  assert.match(route, /service\.from\("builder_e2e_runs"\)\.insert/);
+});
+
 test("release E2E isolates locale failures so FR cannot suppress EN evidence", () => {
   assert.match(route, /for \(const plan of pending\) \{/);
   assert.match(route, /try \{[\s\S]*fetch\([\s\S]*locale: plan\.locale/);
