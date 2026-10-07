@@ -67,16 +67,24 @@ test("provider verifies only reporting and fails closed without disclosing error
     const env = { VERCEL_TOKEN: "synthetic-provider-secret", VERCEL_PROJECT_ID: "prj_test", VERCEL_ORG_ID: "team_test" };
     writeFileSync(metadata, JSON.stringify({ envs: [] }));
     assert.deepEqual(await verifyReportingProvider(metadata, {}, () => { throw new Error("must not fetch"); }), { status: "disabled" });
-    writeFileSync(metadata, JSON.stringify({ envs: [{ id: "env_test", key: "AJG_COCKPIT_REPORTING_TOKEN", target: ["production"] }] }));
+    writeFileSync(metadata, JSON.stringify({ envs: [{ id: "env_test", key: "AJG_COCKPIT_REPORTING_TOKEN", type: "encrypted", target: ["production"] }] }));
     const request = async (url, options) => {
       assert.equal(url.pathname, "/v1/projects/prj_test/env/env_test");
       assert.equal(url.searchParams.get("teamId"), "team_test");
-      assert.equal(url.searchParams.get("decrypt"), "true");
+      assert.equal(url.searchParams.get("decrypt"), null);
       assert.equal(options.headers.Authorization, "Bearer " + env.VERCEL_TOKEN);
       assert.ok(options.signal);
       return { ok: true, json: async () => ({ key: "AJG_COCKPIT_REPORTING_TOKEN", decrypted: true, value: "x".repeat(32) }) };
     };
     assert.deepEqual(await verifyReportingProvider(metadata, env, request), { status: "ready" });
+
+    writeFileSync(metadata, JSON.stringify({ envs: [{ id: "env_sensitive", key: "AJG_COCKPIT_REPORTING_TOKEN", type: "sensitive", target: ["production"] }] }));
+    let sensitiveFetches = 0;
+    assert.deepEqual(await verifyReportingProvider(metadata, env, async () => {
+      sensitiveFetches += 1;
+      throw new Error("sensitive secret must remain write-only");
+    }), { status: "ready" });
+    assert.equal(sensitiveFetches, 0);
     for (const row of [{ decrypted: false, value: "x".repeat(32) }, { decrypted: true, value: "short" }, { decrypted: true }]) {
       await assert.rejects(verifyReportingProvider(metadata, env, async () => ({ ok: true, json: async () => ({ key: "AJG_COCKPIT_REPORTING_TOKEN", ...row }) })), /^Error: reporting_configuration_preflight_failed$/);
     }
