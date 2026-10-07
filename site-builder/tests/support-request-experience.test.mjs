@@ -34,7 +34,15 @@ function harness({ fetch, session = true, locale = "fr" } = {}) {
     "../../lib/supabase-browser": {
       getSupabaseBrowserClient: () => ({ auth: { getSession: async () => ({ data: { session: session ? { access_token: "isolated-test-token" } : null } }) } })
     },
-    "../../lib/support-guidance": { supportGuidanceForDiagnosis: () => [] },
+    "../../lib/support-guidance": {
+      supportGuidanceForDiagnosis: () => [],
+      supportCheckDisplay: (check) => ({
+        title: check.label,
+        detail: check.detail,
+        action: check.clientAction || null
+      }),
+      supportTicketStatusLabel: (status) => status
+    },
     "../../lib/support-knowledge": { supportArticlesForLocale: () => [] }
   };
   const module = { exports: {} };
