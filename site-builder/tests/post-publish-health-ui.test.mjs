@@ -18,4 +18,6 @@ test("final diagnostic exposes actionable Health Center navigation", () => {
   assert.match(builder, /Corriger avec le Health Center/);
   assert.match(builder, /Relancer le diagnostic/);
   assert.match(builder, /postPublishHealth\.checks\.map/);
+  assert.match(builder, /supportCheckDisplay\(check, locale\)/);
+  assert.doesNotMatch(builder, /<div><b>\{check\.label\}<\/b><small>\{check\.detail\}<\/small><\/div>/);
 });
