@@ -83,6 +83,29 @@ async function expectMirroredLocale(path, frExpected, enExpected) {
   await expectLocalizedHtml(path, "en", enExpected, frExpected);
 }
 
+async function expectFixedLocaleHtml(path, expectedText, forbiddenText) {
+  console.log("Smoke fixed locale:", path);
+  const response = await fetch(origin + path, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(8000)
+  });
+  if (response.status !== 200) {
+    throw new Error(`${path}: expected HTTP 200, got ${response.status}`);
+  }
+
+  const html = await response.text();
+  for (const text of expectedText) {
+    if (!html.includes(text)) {
+      throw new Error(`${path}: missing expected text "${text}"`);
+    }
+  }
+  for (const text of forbiddenText) {
+    if (html.includes(text)) {
+      throw new Error(`${path}: unexpected opposite-locale text "${text}"`);
+    }
+  }
+}
+
 try {
   await waitUntilReady();
   await expectStatus("/login", 200);
@@ -131,6 +154,47 @@ try {
     "fr",
     ["Créez. Gérez. Faites progresser.", "Choisir Essentiel", "Choisir Growth"],
     ["Build. Run. Grow.", "Choose Essential", "Choose Growth"]
+  );
+
+  await expectFixedLocaleHtml(
+    "/mentions-legales",
+    ["Mentions légales", "Version de préparation", "aucun encaissement commercial n’est ouvert"],
+    ["Legal notice", "Pre-launch version", "commercial charging is not open"]
+  );
+  await expectFixedLocaleHtml(
+    "/legal",
+    ["Legal notice", "Pre-launch version", "commercial charging is not open"],
+    ["Mentions légales", "Version de préparation", "aucun encaissement commercial n’est ouvert"]
+  );
+  await expectFixedLocaleHtml(
+    "/confidentialite",
+    ["Politique de confidentialité", "Version de préparation", "aucun encaissement commercial n’est ouvert"],
+    ["Privacy policy", "Pre-launch version", "commercial charging is not open"]
+  );
+  await expectFixedLocaleHtml(
+    "/privacy",
+    ["Privacy policy", "Pre-launch version", "commercial charging is not open"],
+    ["Politique de confidentialité", "Version de préparation", "aucun encaissement commercial n’est ouvert"]
+  );
+  await expectFixedLocaleHtml(
+    "/cgv",
+    ["Conditions générales de service", "Version de préparation", "aucun encaissement commercial n’est ouvert"],
+    ["Terms of service", "Pre-launch version", "commercial charging is not open"]
+  );
+  await expectFixedLocaleHtml(
+    "/terms",
+    ["Terms of service", "Pre-launch version", "commercial charging is not open"],
+    ["Conditions générales de service", "Version de préparation", "aucun encaissement commercial n’est ouvert"]
+  );
+  await expectFixedLocaleHtml(
+    "/resilier",
+    ["Résilier un abonnement", "Version de préparation", "aucun encaissement commercial n’est ouvert"],
+    ["Cancel a subscription", "Pre-launch version", "commercial charging is not open"]
+  );
+  await expectFixedLocaleHtml(
+    "/cancel",
+    ["Cancel a subscription", "Pre-launch version", "commercial charging is not open"],
+    ["Résilier un abonnement", "Version de préparation", "aucun encaissement commercial n’est ouvert"]
   );
   await expectMirroredLocale(
     "/builder",
