@@ -90,11 +90,39 @@ async function verifyLocalizedPage(path, {
 }
 
 async function verifyLocalizedNotFound(locale, expectedText) {
-  const response = await fetch(baseUrl + "/ci-page-that-does-not-exist", {
+  const path = "/ci-page-that-does-not-exist";
+  const headers = {
+    "Accept-Language": locale === "en" ? "en-GB,en;q=0.9" : "fr-FR,fr;q=0.9"
+  };
+  let response = await fetch(baseUrl + path, {
     redirect: "manual",
-    headers: { "Accept-Language": locale === "en" ? "en-GB,en;q=0.9" : "fr-FR,fr;q=0.9" },
+    headers,
     signal: AbortSignal.timeout(10000)
   });
+
+  if (response.status === 307 || response.status === 308) {
+    const location = response.headers.get("location") || "";
+    let redirected;
+    try {
+      redirected = new URL(location, baseUrl);
+    } catch {
+      throw new Error(`404 page: invalid canonical redirect for ${locale}`);
+    }
+    if (
+      redirected.hostname !== "eltara.ajgsolutionsgroup.com" ||
+      redirected.pathname !== path
+    ) {
+      throw new Error(
+        `404 page: unexpected canonical redirect for ${locale}: ${redirected.href}`
+      );
+    }
+    response = await fetch(redirected, {
+      redirect: "manual",
+      headers,
+      signal: AbortSignal.timeout(10000)
+    });
+  }
+
   if (response.status !== 404) {
     throw new Error(`404 page: expected 404 for ${locale}, got ${response.status}`);
   }
