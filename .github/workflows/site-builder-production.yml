@@ -431,7 +431,8 @@ jobs:
           npx --yes vercel@60.1.3 link \
             --yes \
             --token "$VERCEL_TOKEN" \
-            --project "$VERCEL_PROJECT_ID"
+            --scope "$VERCEL_ORG_ID" \
+            --project "ajg-site-builder"
 
           node -e '
             const fs = require("node:fs");
