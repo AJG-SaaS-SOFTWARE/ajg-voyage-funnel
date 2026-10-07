@@ -20,6 +20,10 @@
     {
       "path": "/api/cron/support-operations",
       "schedule": "20 * * * *"
+    },
+    {
+      "path": "/api/cron/release-e2e",
+      "schedule": "35 * * * *"
     }
   ],
   "git": {
