@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "../../../../lib/app-url";
 import { getStorageBackupStatus } from "../../../../lib/storage-backup";
 import { commercialLegalMissing, commercialLegalProfile } from "../../../../lib/commercial-legal";
+import { auditStripeRuntime } from "../../../../lib/stripe-readiness";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -242,6 +243,46 @@ export async function GET(request: Request) {
       "deferred"
     )
   ];
+
+  const stripeRuntimeConfigured =
+    present(process.env.STRIPE_RESTRICTED_KEY || process.env.STRIPE_SECRET_KEY) &&
+    present(process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID) &&
+    present(process.env.STRIPE_ESSENTIAL_ANNUAL_PRICE_ID) &&
+    present(process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID) &&
+    present(process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID) &&
+    present(process.env.STRIPE_AI_LAUNCH_PRICE_ID) &&
+    present(process.env.STRIPE_PORTAL_CONFIGURATION_ID);
+
+  if (stripeRuntimeConfigured) {
+    try {
+      const stripeAudit = await auditStripeRuntime();
+      for (const item of stripeAudit) {
+        checks.push({
+          key: item.key,
+          label: item.label,
+          status: item.ok ? "pass" : "blocker",
+          scope: "commercial",
+          detail: item.detail
+        });
+      }
+    } catch {
+      checks.push({
+        key: "stripe-runtime-audit",
+        label: "Stripe · audit runtime",
+        status: "blocker",
+        scope: "commercial",
+        detail: "Impossible d’exécuter l’audit read-only du catalogue Stripe."
+      });
+    }
+  } else {
+    checks.push({
+      key: "stripe-runtime-audit",
+      label: "Stripe · audit runtime",
+      status: "deferred",
+      scope: "commercial",
+      detail: "Audit Stripe différé tant que la configuration runtime n’est pas complète."
+    });
+  }
 
   const deploymentSha =
     process.env.AJG_RELEASE_SHA ||
