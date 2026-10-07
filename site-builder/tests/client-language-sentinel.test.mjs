@@ -162,6 +162,16 @@ test("customer JSX has no accented French literals outside localization contexts
   );
 });
 
+test("customer-visible literals outside localization are explicitly classified", () => {
+  const findings = languageLeakFindings(/[A-Za-zÀ-ÿŒœÆæ]{2,}/);
+  assert.deepEqual(
+    findings,
+    [],
+    "Unclassified customer-facing literals detected outside localization contexts:\n" +
+      findings.join("\n")
+  );
+});
+
 test("customer JSX has no high-risk raw English literals outside localization contexts", () => {
   const findings = languageLeakFindings(highRiskEnglish);
   assert.deepEqual(
