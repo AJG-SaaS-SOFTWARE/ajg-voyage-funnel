@@ -318,6 +318,42 @@ export async function GET(request: Request) {
       auth: { persistSession: false, autoRefreshToken: false }
     });
 
+    if (present(deploymentSha)) {
+      const [frRun, enRun] = await Promise.all(
+        (["fr", "en"] as const).map(async (locale) => {
+          const { data, error } = await service
+            .from("builder_e2e_runs")
+            .select("completed_at,deployment_sha,locale,include_ai,status")
+            .eq("deployment_sha", deploymentSha!)
+            .eq("locale", locale)
+            .eq("include_ai", true)
+            .eq("status", "success")
+            .order("completed_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          return error ? null : data;
+        })
+      );
+      const mirrorValidated = Boolean(frRun && enRun);
+      checks.push({
+        key: "builder-e2e-mirror",
+        label: "E2E Builder · miroir FR + EN",
+        status: mirrorValidated ? "pass" : "warn",
+        scope: "beta",
+        detail: mirrorValidated
+          ? `FR validé ${frRun?.completed_at}; EN validé ${enRun?.completed_at}; SHA ${deploymentSha?.slice(0, 12)}…`
+          : `Validation miroir incomplète pour le SHA courant ${deploymentSha?.slice(0, 12)}… : ${frRun ? "FR ✓" : "FR manquant"} · ${enRun ? "EN ✓" : "EN manquant"}.`
+      });
+    } else {
+      checks.push({
+        key: "builder-e2e-mirror",
+        label: "E2E Builder · miroir FR + EN",
+        status: "warn",
+        scope: "beta",
+        detail: "Impossible de rattacher une validation E2E au déploiement sans SHA courant."
+      });
+    }
+
     const { data: managedDomain, error: managedDomainError } = await service
       .from("domains")
       .select("hostname")
