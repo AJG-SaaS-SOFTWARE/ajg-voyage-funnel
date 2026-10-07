@@ -42,6 +42,11 @@ function customerTsxFiles() {
   return files;
 }
 
+function localeDrivenCondition(condition) {
+  const text = condition.getText();
+  return /\b(?:locale|uiLocale|language|english|isEnglish|fr)\b/i.test(text);
+}
+
 function insideLocalizedContext(node) {
   let current = node.parent;
   while (current) {
@@ -52,7 +57,9 @@ function insideLocalizedContext(node) {
     ) {
       return true;
     }
-    if (ts.isConditionalExpression(current)) return true;
+    if (ts.isConditionalExpression(current) && localeDrivenCondition(current.condition)) {
+      return true;
+    }
     if (ts.isJsxElement(current) || ts.isJsxSelfClosingElement(current)) break;
     current = current.parent;
   }
@@ -62,17 +69,21 @@ function insideLocalizedContext(node) {
 function displayedLiteral(node) {
   if (ts.isJsxText(node)) return node.getText();
 
-  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+  if (
+    ts.isStringLiteral(node) ||
+    ts.isNoSubstitutionTemplateLiteral(node) ||
+    ts.isTemplateExpression(node)
+  ) {
     if (ts.isJsxAttribute(node.parent)) {
       const name = node.parent.name.getText();
       if (["placeholder", "title", "aria-label", "alt"].includes(name)) {
-        return node.text;
+        return ts.isTemplateExpression(node) ? node.getText() : node.text;
       }
       return null;
     }
 
     if (node.parent?.kind === ts.SyntaxKind.JsxExpression) {
-      return node.text;
+      return ts.isTemplateExpression(node) ? node.getText() : node.text;
     }
   }
 
@@ -141,4 +152,59 @@ test("public-site emergency error fallback is deliberately bilingual when site l
   assert.match(errorPage, /Un service technique ne répond pas correctement/);
   assert.match(errorPage, /This website is temporarily unavailable/);
   assert.match(errorPage, /Réessayer · Try again/);
+});
+
+test("non-locale business ternaries are not treated as localization contexts", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const node = <span>{ready ? "Voir" : "Corriger"}</span>;',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  let protectedByLocale = false;
+  const visit = (node) => {
+    if (ts.isStringLiteral(node) && /Voir|Corriger/.test(node.text)) {
+      protectedByLocale = insideLocalizedContext(node);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(protectedByLocale, false);
+});
+
+test("locale-driven ternaries remain valid localization contexts", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const node = <span>{locale === "fr" ? "Voir" : "View"}</span>;',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  const results = [];
+  const visit = (node) => {
+    if (ts.isStringLiteral(node) && /Voir|View/.test(node.text)) {
+      results.push(insideLocalizedContext(node));
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.deepEqual(results, [true, true]);
+});
+
+test("template literals rendered directly in JSX are inspected", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const value = "x"; const node = <span>{`Voir ${value}`}</span>;',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  let literal = null;
+  const visit = (node) => {
+    if (ts.isTemplateExpression(node)) literal = displayedLiteral(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.match(literal || "", /Voir/);
 });
