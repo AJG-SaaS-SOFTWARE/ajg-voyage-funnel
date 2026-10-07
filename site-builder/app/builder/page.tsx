@@ -952,7 +952,7 @@ export default function BuilderPage() {
       revisionProposal.heroTitle !== config.heroTitle ||
       revisionProposal.heroSubtitle !== config.heroSubtitle
     ) {
-      changes.push("Accueil");
+      changes.push(tr("Accueil", "Home"));
     }
 
     if (
@@ -967,7 +967,7 @@ export default function BuilderPage() {
     }
 
     if (!same(revisionProposal.architecture, config.architecture)) {
-      changes.push("Architecture / pages");
+      changes.push(tr("Architecture / pages", "Architecture / pages"));
     }
 
     if (
@@ -984,7 +984,7 @@ export default function BuilderPage() {
         }
       )
     ) {
-      changes.push("Direction visuelle");
+      changes.push(tr("Direction visuelle", "Visual direction"));
     }
 
     const currentEnabledModules = config.design.modules.order.filter(
@@ -1006,7 +1006,7 @@ export default function BuilderPage() {
         items: config.design.modules.faq.items
       })
     ) {
-      changes.push("FAQ");
+      changes.push(tr("FAQ", "FAQ"));
     }
 
     if (
@@ -1015,7 +1015,7 @@ export default function BuilderPage() {
         items: config.design.modules.benefits.items
       })
     ) {
-      changes.push("Avantages");
+      changes.push(tr("Avantages", "Benefits"));
     }
 
     return changes;
@@ -1674,7 +1674,7 @@ export default function BuilderPage() {
                           ? tr("Brief suffisamment détaillé pour lancer l’analyse Premium.", "Your brief is detailed enough to start the Premium analysis.")
                           : architectBriefLength === 0
                             ? tr("Commencez par quelques phrases : activité, public, objectif et ton souhaité.", "Start with a few sentences about your activity, audience, goal and desired tone.")
-                            : tr(`Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière à l’Architecte.`, `About ${80 - architectBriefLength} more character${80 - architectBriefLength > 1 ? "s" : ""} needed to give the Site Architect enough context.`)}
+                            : tr(`Encore ${80 - architectBriefLength} caractère${80 - architectBriefLength > 1 ? "s" : ""} environ pour donner assez de matière au Concepteur IA.`, `About ${80 - architectBriefLength} more character${80 - architectBriefLength > 1 ? "s" : ""} needed to give the AI Site Architect enough context.`)}
                       </small>
                     </label>
                     <button type="button" className="button primary premium-button" disabled={!siteArchitectCreateAvailable || architectLoading || !architectBriefReady} onClick={() => void createSiteWithAi()}>{architectLoading ? tr("Stratégie, création et audit en cours…", "Strategy, creation and quality review in progress…") : tr("Créer avec le Concepteur IA", "Create with the AI Site Architect")} <span aria-hidden="true">→</span></button>
@@ -1736,7 +1736,7 @@ export default function BuilderPage() {
                         <div className="architect-human-eval">
                           <div>
                             <b>{tr("Cette proposition correspond-elle vraiment à votre besoin ?", "Does this proposal genuinely match what you need?")}</b>
-                            <small>{tr("Votre réponse aide à améliorer l’Architecte. Aucun texte de votre site n’est envoyé avec cette évaluation.", "Your feedback helps improve the Site Architect. No website copy is sent with this rating.")}</small>
+                            <small>{tr("Votre réponse aide à améliorer le Concepteur IA. Aucun texte de votre site n’est envoyé avec cette évaluation.", "Your feedback helps improve the AI Site Architect. No website copy is sent with this rating.")}</small>
                           </div>
                           {architectQualitySubmitted ? (
                             <p className="architect-human-eval-thanks">
@@ -1797,7 +1797,7 @@ export default function BuilderPage() {
                         </div>
                         {architectProposal.intelligence.missingInformation.length ? (
                           <div className="architect-missing architect-clarification">
-                            <b>{tr("L’Architecte a encore quelques questions", "The Site Architect has a few more questions")}</b>
+                            <b>{tr("Le Concepteur IA a encore quelques questions", "The AI Site Architect has a few more questions")}</b>
                             <p>{tr("Ces réponses sont facultatives. Répondez uniquement à ce que vous connaissez : l’IA réutilisera vos réponses pour reconstruire et réauditer la proposition sans inventer le reste.", "These answers are optional. Answer only what you know: AI will reuse your answers to rebuild and reaudit the proposal without inventing the rest.")}</p>
                             <div className="architect-clarification-list">
                               {architectProposal.intelligence.missingInformation.map((question, index) => (

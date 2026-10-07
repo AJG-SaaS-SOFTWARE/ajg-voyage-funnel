@@ -112,6 +112,18 @@ function displayedLiteral(node) {
   if (ts.isJsxText(node)) return node.getText();
 
   if (
+    ts.isStringLiteral(node) &&
+    ts.isCallExpression(node.parent) &&
+    node.parent.arguments.includes(node) &&
+    ts.isPropertyAccessExpression(node.parent.expression) &&
+    ts.isIdentifier(node.parent.expression.expression) &&
+    node.parent.expression.expression.text === "changes" &&
+    node.parent.expression.name.text === "push"
+  ) {
+    return node.text;
+  }
+
+  if (
     ts.isStringLiteral(node) ||
     ts.isNoSubstitutionTemplateLiteral(node) ||
     ts.isTemplateExpression(node)
@@ -285,6 +297,25 @@ test("locale-driven ternaries remain valid localization contexts", () => {
   };
   visit(source);
   assert.deepEqual(results, [true, true]);
+});
+
+test("customer-visible revision summary collectors are inspected", () => {
+  const source = ts.createSourceFile(
+    "synthetic.tsx",
+    'const changes = []; changes.push("Accueil");',
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX
+  );
+  let literal = null;
+  const visit = (node) => {
+    if (ts.isStringLiteral(node) && node.text === "Accueil") {
+      literal = displayedLiteral(node);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(literal, "Accueil");
 });
 
 test("template literals rendered directly in JSX are inspected", () => {
