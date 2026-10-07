@@ -51,8 +51,22 @@ test("admin UI can run the full authenticated Builder E2E sequentially in both l
   assert.match(page, /la validation miroir en consomme deux/);
 });
 
+test("mirrored E2E exposes the complete commercial-language journey without opening Checkout", () => {
+  for (const key of ["auth", "create", "billing", "ai", "media", "publish", "domains", "public", "feedback", "data", "cleanup"]) {
+    assert.match(route, new RegExp(`key: "\${key}"`));
+  }
+  assert.match(route, /Managed domain readback failed/);
+  assert.match(route, /verification_status !== "verified"/);
+  assert.match(route, /Archive TAR\.GZ réelle générée avec succès/);
+  assert.match(route, /sans ouvrir Checkout/);
+  assert.doesNotMatch(route, /\/api\/billing\/checkout/);
+});
+
 test("mirrored E2E only reports parity after both isolated runs succeeded", () => {
   assert.match(page, /builderE2EMirrorResults\?\.length === 2/);
   assert.match(page, /builderE2EMirrorResults\.map\(\(result\) =>/);
   assert.match(page, /Création, IA, média, publication, rendu public, feedback, export et nettoyage terminés\./);
+  assert.match(route, /key: "billing"/);
+  assert.match(route, /key: "domains"/);
+  assert.match(route, /key: "data"/);
 });
