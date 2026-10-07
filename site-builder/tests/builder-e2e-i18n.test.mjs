@@ -23,6 +23,11 @@ test("authenticated Builder E2E accepts an explicit FR or EN locale", () => {
   assert.match(route, /locale,/);
 });
 
+test("mirrored Builder E2E propagates the selected locale to the AI route", () => {
+  assert.match(route, /"X-AJG-Locale": locale/);
+  assert.match(route, /new URL\("\/api\/ai\/write", request\.url\)/);
+});
+
 test("authenticated Builder E2E localizes temporary content and public validation", () => {
   assert.match(route, /Temporary ELTARA technical validation website/);
   assert.match(route, /Site temporaire de validation technique ELTARA/);
