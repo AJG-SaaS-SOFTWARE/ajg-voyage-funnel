@@ -4863,7 +4863,7 @@ button.active .step-label small{color:#63817f}
 
 /* Admin beta mission cockpit — mirrors the 5-step tester journey from real product events. */
 .admin-beta-mission-summary{display:grid;gap:11px;margin:18px 0;padding:16px;border:1px solid rgba(78,121,216,.16);border-radius:16px;background:linear-gradient(145deg,rgba(247,249,255,.86),rgba(255,255,255,.72))}
-.admin-beta-mission-summary-head{display:flex;justify-content:space-between;align-items:end;gap:18px}
+.admin-beta-mission-summary-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px}
 .admin-beta-mission-summary-head>div{display:flex;align-items:baseline;gap:10px}
 .admin-beta-mission-summary-head span{color:#64727a;font-size:.7rem;font-weight:760;text-transform:uppercase;letter-spacing:.05em}
 .admin-beta-mission-summary-head b{font-size:1.15rem;color:#334465}
