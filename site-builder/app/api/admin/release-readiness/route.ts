@@ -4,6 +4,10 @@ import { appBaseUrl } from "../../../../lib/app-url";
 import { getStorageBackupStatus } from "../../../../lib/storage-backup";
 import { commercialConfigurationReadiness } from "../../../../lib/commercial-checkout-readiness";
 import { auditStripeRuntimeCached } from "../../../../lib/stripe-readiness";
+import {
+  aiFinopsMonitorReadiness,
+  aiFinopsPolicyReadiness
+} from "../../../../lib/ai-finops-readiness";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -317,6 +321,66 @@ export async function GET(request: Request) {
     const service = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
+
+    const [{ data: finopsPolicy, error: finopsPolicyError }, { data: finopsMonitor, error: finopsMonitorError }] =
+      await Promise.all([
+        service
+          .from("ai_cost_policy")
+          .select("ai_enabled,heavy_enabled,global_daily_micros,global_monthly_micros")
+          .eq("singleton", true)
+          .maybeSingle(),
+        service
+          .from("ai_finops_monitor_state")
+          .select("last_run_at,active_alerts")
+          .eq("singleton", true)
+          .maybeSingle()
+      ]);
+
+    if (finopsPolicyError || !finopsPolicy) {
+      checks.push({
+        key: "ai-finops-policy",
+        label: "FinOps IA · plafonds",
+        status: "blocker",
+        scope: "commercial",
+        detail: "Impossible de lire la politique de plafonds IA."
+      });
+    } else {
+      const policyReadiness = aiFinopsPolicyReadiness({
+        aiEnabled: finopsPolicy.ai_enabled === true,
+        heavyEnabled: finopsPolicy.heavy_enabled === true,
+        globalDailyMicros: Number(finopsPolicy.global_daily_micros),
+        globalMonthlyMicros: Number(finopsPolicy.global_monthly_micros)
+      });
+      checks.push({
+        key: "ai-finops-policy",
+        label: "FinOps IA · plafonds",
+        status: policyReadiness.status,
+        scope: "commercial",
+        detail: policyReadiness.detail
+      });
+    }
+
+    if (finopsMonitorError || !finopsMonitor) {
+      checks.push({
+        key: "ai-finops-monitor",
+        label: "FinOps IA · surveillance",
+        status: "blocker",
+        scope: "commercial",
+        detail: "Impossible de lire l’état du monitor FinOps IA."
+      });
+    } else {
+      const monitorReadiness = aiFinopsMonitorReadiness({
+        lastRunAt: finopsMonitor.last_run_at,
+        activeAlerts: Number(finopsMonitor.active_alerts)
+      });
+      checks.push({
+        key: "ai-finops-monitor",
+        label: "FinOps IA · surveillance",
+        status: monitorReadiness.status,
+        scope: "commercial",
+        detail: monitorReadiness.detail
+      });
+    }
 
     if (present(deploymentSha)) {
       const [frRun, enRun] = await Promise.all(
