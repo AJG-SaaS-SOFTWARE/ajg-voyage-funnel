@@ -198,6 +198,15 @@ test("customer-facing AI creation terminology follows the canonical glossary", (
 
   assert.match(builder, /Création IA/);
   assert.match(builder, /AI Launch/);
+
+  const pricing = read("components/PricingPage.tsx");
+  const legal = read("components/CommercialLegalPage.tsx");
+  for (const source of [pricing, legal]) {
+    assert.match(source, /Création IA/);
+    assert.match(source, /AI Launch/);
+    assert.doesNotMatch(source, /Création IA complète/);
+    assert.doesNotMatch(source, /Full AI Launch/);
+  }
 });
 
 test("English Builder core has no known French-only residuals in customer paths", () => {
