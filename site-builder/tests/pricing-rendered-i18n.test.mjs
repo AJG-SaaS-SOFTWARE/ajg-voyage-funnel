@@ -62,7 +62,7 @@ test("English pricing renders English commercial copy without French commercial 
   assert.match(text, /Private beta · commercial payments still disabled/);
   assert.match(text, /Choose Essential/);
   assert.match(text, /Choose Growth/);
-  assert.match(text, /Full AI Launch/);
+  assert.match(text, /AI Launch/);
   assert.match(text, /Legal notice/);
   assert.match(text, /Privacy/);
   assert.match(text, /Cancellation/);
@@ -90,7 +90,7 @@ test("French pricing renders French commercial copy without English commercial l
   assert.match(text, /Bêta privée · paiements commerciaux encore désactivés/);
   assert.match(text, /Choisir Essentiel/);
   assert.match(text, /Choisir Growth/);
-  assert.match(text, /Création IA complète/);
+  assert.match(text, /Création IA/);
   assert.match(text, /Mentions légales/);
   assert.match(text, /Confidentialité/);
   assert.match(text, /Résiliation/);

@@ -182,6 +182,33 @@ test("customer website selectors use the same Site / Website terminology", () =>
   assert.doesNotMatch(builder, /<span>Site<\/span>/);
 });
 
+test("customer-facing AI creation terminology follows the canonical glossary", () => {
+  const builder = read("app/builder/page.tsx");
+  const aiWrite = read("app/api/ai/write/route.ts");
+
+  assert.match(builder, /Le Concepteur IA/);
+  assert.match(builder, /The AI Site Architect/);
+  assert.match(aiWrite, /Le Concepteur IA/);
+  assert.match(aiWrite, /The AI Site Architect/);
+
+  for (const source of [builder, aiWrite]) {
+    assert.doesNotMatch(source, /L’Architecte Premium/);
+    assert.doesNotMatch(source, /The Premium Site Architect/);
+  }
+
+  assert.match(builder, /Création IA/);
+  assert.match(builder, /AI Launch/);
+
+  const pricing = read("components/PricingPage.tsx");
+  const legal = read("components/CommercialLegalPage.tsx");
+  for (const source of [pricing, legal]) {
+    assert.match(source, /Création IA/);
+    assert.match(source, /AI Launch/);
+    assert.doesNotMatch(source, /Création IA complète/);
+    assert.doesNotMatch(source, /Full AI Launch/);
+  }
+});
+
 test("English Builder core has no known French-only residuals in customer paths", () => {
   const builder = read("app/builder/page.tsx");
   const privacyApi = read("app/api/privacy/erasure/request/route.ts");
