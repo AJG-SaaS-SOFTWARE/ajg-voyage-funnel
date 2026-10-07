@@ -86,6 +86,11 @@ async function expectMirroredLocale(path, frExpected, enExpected) {
 try {
   await waitUntilReady();
   await expectStatus("/login", 200);
+  await expectMirroredLocale(
+    "/",
+    ["Élevez votre présence digitale", "Créez une présence digitale qui évolue avec votre activité", "Voir les tarifs"],
+    ["Elevate your digital presence", "Build a digital presence that grows with your business", "View pricing"]
+  );
   await expectStatus("/plans", 200);
   await expectStatus("/tarifs", 200);
   await expectStatus("/pricing", 200);
