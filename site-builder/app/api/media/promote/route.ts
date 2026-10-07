@@ -16,7 +16,7 @@ export async function POST(request:NextRequest){
  if(!token)return NextResponse.json({error:tr("Reconnectez-vous pour continuer.","Sign in again to continue.")},{status:401});
  const userClient=createClient(url,publicKey,{global:{headers:{Authorization:`Bearer ${token}`}},auth:{persistSession:false,autoRefreshToken:false}});
  const {data:{user},error:userError}=await userClient.auth.getUser(token);
- if(userError||!user)return NextResponse.json({error:"Unauthorized"},{status:401});
+ if(userError||!user)return NextResponse.json({error:tr("Connexion requise.","Sign-in required.")},{status:401});
  const body=await request.json() as Body;
  if(!body.siteId||!body.privateRef?.startsWith("private://")||!body.assetId)return NextResponse.json({error:tr("Demande média invalide.","Invalid media request.")},{status:400});
  if(body.rights==="unknown"||!body.rights)return NextResponse.json({error:tr("Les droits de publication doivent être confirmés.","Publication rights must be confirmed.")},{status:409});
