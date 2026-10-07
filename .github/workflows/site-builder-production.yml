@@ -428,21 +428,24 @@ jobs:
         shell: bash
         run: |
           rm -rf .vercel
-          mkdir -p .vercel
+          npx --yes vercel@60.1.3 link \
+            --yes \
+            --token "$VERCEL_TOKEN" \
+            --project "$VERCEL_PROJECT_ID"
+
           node -e '
             const fs = require("node:fs");
-            const orgId = process.env.VERCEL_ORG_ID || "";
-            const projectId = process.env.VERCEL_PROJECT_ID || "";
-            if (!orgId.startsWith("team_") || !projectId.startsWith("prj_")) {
-              console.error("Missing Vercel project identity for Cron CLI.");
+            const payload = JSON.parse(fs.readFileSync(".vercel/project.json", "utf8"));
+            if (
+              payload?.orgId !== process.env.VERCEL_ORG_ID ||
+              payload?.projectId !== process.env.VERCEL_PROJECT_ID
+            ) {
+              console.error("Vercel CLI linked an unexpected project.");
               process.exit(1);
             }
-            fs.writeFileSync(
-              ".vercel/project.json",
-              JSON.stringify({ orgId, projectId })
-            );
           '
-          echo "Ephemeral Vercel project context created for release Cron validation." >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Vercel CLI linked the ephemeral release workspace to ELTARA." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run structural FR/EN release E2E for deployed SHA
         shell: bash
