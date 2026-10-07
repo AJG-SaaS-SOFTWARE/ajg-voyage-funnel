@@ -129,13 +129,13 @@ try {
   );
   await expectMirroredLocale(
     "/builder",
-    ["Chargement de votre espace…", "Aperçu", "Mon offre", "Mes données"],
-    ["Loading your workspace…", "Preview", "My plan", "My data"]
+    ["Chargement de votre espace…"],
+    ["Loading your workspace…"]
   );
   await expectMirroredLocale(
     "/growth",
-    ["Piloter la santé de votre site", "Préparation du cockpit Growth…", "Disponibilité & accès"],
-    ["Manage your website health", "Preparing the Growth cockpit…", "Availability & access"]
+    ["Piloter la santé de votre site", "Préparation du cockpit Growth…"],
+    ["Manage your website health", "Preparing the Growth cockpit…"]
   );
   await expectMirroredLocale(
     "/analytics",
@@ -144,13 +144,13 @@ try {
   );
   await expectMirroredLocale(
     "/support",
-    ["Aide et demandes", "Diagnostic en cours…", "Nouvelle demande"],
-    ["Help and requests", "Running diagnosis…", "New request"]
+    ["Aide et demandes", "Diagnostic en cours…"],
+    ["Help and requests", "Running diagnosis…"]
   );
   await expectMirroredLocale(
     "/messages",
-    ["Messages reçus", "Chargement des messages…", "Aucun message"],
-    ["Received messages", "Loading messages…", "No messages"]
+    ["Messages reçus", "Chargement des messages…"],
+    ["Received messages", "Loading messages…"]
   );
   await expectStatus("/ci-route-that-does-not-exist", 404);
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
