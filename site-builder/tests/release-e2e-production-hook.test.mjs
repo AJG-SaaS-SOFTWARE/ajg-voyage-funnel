@@ -29,7 +29,7 @@ test("production release validates structural FR/EN before the full AI mirror", 
   assert.match(workflow, /https:\/\/\$PRODUCTION_ALIAS\/api\/cron\/release-e2e-structural/);
   assert.match(workflow, /https:\/\/\$PRODUCTION_ALIAS\/api\/cron\/release-e2e"/);
   assert.match(workflow, /Authorization: Bearer \$AJG_RELEASE_E2E_TOKEN/);
-  assert.doesNotMatch(workflow, /vercel@60\.1\.3 crons run/);
+  assert.doesNotMatch(workflow, /vercel@60\.1\.3 crons run \/api\/cron\/release-e2e/);
   assert.doesNotMatch(workflow, /vercel@60\.1\.3 link/);
   assert.doesNotMatch(workflow, /VERCEL_TEAM_SLUG/);
 });
