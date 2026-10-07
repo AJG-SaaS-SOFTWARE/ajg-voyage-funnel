@@ -115,6 +115,18 @@ try {
     ["Mes données", "Votre compte"],
     ["My data", "Your account"]
   );
+  await expectLocalizedHtml(
+    "/pricing",
+    "en",
+    ["Build. Run. Grow.", "Choose Essential", "Choose Growth"],
+    ["Créez. Gérez. Faites progresser.", "Choisir Essentiel", "Choisir Growth"]
+  );
+  await expectLocalizedHtml(
+    "/tarifs",
+    "fr",
+    ["Créez. Gérez. Faites progresser.", "Choisir Essentiel", "Choisir Growth"],
+    ["Build. Run. Grow.", "Choose Essential", "Choose Growth"]
+  );
   await expectStatus("/ci-route-that-does-not-exist", 404);
   await expectStatus("/api/export/site?siteId=ci&format=archive", 401);
   await expectStatus("/api/admin/release-readiness", 401);
