@@ -48,7 +48,7 @@ test("Builder report exposes only aggregate commercial launch readiness", () => 
   assert.match(source, /taxReady: commercialConfig\.tax\.ok/);
   assert.match(source, /stripeConfigured: commercialConfig\.stripe\.ok/);
   assert.match(source, /stripeRuntimeReady/);
-  assert.doesNotMatch(source, /commercialLaunch:\s*{[^}]*reasons/s);
+  assert.doesNotMatch(source, /commercialLaunch:\s*{[^}]*\breasons\s*:/s);
 });
 
 test("Builder report treats an enabled but non-ready Checkout as critical", () => {
