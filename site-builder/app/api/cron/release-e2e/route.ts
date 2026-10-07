@@ -140,33 +140,49 @@ export async function GET(request: NextRequest) {
       throw signInError || new Error("temporary_admin_sign_in_failed");
     }
 
-    for (const plan of pending) {
-      const response = await fetch(
-        new URL("/api/admin/builder-e2e", request.url),
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            includeAi: true,
-            locale: plan.locale
-          }),
-          cache: "no-store",
-          signal: AbortSignal.timeout(150000)
-        }
-      );
+    const appOrigin = (
+      process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
+    ).replace(/\/$/, "");
 
-      const body = await response.json().catch(() => null);
-      results.push({
-        locale: plan.locale,
-        ok: response.ok && body?.ok === true,
-        status: response.status,
-        detail: response.ok
-          ? "validated"
-          : String(body?.error || "E2E validation failed").slice(0, 300)
-      });
+    for (const plan of pending) {
+      try {
+        const response = await fetch(
+          new URL("/api/admin/builder-e2e", appOrigin),
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              includeAi: true,
+              locale: plan.locale
+            }),
+            cache: "no-store",
+            signal: AbortSignal.timeout(150000)
+          }
+        );
+
+        const body = await response.json().catch(() => null);
+        results.push({
+          locale: plan.locale,
+          ok: response.ok && body?.ok === true,
+          status: response.status,
+          detail: response.ok
+            ? "validated"
+            : String(body?.error || "E2E validation failed").slice(0, 300)
+        });
+      } catch (error) {
+        results.push({
+          locale: plan.locale,
+          ok: false,
+          status: 503,
+          detail:
+            error instanceof Error
+              ? error.message.slice(0, 300)
+              : "E2E validation request failed"
+        });
+      }
     }
   } catch (error) {
     results.push({
