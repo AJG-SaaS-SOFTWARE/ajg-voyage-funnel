@@ -5,7 +5,7 @@ import { LanguageSwitch } from "../components/LanguageSwitch";
 import { useProductLocale } from "../lib/product-i18n";
 
 export default function NotFound() {
-  const { locale, tr } = useProductLocale();
+  const { tr } = useProductLocale();
 
   return (
     <main className="not-found" role="main">
@@ -21,7 +21,7 @@ export default function NotFound() {
           "This address does not exist or is no longer available. Return to ELTARA to continue your journey."
         )}
       </p>
-      <Link className="button primary" href={locale === "en" ? "/?lang=en" : "/"}>
+      <Link className="button primary" href="/">
         {tr("Retour à ELTARA", "Back to ELTARA")}
       </Link>
     </main>
