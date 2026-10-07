@@ -97,12 +97,19 @@ test("release E2E cron uses a disposable admin identity and always removes it", 
 test("release E2E cron reuses the authenticated Builder engine for missing locales only", () => {
   assert.match(route, /\["fr", "en"\] as const/);
   assert.match(route, /plans\.filter\(\(plan\) => plan\.run\)/);
-  assert.match(route, /new URL\("\/api\/admin\/builder-e2e", request\.url\)/);
+  assert.match(route, /process\.env\.NEXT_PUBLIC_APP_URL \|\| request\.nextUrl\.origin/);
+  assert.match(route, /new URL\("\/api\/admin\/builder-e2e", appOrigin\)/);
   assert.match(route, /includeAi: true/);
   assert.match(route, /locale: plan\.locale/);
   assert.doesNotMatch(route, /\/api\/billing\/checkout/);
   assert.doesNotMatch(route, /AJG_BILLING_CHECKOUT_ENABLED/);
   assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY/);
+});
+
+test("release E2E isolates locale failures so FR cannot suppress EN evidence", () => {
+  assert.match(route, /for \(const plan of pending\) \{/);
+  assert.match(route, /try \{[\s\S]*fetch\([\s\S]*locale: plan\.locale/);
+  assert.match(route, /catch \(error\) \{[\s\S]*locale: plan\.locale/);
 });
 
 test("Vercel schedules release E2E checks hourly without multiplying successful runs", () => {
