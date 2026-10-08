@@ -45,3 +45,48 @@ test("release readiness promotes Stripe runtime mismatches to blockers", () => {
   assert.ok(readiness.includes('key: "stripe-runtime-audit"'));
   assert.ok(readiness.includes('status: "deferred"'));
 });
+
+
+test("production release performs a fail-closed Stripe sandbox mutation smoke", () => {
+  const billing = fs.readFileSync(
+    new URL("../lib/stripe-billing.ts", import.meta.url),
+    "utf8"
+  );
+  const route = fs.readFileSync(
+    new URL("../app/api/cron/stripe-sandbox-smoke/route.ts", import.meta.url),
+    "utf8"
+  );
+  const workflow = fs.readFileSync(
+    new URL("../../.github/workflows/site-builder-production.yml", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(billing.includes("runStripeSandboxCheckoutSmoke"));
+  assert.ok(billing.includes('key.startsWith("rk_test_")'));
+  assert.ok(billing.includes('key.startsWith("sk_test_")'));
+  assert.ok(billing.includes("/checkout/sessions"));
+  assert.ok(billing.includes("/expire"));
+  assert.ok(billing.includes('status !== "expired"'));
+
+  assert.ok(route.includes("releaseE2EAuthorized(request)"));
+  assert.ok(route.includes("AJG_BILLING_CHECKOUT_ENABLED"));
+  assert.ok(route.includes("Sandbox smoke is disabled while commercial Checkout is open."));
+  assert.ok(route.includes("STRIPE_ESSENTIAL_MONTHLY_PRICE_ID"));
+  assert.ok(route.includes("checkoutEnabled: false"));
+
+  assert.ok(workflow.includes("Run Stripe sandbox mutation smoke"));
+  assert.ok(workflow.includes("/api/cron/stripe-sandbox-smoke"));
+  assert.ok(workflow.includes("payload?.mode !== \"test\""));
+  assert.ok(workflow.includes("payload?.expired !== true"));
+});
+
+test("Stripe sandbox mutation smoke never exposes the credential or opens commercial Checkout", () => {
+  const route = fs.readFileSync(
+    new URL("../app/api/cron/stripe-sandbox-smoke/route.ts", import.meta.url),
+    "utf8"
+  );
+  assert.doesNotMatch(route, /STRIPE_RESTRICTED_KEY/);
+  assert.doesNotMatch(route, /STRIPE_SECRET_KEY/);
+  assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY/);
+  assert.doesNotMatch(route, /process\.env\.AJG_BILLING_CHECKOUT_ENABLED\s*=/);
+});
