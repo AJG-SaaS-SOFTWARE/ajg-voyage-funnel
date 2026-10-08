@@ -474,6 +474,56 @@ jobs:
 
           echo "Stripe sandbox mutation smoke passed: Checkout session created and immediately expired with commercial Checkout still closed." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Run disposable billing lifecycle smoke
+        shell: bash
+        run: |
+          echo "Triggering ELTARA disposable billing lifecycle smoke."
+
+          set +e
+          HTTP_CODE="$(curl --silent --show-error \
+            --max-time 90 \
+            --output /tmp/eltara-billing-lifecycle-smoke.json \
+            --write-out "%{http_code}" \
+            "https://$PRODUCTION_ALIAS/api/cron/billing-lifecycle-smoke" \
+            -H "Authorization: Bearer $AJG_RELEASE_E2E_TOKEN")"
+          CURL_EXIT=$?
+          set -e
+
+          if [ "$CURL_EXIT" -ne 0 ] || [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Billing lifecycle smoke failed for $GITHUB_SHA (curl=$CURL_EXIT, HTTP=$HTTP_CODE). Checkout remains closed."
+            cat /tmp/eltara-billing-lifecycle-smoke.json 2>/dev/null || true
+            exit 1
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const payload = JSON.parse(fs.readFileSync("/tmp/eltara-billing-lifecycle-smoke.json", "utf8"));
+            const labels = Array.isArray(payload?.steps) ? payload.steps.map(step => step?.label) : [];
+            for (const required of [
+              "subscription_active_before_payment",
+              "first_payment_succeeded",
+              "renewal_failed",
+              "payment_recovered",
+              "subscription_canceled"
+            ]) {
+              if (!labels.includes(required)) {
+                console.error("Billing lifecycle smoke is missing step:", required);
+                process.exit(1);
+              }
+            }
+            if (
+              payload?.ok !== true ||
+              payload?.mode !== "synthetic_provider_lifecycle" ||
+              payload?.checkoutEnabled !== false ||
+              payload?.cleanupOk !== true
+            ) {
+              console.error("Billing lifecycle smoke payload is invalid.");
+              process.exit(1);
+            }
+          '
+
+          echo "Disposable billing lifecycle smoke passed: pre-payment lock, payment activation, failure grace, recovery and cancellation gates validated." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run structural FR/EN release E2E for deployed SHA
         shell: bash
         run: |
