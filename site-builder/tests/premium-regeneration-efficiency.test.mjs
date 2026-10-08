@@ -72,3 +72,15 @@ test("final quality rejection gets one bounded corrective refinement before fail
   assert.ok(source.includes("secondRefinementApplied"));
   assert.ok(source.includes("runFinalQualityReview"));
 });
+
+
+test("Premium reviewers understand module activation and CTA schema boundaries", () => {
+  const source = fs.readFileSync(
+    new URL("../lib/premium-site-architect.ts", import.meta.url),
+    "utf8"
+  );
+  assert.ok(source.includes("recommendedModules lists the modules actually recommended"));
+  assert.ok(source.includes("moduleOrder only stores the stable display order"));
+  assert.ok(source.includes("bookingLabel is only the visible CTA label"));
+  assert.ok(source.includes("Do not mark conversion as broken solely because no URL"));
+});
