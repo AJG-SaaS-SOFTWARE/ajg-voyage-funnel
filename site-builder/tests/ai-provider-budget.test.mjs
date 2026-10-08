@@ -112,3 +112,14 @@ test('writer refunds standard quota only when no usable result is returned', asy
     Object.assign(process.env, oldEnv);
   }
 });
+
+
+test('Premium Architect worst-case correction path is allowed through provider call sequence 7', () => {
+  const migration = fs.readFileSync(
+    new URL('../supabase/migrations/20261008084200_ai_provider_budget_sequence_7.sql', import.meta.url),
+    'utf8'
+  );
+  assert.match(migration, /sequence between 1 and 7/);
+  assert.match(migration, /p_sequence not between 1 and 7/);
+  assert.doesNotMatch(migration, /global_daily_micros\s*=|global_monthly_micros\s*=/);
+});
