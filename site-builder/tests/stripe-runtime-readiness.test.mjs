@@ -123,3 +123,38 @@ test("production release validates the disposable billing lifecycle without open
   assert.ok(workflow.includes("payload?.checkoutEnabled !== false"));
   assert.ok(workflow.includes("payload?.cleanupOk !== true"));
 });
+
+
+test("AI Launch webhook rechecks paid active subscription and is release-smoked with a real signature path", () => {
+  const webhook = fs.readFileSync(
+    new URL("../app/api/billing/stripe-webhook/route.ts", import.meta.url),
+    "utf8"
+  );
+  const route = fs.readFileSync(
+    new URL("../app/api/cron/stripe-ai-launch-webhook-smoke/route.ts", import.meta.url),
+    "utf8"
+  );
+  const workflow = fs.readFileSync(
+    new URL("../../.github/workflows/site-builder-production.yml", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(webhook.includes('select("plan_key,status,first_payment_confirmed_at")'));
+  assert.ok(webhook.includes('subscription.status !== "active"'));
+  assert.ok(webhook.includes("!subscription.first_payment_confirmed_at"));
+  assert.ok(webhook.includes('return "subscription_required"'));
+
+  assert.ok(route.includes("signedStripeHeader"));
+  assert.ok(route.includes('"stripe-signature"'));
+  assert.ok(route.includes("stripeCredentialMode() !== \"test\""));
+  assert.ok(route.includes('"unpaid_ai_launch_webhook_gate_failed"'));
+  assert.ok(route.includes('"paid_ai_launch_webhook_grant_failed"'));
+  assert.ok(route.includes('"subscription_required"'));
+  assert.ok(route.includes('"granted"'));
+  assert.ok(route.includes("deleteUser(userId)"));
+
+  assert.ok(workflow.includes("Run signed AI Launch webhook smoke"));
+  assert.ok(workflow.includes("/api/cron/stripe-ai-launch-webhook-smoke"));
+  assert.ok(workflow.includes('payload?.unpaidBlocked !== true'));
+  assert.ok(workflow.includes('payload?.paidGranted !== true'));
+});
