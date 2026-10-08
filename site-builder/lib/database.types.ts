@@ -712,6 +712,7 @@ export type Database = {
       site_subscriptions: {
         Row: {
           current_period_end: string | null
+          first_payment_confirmed_at: string | null
           owner_id: string
           plan_key: string
           provider: string | null
@@ -723,6 +724,7 @@ export type Database = {
         }
         Insert: {
           current_period_end?: string | null
+          first_payment_confirmed_at?: string | null
           owner_id: string
           plan_key: string
           provider?: string | null
@@ -734,6 +736,7 @@ export type Database = {
         }
         Update: {
           current_period_end?: string | null
+          first_payment_confirmed_at?: string | null
           owner_id?: string
           plan_key?: string
           provider?: string | null
