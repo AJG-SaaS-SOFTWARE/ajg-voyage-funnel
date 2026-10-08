@@ -20,6 +20,75 @@ function stripeKey() {
   ).trim();
 }
 
+
+export function stripeCredentialMode() {
+  const key = stripeKey();
+  if (!key) return "missing" as const;
+  if (key.startsWith("rk_test_") || key.startsWith("sk_test_")) return "test" as const;
+  if (key.startsWith("rk_live_") || key.startsWith("sk_live_")) return "live" as const;
+  return "unknown" as const;
+}
+
+export async function runStripeSandboxCheckoutSmoke(input: {
+  priceId: string;
+  successUrl: string;
+  cancelUrl: string;
+}) {
+  if (stripeCredentialMode() !== "test") {
+    throw new Error("stripe_sandbox_required");
+  }
+
+  const marker = integrationIdentifier();
+  const session = await stripeRequest<{
+    id: string;
+    livemode: boolean;
+    status?: string | null;
+  }>("/checkout/sessions", {
+    params: {
+      mode: "subscription",
+      line_items: [{ price: input.priceId, quantity: 1 }],
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      client_reference_id: marker,
+      metadata: {
+        app: "ajg_site_builder",
+        purpose: "sandbox_mutation_smoke"
+      },
+      subscription_data: {
+        metadata: {
+          app: "ajg_site_builder",
+          purpose: "sandbox_mutation_smoke"
+        }
+      }
+    }
+  });
+
+  if (!session?.id || session.livemode !== false) {
+    throw new Error("stripe_sandbox_session_invalid");
+  }
+
+  const expired = await stripeRequest<{
+    id: string;
+    livemode: boolean;
+    status?: string | null;
+  }>(`/checkout/sessions/${encodeURIComponent(session.id)}/expire`);
+
+  if (
+    expired?.id !== session.id ||
+    expired.livemode !== false ||
+    expired.status !== "expired"
+  ) {
+    throw new Error("stripe_sandbox_cleanup_failed");
+  }
+
+  return {
+    ok: true,
+    mode: "test" as const,
+    created: true,
+    expired: true
+  };
+}
+
 export function stripeConfigured() {
   return Boolean(stripeKey() && process.env.STRIPE_WEBHOOK_SECRET?.trim());
 }
