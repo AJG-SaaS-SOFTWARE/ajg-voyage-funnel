@@ -31,7 +31,9 @@ test('public pricing renders the actual enabled offer in both languages', () => 
     assert.ok(enabled.includes(locale === 'fr' ? 'incluse avec Growth annuel' : 'included with annual Growth'));
   }
 });
-test('annual payment webhook gate is applied before automatic grant', () => {
+test('annual Growth AI grant is applied only from the paid invoice path', () => {
   const webhook = fs.readFileSync(new URL('../app/api/billing/stripe-webhook/route.ts', import.meta.url), 'utf8');
-  assert.ok(webhook.includes('growthAnnualIncludesLaunch() &&\n    resolved.planKey === "growth"'));
+  assert.equal((webhook.match(/source: "growth_annual"/g) || []).length, 1);
+  assert.ok(webhook.includes('const paid = event.type === "invoice.paid"'));
+  assert.ok(webhook.includes('paid &&\n    growthAnnualIncludesLaunch()'));
 });
