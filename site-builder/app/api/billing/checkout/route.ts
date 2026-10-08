@@ -142,7 +142,7 @@ export async function POST(request: Request) {
 
   const { data: current, error: currentError } = await service
     .from("site_subscriptions")
-    .select("plan_key,status,provider,provider_customer_id,provider_subscription_id")
+    .select("plan_key,status,provider,provider_customer_id,provider_subscription_id,first_payment_confirmed_at")
     .eq("site_id", site.id)
     .maybeSingle();
 
@@ -159,7 +159,8 @@ export async function POST(request: Request) {
     if (
       !current ||
       !["essential", "growth"].includes(current.plan_key) ||
-      !["active", "trialing"].includes(current.status)
+      current.status !== "active" ||
+      !current.first_payment_confirmed_at
     ) {
       return NextResponse.json(
         {

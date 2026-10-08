@@ -372,6 +372,8 @@ Le lancement commercial ne sera marqué prêt qu’après validation réelle de 
 ### Itération 6E — Billing Access & impayés
 État : moteur serveur en cours, politique J0/J14/J28/J104 intégrée
 
+- [x] lancement commercial sans essai Stripe : hors BETA, les fonctions à coût variable restent verrouillées jusqu’à la **première facture réellement payée** (`invoice.paid`) ; un simple statut Subscription `active` ou `trialing` ne suffit pas ;
+
 - [x] état d’impayé isolé par site : `free/trial/active/grace/restricted/public_suspended/retention/closed` ;
 - [x] journal de transitions et identifiant fournisseur dédupliquable ;
 - [x] capacités indépendantes `read/edit/publish/ai/import/export/collect_leads/view_billing/public_site` ;
