@@ -85,3 +85,13 @@ test("mirrored E2E only reports parity after both isolated runs succeeded", () =
   assert.match(route, /key: "domains"/);
   assert.match(route, /key: "data"/);
 });
+
+
+test("disposable Builder E2E satisfies the first-paid cost gate without opening Checkout", () => {
+  assert.match(route, /first_payment_confirmed_at: new Date\(\)\.toISOString\(\)/);
+  assert.match(route, /provider: "internal-e2e"/);
+  assert.match(route, /état Growth payé interne/);
+  assert.doesNotMatch(route, /\/api\/billing\/checkout/);
+  assert.doesNotMatch(route, /AJG_BILLING_CHECKOUT_ENABLED/);
+  assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY/);
+});
