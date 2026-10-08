@@ -14,6 +14,18 @@ const firstPaymentMigration = fs.readFileSync(
   new URL("../docs/migrations/20261008145512_require_first_paid_period_for_costly_features.sql", import.meta.url),
   "utf8"
 );
+const publicationGateMigration = fs.readFileSync(
+  new URL("../docs/migrations/20261008151140_enforce_first_payment_on_publication_and_domains.sql", import.meta.url),
+  "utf8"
+);
+const siteRepository = fs.readFileSync(
+  new URL("../lib/supabase-site-repository.ts", import.meta.url),
+  "utf8"
+);
+const stripeWebhook = fs.readFileSync(
+  new URL("../app/api/billing/stripe-webhook/route.ts", import.meta.url),
+  "utf8"
+);
 const checkout = fs.readFileSync(
   new URL("../app/api/billing/checkout/route.ts", import.meta.url),
   "utf8"
@@ -88,4 +100,20 @@ test("AI Launch add-on requires an already paid active subscription", () => {
   assert.ok(checkout.includes("first_payment_confirmed_at"));
   assert.ok(checkout.includes('current.status !== "active"'));
   assert.ok(checkout.includes("!current.first_payment_confirmed_at"));
+});
+
+
+test("new publication and domain operations cannot bypass the first-payment gate", () => {
+  assert.ok(publicationGateMigration.includes("enforce_eltara_publication_cost_gate"));
+  assert.ok(publicationGateMigration.includes("first_paid_period_required_for_publication"));
+  assert.ok(publicationGateMigration.includes("private.eltara_cost_gate_unlocked(domains.site_id)"));
+  assert.ok(publicationGateMigration.includes("first_payment_confirmed_at is not null"));
+  assert.ok(siteRepository.includes('const initialPayload = publish ? payload(user, publishConfig, "draft") : nextPayload'));
+  assert.ok(siteRepository.includes('await assertSiteCapability(remote.id, "can_publish")'));
+});
+
+test("Growth annual AI benefit is granted only from the paid invoice path", () => {
+  assert.equal((stripeWebhook.match(/source: "growth_annual"/g) || []).length, 1);
+  assert.ok(stripeWebhook.includes('const paid = event.type === "invoice.paid"'));
+  assert.match(stripeWebhook, /paid &&[\s\S]*source: "growth_annual"/);
 });
