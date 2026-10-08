@@ -1542,74 +1542,149 @@ export async function generatePremiumSiteArchitect(
     );
   }
 
-  const finalReview = await structuredResponse({
-    apiKey: input.apiKey,
-    model: auxiliaryModel,
-    schemaName: "ajg_premium_site_final_review",
-    schema: reviewSchema as unknown as Record<string, unknown>,
-    maxOutputTokens: 1000,
-    effort: "low",
-    operation: "premium_final_review",
-    onUsage: input.onUsage,
+  const runFinalQualityReview = async (
+    candidateProposal: PremiumArchitectCore,
+    priorReview: { score: number; issues: any[] },
+    refinementApplied: boolean
+  ) =>
+    structuredResponse({
+      apiKey: input.apiKey,
+      model: auxiliaryModel,
+      schemaName: "ajg_premium_site_final_review",
+      schema: reviewSchema as unknown as Record<string, unknown>,
+      maxOutputTokens: 1000,
+      effort: "low",
+      operation: "premium_final_review",
+      onUsage: input.onUsage,
       providerFetch: input.providerFetch,
-    instructions: [
-      "You are the final independent quality gate for AJG Premium Site Architect.",
-      sourceDataBoundaryRule,
-      "Review only the candidate proposal that will actually be shown to the customer, whether or not an earlier refinement was needed.",
-      "Treat the previous review as context, not as a verdict to copy. Make an independent assessment of the final candidate.",
-      ...(variationReference
-        ? ["When this is a regeneration, verify that the candidate is a genuinely useful alternative to the reference rather than a cosmetic synonym rewrite."]
-        : []),
-      "If refinement occurred, verify that the previous review problems are resolved without introducing unsupported facts.",
-      "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
-      "Treat invented urgency, scarcity, deadlines or limited availability as unsupported factual pressure and a major issue.",
-      "Do not penalize facts that are explicitly marked as missing instead of invented.",
-      "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
-      "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
-      ...revisionScopeRules,
-      input.affiliationRules
-    ].join(" "),
-    input: JSON.stringify({
-      sourceContext,
-      strategy,
-      variationReference,
-      refinementApplied: shouldRefine,
-      previousReview: {
-        score,
-        issues
-      },
-      candidateProposal: finalProposal
-    })
-  });
+      instructions: [
+        "You are the final independent quality gate for AJG Premium Site Architect.",
+        sourceDataBoundaryRule,
+        "Review only the candidate proposal that will actually be shown to the customer, whether or not an earlier refinement was needed.",
+        "Treat the previous review as context, not as a verdict to copy. Make an independent assessment of the final candidate.",
+        ...(variationReference
+          ? ["When this is a regeneration, verify that the candidate is a genuinely useful alternative to the reference rather than a cosmetic synonym rewrite."]
+          : []),
+        "If refinement occurred, verify that the previous review problems are resolved without introducing unsupported facts.",
+        "Check factual grounding, compliance, strategic fit, clarity, differentiation, visitor journey, conversion logic, information architecture and design coherence.",
+        "Treat invented urgency, scarcity, deadlines or limited availability as unsupported factual pressure and a major issue.",
+        "Do not penalize facts that are explicitly marked as missing instead of invented.",
+        "Use major severity only for unsupported factual claims, compliance problems, contradictions, broken information architecture or another issue serious enough that the proposal should not be presented as finished.",
+        "A pass requires no major issue and a genuinely polished proposal. Do not create new requirements unrelated to the supplied brief.",
+        ...revisionScopeRules,
+        input.affiliationRules
+      ].join(" "),
+      input: JSON.stringify({
+        sourceContext,
+        strategy,
+        variationReference,
+        refinementApplied,
+        previousReview: priorReview,
+        candidateProposal
+      })
+    });
 
-  const finalDeterministicIssues = deterministicQualityIssues(
+  let finalReview = await runFinalQualityReview(
+    finalProposal,
+    { score, issues },
+    shouldRefine
+  );
+  let finalDeterministicIssues = deterministicQualityIssues(
     finalProposal,
     sourceEvidenceText
   );
-  const finalDeterministicBlocking = finalDeterministicIssues.filter(
+  let finalDeterministicBlocking = finalDeterministicIssues.filter(
     (item) => item.severity === "blocking"
   );
-
-  const finalIssues = Array.isArray(finalReview?.issues)
+  let finalIssues = Array.isArray(finalReview?.issues)
     ? finalReview.issues.slice(0, 8)
     : [];
-  const finalMajorIssues = finalIssues.filter(
+  let finalMajorIssues = finalIssues.filter(
     (item: any) => item?.severity === "major"
   );
-  const finalScore = clampScore(finalReview?.overallScore);
-  const finalVerified =
+  let finalScore = clampScore(finalReview?.overallScore);
+  let finalVerified =
     finalReview?.verdict === "pass" &&
     finalMajorIssues.length === 0 &&
     finalScore >= 88 &&
     finalDeterministicBlocking.length === 0;
+  let secondRefinementApplied = false;
+
+  if (!finalVerified) {
+    secondRefinementApplied = true;
+    finalProposal = normalizeProposal(
+      await structuredResponse({
+        apiKey: input.apiKey,
+        model: premiumModel,
+        schemaName: "ajg_premium_site_final_correction",
+        schema: proposalSchema as unknown as Record<string, unknown>,
+        maxOutputTokens: 3000,
+        effort: "medium",
+        operation: "premium_refinement",
+        onUsage: input.onUsage,
+        providerFetch: input.providerFetch,
+        instructions: [
+          "You are the bounded final correction layer of AJG Premium Site Architect.",
+          sourceDataBoundaryRule,
+          "Return a complete corrected proposal, not commentary.",
+          "Correct every issue identified by the independent final review and every deterministic blocking issue.",
+          "Do not weaken, reinterpret or ignore the final review. Remove unsupported claims instead of inventing evidence.",
+          "Preserve verified facts, the approved strategy and strong parts of the candidate.",
+          "Keep architecture minimal, CTA concrete, copy concise and all claims grounded in the supplied source context.",
+          "This is the last correction attempt. Prefer a simpler fully supported proposal over an ambitious proposal with unresolved risk.",
+          ...revisionScopeRules,
+          input.affiliationRules
+        ].join(" "),
+        input: JSON.stringify({
+          sourceContext,
+          strategy,
+          variationReference,
+          candidateProposal: finalProposal,
+          finalReview: {
+            verdict: finalReview?.verdict,
+            score: finalScore,
+            issues: finalIssues,
+            deterministicIssues: finalDeterministicIssues
+          }
+        })
+      }),
+      assets
+    );
+
+    finalReview = await runFinalQualityReview(
+      finalProposal,
+      { score: finalScore, issues: finalIssues },
+      true
+    );
+    finalDeterministicIssues = deterministicQualityIssues(
+      finalProposal,
+      sourceEvidenceText
+    );
+    finalDeterministicBlocking = finalDeterministicIssues.filter(
+      (item) => item.severity === "blocking"
+    );
+    finalIssues = Array.isArray(finalReview?.issues)
+      ? finalReview.issues.slice(0, 8)
+      : [];
+    finalMajorIssues = finalIssues.filter(
+      (item: any) => item?.severity === "major"
+    );
+    finalScore = clampScore(finalReview?.overallScore);
+    finalVerified =
+      finalReview?.verdict === "pass" &&
+      finalMajorIssues.length === 0 &&
+      finalScore >= 88 &&
+      finalDeterministicBlocking.length === 0;
+  }
 
   if (!finalVerified) {
     console.warn("Premium Architect quality gate rejected candidate", {
       verdict: finalReview?.verdict || "unknown",
       finalScore,
       finalMajorIssueCount: finalMajorIssues.length,
+      finalIssueAreas: finalIssues.map((item: any) => item?.area || "unknown"),
       deterministicBlockingCodes: finalDeterministicBlocking.map((item) => item.code),
-      refinementApplied: shouldRefine
+      refinementApplied: shouldRefine || secondRefinementApplied
     });
     throw new PremiumArchitectError(
       "Premium Architect final quality gate did not pass",
@@ -1630,7 +1705,7 @@ export async function generatePremiumSiteArchitect(
     intelligence: strategy,
     premiumAudit: {
       reviewed: true,
-      refinementApplied: shouldRefine,
+      refinementApplied: shouldRefine || secondRefinementApplied,
       finalReviewPerformed: true,
       finalVerified,
       initialScore: score,
@@ -1644,7 +1719,7 @@ export async function generatePremiumSiteArchitect(
       deterministicBlockingIssuesDetected: finalDeterministicBlocking.length,
       strategyReused,
       strengths,
-      qualityNote: shouldRefine
+      qualityNote: shouldRefine || secondRefinementApplied
         ? `Audit premium effectué : ${issues.length} point(s) IA et ${creationDeterministicIssues.length} contrôle(s) déterministe(s) examinés, proposition raffinée, puis second contrôle indépendant validé avant affichage.${strategyReused ? " La stratégie validée du brief a été réutilisée pour cette variante." : ""}`
         : `Audit premium effectué : la première proposition a passé les contrôles IA et déterministes, puis un second contrôle indépendant l’a validée avant affichage.${strategyReused ? " La stratégie validée du brief a été réutilisée pour cette variante." : ""}`
     }
