@@ -162,22 +162,6 @@ async function bindAndApply(
   const status = normalizeStripeSubscriptionStatus(rawStatus);
   const periodEnd = stripePeriodEnd(subscription);
 
-  const { error: bindError } = await service.rpc(
-    "bind_builder_site_subscription_provider",
-    {
-      p_site_id: resolved.siteId,
-      p_owner_id: resolved.ownerId,
-      p_plan_key: resolved.planKey,
-      p_provider: "stripe",
-      p_provider_customer_id: customerId,
-      p_provider_subscription_id: subscriptionId,
-      p_provider_price_id: priceId || null,
-      p_provider_status: status,
-      p_current_period_end: periodEnd
-    }
-  );
-  if (bindError) throw bindError;
-
   let providerEventType = "subscription_updated";
   if (sourceEventType === "invoice.payment_failed") {
     providerEventType = "payment_failed";
@@ -200,22 +184,31 @@ async function bindAndApply(
       : null;
 
   const { data, error } = await service.rpc(
-    "apply_builder_site_billing_provider_event",
+    "apply_builder_site_billing_provider_event_v2",
     {
       p_provider: "stripe",
       p_event_id: event.id,
       p_event_type: providerEventType,
       p_site_id: resolved.siteId,
       p_owner_id: resolved.ownerId,
+      p_plan_key: resolved.planKey,
+      p_provider_customer_id: customerId,
+      p_provider_subscription_id: subscriptionId,
+      p_provider_price_id: priceId || "",
       p_provider_status: status,
       p_paid_through: periodEnd,
       p_failed_at: failedAt,
-      p_provider_subscription_id: subscriptionId
+      p_provider_created_at: eventTime(event)
     }
   );
   if (error) throw error;
 
+  const applied =
+    typeof data !== "string" ||
+    !["duplicate", "stale_ignored", "terminal_ignored"].includes(data);
+
   if (
+    applied &&
     growthAnnualIncludesLaunch() &&
     resolved.planKey === "growth" &&
     priceId &&
@@ -295,39 +288,33 @@ async function bindAndApplyInvoice(
       ? existing.current_period_end
       : null);
 
-  const { error: bindError } = await service.rpc(
-    "bind_builder_site_subscription_provider",
-    {
-      p_site_id: siteId,
-      p_owner_id: ownerId,
-      p_plan_key: planKey,
-      p_provider: "stripe",
-      p_provider_customer_id: customerId,
-      p_provider_subscription_id: subscriptionId,
-      p_provider_price_id: priceId || null,
-      p_provider_status: providerStatus,
-      p_current_period_end: paidThrough
-    }
-  );
-  if (bindError) throw bindError;
-
   const { data, error } = await service.rpc(
-    "apply_builder_site_billing_provider_event",
+    "apply_builder_site_billing_provider_event_v2",
     {
       p_provider: "stripe",
       p_event_id: event.id,
       p_event_type: providerEventType,
       p_site_id: siteId,
       p_owner_id: ownerId,
+      p_plan_key: planKey,
+      p_provider_customer_id: customerId,
+      p_provider_subscription_id: subscriptionId,
+      p_provider_price_id: priceId || "",
       p_provider_status: providerStatus,
       p_paid_through: paidThrough,
-      p_failed_at: providerEventType === "payment_failed" ? eventTime(event) : null,
-      p_provider_subscription_id: subscriptionId
+      p_failed_at:
+        providerEventType === "payment_failed" ? eventTime(event) : null,
+      p_provider_created_at: eventTime(event)
     }
   );
   if (error) throw error;
 
+  const applied =
+    typeof data !== "string" ||
+    !["duplicate", "stale_ignored", "terminal_ignored"].includes(data);
+
   if (
+    applied &&
     paid &&
     growthAnnualIncludesLaunch() &&
     planKey === "growth" &&
