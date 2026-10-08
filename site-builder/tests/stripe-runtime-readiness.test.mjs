@@ -90,3 +90,36 @@ test("Stripe sandbox mutation smoke never exposes the credential or opens commer
   assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY/);
   assert.doesNotMatch(route, /process\.env\.AJG_BILLING_CHECKOUT_ENABLED\s*=/);
 });
+
+
+test("production release validates the disposable billing lifecycle without opening Checkout", () => {
+  const route = fs.readFileSync(
+    new URL("../app/api/cron/billing-lifecycle-smoke/route.ts", import.meta.url),
+    "utf8"
+  );
+  const workflow = fs.readFileSync(
+    new URL("../../.github/workflows/site-builder-production.yml", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(route.includes("releaseE2EAuthorized(request)"));
+  assert.ok(route.includes("AJG_BILLING_CHECKOUT_ENABLED"));
+  assert.ok(route.includes("apply_builder_site_billing_provider_event_v2"));
+  assert.ok(route.includes('"subscription_active_before_payment"'));
+  assert.ok(route.includes('"first_payment_succeeded"'));
+  assert.ok(route.includes('"renewal_failed"'));
+  assert.ok(route.includes('"payment_recovered"'));
+  assert.ok(route.includes('"subscription_canceled"'));
+  assert.ok(route.includes("prepayment_cost_gate_failed"));
+  assert.ok(route.includes("payment_failure_grace_failed"));
+  assert.ok(route.includes("payment_recovery_failed"));
+  assert.ok(route.includes("cancellation_cost_gate_failed"));
+  assert.ok(route.includes('provider", "stripe_e2e"'));
+  assert.ok(route.includes("deleteUser(userId)"));
+
+  assert.ok(workflow.includes("Run disposable billing lifecycle smoke"));
+  assert.ok(workflow.includes("/api/cron/billing-lifecycle-smoke"));
+  assert.ok(workflow.includes('payload?.mode !== "synthetic_provider_lifecycle"'));
+  assert.ok(workflow.includes("payload?.checkoutEnabled !== false"));
+  assert.ok(workflow.includes("payload?.cleanupOk !== true"));
+});
