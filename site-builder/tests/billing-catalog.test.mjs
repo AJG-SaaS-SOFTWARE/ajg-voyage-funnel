@@ -103,6 +103,7 @@ test("Growth heavy AI work has a separate bounded monthly allowance", () => {
   assert.ok(aiRoute.includes("Votre quota mensuel d’opérations Growth lourdes est atteint"));
 });
 
-test("AI Launch cannot be purchased while the subscription is past due", () => {
-  assert.ok(checkout.includes('!["active", "trialing"].includes(current.status)'));
+test("AI Launch requires an active subscription with a confirmed first payment", () => {
+  assert.ok(checkout.includes('current.status !== "active"'));
+  assert.ok(checkout.includes("!current.first_payment_confirmed_at"));
 });
