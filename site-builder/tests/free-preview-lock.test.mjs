@@ -10,6 +10,10 @@ const aiLockMigration = fs.readFileSync(
   new URL("../docs/migrations/20261006193146_lock_free_preview_ai_generation.sql", import.meta.url),
   "utf8"
 );
+const firstPaymentMigration = fs.readFileSync(
+  new URL("../docs/migrations/20261008145512_require_first_paid_period_for_costly_features.sql", import.meta.url),
+  "utf8"
+);
 const checkout = fs.readFileSync(
   new URL("../app/api/billing/checkout/route.ts", import.meta.url),
   "utf8"
@@ -66,4 +70,22 @@ test("commercial copy positions free access as qualitative preview only", () => 
   assert.ok(legal.includes("sans publication, hébergement, domaine personnalisé, export"));
   assert.ok(pricing.includes("Le gratuit donne un aperçu représentatif"));
   assert.ok(pricing.includes("publishing, hosting, domains, export"));
+});
+
+
+test("variable-cost features require a confirmed first payment outside beta", () => {
+  assert.ok(firstPaymentMigration.includes("first_payment_confirmed_at"));
+  assert.ok(firstPaymentMigration.includes("public.has_active_beta_access()"));
+  assert.ok(firstPaymentMigration.includes("p_event_type='payment_succeeded'"));
+  assert.ok(firstPaymentMigration.includes("p_event_type='subscription_active'"));
+  assert.ok(firstPaymentMigration.includes("v_result := 'projection_updated'"));
+  assert.ok(firstPaymentMigration.includes("current_paid_or_beta"));
+  assert.ok(firstPaymentMigration.includes("public.can_modify_site_media"));
+  assert.doesNotMatch(firstPaymentMigration, /subscription_status in \('active','trialing'\)/);
+});
+
+test("AI Launch add-on requires an already paid active subscription", () => {
+  assert.ok(checkout.includes("first_payment_confirmed_at"));
+  assert.ok(checkout.includes('current.status !== "active"'));
+  assert.ok(checkout.includes("!current.first_payment_confirmed_at"));
 });
