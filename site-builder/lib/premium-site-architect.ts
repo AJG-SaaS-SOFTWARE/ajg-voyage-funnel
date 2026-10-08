@@ -1604,6 +1604,13 @@ export async function generatePremiumSiteArchitect(
     finalDeterministicBlocking.length === 0;
 
   if (!finalVerified) {
+    console.warn("Premium Architect quality gate rejected candidate", {
+      verdict: finalReview?.verdict || "unknown",
+      finalScore,
+      finalMajorIssueCount: finalMajorIssues.length,
+      deterministicBlockingCodes: finalDeterministicBlocking.map((item) => item.code),
+      refinementApplied: shouldRefine
+    });
     throw new PremiumArchitectError(
       "Premium Architect final quality gate did not pass",
       502,

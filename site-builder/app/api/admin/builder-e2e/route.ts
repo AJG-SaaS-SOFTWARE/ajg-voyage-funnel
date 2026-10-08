@@ -245,18 +245,18 @@ export async function POST(request: NextRequest) {
           field: "siteArchitect",
           siteId,
           instruction: tr(
-            "Crée une proposition simple de site vitrine pour valider le fonctionnement technique. N'invente aucune donnée commerciale, chiffre, témoignage ou certification.",
-            "Create a simple showcase website proposal to validate the technical workflow. Do not invent commercial data, figures, testimonials or certifications."
+            "Crée un site vitrine clair et rassurant pour Atelier Horizon. Mets en avant l'accompagnement d'artisans locaux, une approche simple et le fait qu'un visiteur peut demander un premier échange. Reste sobre et n'invente aucun prix, chiffre, témoignage, certification, délai ou garantie.",
+            "Create a clear, reassuring showcase website for Atelier Horizon. Emphasize support for local craftspeople, a simple approach and the ability for a visitor to request an initial conversation. Keep the tone understated and do not invent prices, figures, testimonials, certifications, timelines or guarantees."
           ),
           currentText: "",
           context: {
             language: locale,
             affiliation: "independent",
-            firstName: "Test",
-            brandName: marker,
+            firstName: "Camille",
+            brandName: "Atelier Horizon",
             architectBrief: tr(
-              "Site interne de validation ELTARA pour une activité indépendante fictive nommée Atelier Horizon. Atelier Horizon conçoit des sites vitrines simples pour des artisans locaux. Le visiteur doit comprendre cette activité, découvrir une approche claire et pouvoir demander un premier échange. Ton attendu : sobre, humain et professionnel. Ne pas inventer de prix, chiffre, témoignage, certification, délai, disponibilité ou garantie.",
-              "Internal ELTARA validation website for a fictional independent business called Atelier Horizon. Atelier Horizon creates simple showcase websites for local craftspeople. Visitors should understand the activity, discover a clear approach and be able to request an initial conversation. Expected tone: understated, human and professional. Do not invent prices, figures, testimonials, certifications, timelines, availability or guarantees."
+              "Atelier Horizon est une activité indépendante portée par Camille. Elle conçoit des sites vitrines simples pour des artisans locaux qui veulent présenter clairement leur métier en ligne. Son approche consiste à partir des besoins essentiels, organiser les contenus de façon lisible et proposer un site facile à comprendre. Le visiteur doit pouvoir découvrir cette approche et demander un premier échange. Ton attendu : sobre, humain et professionnel. Ne pas inventer de prix, chiffre, témoignage, certification, délai, disponibilité ou garantie.",
+              "Atelier Horizon is an independent business run by Camille. It creates simple showcase websites for local craftspeople who want to present their work clearly online. The approach starts from essential needs, organizes content for clarity and proposes a website that is easy to understand. Visitors should be able to discover this approach and request an initial conversation. Expected tone: understated, human and professional. Do not invent prices, figures, testimonials, certifications, timelines, availability or guarantees."
             ),
             contentLibrary: []
           }
