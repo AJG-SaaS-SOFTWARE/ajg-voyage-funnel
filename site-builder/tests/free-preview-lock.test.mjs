@@ -38,6 +38,14 @@ const pricing = fs.readFileSync(
   new URL("../components/PricingPage.tsx", import.meta.url),
   "utf8"
 );
+const siteRepository = fs.readFileSync(
+  new URL("../lib/supabase-site-repository.ts", import.meta.url),
+  "utf8"
+);
+const stripeWebhook = fs.readFileSync(
+  new URL("../app/api/billing/stripe-webhook/route.ts", import.meta.url),
+  "utf8"
+);
 
 test("free preview can draft but cannot publish, export, host, or collect leads", () => {
   assert.ok(migration.includes("Free preview lock"));
@@ -103,4 +111,18 @@ test("publication and domain mutations enforce the first-paid cost gate in versi
   assert.ok(publicationGateMigration.includes("private.eltara_cost_gate_unlocked(domains.site_id)"));
   assert.ok(publicationGateMigration.includes("public.has_active_beta_access") === false);
   assert.ok(publicationGateMigration.includes("beta_access_grants"));
+});
+
+
+test("initial publication is created as draft before the paid publication capability is checked", () => {
+  assert.ok(siteRepository.includes('const initialPayload = publish'));
+  assert.ok(siteRepository.includes('payload(user, publishConfig, "draft")'));
+  assert.ok(siteRepository.includes('await assertSiteCapability(remote.id, "can_publish")'));
+  assert.ok(siteRepository.indexOf('await assertSiteCapability(remote.id, "can_publish")') < siteRepository.indexOf('update(payload(user, publishConfig, "published"))'));
+});
+
+test("Growth annual AI benefit is granted only from the paid invoice path", () => {
+  assert.equal((stripeWebhook.match(/source: "growth_annual"/g) || []).length, 1);
+  assert.ok(stripeWebhook.includes('const paid = event.type === "invoice.paid"'));
+  assert.match(stripeWebhook, /paid &&[\s\S]*source: "growth_annual"/);
 });

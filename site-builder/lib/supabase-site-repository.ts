@@ -275,15 +275,31 @@ export async function saveMySite(config: SiteConfig, publish = false, siteId?: s
     return remote;
   }
 
+  const initialPayload = publish
+    ? payload(user, publishConfig, "draft")
+    : nextPayload;
   const { data, error } = await supabase
     .from("sites")
-    .insert(nextPayload)
+    .insert(initialPayload)
     .select("*")
     .single();
 
   if (error) throw error;
-  const remote = toRemote(data);
-  if (publish) await ensureManagedDomain(remote.id, remote.slug);
+  let remote = toRemote(data);
+
+  if (publish) {
+    await assertSiteCapability(remote.id, "can_publish");
+    const { data: published, error: publishError } = await supabase
+      .from("sites")
+      .update(payload(user, publishConfig, "published"))
+      .eq("id", remote.id)
+      .select("*")
+      .single();
+    if (publishError) throw publishError;
+    remote = toRemote(published);
+    await ensureManagedDomain(remote.id, remote.slug);
+  }
+
   return remote;
 }
 
