@@ -171,6 +171,7 @@ export async function POST(request: NextRequest) {
           provider: "internal-e2e",
           provider_customer_id: null,
           provider_subscription_id: null,
+          first_payment_confirmed_at: new Date().toISOString(),
           current_period_end: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
           updated_at: new Date().toISOString()
         },
@@ -219,15 +220,15 @@ export async function POST(request: NextRequest) {
       key: "entitlement",
       label: "Droits Growth / BUILD temporaires",
       status: "pass",
-      detail: includeAi ? "Le site E2E reçoit un droit Growth interne et un crédit BUILD unique, tous deux supprimés avec le site." : "Le site E2E reçoit uniquement pendant la recette un droit Growth interne, supprimé avec le site."
+      detail: includeAi ? "Le site E2E reçoit un état Growth payé interne et un crédit BUILD unique, tous supprimés avec le site ; aucun Checkout Stripe n’est ouvert." : "Le site E2E reçoit uniquement pendant la recette un état Growth payé interne, supprimé avec le site ; aucun Checkout Stripe n’est ouvert."
     });
     steps.push({
       key: "billing",
       label: "Billing",
       status: "pass",
       detail: includeAi
-        ? "Le droit Growth et le crédit BUILD temporaire sont lisibles via le contrat d’entitlements authentifié, sans ouvrir Checkout."
-        : "Le droit Growth temporaire est lisible via le contrat d’entitlements authentifié, sans ouvrir Checkout."
+        ? "L’état Growth payé et le crédit BUILD temporaires sont lisibles via le contrat d’entitlements authentifié, sans ouvrir Checkout."
+        : "L’état Growth payé temporaire est lisible via le contrat d’entitlements authentifié, sans ouvrir Checkout."
     });
 
     let proposal: any = null;
