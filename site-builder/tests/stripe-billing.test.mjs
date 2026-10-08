@@ -220,3 +220,46 @@ test("Stripe webhook route reads raw body before JSON parsing", () => {
   assert.ok(source.includes("verifyStripeWebhookSignature(payload, signature)"));
   assert.ok(!source.includes("await request.json()"));
 });
+
+
+test("Stripe webhook projection is ordered by provider event creation time", () => {
+  const source = fs.readFileSync(
+    new URL("../app/api/billing/stripe-webhook/route.ts", import.meta.url),
+    "utf8"
+  );
+  const migration = fs.readFileSync(
+    new URL("../supabase/migrations/20261008152000_stripe_webhook_event_ordering.sql", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(source.includes("apply_builder_site_billing_provider_event_v2"));
+  assert.ok(source.includes("p_provider_created_at: eventTime(event)"));
+  assert.ok(!source.includes('"bind_builder_site_subscription_provider"'));
+
+  assert.ok(migration.includes("provider_event_created_at timestamptz"));
+  assert.ok(migration.includes("provider_created_at timestamptz"));
+  assert.ok(migration.includes("p_provider_created_at < v_current.provider_event_created_at"));
+  assert.ok(migration.includes("return 'stale_ignored'"));
+  assert.ok(migration.includes("return 'terminal_ignored'"));
+});
+
+test("a stale paid webhook may prove first payment but cannot reactivate a newer canceled projection", () => {
+  const migration = fs.readFileSync(
+    new URL("../supabase/migrations/20261008152000_stripe_webhook_event_ordering.sql", import.meta.url),
+    "utf8"
+  );
+
+  const staleStart = migration.indexOf("if v_has_current");
+  const staleEnd = migration.indexOf("return 'stale_ignored'", staleStart);
+  const staleBranch = migration.slice(staleStart, staleEnd);
+
+  assert.ok(staleBranch.includes("p_event_type='payment_succeeded'"));
+  assert.ok(staleBranch.includes("first_payment_confirmed_at"));
+  assert.ok(!staleBranch.includes("reactivate_builder_site"));
+
+  const terminalStart = migration.indexOf("v_current.status='canceled'");
+  const terminalEnd = migration.indexOf("return 'terminal_ignored'", terminalStart);
+  const terminalBranch = migration.slice(terminalStart, terminalEnd);
+  assert.ok(terminalBranch.includes("p_provider_status<>'canceled'"));
+  assert.ok(!terminalBranch.includes("reactivate_builder_site"));
+});
