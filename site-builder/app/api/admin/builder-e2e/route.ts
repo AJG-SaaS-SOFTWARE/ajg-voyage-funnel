@@ -255,8 +255,8 @@ export async function POST(request: NextRequest) {
             firstName: "Test",
             brandName: marker,
             architectBrief: tr(
-              "Site interne de validation ELTARA pour une activité indépendante fictive. Objectif : vérifier la génération structurée, la publication et le rendu, sans donnée commerciale réelle.",
-              "Internal ELTARA validation website for a fictional independent business. Goal: validate structured generation, publishing and rendering without real commercial data."
+              "Site interne de validation ELTARA pour une activité indépendante fictive nommée Atelier Horizon. Atelier Horizon conçoit des sites vitrines simples pour des artisans locaux. Le visiteur doit comprendre cette activité, découvrir une approche claire et pouvoir demander un premier échange. Ton attendu : sobre, humain et professionnel. Ne pas inventer de prix, chiffre, témoignage, certification, délai, disponibilité ou garantie.",
+              "Internal ELTARA validation website for a fictional independent business called Atelier Horizon. Atelier Horizon creates simple showcase websites for local craftspeople. Visitors should understand the activity, discover a clear approach and be able to request an initial conversation. Expected tone: understated, human and professional. Do not invent prices, figures, testimonials, certifications, timelines, availability or guarantees."
             ),
             contentLibrary: []
           }
