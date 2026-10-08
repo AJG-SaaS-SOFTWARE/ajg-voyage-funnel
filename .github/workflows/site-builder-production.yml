@@ -524,6 +524,46 @@ jobs:
 
           echo "Disposable billing lifecycle smoke passed: pre-payment lock, payment activation, failure grace, recovery and cancellation gates validated." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Run signed AI Launch webhook smoke
+        shell: bash
+        run: |
+          echo "Triggering ELTARA signed AI Launch webhook smoke."
+
+          set +e
+          HTTP_CODE="$(curl --silent --show-error \
+            --max-time 90 \
+            --output /tmp/eltara-ai-launch-webhook-smoke.json \
+            --write-out "%{http_code}" \
+            "https://$PRODUCTION_ALIAS/api/cron/stripe-ai-launch-webhook-smoke" \
+            -H "Authorization: Bearer $AJG_RELEASE_E2E_TOKEN")"
+          CURL_EXIT=$?
+          set -e
+
+          if [ "$CURL_EXIT" -ne 0 ] || [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Signed AI Launch webhook smoke failed for $GITHUB_SHA (curl=$CURL_EXIT, HTTP=$HTTP_CODE). Checkout remains closed."
+            cat /tmp/eltara-ai-launch-webhook-smoke.json 2>/dev/null || true
+            exit 1
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const payload = JSON.parse(fs.readFileSync("/tmp/eltara-ai-launch-webhook-smoke.json", "utf8"));
+            if (
+              payload?.ok !== true ||
+              payload?.mode !== "signed_ai_launch_webhook" ||
+              payload?.checkoutEnabled !== false ||
+              payload?.sandbox !== true ||
+              payload?.unpaidBlocked !== true ||
+              payload?.paidGranted !== true ||
+              payload?.cleanupOk !== true
+            ) {
+              console.error("Signed AI Launch webhook smoke payload is invalid.");
+              process.exit(1);
+            }
+          '
+
+          echo "Signed AI Launch webhook smoke passed: unpaid site blocked, paid active subscription granted one entitlement, cleanup complete." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run structural FR/EN release E2E for deployed SHA
         shell: bash
         run: |
