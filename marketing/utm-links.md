@@ -6,7 +6,7 @@ Base : `https://voyage.ajgsolutionsgroup.com/`
 
 | Canal | URL |
 | --- | --- |
-| Instagram bio | https://voyage.ajgsolutionsgroup.com/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=bio |
+| Instagram bio | https://voyage.ajgsolutionsgroup.com/instagram |
 | Instagram Reel | https://voyage.ajgsolutionsgroup.com/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=reel |
 | Instagram Story | https://voyage.ajgsolutionsgroup.com/?utm_source=instagram&utm_medium=social&utm_campaign=launch_v1&utm_content=story |
 | Facebook | https://voyage.ajgsolutionsgroup.com/?utm_source=facebook&utm_medium=social&utm_campaign=launch_v1 |
@@ -39,3 +39,16 @@ Exemple :
 - une campagne = une logique de nommage ;
 - ne pas modifier les anciennes balises après publication ;
 - noter le contenu exact associé à chaque `utm_content`.
+
+
+## Lien intelligent Instagram
+
+`https://voyage.ajgsolutionsgroup.com/instagram` est le lien permanent recommandé pour la bio Instagram.
+
+- priorité à la langue choisie précédemment par le visiteur ;
+- sinon détection de la langue principale du navigateur ;
+- français → accueil FR ;
+- toute autre langue → accueil EN ;
+- attribution ajoutée automatiquement : `utm_source=instagram`, `utm_medium=social`, `utm_campaign=instagram_profile`, `utm_content=bio` ;
+- les paramètres UTM déjà présents dans l'URL sont conservés et ne sont pas écrasés ;
+- aucune géolocalisation ni adresse IP n'est utilisée.
