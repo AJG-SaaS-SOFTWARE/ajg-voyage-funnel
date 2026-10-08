@@ -215,21 +215,6 @@ async function bindAndApply(
   );
   if (error) throw error;
 
-  if (
-    growthAnnualIncludesLaunch() &&
-    resolved.planKey === "growth" &&
-    priceId &&
-    priceId === process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID?.trim() &&
-    rawStatus === "active"
-  ) {
-    await grantAiLaunch(service, {
-      siteId: resolved.siteId,
-      ownerId: resolved.ownerId,
-      source: "growth_annual",
-      externalReference: `growth_annual:${resolved.siteId}`
-    });
-  }
-
   return typeof data === "string" ? data : "processed";
 }
 
