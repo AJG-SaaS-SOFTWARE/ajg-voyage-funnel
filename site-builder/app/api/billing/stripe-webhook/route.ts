@@ -123,6 +123,22 @@ async function grantAiLaunch(
   if (siteError) throw siteError;
   if (!site) return "ignored";
 
+  const { data: subscription, error: subscriptionError } = await service
+    .from("site_subscriptions")
+    .select("plan_key,status,first_payment_confirmed_at")
+    .eq("site_id", input.siteId)
+    .eq("owner_id", input.ownerId)
+    .maybeSingle();
+  if (subscriptionError) throw subscriptionError;
+  if (
+    !subscription ||
+    !["essential", "growth"].includes(subscription.plan_key) ||
+    subscription.status !== "active" ||
+    !subscription.first_payment_confirmed_at
+  ) {
+    return "subscription_required";
+  }
+
   const { error } = await service
     .from("site_ai_launch_entitlements")
     .upsert(
