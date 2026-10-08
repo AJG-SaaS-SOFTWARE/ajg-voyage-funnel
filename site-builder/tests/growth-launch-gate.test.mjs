@@ -31,6 +31,7 @@ test('public pricing renders the actual enabled offer in both languages', () => 
     assert.ok(enabled.includes(locale === 'fr' ? 'incluse avec Growth annuel' : 'included with annual Growth'));
   }
 });
+// Commercial safety: an active subscription projection alone must never grant the annual AI benefit.
 test('annual Growth AI grant is applied only from the paid invoice path', () => {
   const webhook = fs.readFileSync(new URL('../app/api/billing/stripe-webhook/route.ts', import.meta.url), 'utf8');
   assert.equal((webhook.match(/source: "growth_annual"/g) || []).length, 1);
