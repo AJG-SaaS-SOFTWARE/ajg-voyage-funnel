@@ -60,3 +60,15 @@ test("regeneration explicitly asks for a materially different alternative", () =
   assert.ok(source.includes("Do not merely swap synonyms"));
   assert.ok(source.includes("strategyReused"));
 });
+
+
+test("final quality rejection gets one bounded corrective refinement before failing", () => {
+  const source = fs.readFileSync(
+    new URL("../lib/premium-site-architect.ts", import.meta.url),
+    "utf8"
+  );
+  assert.ok(source.includes("ajg_premium_site_final_correction"));
+  assert.ok(source.includes("This is the last correction attempt"));
+  assert.ok(source.includes("secondRefinementApplied"));
+  assert.ok(source.includes("runFinalQualityReview"));
+});
