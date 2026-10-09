@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
+import { AiArchitectDiscovery } from "../../components/AiArchitectDiscovery";
 import { getMyBillingState, openStripeBillingPortal, startAiLaunchCheckout, startPlanCheckout, type BillingState } from "../../lib/billing-access";
 import {
   freeEntitlements,
@@ -187,6 +188,8 @@ export default function PlansPage() {
           </div>
         </section>
       ) : null}
+
+      {loaded && !betaAccess.active && current.planKey === "essential" && !aiAccess.canCreateSite ? <AiArchitectDiscovery /> : null}
 
       {loaded && betaAccess.active ? (
         <BetaExperienceSwitch
