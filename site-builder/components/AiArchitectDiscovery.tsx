@@ -22,7 +22,7 @@ export function AiArchitectDiscovery() {
         </ol>
         <div className="advanced-discovery-actions">
           <Link href="/plans" className="button primary">{tr("Découvrir la Création IA · 49 €", "Explore AI Launch · €49")}</Link>
-          <Link href="/growth" className="button secondary">{tr("Découvrir Growth", "Explore Growth")}</Link>
+          <Link href="/tarifs" className="button secondary">{tr("Découvrir Growth", "Explore Growth")}</Link>
         </div>
         <small>{tr(
           "Aucun appel IA ni changement de votre site durant cette présentation. Growth mensuel et Création IA initiale sont des offres distinctes.",
