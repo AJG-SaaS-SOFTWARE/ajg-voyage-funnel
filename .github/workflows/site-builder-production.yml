@@ -465,6 +465,8 @@ jobs:
               payload?.mode !== "test" ||
               payload?.created !== true ||
               payload?.expired !== true ||
+              payload?.aiLaunchCreated !== true ||
+              payload?.aiLaunchExpired !== true ||
               payload?.checkoutEnabled !== false
             ) {
               console.error("Stripe sandbox mutation smoke payload is invalid.");
@@ -472,7 +474,7 @@ jobs:
             }
           '
 
-          echo "Stripe sandbox mutation smoke passed: Checkout session created and immediately expired with commercial Checkout still closed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Stripe sandbox mutation smoke passed: subscription + AI Launch Checkout sessions created and immediately expired with commercial Checkout still closed." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run disposable billing lifecycle smoke
         shell: bash
