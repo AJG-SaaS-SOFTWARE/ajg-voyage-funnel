@@ -39,3 +39,14 @@ test("commercial demo stays static and appears only for eligible Essential buyer
   assert.doesNotMatch(demo, /fetch\(|generatePremiumSiteArchitect|openai|supabase\.rpc/i);
   assert.match(plans, /!betaAccess\.active && current\.planKey === "essential" && !aiAccess\.canCreateSite/);
 });
+
+test("authorized beta BUILD mode retains Growth and Analytics access without changing paid entitlements", () => {
+  const cockpit = source("../app/growth/page.tsx");
+  const analytics = source("../app/analytics/page.tsx");
+  assert.match(cockpit, /beta\.active \? resolvedMode !== "essential" : paidGrowth/);
+  assert.match(analytics, /beta\.active \? resolvedMode !== "essential" : paidGrowth/);
+  assert.match(cockpit, /if \(mode !== "essential"\)/);
+  assert.match(analytics, /setGrowthExperience\(mode !== "essential"\)/);
+  assert.match(cockpit, /mode === "architect" \? "beta_architect_selected"/);
+  assert.match(analytics, /mode === "architect" \? "beta_architect_selected"/);
+});
