@@ -344,14 +344,16 @@ export default function BuilderPage() {
 
   const paidAiAccessActive = ["active", "trialing"].includes(siteEntitlements.status);
   const betaEssentialSimulation = betaTester && betaExperienceMode === "essential";
+  const betaArchitectSimulation = betaTester && betaExperienceMode === "architect";
+  const betaGrowthSimulation = betaTester && betaExperienceMode === "growth";
   const actualSiteArchitectCreateAvailable =
     paidAiAccessActive && siteAiAccess.canCreateSite;
   const actualSiteRevisionAvailable =
     paidAiAccessActive && siteAiAccess.canReviseSite;
   const siteArchitectCreateAvailable =
-    actualSiteArchitectCreateAvailable && !betaEssentialSimulation;
+    actualSiteArchitectCreateAvailable && (!betaTester || betaArchitectSimulation);
   const siteRevisionAvailable =
-    actualSiteRevisionAvailable && !betaEssentialSimulation;
+    actualSiteRevisionAvailable && (!betaTester || betaGrowthSimulation || betaArchitectSimulation);
   const premiumAccessHref =
     ["past_due", "canceled", "suspended"].includes(siteEntitlements.status)
       ? "/billing"
@@ -369,7 +371,7 @@ export default function BuilderPage() {
     setRevisionProposal(null);
     if (betaTester) {
       void trackProductEvent(
-        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        mode === "growth" ? "beta_growth_selected" : mode === "architect" ? "beta_architect_selected" : "beta_essential_selected",
         remoteSiteId
       );
     }
@@ -378,7 +380,7 @@ export default function BuilderPage() {
   useEffect(() => {
     if (!ready || !betaTester) return;
     void trackProductEvent(
-      betaExperienceMode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+      betaExperienceMode === "growth" ? "beta_growth_selected" : betaExperienceMode === "architect" ? "beta_architect_selected" : "beta_essential_selected",
       remoteSiteId
     );
   }, [ready, betaTester, betaExperienceMode, remoteSiteId]);
@@ -1406,7 +1408,7 @@ export default function BuilderPage() {
           <span className={"cloud-pill builder-header-status " + (remoteMode ? "online" : "local")}>
             <i />{remoteMode ? "Cloud" : "Local"} · {completion}%
           </span>
-          {betaTester && betaExperienceMode === "growth" && published ? (
+          {betaTester && betaExperienceMode !== "essential" && published ? (
             <Link href="/growth" className="button primary builder-growth-shortcut">
               GROW <span aria-hidden="true">→</span>
             </Link>
@@ -1639,15 +1641,15 @@ export default function BuilderPage() {
                         </article>
                       ) : null}
                       <div className="advanced-discovery-actions">
-                        {betaEssentialSimulation ? (
-                          <button type="button" className="button secondary" onClick={() => changeBetaExperienceMode("growth")}>
-                            {tr("Tester maintenant l’expérience Growth", "Test the Growth experience now")}
+                        {betaTester && !siteArchitectCreateAvailable ? (
+                          <button type="button" className="button secondary" onClick={() => changeBetaExperienceMode(betaEssentialSimulation ? "growth" : "architect")}>
+                            {betaEssentialSimulation ? tr("Tester maintenant Growth", "Try Growth now") : tr("Tester le Concepteur IA", "Try AI Architect")}
                           </button>
                         ) : (
                           <Link className="button secondary" href={premiumAccessHref}>{premiumAccessLabel}</Link>
                         )}
-                        <span>{betaEssentialSimulation
-                          ? tr("Vos droits bêta restent complets : le passage en Growth est instantané et sans paiement.", "Your beta rights remain complete: switching to Growth is instant and requires no payment.")
+                        <span>{betaTester
+                          ? tr("Parcours bêta gratuit : aucun changement d’abonnement. Les quotas IA de sécurité restent applicables.", "Free beta journey: no subscription change. AI safety quotas still apply.")
                           : tr("Aucune fonction verrouillée n’encombre votre éditeur.", "Locked features do not clutter your editor.")}</span>
                       </div>
                     </div>
