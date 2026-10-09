@@ -193,3 +193,45 @@ test("provider-backed billing harness exposes no Stripe credential and cannot en
   assert.doesNotMatch(route, /process\.env\.AJG_BILLING_CHECKOUT_ENABLED\s*=/);
   assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY\s*=/);
 });
+
+
+test("provider-backed Stripe lifecycle release step is isolated behind a dedicated sandbox secret", () => {
+  const workflow = fs.readFileSync(
+    new URL("../../.github/workflows/site-builder-production.yml", import.meta.url),
+    "utf8"
+  );
+  const script = fs.readFileSync(
+    new URL("../scripts/stripe-provider-lifecycle-e2e.mjs", import.meta.url),
+    "utf8"
+  );
+  const harness = fs.readFileSync(
+    new URL("../app/api/cron/stripe-provider-lifecycle-harness/route.ts", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(workflow.includes("STRIPE_PROVIDER_E2E_KEY"));
+  assert.ok(workflow.includes("real Stripe provider lifecycle E2E is deferred"));
+  assert.ok(workflow.includes("scripts/stripe-provider-lifecycle-e2e.mjs"));
+  assert.ok(workflow.includes("provider_backed_stripe_lifecycle"));
+  assert.ok(script.includes('pm_card_visa'));
+  assert.ok(script.includes('pm_card_chargeCustomerFail'));
+  assert.ok(script.includes('/test_helpers/test_clocks'));
+  assert.ok(script.includes('/advance'));
+  assert.ok(script.includes('/invoices/'));
+  assert.ok(script.includes('/pay'));
+  assert.ok(script.includes('method: "DELETE"'));
+  assert.ok(script.includes('checkoutEnabled: false'));
+  assert.ok(harness.includes("growthMonthlyPriceId"));
+});
+
+test("provider-backed Stripe lifecycle script rejects live credentials and never enables Checkout", () => {
+  const script = fs.readFileSync(
+    new URL("../scripts/stripe-provider-lifecycle-e2e.mjs", import.meta.url),
+    "utf8"
+  );
+  assert.ok(script.includes('stripeKey.startsWith("rk_test_")'));
+  assert.ok(script.includes('stripeKey.startsWith("sk_test_")'));
+  assert.doesNotMatch(script, /rk_live_/);
+  assert.doesNotMatch(script, /sk_live_/);
+  assert.doesNotMatch(script, /AJG_BILLING_CHECKOUT_ENABLED\s*=/);
+});
