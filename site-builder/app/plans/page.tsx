@@ -201,7 +201,7 @@ export default function PlansPage() {
 
       {loaded ? (
         <section className="account-metrics-grid" aria-label={tr("Capacités et utilisation", "Capabilities and usage")}>
-          <article className="account-metric-card">
+          <article id="ai-launch" className="account-metric-card">
             <div className="account-metric-heading">
               <span className="account-metric-icon" aria-hidden="true">✦</span>
               <div>
