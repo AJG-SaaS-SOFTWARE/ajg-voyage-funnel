@@ -10,7 +10,7 @@ export function AiArchitectDiscovery() {
   return (
     <section className={styles.panel} aria-label={tr("Aperçu du Concepteur IA", "AI Architect preview")}>
       <div className={styles.intro}>
-        <span className={styles.eyebrow}>ELTARA BUILD · {tr("APERÇU GRATUIT", "FREE PREVIEW")}</span>
+        <span className={styles.eyebrow}>{tr("ELTARA BUILD · APERÇU GRATUIT", "ELTARA BUILD · FREE PREVIEW")}</span>
         <h2>{tr("Imaginez votre site déjà structuré par l'IA.", "Imagine your website already structured by AI.")}</h2>
         <p>{tr(
           "Un exemple concret de ce que le Concepteur IA peut proposer, sans générer de contenu ni toucher à votre site actuel.",
@@ -29,7 +29,7 @@ export function AiArchitectDiscovery() {
         <article className={styles.after}>
           <span className={styles.flag}>{tr("APRÈS · PROPOSITION ILLUSTRATIVE", "AFTER · SAMPLE PROPOSAL")}</span>
           <div className={styles.mockup}>
-            <div className={styles.mockHeader}><span>ÉLAN STUDIO</span><span>☰</span></div>
+            <div className={styles.mockHeader}><span>{tr("ÉLAN STUDIO", "ELAN STUDIO")}</span><span>☰</span></div>
             <div className={styles.mockHero}>
               <span>{tr("COACHING & ACCOMPAGNEMENT", "COACHING & GUIDANCE")}</span>
               <strong>{tr("Avancez avec clarté.", "Move forward with clarity.")}</strong>
