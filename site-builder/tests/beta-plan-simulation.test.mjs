@@ -109,17 +109,18 @@ test("beta mission gives a direct next action when switching from RUN to Growth"
   assert.match(home, /Publier pour tester Growth/);
   assert.match(home, /href="\/growth"/);
   assert.match(builder, /builder-growth-shortcut/);
-  assert.match(builder, /betaExperienceMode === "growth" && published/);
+  assert.match(builder, /betaExperienceMode !== "essential" && published/);
 });
 
 
-test("beta mission shows a five-step progress bar and a deterministic next action", () => {
+test("beta mission shows a six-step progress bar and a deterministic next action", () => {
   assert.match(home, /betaMissionCompleteCount/);
   assert.match(home, /betaMissionPercent/);
   assert.match(home, /Progression de la mission bêta/);
   assert.match(home, /Explorer Growth \+ Analytics/);
   assert.match(home, /Prochaine action/);
   assert.match(home, /betaJourney\.growthExplored/);
+  assert.match(home, /betaJourney\.architectTested/);
 });
 
 test("beta mission only validates Growth exploration after real Growth and Analytics visits", () => {
