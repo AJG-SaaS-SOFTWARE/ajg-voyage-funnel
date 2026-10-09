@@ -185,16 +185,18 @@ export default function Home() {
         ? `/builder?step=${onboarding.nextStep}`
         : "/builder";
   const effectiveCanCreateWithAi =
-    betaAccess.active && betaExperienceMode === "essential" ? false : canCreateWithAi;
+    betaAccess.active && betaExperienceMode !== "architect" ? false : canCreateWithAi;
   const experiencePlanName = betaAccess.active
     ? betaExperienceMode === "essential"
       ? tr("Essentiel · mode test", "Essential · test mode")
-      : tr("Growth · mode test", "Growth · test mode")
+      : betaExperienceMode === "growth"
+        ? tr("Growth · mode test", "Growth · test mode")
+        : tr("Concepteur IA · mode test", "AI Architect · test mode")
     : productPlanLabel(planKey, locale);
   const growthExperienceAvailable =
     entitlementActive &&
     draft?.status === "published" &&
-    (betaAccess.active ? betaExperienceMode === "growth" : planKey === "growth");
+    (betaAccess.active ? betaExperienceMode === "growth" || betaExperienceMode === "architect" : planKey === "growth");
   const creationPath = onboarding
     ? deriveOnboardingCreationPath({
         progress: onboarding,
@@ -457,7 +459,7 @@ export default function Home() {
             )}
           </div>
                     <div className="actions beta-mission-actions">
-            {betaExperienceMode === "growth" && draft?.status === "published" ? (
+            {(betaExperienceMode === "growth" || betaExperienceMode === "architect") && draft?.status === "published" ? (
               <Link className="button primary" href="/growth">
                 {tr("Ouvrir Growth", "Open Growth")} <span aria-hidden="true">→</span>
               </Link>
@@ -466,8 +468,8 @@ export default function Home() {
                 {tr("Passer en Growth", "Switch to Growth")} <span aria-hidden="true">→</span>
               </button>
             ) : (
-              <Link className="button primary" href={onboardingHref}>
-                {tr("Publier pour tester Growth", "Publish to test Growth")} <span aria-hidden="true">→</span>
+              <Link className="button primary" href={betaExperienceMode === "architect" ? "/builder?step=story&focus=architect" : onboardingHref}>
+                {betaExperienceMode === "architect" ? tr("Ouvrir le Concepteur IA", "Open AI Architect") : tr("Publier pour tester Growth", "Publish to test Growth")} <span aria-hidden="true">→</span>
               </Link>
             )}
             <Link className="button secondary" href={onboardingHref}>
