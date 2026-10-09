@@ -62,6 +62,7 @@ test("production release performs a fail-closed Stripe sandbox mutation smoke", 
   );
 
   assert.ok(billing.includes("runStripeSandboxCheckoutSmoke"));
+  assert.ok(billing.includes("runStripeSandboxAiLaunchCheckoutSmoke"));
   assert.ok(billing.includes('key.startsWith("rk_test_")'));
   assert.ok(billing.includes('key.startsWith("sk_test_")'));
   assert.ok(billing.includes("/checkout/sessions"));
@@ -72,12 +73,18 @@ test("production release performs a fail-closed Stripe sandbox mutation smoke", 
   assert.ok(route.includes("AJG_BILLING_CHECKOUT_ENABLED"));
   assert.ok(route.includes("Sandbox smoke is disabled while commercial Checkout is open."));
   assert.ok(route.includes("STRIPE_ESSENTIAL_MONTHLY_PRICE_ID"));
+  assert.ok(route.includes("STRIPE_AI_LAUNCH_PRICE_ID"));
+  assert.ok(route.includes("runStripeSandboxAiLaunchCheckoutSmoke"));
+  assert.ok(route.includes("aiLaunchCreated"));
+  assert.ok(route.includes("aiLaunchExpired"));
   assert.ok(route.includes("checkoutEnabled: false"));
 
   assert.ok(workflow.includes("Run Stripe sandbox mutation smoke"));
   assert.ok(workflow.includes("/api/cron/stripe-sandbox-smoke"));
   assert.ok(workflow.includes("payload?.mode !== \"test\""));
   assert.ok(workflow.includes("payload?.expired !== true"));
+  assert.ok(workflow.includes("payload?.aiLaunchCreated !== true"));
+  assert.ok(workflow.includes("payload?.aiLaunchExpired !== true"));
 });
 
 test("Stripe sandbox mutation smoke never exposes the credential or opens commercial Checkout", () => {
