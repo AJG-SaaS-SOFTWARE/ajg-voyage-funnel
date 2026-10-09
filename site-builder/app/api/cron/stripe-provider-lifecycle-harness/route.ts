@@ -128,12 +128,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const growthMonthlyPriceId =
+      process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID?.trim() || "";
+
+    if (!growthMonthlyPriceId) {
+      await service.auth.admin.deleteUser(ownerId).catch(() => undefined);
+      return NextResponse.json(
+        { error: "Stripe Growth sandbox price is not configured." },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       action,
       attemptId,
       ownerId,
       siteId: site.id,
+      growthMonthlyPriceId,
       checkoutEnabled: false,
       sandbox: true
     });

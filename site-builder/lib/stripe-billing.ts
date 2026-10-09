@@ -89,6 +89,66 @@ export async function runStripeSandboxCheckoutSmoke(input: {
   };
 }
 
+export async function runStripeSandboxAiLaunchCheckoutSmoke(input: {
+  priceId: string;
+  successUrl: string;
+  cancelUrl: string;
+}) {
+  if (stripeCredentialMode() !== "test") {
+    throw new Error("stripe_sandbox_required");
+  }
+
+  const marker = integrationIdentifier();
+  const session = await stripeRequest<{
+    id: string;
+    livemode: boolean;
+    mode?: string | null;
+    status?: string | null;
+  }>("/checkout/sessions", {
+    params: {
+      mode: "payment",
+      line_items: [{ price: input.priceId, quantity: 1 }],
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      client_reference_id: marker,
+      metadata: {
+        app: "ajg_site_builder",
+        purpose: "sandbox_ai_launch_mutation_smoke",
+        purchase_type: "ai_launch"
+      }
+    }
+  });
+
+  if (
+    !session?.id ||
+    session.livemode !== false ||
+    (session.mode && session.mode !== "payment")
+  ) {
+    throw new Error("stripe_sandbox_ai_launch_session_invalid");
+  }
+
+  const expired = await stripeRequest<{
+    id: string;
+    livemode: boolean;
+    status?: string | null;
+  }>(`/checkout/sessions/${encodeURIComponent(session.id)}/expire`);
+
+  if (
+    expired?.id !== session.id ||
+    expired.livemode !== false ||
+    expired.status !== "expired"
+  ) {
+    throw new Error("stripe_sandbox_ai_launch_cleanup_failed");
+  }
+
+  return {
+    ok: true,
+    mode: "test" as const,
+    created: true,
+    expired: true
+  };
+}
+
 export function stripeConfigured() {
   return Boolean(stripeKey() && process.env.STRIPE_WEBHOOK_SECRET?.trim());
 }

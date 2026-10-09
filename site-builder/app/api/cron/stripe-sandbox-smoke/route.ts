@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { releaseE2EAuthorized } from "../../../../lib/release-e2e-auth";
-import { runStripeSandboxCheckoutSmoke } from "../../../../lib/stripe-billing";
+import { runStripeSandboxAiLaunchCheckoutSmoke, runStripeSandboxCheckoutSmoke } from "../../../../lib/stripe-billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
   }
 
   const priceId = process.env.STRIPE_ESSENTIAL_MONTHLY_PRICE_ID?.trim() || "";
-  if (!priceId) {
-    return NextResponse.json({ error: "Stripe sandbox price is not configured." }, { status: 503 });
+  const aiLaunchPriceId = process.env.STRIPE_AI_LAUNCH_PRICE_ID?.trim() || "";
+  if (!priceId || !aiLaunchPriceId) {
+    return NextResponse.json({ error: "Stripe sandbox prices are not configured." }, { status: 503 });
   }
 
   const origin = (
@@ -29,17 +30,26 @@ export async function GET(request: NextRequest) {
   ).replace(/\/$/, "");
 
   try {
-    const result = await runStripeSandboxCheckoutSmoke({
-      priceId,
-      successUrl: `${origin}/billing?stripeSmoke=success`,
-      cancelUrl: `${origin}/plans?stripeSmoke=cancel`
-    });
+    const [subscription, aiLaunch] = await Promise.all([
+      runStripeSandboxCheckoutSmoke({
+        priceId,
+        successUrl: `${origin}/billing?stripeSmoke=success`,
+        cancelUrl: `${origin}/plans?stripeSmoke=cancel`
+      }),
+      runStripeSandboxAiLaunchCheckoutSmoke({
+        priceId: aiLaunchPriceId,
+        successUrl: `${origin}/billing?aiLaunchSmoke=success`,
+        cancelUrl: `${origin}/plans?aiLaunchSmoke=cancel`
+      })
+    ]);
 
     return NextResponse.json({
-      ok: result.ok,
-      mode: result.mode,
-      created: result.created,
-      expired: result.expired,
+      ok: subscription.ok && aiLaunch.ok,
+      mode: subscription.mode,
+      created: subscription.created,
+      expired: subscription.expired,
+      aiLaunchCreated: aiLaunch.created,
+      aiLaunchExpired: aiLaunch.expired,
       checkoutEnabled: false
     });
   } catch (error) {

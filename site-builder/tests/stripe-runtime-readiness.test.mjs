@@ -62,6 +62,7 @@ test("production release performs a fail-closed Stripe sandbox mutation smoke", 
   );
 
   assert.ok(billing.includes("runStripeSandboxCheckoutSmoke"));
+  assert.ok(billing.includes("runStripeSandboxAiLaunchCheckoutSmoke"));
   assert.ok(billing.includes('key.startsWith("rk_test_")'));
   assert.ok(billing.includes('key.startsWith("sk_test_")'));
   assert.ok(billing.includes("/checkout/sessions"));
@@ -72,12 +73,18 @@ test("production release performs a fail-closed Stripe sandbox mutation smoke", 
   assert.ok(route.includes("AJG_BILLING_CHECKOUT_ENABLED"));
   assert.ok(route.includes("Sandbox smoke is disabled while commercial Checkout is open."));
   assert.ok(route.includes("STRIPE_ESSENTIAL_MONTHLY_PRICE_ID"));
+  assert.ok(route.includes("STRIPE_AI_LAUNCH_PRICE_ID"));
+  assert.ok(route.includes("runStripeSandboxAiLaunchCheckoutSmoke"));
+  assert.ok(route.includes("aiLaunchCreated"));
+  assert.ok(route.includes("aiLaunchExpired"));
   assert.ok(route.includes("checkoutEnabled: false"));
 
   assert.ok(workflow.includes("Run Stripe sandbox mutation smoke"));
   assert.ok(workflow.includes("/api/cron/stripe-sandbox-smoke"));
   assert.ok(workflow.includes("payload?.mode !== \"test\""));
   assert.ok(workflow.includes("payload?.expired !== true"));
+  assert.ok(workflow.includes("payload?.aiLaunchCreated !== true"));
+  assert.ok(workflow.includes("payload?.aiLaunchExpired !== true"));
 });
 
 test("Stripe sandbox mutation smoke never exposes the credential or opens commercial Checkout", () => {
@@ -192,4 +199,46 @@ test("provider-backed billing harness exposes no Stripe credential and cannot en
   assert.doesNotMatch(route, /STRIPE_SECRET_KEY/);
   assert.doesNotMatch(route, /process\.env\.AJG_BILLING_CHECKOUT_ENABLED\s*=/);
   assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY\s*=/);
+});
+
+
+test("provider-backed Stripe lifecycle release step is isolated behind a dedicated sandbox secret", () => {
+  const workflow = fs.readFileSync(
+    new URL("../../.github/workflows/site-builder-production.yml", import.meta.url),
+    "utf8"
+  );
+  const script = fs.readFileSync(
+    new URL("../scripts/stripe-provider-lifecycle-e2e.mjs", import.meta.url),
+    "utf8"
+  );
+  const harness = fs.readFileSync(
+    new URL("../app/api/cron/stripe-provider-lifecycle-harness/route.ts", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(workflow.includes("STRIPE_PROVIDER_E2E_KEY"));
+  assert.ok(workflow.includes("real Stripe provider lifecycle E2E is deferred"));
+  assert.ok(workflow.includes("scripts/stripe-provider-lifecycle-e2e.mjs"));
+  assert.ok(workflow.includes("provider_backed_stripe_lifecycle"));
+  assert.ok(script.includes('pm_card_visa'));
+  assert.ok(script.includes('pm_card_chargeCustomerFail'));
+  assert.ok(script.includes('/test_helpers/test_clocks'));
+  assert.ok(script.includes('/advance'));
+  assert.ok(script.includes('/invoices/'));
+  assert.ok(script.includes('/pay'));
+  assert.ok(script.includes('method: "DELETE"'));
+  assert.ok(script.includes('checkoutEnabled: false'));
+  assert.ok(harness.includes("growthMonthlyPriceId"));
+});
+
+test("provider-backed Stripe lifecycle script rejects live credentials and never enables Checkout", () => {
+  const script = fs.readFileSync(
+    new URL("../scripts/stripe-provider-lifecycle-e2e.mjs", import.meta.url),
+    "utf8"
+  );
+  assert.ok(script.includes('stripeKey.startsWith("rk_test_")'));
+  assert.ok(script.includes('stripeKey.startsWith("sk_test_")'));
+  assert.doesNotMatch(script, /rk_live_/);
+  assert.doesNotMatch(script, /sk_live_/);
+  assert.doesNotMatch(script, /AJG_BILLING_CHECKOUT_ENABLED\s*=/);
 });
