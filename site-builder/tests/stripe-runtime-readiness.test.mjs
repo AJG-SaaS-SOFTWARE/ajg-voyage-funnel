@@ -158,3 +158,38 @@ test("AI Launch webhook rechecks paid active subscription and is release-smoked 
   assert.ok(workflow.includes('payload?.unpaidBlocked !== true'));
   assert.ok(workflow.includes('payload?.paidGranted !== true'));
 });
+
+
+test("provider-backed billing harness is sandbox-only, fail-closed and disposable", () => {
+  const route = fs.readFileSync(
+    new URL("../app/api/cron/stripe-provider-lifecycle-harness/route.ts", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(route.includes("releaseE2EAuthorized(request)"));
+  assert.ok(route.includes("AJG_BILLING_CHECKOUT_ENABLED"));
+  assert.ok(route.includes("stripeCredentialMode() !== \"test\""));
+  assert.ok(route.includes('const PURPOSE = "eltara_provider_billing_e2e"'));
+  assert.ok(route.includes('action === "provision"'));
+  assert.ok(route.includes('action === "status"'));
+  assert.ok(route.includes('action === "cleanup"'));
+  assert.ok(route.includes("user_metadata"));
+  assert.ok(route.includes("attempt_id"));
+  assert.ok(route.includes("getUserById(ownerId)"));
+  assert.ok(route.includes('site.brand_name !== "ELTARA Provider Billing E2E"'));
+  assert.ok(route.includes("deleteUser(ownerId)"));
+  assert.ok(route.includes("checkoutEnabled: false"));
+  assert.ok(route.includes("activeAiLaunchEntitlements"));
+});
+
+test("provider-backed billing harness exposes no Stripe credential and cannot enable Checkout", () => {
+  const route = fs.readFileSync(
+    new URL("../app/api/cron/stripe-provider-lifecycle-harness/route.ts", import.meta.url),
+    "utf8"
+  );
+
+  assert.doesNotMatch(route, /STRIPE_RESTRICTED_KEY/);
+  assert.doesNotMatch(route, /STRIPE_SECRET_KEY/);
+  assert.doesNotMatch(route, /process\.env\.AJG_BILLING_CHECKOUT_ENABLED\s*=/);
+  assert.doesNotMatch(route, /AJG_COMMERCIAL_(?:LEGAL|TAX)_READY\s*=/);
+});
