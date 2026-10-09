@@ -67,6 +67,7 @@ export default function Home() {
   const [betaJourney, setBetaJourney] = useState<BetaJourneyProgress>({
     essentialTested: false,
     growthTested: false,
+    architectTested: false,
     essentialThenGrowth: false,
     growthCockpitOpened: false,
     analyticsOpened: false,
