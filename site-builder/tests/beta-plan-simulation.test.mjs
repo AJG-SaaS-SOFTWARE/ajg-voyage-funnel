@@ -13,32 +13,33 @@ test("beta simulation defaults to Essential and persists only a local display mo
   assert.match(mode, /window\.localStorage/);
   assert.doesNotMatch(mode, /supabase|stripe|fetch\(/i);
   assert.match(switcher, /Tester l’expérience client/);
-  assert.match(switcher, /aucun abonnement Stripe n’est modifié/);
+  assert.match(switcher, /aucun paiement n’est déclenché/);
 });
 
 test("Builder keeps real beta rights but hides Growth and BUILD in Essential simulation", () => {
   assert.match(builder, /betaEssentialSimulation = betaTester && betaExperienceMode === "essential"/);
   assert.match(builder, /actualSiteArchitectCreateAvailable/);
   assert.match(builder, /actualSiteRevisionAvailable/);
-  assert.match(builder, /actualSiteArchitectCreateAvailable && !betaEssentialSimulation/);
-  assert.match(builder, /actualSiteRevisionAvailable && !betaEssentialSimulation/);
-  assert.match(builder, /Tester maintenant l’expérience Growth/);
-  assert.match(builder, /passage en Growth est instantané et sans paiement/);
+  assert.match(builder, /actualSiteArchitectCreateAvailable && \(!betaTester \|\| betaArchitectSimulation\)/);
+  assert.match(builder, /actualSiteRevisionAvailable && \(!betaTester \|\| betaGrowthSimulation \|\| betaArchitectSimulation\)/);
+  assert.match(builder, /Tester maintenant Growth/);
+  assert.match(builder, /Parcours bêta gratuit/);
 });
 
 test("dashboard lets beta testers move from Essential to Growth without checkout", () => {
   assert.match(home, /effectiveCanCreateWithAi/);
-  assert.match(home, /betaExperienceMode === "essential" \? false : canCreateWithAi/);
+  assert.match(home, /betaExperienceMode !== "architect" \? false : canCreateWithAi/);
   assert.match(home, /Tester Essentiel/);
   assert.match(home, /Comparer avec Growth/);
   assert.match(home, /Tester Growth/);
   assert.match(home, /changeBetaExperienceMode\("growth"\)/);
 });
 
-test("plan page shows simulated Essential or Growth while billing actions stay disabled for beta", () => {
-  assert.match(plans, /displayedPlanKey = betaAccess\.active \? betaExperienceMode : current\.planKey/);
+test("plan page shows simulated Essential, Growth, or BUILD while billing actions stay disabled for beta", () => {
+  assert.match(plans, /displayedPlanKey = betaAccess\.active \? \(betaExperienceMode === "architect" \? "essential" : betaExperienceMode\) : current\.planKey/);
   assert.match(plans, /Essentiel · mode test/);
   assert.match(plans, /Growth · mode test/);
+  assert.match(plans, /Concepteur IA · mode test/);
   assert.match(plans, /if \(!siteId \|\| betaAccess\.active\) return/);
   assert.match(plans, /sans modifier Stripe ni vos droits réels/);
 });
@@ -109,17 +110,18 @@ test("beta mission gives a direct next action when switching from RUN to Growth"
   assert.match(home, /Publier pour tester Growth/);
   assert.match(home, /href="\/growth"/);
   assert.match(builder, /builder-growth-shortcut/);
-  assert.match(builder, /betaExperienceMode === "growth" && published/);
+  assert.match(builder, /betaExperienceMode !== "essential" && published/);
 });
 
 
-test("beta mission shows a five-step progress bar and a deterministic next action", () => {
+test("beta mission shows a six-step progress bar and a deterministic next action", () => {
   assert.match(home, /betaMissionCompleteCount/);
   assert.match(home, /betaMissionPercent/);
   assert.match(home, /Progression de la mission bêta/);
   assert.match(home, /Explorer Growth \+ Analytics/);
   assert.match(home, /Prochaine action/);
   assert.match(home, /betaJourney\.growthExplored/);
+  assert.match(home, /betaJourney\.architectTested/);
 });
 
 test("beta mission only validates Growth exploration after real Growth and Analytics visits", () => {

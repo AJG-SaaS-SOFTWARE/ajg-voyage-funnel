@@ -117,7 +117,7 @@ export default function GrowthPage() {
       const paidGrowth =
         entitlements.planKey === "growth" &&
         ["active", "trialing"].includes(entitlements.status);
-      const growthExperienceEnabled = beta.active ? resolvedMode === "growth" : paidGrowth;
+      const growthExperienceEnabled = beta.active ? resolvedMode !== "essential" : paidGrowth;
 
       if (!growthExperienceEnabled) {
         setDiagnosis(null);
@@ -174,11 +174,11 @@ export default function GrowthPage() {
     setBetaExperienceMode(mode);
     if (betaActive) {
       void trackProductEvent(
-        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        mode === "growth" ? "beta_growth_selected" : mode === "architect" ? "beta_architect_selected" : "beta_essential_selected",
         siteId || null
       );
     }
-    if (mode === "growth") {
+    if (mode !== "essential") {
       void load(siteId || undefined, mode);
     } else {
       setDiagnosis(null);
