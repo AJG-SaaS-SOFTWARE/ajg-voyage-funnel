@@ -2,31 +2,60 @@
 
 import Link from "next/link";
 import { useProductLocale } from "../lib/product-i18n";
+import styles from "./AiArchitectDiscovery.module.css";
 
-/** Static, zero-token preview; no model call, free entitlement or simulated unlock. */
+/** Prebuilt illustrative content: zero AI calls, no access modification. */
 export function AiArchitectDiscovery() {
   const { tr } = useProductLocale();
   return (
-    <section className="advanced-discovery-card" aria-label={tr("Aperçu du Concepteur IA", "AI Architect preview")}>
-      <div className="advanced-discovery-body">
-        <span className="advanced-discovery-kicker">BUILD · {tr("Démonstration sans IA", "No-AI demonstration")}</span>
-        <b>{tr("Votre brief devient un site structuré", "Turn your brief into a structured website")}</b>
+    <section className={styles.panel} aria-label={tr("Aperçu du Concepteur IA", "AI Architect preview")}>
+      <div className={styles.intro}>
+        <span className={styles.eyebrow}>ELTARA BUILD · {tr("APERÇU GRATUIT", "FREE PREVIEW")}</span>
+        <h2>{tr("Imaginez votre site déjà structuré par l'IA.", "Imagine your website already structured by AI.")}</h2>
         <p>{tr(
-          "Voici un exemple illustratif, non généré à partir de vos données. Le Concepteur IA propose une stratégie, une architecture, des textes et un style, que vous validez avant application.",
-          "This is an illustrative example, not generated from your data. AI Architect proposes strategy, page structure, copy and design for your approval."
+          "Un exemple concret de ce que le Concepteur IA peut proposer, sans générer de contenu ni toucher à votre site actuel.",
+          "A concrete example of what AI Architect can propose, without generating content or touching your current website."
         )}</p>
-        <ol>
-          <li>{tr("Comprendre votre activité et votre objectif", "Understand your business and goals")}</li>
-          <li>{tr("Proposer les pages, les textes et la direction visuelle", "Propose pages, copy and visual direction")}</li>
-          <li>{tr("Vérifier la qualité puis vous laisser décider", "Check quality and let you decide")}</li>
-        </ol>
-        <div className="advanced-discovery-actions">
-          <Link href="/plans" className="button primary">{tr("Découvrir la Création IA · 49 €", "Explore AI Launch · €49")}</Link>
-          <Link href="/tarifs" className="button secondary">{tr("Découvrir Growth", "Explore Growth")}</Link>
+      </div>
+      <div className={styles.comparison}>
+        <article className={styles.before}>
+          <span className={styles.flag}>{tr("AVANT · VOTRE IDÉE", "BEFORE · YOUR IDEA")}</span>
+          <p>{tr(
+            "« Je lance mon activité de coaching. Je veux présenter mes services et obtenir des rendez-vous. »",
+            "“I'm launching my coaching business. I want to introduce my services and get appointments.”"
+          )}</p>
+        </article>
+        <div className={styles.arrow} aria-hidden="true">→</div>
+        <article className={styles.after}>
+          <span className={styles.flag}>{tr("APRÈS · PROPOSITION ILLUSTRATIVE", "AFTER · SAMPLE PROPOSAL")}</span>
+          <div className={styles.mockup}>
+            <div className={styles.mockHeader}><span>ÉLAN STUDIO</span><span>☰</span></div>
+            <div className={styles.mockHero}>
+              <span>{tr("COACHING & ACCOMPAGNEMENT", "COACHING & GUIDANCE")}</span>
+              <strong>{tr("Avancez avec clarté.", "Move forward with clarity.")}</strong>
+              <small>{tr("Un accompagnement pensé pour vos objectifs.", "Support tailored to your goals.")}</small>
+              <span className={styles.mockButton}>{tr("Prendre rendez-vous", "Book a call")}</span>
+            </div>
+            <div className={styles.mockFooter}><i /><i /><i /></div>
+          </div>
+          <small>{tr(
+            "Pages proposées : Accueil · Services · À propos · Contact",
+            "Suggested pages: Home · Services · About · Contact"
+          )}</small>
+        </article>
+      </div>
+      <div className={styles.bottom}>
+        <p>{tr(
+          "BUILD prépare l'architecture, les textes et la direction visuelle, puis vous laisse valider. Exemple fictif : les résultats réels dépendent de votre brief.",
+          "BUILD prepares structure, copy and visual direction for your approval. Fictional example: actual results depend on your brief."
+        )}</p>
+        <div className={styles.actions}>
+          <Link className="button primary" href="/plans#ai-launch">{tr("Découvrir BUILD · 49 €", "Explore BUILD · €49")}</Link>
+          <Link className="button secondary" href="/tarifs">{tr("Comparer avec Growth", "Compare with Growth")}</Link>
         </div>
         <small>{tr(
-          "Aucun appel IA ni changement de votre site durant cette présentation. Growth mensuel et Création IA initiale sont des offres distinctes.",
-          "No AI request or website change during this preview. Monthly Growth and initial AI Launch are separate products."
+          "Démonstration statique sans coût IA. Growth mensuel et Création IA sont deux offres distinctes ; les paiements commerciaux sont actuellement désactivés.",
+          "Static demonstration with no AI cost. Monthly Growth and AI Launch are separate offers; commercial payments are currently disabled."
         )}</small>
       </div>
     </section>
