@@ -564,6 +564,48 @@ jobs:
 
           echo "Signed AI Launch webhook smoke passed: unpaid site blocked, paid active subscription granted one entitlement, cleanup complete." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Run provider-backed Stripe lifecycle E2E when configured
+        shell: bash
+        env:
+          STRIPE_PROVIDER_E2E_KEY: ${{ secrets.STRIPE_PROVIDER_E2E_KEY }}
+          ELTARA_E2E_BASE_URL: https://ajg-site-builder.vercel.app
+        run: |
+          if [ -z "${STRIPE_PROVIDER_E2E_KEY:-}" ]; then
+            echo "::notice::STRIPE_PROVIDER_E2E_KEY is not configured; real Stripe provider lifecycle E2E is deferred."
+            echo "Provider-backed Stripe lifecycle E2E deferred: dedicated sandbox CI key is not configured." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [[ "$STRIPE_PROVIDER_E2E_KEY" != rk_test_* && "$STRIPE_PROVIDER_E2E_KEY" != sk_test_* ]]; then
+            echo "::error::STRIPE_PROVIDER_E2E_KEY must be a sandbox/test credential."
+            exit 1
+          fi
+
+          echo "::add-mask::$STRIPE_PROVIDER_E2E_KEY"
+          echo "Running real Stripe sandbox lifecycle against the disposable ELTARA fixture."
+          node scripts/stripe-provider-lifecycle-e2e.mjs | tee /tmp/eltara-provider-billing-e2e.json
+
+          node -e '
+            const fs = require("node:fs");
+            const raw = fs.readFileSync("/tmp/eltara-provider-billing-e2e.json", "utf8").trim().split(/\n+/).at(-1);
+            const payload = JSON.parse(raw);
+            if (
+              payload?.ok !== true ||
+              payload?.mode !== "provider_backed_stripe_lifecycle" ||
+              payload?.sandbox !== true ||
+              payload?.checkoutEnabled !== false ||
+              payload?.initialPayment !== true ||
+              payload?.renewalFailure !== true ||
+              payload?.recovery !== true ||
+              payload?.cancellation !== true
+            ) {
+              console.error("Provider-backed Stripe lifecycle E2E payload is invalid.");
+              process.exit(1);
+            }
+          '
+
+          echo "Provider-backed Stripe lifecycle E2E passed: real initial payment, renewal failure, recovery and cancellation validated in sandbox." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run structural FR/EN release E2E for deployed SHA
         shell: bash
         run: |
