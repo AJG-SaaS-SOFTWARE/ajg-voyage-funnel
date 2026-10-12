@@ -363,7 +363,7 @@ export default function PlansPage() {
             <div className="builder-actions">
               <Link className="button secondary" href="/growth">{tr("Découvrir les possibilités Growth", "Explore Growth features")}</Link>
               <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "monthly")}>
-                {checkoutBusy === "growth:monthly" ? tr("Ouverture…", "Opening…") : tr("Passer à Growth · 29 €/mois", "Upgrade to Growth · €29/month")}
+                {checkoutBusy === "growth:monthly" ? tr("Ouverture…", "Opening…") : billingState?.hasStripeSubscription ? tr("Gérer mon passage à Growth dans Stripe", "Manage my Growth upgrade in Stripe") : tr("Passer à Growth · 29 €/mois", "Upgrade to Growth · €29/month")}
               </button>
             </div>
           </article>
