@@ -2,6 +2,7 @@
 
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import { getMySite } from "./supabase-site-repository";
+import { siteConfigFromRecoveryExport } from "./site-recovery";
 import { getProductLocale } from "./product-i18n";
 
 export type BillingState = {
@@ -53,6 +54,21 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
   };
 }
 
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  let anchor: HTMLAnchorElement | null = null;
+  try {
+    anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+  } finally {
+    anchor?.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}
+
 export async function downloadMySiteExport(siteId?: string) {
   const locale = getProductLocale();
   const tr = (fr: string, en: string) => locale === "en" ? en : fr;
@@ -71,18 +87,23 @@ export async function downloadMySiteExport(siteId?: string) {
     throw new Error(body?.error || tr("Export impossible.", "Export unavailable."));
   }
 
-  const blob = await response.blob();
+  let blob: Blob;
+  try {
+    if (!/^application\/(?:x-)?gzip(?:\s*;|$)/i.test(response.headers.get("content-type") || "")) {
+      throw new Error("invalid_archive_type");
+    }
+    blob = await response.blob();
+    const signature = new Uint8Array(await blob.slice(0, 3).arrayBuffer());
+    if (blob.size < 18 || signature[0] !== 0x1f || signature[1] !== 0x8b || signature[2] !== 0x08) {
+      throw new Error("invalid_archive_signature");
+    }
+  } catch {
+    throw new Error(tr("Le fichier d’archive reçu est invalide ou incomplet. Réessayez plus tard.", "The received archive is invalid or incomplete. Please try again later."));
+  }
   const disposition = response.headers.get("content-disposition") || "";
   const filename = disposition.match(/filename="([^"]+)"/i)?.[1]
     || `eltara-export-${site.slug || "site"}.tar.gz`;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadBlob(blob, filename);
 }
 
 
@@ -103,15 +124,17 @@ export async function downloadMySiteRecoveryJson(siteId?: string) {
     const body = await response.json().catch(() => null);
     throw new Error(body?.error || tr("Export de restauration impossible.", "Recovery export unavailable."));
   }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `eltara-recovery-${site.slug || "site"}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  let blob: Blob;
+  try {
+    if (!/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") || "")) {
+      throw new Error("invalid_recovery_type");
+    }
+    blob = await response.blob();
+    siteConfigFromRecoveryExport(JSON.parse(await blob.text()), { id: site.id, slug: site.slug });
+  } catch {
+    throw new Error(tr("Le fichier de restauration reçu est invalide ou incomplet. Réessayez plus tard.", "The received recovery file is invalid or incomplete. Please try again later."));
+  }
+  downloadBlob(blob, `eltara-recovery-${site.slug || "site"}.json`);
 }
 
 async function openStripeBillingPath(
