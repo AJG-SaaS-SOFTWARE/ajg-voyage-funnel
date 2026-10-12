@@ -83,8 +83,13 @@ test('Checkout subscription projection must be restricted to the authenticated o
 });
 
 test('Checkout rejects malformed existing BUILD quota records',()=>{
-  assert.match(checkout,/Number\.isSafeInteger\(total\)/);
-  assert.match(checkout,/Number\.isSafeInteger\(used\)/);
-  assert.match(checkout,/used >= 0 && used < total/);
+  assert.match(checkout,/Number\.isSafeInteger\(row\.operations_total\)/);
+  assert.match(checkout,/Number\.isSafeInteger\(row\.operations_used\)/);
+  assert.match(checkout,/code: "ai_launch_entitlement_unverifiable"/);
   assert.match(checkout,/Number\.isFinite\(Date\.parse\(row\.expires_at\)\)/);
+});
+
+test('unverifiable active entitlement blocks checkout instead of causing a duplicate purchase',()=>{
+  assert.match(checkout,/if \(malformedLaunch\)/);
+  assert.ok(checkout.indexOf('if (malformedLaunch)') < checkout.indexOf('createStripeOneTimeCheckout({'));
 });
