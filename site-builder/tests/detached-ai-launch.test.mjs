@@ -180,3 +180,8 @@ test('plan change refreshes billing state before choosing Checkout or Stripe por
   assert.match(begin,/if \(latestBilling\.hasStripeSubscription\)/);
   assert.ok(begin.indexOf('getMyBillingState(siteId)') < begin.indexOf('startPlanCheckout(siteId, planKey, billingCycle)'));
 });
+
+test('subscription checkout blocks duplicate subscriptions in pending or failed states',()=>{
+  assert.match(checkout,/\["active", "trialing", "past_due", "incomplete", "unpaid", "paused"\]\.includes\(current\.status\)/);
+  assert.ok(checkout.indexOf('code: "existing_subscription"') < checkout.indexOf('createStripeSubscriptionCheckout({'));
+});
