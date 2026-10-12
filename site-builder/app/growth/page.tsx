@@ -326,6 +326,22 @@ export default function GrowthPage() {
                 "Essentiel maintient votre site en ligne et vous laisse le modifier. Growth ajoute la surveillance structurée, les recommandations et les évolutions globales.",
                 "Essential keeps your website online and editable. Growth adds structured monitoring, recommendations and full-site evolution."
               )}</p>
+          {!betaActive && sites.some(site => site.id === siteId) ? (
+            <div className="growth-preview" aria-label={tr("État de publication de votre site", "Your website publication status")}>
+              <p className="eyebrow">{tr("Information réelle de votre site · sans appel IA", "Actual website information · no AI call")}</p>
+              {sites.find(site => site.id === siteId)?.status === "published" ? (
+                <p>{tr(
+                  "Votre site est publié. Growth peut vous aider à prioriser ensuite son suivi, sa visibilité et ses évolutions.",
+                  "Your website is published. Growth can then help prioritise monitoring, visibility and improvements."
+                )}</p>
+              ) : (
+                <p>{tr(
+                  "Votre site n’est pas encore publié. Essentiel suffit pour finaliser et publier ; Growth sera utile ensuite pour l’optimiser.",
+                  "Your website is not published yet. Essential is enough to finish and publish it; Growth can help optimise it afterwards."
+                )}</p>
+              )}
+            </div>
+          ) : null}
           {!betaActive ? (
             <div className="growth-preview" aria-label={tr("Exemples de recommandations Growth", "Example Growth recommendations")}>
               <p className="eyebrow">{tr("Aperçu illustratif · pas un diagnostic de votre site", "Illustrative preview · not a diagnosis of your website")}</p>
