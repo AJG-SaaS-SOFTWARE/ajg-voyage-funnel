@@ -194,10 +194,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const hasRemainingLaunch = (launchRows || []).some((row: any) =>
-      Number(row.operations_total) > Number(row.operations_used) &&
-      (!row.expires_at || row.expires_at > now)
-    );
+    const hasRemainingLaunch = (launchRows || []).some((row: any) => {
+      const total = row.operations_total;
+      const used = row.operations_used;
+      return Number.isSafeInteger(total) && Number.isSafeInteger(used) &&
+        total > 0 && used >= 0 && used < total &&
+        (row.expires_at === null ||
+          (typeof row.expires_at === "string" &&
+            Number.isFinite(Date.parse(row.expires_at)) &&
+            Date.parse(row.expires_at) > Date.now()));
+    });
     if (hasRemainingLaunch) {
       return NextResponse.json(
         {
