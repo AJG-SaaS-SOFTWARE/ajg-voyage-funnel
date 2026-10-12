@@ -160,3 +160,8 @@ test('Stripe readiness verifies all Essential and Growth prices are selectable i
   assert.match(readiness,/subscription_update\?\.products/);
   assert.match(readiness,/product\.prices\?\.includes\(priceId as string\)/);
 });
+
+test('browser billing state selects only subscriptions owned by the selected site owner',()=>{
+  const billing=fs.readFileSync(new URL('../lib/billing-access.ts',import.meta.url),'utf8');
+  assert.match(billing,/\.from\("site_subscriptions"\)\.select\("provider,provider_customer_id,provider_subscription_id,status"\)\.eq\("site_id", site\.id\)\.eq\("owner_id", site\.ownerId\)/);
+});
