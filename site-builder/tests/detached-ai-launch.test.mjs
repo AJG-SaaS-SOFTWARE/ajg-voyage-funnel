@@ -116,3 +116,11 @@ test('Growth locked state offers honest illustrative preview without calling AI'
   assert.match(growth,/state === "locked"/);
   assert.match(growth,/!betaActive \? \(/);
 });
+
+test('Growth preview uses the actual owned site publication state without paid AI',()=>{
+  const growth=fs.readFileSync(new URL('../app/growth/page.tsx',import.meta.url),'utf8');
+  assert.match(growth,/sites\.some\(site => site\.id === siteId\)/);
+  assert.match(growth,/sites\.find\(site => site\.id === siteId\)\?\.status === "published"/);
+  assert.match(growth,/Information réelle de votre site · sans appel IA/);
+  assert.match(growth,/Essentiel suffit pour finaliser et publier/);
+});
