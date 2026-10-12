@@ -141,3 +141,13 @@ test('Essential content preview only checks configured text presence, without an
   assert.match(growth,/Vous pouvez le compléter avec Essentiel/);
   assert.match(growth,/Sa pertinence n’est pas analysée ici/);
 });
+
+test('billing portal checks owner and no longer advertises obsolete Pro plan',()=>{
+  const portal=fs.readFileSync(new URL('../app/api/billing/portal/route.ts',import.meta.url),'utf8');
+  assert.match(portal,/\.eq\("site_id", site\.id\)\s*\.eq\("owner_id", auth\.user\.id\)/);
+  assert.doesNotMatch(portal,/souscription Pro|Pro subscription/);
+});
+test('Essential upgrade button accurately describes Stripe portal transition',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  assert.match(plans,/Gérer mon passage à Growth dans Stripe/);
+});
