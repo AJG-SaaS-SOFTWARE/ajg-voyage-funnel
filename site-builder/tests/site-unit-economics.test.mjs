@@ -39,7 +39,7 @@ test('refuses absent exchange evidence, negative and fractional costs', () => {
   assert.throws(() => calculateSiteMonthEconomics(base, { ...fx, source: '' }), /invalid_fx_rate/);
   assert.throws(() => calculateSiteMonthEconomics({ ...base, hostingCents: -1 }, fx), /invalid_hostingCents/);
   assert.throws(() => calculateSiteMonthEconomics({ ...base, paymentFeesCents: 3.4 }, fx), /invalid_paymentFeesCents/);
-  assert.throws(() => calculateSiteMonthEconomics({ ...base, aiUsdMicros: -1 }, fx), /invalid_usd_micros/);
+  assert.throws(() => calculateSiteMonthEconomics({ ...base, aiUsdMicros: -1 }, fx), /invalid_ai_usd_micros/);
 });
 
 test('a malformed calendar date is rejected', () => {
