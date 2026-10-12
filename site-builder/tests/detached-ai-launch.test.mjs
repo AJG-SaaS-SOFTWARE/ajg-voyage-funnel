@@ -219,7 +219,16 @@ test('plans ignores responses from stale multi-site asynchronous loads',()=>{
 
 test('plans blocks checkout while switching websites or billing is unresolved',()=>{
   const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
-  assert.match(plans,/if \(!siteId \|\| !loaded \|\| !billingState \|\| betaAccess\.active\) return/);
-  assert.match(plans,/onChange=\{\(event\) => \{ setLoaded\(false\); setBillingState\(null\)/);
+  assert.match(plans,/if \(!siteId \|\| !loaded \|\| !billingState \|\| betaAccess\.active \|\| paymentInProgressRef\.current\) return/);
+  assert.match(plans,/selectedSiteRef\.current = event\.target\.value; setLoaded\(false\); setBillingState\(null\)/);
   assert.match(plans,/Impossible de charger ce site/);
+});
+
+test('plans pins billing requests to selected site and blocks concurrent switches',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  assert.match(plans,/const targetSiteId = siteId/);
+  assert.match(plans,/if \(selectedSiteRef\.current !== targetSiteId\) return/);
+  assert.match(plans,/await startPlanCheckout\(targetSiteId, planKey, billingCycle\)/);
+  assert.match(plans,/await openStripeBillingPortal\(targetSiteId\)/);
+  assert.match(plans,/paymentInProgressRef\.current = false/);
 });
