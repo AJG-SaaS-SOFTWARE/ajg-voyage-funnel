@@ -30,7 +30,7 @@ import {
 import type { AnalyticsOpportunity } from "../../lib/site-analytics";
 
 type GrowthState = "loading" | "guest" | "locked" | "no_site" | "draft" | "ready" | "error";
-type SiteOption = { id: string; slug: string; status: string; publishedAt: string | null };
+type SiteOption = { id: string; slug: string; status: string; publishedAt: string | null; bookingUrl: string; heroTitle: string; aboutText: string };
 
 const groupLabels: Record<GrowthHealthGroupKey, { fr: string; en: string; detailFr: string; detailEn: string }> = {
   availability: {
@@ -92,7 +92,7 @@ export default function GrowthPage() {
       }
 
       const owned = await getMySites();
-      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt }));
+      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt, bookingUrl: typeof site.config?.bookingUrl === "string" ? site.config.bookingUrl : "", heroTitle: typeof site.config?.heroTitle === "string" ? site.config.heroTitle : "", aboutText: typeof site.config?.aboutText === "string" ? site.config.aboutText : "" }));
       setSites(options);
       if (!options.length) {
         setSiteId("");
@@ -326,6 +326,51 @@ export default function GrowthPage() {
                 "Essentiel maintient votre site en ligne et vous laisse le modifier. Growth ajoute la surveillance structurée, les recommandations et les évolutions globales.",
                 "Essential keeps your website online and editable. Growth adds structured monitoring, recommendations and full-site evolution."
               )}</p>
+          {!betaActive && sites.some(site => site.id === siteId) ? (
+            <div className="growth-preview" aria-label={tr("État de publication de votre site", "Your website publication status")}>
+              <p className="eyebrow">{tr("Information réelle de votre site · sans appel IA", "Actual website information · no AI call")}</p>
+              {sites.find(site => site.id === siteId)?.status === "published" ? (
+                <p>{tr(
+                  "Votre site est publié. Growth peut vous aider à prioriser ensuite son suivi, sa visibilité et ses évolutions.",
+                  "Your website is published. Growth can then help prioritise monitoring, visibility and improvements."
+                )}</p>
+              ) : (
+                <p>{tr(
+                  "Votre site n’est pas encore publié. Essentiel suffit pour finaliser et publier ; Growth sera utile ensuite pour l’optimiser.",
+                  "Your website is not published yet. Essential is enough to finish and publish it; Growth can help optimise it afterwards."
+                )}</p>
+              )}
+              <p>{sites.find(site => site.id === siteId)?.bookingUrl?.trim()
+                ? tr(
+                    "Vérification de configuration : un lien de réservation ou d’action est renseigné. Son fonctionnement et ses performances ne sont pas évalués ici.",
+                    "Configuration check: a booking or action link is set. Its operation and performance have not been assessed here."
+                  )
+                : tr(
+                    "Vérification de configuration : aucun lien de réservation ou d’action n’est renseigné. Vous pouvez en ajouter un directement avec Essentiel.",
+                    "Configuration check: no booking or action link is set. You can add one directly with Essential."
+                  )}</p>
+              <p>{sites.find(site => site.id === siteId)?.heroTitle?.trim()
+                ? tr("Contenu : un titre principal est renseigné. Sa qualité SEO n’est pas évaluée ici.", "Content: a main title is set. Its SEO quality has not been assessed here.")
+                : tr("Contenu : aucun titre principal n’est renseigné. Vous pouvez le compléter avec Essentiel.", "Content: no main title is set. You can complete it with Essential.")}</p>
+              <p>{sites.find(site => site.id === siteId)?.aboutText?.trim()
+                ? tr("Contenu : un texte de présentation est renseigné. Sa pertinence n’est pas analysée ici.", "Content: an introduction text is set. Its relevance has not been analysed here.")
+                : tr("Contenu : le texte de présentation est vide. Vous pouvez le rédiger avec Essentiel.", "Content: the introduction text is empty. You can write it with Essential.")}</p>
+            </div>
+          ) : null}
+          {!betaActive ? (
+            <div className="growth-preview" aria-label={tr("Exemples de recommandations Growth", "Example Growth recommendations")}>
+              <p className="eyebrow">{tr("Aperçu illustratif · pas un diagnostic de votre site", "Illustrative preview · not a diagnosis of your website")}</p>
+              <ul>
+                <li>{tr("SEO : vérifier les titres et descriptions des pages importantes.", "SEO: review titles and descriptions on key pages.")}</li>
+                <li>{tr("Conversion : rendre l’appel à l’action principal immédiatement visible.", "Conversion: make the main call to action immediately visible.")}</li>
+                <li>{tr("Contenu : demander à l’IA conceptrice une révision globale du site.", "Content: ask the AI architect for a full website revision.")}</li>
+              </ul>
+              <p>{tr(
+                "Ces pistes sont des exemples, sans analyse de vos données ni appel IA facturé. Growth fournit ensuite des contrôles et recommandations adaptés à votre site.",
+                "These are examples, without analysing your data or triggering paid AI. Growth then provides checks and recommendations tailored to your website."
+              )}</p>
+            </div>
+          ) : null}
           {betaActive ? (
             <button className="button primary" type="button" onClick={() => changeBetaExperienceMode("growth")}>
               {tr("Tester Growth maintenant", "Test Growth now")}

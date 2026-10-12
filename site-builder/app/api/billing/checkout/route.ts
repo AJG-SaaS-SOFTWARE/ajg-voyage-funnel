@@ -144,6 +144,7 @@ export async function POST(request: Request) {
     .from("site_subscriptions")
     .select("plan_key,status,provider,provider_customer_id,provider_subscription_id,first_payment_confirmed_at")
     .eq("site_id", site.id)
+    .eq("owner_id", auth.user.id)
     .maybeSingle();
 
   if (currentError) {
@@ -156,11 +157,16 @@ export async function POST(request: Request) {
   const appUrl = billingAppUrl(request);
 
   if (purchaseType === "ai_launch") {
+    // Detached BUILD is opt-in only: existing subscription-first flow stays the default.
+    // Do not enable until database capabilities and the paid BUILD sandbox E2E are certified.
     if (
-      !current ||
-      !["essential", "growth"].includes(current.plan_key) ||
-      current.status !== "active" ||
-      !current.first_payment_confirmed_at
+      process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true" &&
+      (
+        !current ||
+        !["essential", "growth"].includes(current.plan_key) ||
+        current.status !== "active" ||
+        !current.first_payment_confirmed_at
+      )
     ) {
       return NextResponse.json(
         {
@@ -181,16 +187,36 @@ export async function POST(request: Request) {
       .eq("owner_id", auth.user.id)
       .eq("status", "active");
 
-    if (launchError) {
+    if (launchError || !Array.isArray(launchRows)) {
+      // A null or malformed response is not evidence that no entitlement exists.
+      // Do not initiate a second paid Checkout without a confirmed ledger read.
       return NextResponse.json(
-        { error: tr("Impossible de vérifier votre droit Création IA.", "Unable to verify your AI Launch entitlement.") },
+        { error: tr("Impossible de vérifier votre droit Création IA.", "Unable to verify your AI Launch entitlement."),
+          code: "ai_launch_ledger_unavailable" },
         { status: 503 }
       );
     }
 
+    // Fail closed if any active entitlement is unreadable: never risk selling
+    // a second BUILD package merely because a malformed row was ignored.
+    const malformedLaunch = (launchRows || []).some((row: any) =>
+      !Number.isSafeInteger(row.operations_total) ||
+      !Number.isSafeInteger(row.operations_used) ||
+      row.operations_total < 1 || row.operations_used < 0 ||
+      row.operations_used > row.operations_total ||
+      (row.expires_at !== null &&
+        (typeof row.expires_at !== "string" ||
+          !Number.isFinite(Date.parse(row.expires_at))))
+    );
+    if (malformedLaunch) {
+      return NextResponse.json({
+        code: "ai_launch_entitlement_unverifiable",
+        error: tr("Impossible de vérifier un droit Création IA existant.", "An existing AI Launch entitlement cannot be verified.")
+      }, { status: 503 });
+    }
     const hasRemainingLaunch = (launchRows || []).some((row: any) =>
-      Number(row.operations_total) > Number(row.operations_used) &&
-      (!row.expires_at || row.expires_at > now)
+      row.operations_used < row.operations_total &&
+      (row.expires_at === null || Date.parse(row.expires_at) > Date.now())
     );
     if (hasRemainingLaunch) {
       return NextResponse.json(
