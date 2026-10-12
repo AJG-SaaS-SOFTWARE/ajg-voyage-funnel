@@ -11,6 +11,7 @@ on:
       - main
       - saas-site-builder-prototype
       - brand/eltara
+      - feat/eltara-unit-economics-and-hosting-only-20261012
     paths:
       - "site-builder/**"
       - ".github/workflows/site-builder-ci.yml"
