@@ -16,7 +16,9 @@ export type SiteMonthCost = {
   domainCents: number;
   observabilityCents: number;
   otherCents: number;
+  /** Total supplier ledger cost in USD micros, INCLUDING unresolved reservations. */
   aiUsdMicros: number;
+  /** Unresolved portion of aiUsdMicros, shown separately but never charged twice. */
   aiUncertainUsdMicros: number;
 };
 export type FxRate = { usdToEur: number; effectiveDate: string; source: string };
@@ -53,10 +55,13 @@ export function calculateSiteMonthEconomics(input: SiteMonthCost, fx: FxRate): U
     "bandwidthCents","backupsCents","mediaCents","emailCents","domainCents",
     "observabilityCents","otherCents"] as const;
   for (const field of fields) validCents(input[field], field);
+  validCents(input.aiUsdMicros, "ai_usd_micros");
+  validCents(input.aiUncertainUsdMicros, "ai_uncertain_usd_micros");
+  if (input.aiUncertainUsdMicros > input.aiUsdMicros) throw new Error("uncertainty_exceeds_total");
   const aiCostCents = usdMicrosInEurCents(input.aiUsdMicros, fx.usdToEur);
   const unresolvedAiProvisionCents = usdMicrosInEurCents(input.aiUncertainUsdMicros, fx.usdToEur);
   const costCents = fields.filter(f => f !== "revenueExVatCents")
-    .reduce((sum, field) => sum + input[field], aiCostCents + unresolvedAiProvisionCents);
+    .reduce((sum, field) => sum + input[field], aiCostCents);
   if (!Number.isSafeInteger(costCents)) throw new Error("invalid_total_cost");
   const contributionCents = input.revenueExVatCents - costCents;
   const marginPercent = input.revenueExVatCents === 0 ? null :
