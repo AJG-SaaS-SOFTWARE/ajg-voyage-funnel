@@ -182,7 +182,7 @@ test('plan change refreshes billing state before choosing Checkout or Stripe por
 });
 
 test('subscription checkout blocks duplicate subscriptions in pending or failed states',()=>{
-  assert.match(checkout,/\["active", "trialing", "past_due", "incomplete", "unpaid", "paused"\]\.includes\(current\.status\)/);
+  assert.match(checkout,/!\["canceled", "incomplete_expired"\]\.includes\(current\.status\)/);
   assert.ok(checkout.indexOf('code: "existing_subscription"') < checkout.indexOf('createStripeSubscriptionCheckout({'));
 });
 
@@ -254,7 +254,7 @@ test('stale site early exit clears both payment loading indicators',()=>{
 
 test('client and server agree which Stripe statuses require the existing-account portal',()=>{
   const billing=fs.readFileSync(new URL('../lib/billing-access.ts',import.meta.url),'utf8');
-  const statuses='["active", "trialing", "past_due", "incomplete", "unpaid", "paused"]';
+  const statuses='!["canceled", "incomplete_expired"].includes(subscription?.status || "")';
   assert.equal(billing.split(statuses).length-1,2);
-  assert.ok(checkout.includes(statuses+'.includes(current.status)'));
+  assert.ok(checkout.includes('!["canceled", "incomplete_expired"].includes(current.status)'));
 });
