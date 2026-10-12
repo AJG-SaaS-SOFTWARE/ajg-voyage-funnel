@@ -130,11 +130,17 @@ async function grantAiLaunch(
     .eq("owner_id", input.ownerId)
     .maybeSingle();
   if (subscriptionError) throw subscriptionError;
+  // The purchased BUILD entitlement is distinct from RUN hosting.
+  // Feature gate remains disabled until the capability RPC supports detached BUILD.
   if (
-    !subscription ||
-    !["essential", "growth"].includes(subscription.plan_key) ||
-    subscription.status !== "active" ||
-    !subscription.first_payment_confirmed_at
+    (input.source !== "stripe_purchase" ||
+      process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true") &&
+    (
+      !subscription ||
+      !["essential", "growth"].includes(subscription.plan_key) ||
+      subscription.status !== "active" ||
+      !subscription.first_payment_confirmed_at
+    )
   ) {
     return "subscription_required";
   }
