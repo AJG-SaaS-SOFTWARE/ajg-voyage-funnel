@@ -171,3 +171,12 @@ test('billing state lookup must scope both state and subscription to site owner'
   assert.match(billing,/\.from\("site_billing_states"\)[^\n]*\.eq\("site_id", site\.id\)\.eq\("owner_id", site\.ownerId\)/);
   assert.match(billing,/\.from\("site_subscriptions"\)[^\n]*\.eq\("site_id", site\.id\)\.eq\("owner_id", site\.ownerId\)/);
 });
+
+test('plan change refreshes billing state before choosing Checkout or Stripe portal',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  const begin=plans.slice(plans.indexOf('async function beginPlanChange('),plans.indexOf('async function buyAiLaunch()'));
+  assert.match(begin,/const latestBilling = await getMyBillingState\(siteId\)/);
+  assert.match(begin,/if \(!latestBilling\)/);
+  assert.match(begin,/if \(latestBilling\.hasStripeSubscription\)/);
+  assert.ok(begin.indexOf('getMyBillingState(siteId)') < begin.indexOf('startPlanCheckout(siteId, planKey, billingCycle)'));
+});
