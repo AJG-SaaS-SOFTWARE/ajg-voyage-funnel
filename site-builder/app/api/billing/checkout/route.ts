@@ -318,6 +318,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const checkoutAttemptId = typeof body?.checkoutAttemptId === "string" &&
+    /^[a-f0-9-]{36}$/i.test(body.checkoutAttemptId)
+      ? body.checkoutAttemptId : "";
+  if (!checkoutAttemptId) {
+    return NextResponse.json({
+      error: tr("Identifiant de tentative de paiement manquant.", "Missing checkout attempt identifier."),
+      code: "checkout_attempt_required"
+    }, { status: 400 });
+  }
+
   const trialDays = configuredTrialDays(planKey, billingCycle);
 
   try {
@@ -329,6 +339,7 @@ export async function POST(request: Request) {
         current?.provider === "stripe" ? current.provider_customer_id : null,
       priceId,
       planKey,
+      attemptId: checkoutAttemptId,
       successUrl: `${appUrl}/billing?checkout=success&siteId=${encodeURIComponent(site.id)}`,
       cancelUrl: `${appUrl}/plans?checkout=cancel&siteId=${encodeURIComponent(site.id)}`
     });
