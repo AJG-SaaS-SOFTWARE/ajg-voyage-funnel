@@ -1,5 +1,5 @@
 import { growthAnnualIncludesLaunch } from "../../../../lib/growth-launch-offer";
-import { paidAiLaunchCheckout } from "@/lib/stripe-ai-launch-payment";
+import { paidAiLaunchCheckout } from "../../../../lib/stripe-ai-launch-payment";
 import { NextResponse } from "next/server";
 import { billingServiceClient } from "../../../../lib/server-billing";
 import {
