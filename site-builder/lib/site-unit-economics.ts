@@ -44,7 +44,9 @@ function usdMicrosInEurCents(usdMicros: number, rate: number) {
 export function calculateSiteMonthEconomics(input: SiteMonthCost, fx: FxRate): UnitEconomics {
   if (!Number.isFinite(fx.usdToEur) || fx.usdToEur <= 0 ||
       !/^20\d{2}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(fx.effectiveDate) ||
-      Number.isNaN(Date.parse(fx.effectiveDate + "T00:00:00Z")) ||\n      new Date(fx.effectiveDate + "T00:00:00Z").toISOString().slice(0, 10) !== fx.effectiveDate ||\n      !fx.source.trim()) {
+      Number.isNaN(Date.parse(fx.effectiveDate + "T00:00:00Z")) ||
+      new Date(fx.effectiveDate + "T00:00:00Z").toISOString().slice(0, 10) !== fx.effectiveDate ||
+      !fx.source.trim()) {
     throw new Error("invalid_fx_rate");
   }
   const fields = ["revenueExVatCents","paymentFeesCents","hostingCents","storageCents",
