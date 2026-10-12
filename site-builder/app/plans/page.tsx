@@ -348,6 +348,27 @@ export default function PlansPage() {
           ) : null}
         </article>
 
+        {loaded && !betaAccess.active && current.planKey === "essential" ? (
+          <article className="plan-card pro-offer-card" aria-label={tr("Découvrir Growth", "Discover Growth")}>
+            <p className="eyebrow">{tr("Votre prochaine étape, à votre rythme", "Your next step, at your pace")}</p>
+            <h2>{tr("Et si votre site pouvait progresser avec vous ?", "What if your website could improve with you?")}</h2>
+            <p>{tr(
+              "Vous pouvez rester sur Essentiel sans limite de durée. Growth ajoute des diagnostics, des recommandations SEO et conversion, et l’IA conceptrice pour réviser votre site existant.",
+              "You can stay on Essential indefinitely. Growth adds diagnostics, SEO and conversion recommendations, and an AI architect to revise your existing website."
+            )}</p>
+            <p className="plan-status">{tr(
+              "Découvrez la valeur de Growth sans achat AI Launch obligatoire. L’activation reste votre choix.",
+              "Explore Growth without a mandatory AI Launch purchase. Upgrading is entirely your choice."
+            )}</p>
+            <div className="builder-actions">
+              <Link className="button secondary" href="/growth">{tr("Découvrir les possibilités Growth", "Explore Growth features")}</Link>
+              <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "monthly")}>
+                {checkoutBusy === "growth:monthly" ? tr("Ouverture…", "Opening…") : tr("Passer à Growth · 29 €/mois", "Upgrade to Growth · €29/month")}
+              </button>
+            </div>
+          </article>
+        ) : null}
+
         <article className={displayedPlanKey === "growth" ? "plan-card current pro-offer-card" : "plan-card pro-offer-card"}>
           <p className="eyebrow">RUN + GROW</p>
           <h2>Growth</h2>
