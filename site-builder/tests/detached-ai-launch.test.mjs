@@ -81,3 +81,10 @@ test('unknown webhook insert outcome must fail closed, not claim success',()=>{
 test('Checkout subscription projection must be restricted to the authenticated owner',()=>{
   assert.match(checkout,/\.from\("site_subscriptions"\)[\s\S]*?\.eq\("site_id", site\.id\)\s*\.eq\("owner_id", auth\.user\.id\)\s*\.maybeSingle\(\)/);
 });
+
+test('Checkout rejects malformed existing BUILD quota records',()=>{
+  assert.match(checkout,/Number\.isSafeInteger\(total\)/);
+  assert.match(checkout,/Number\.isSafeInteger\(used\)/);
+  assert.match(checkout,/used >= 0 && used < total/);
+  assert.match(checkout,/Number\.isFinite\(Date\.parse\(row\.expires_at\)\)/);
+});
