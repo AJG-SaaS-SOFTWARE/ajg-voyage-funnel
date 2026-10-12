@@ -163,11 +163,10 @@ async function grantAiLaunch(
     )
     .select("id");
   if (error) throw error;
-  // Stripe may deliver the same event repeatedly. A conflict is a no-op,
-  // not a new grant, and must never reset operations_used.
-  return Array.isArray(inserted) && inserted.length === 0
-    ? "already_granted"
-    : "granted";
+  // A replayed payment must not reset previously consumed operations.
+  // Do not report "granted" if PostgREST fails to return inserted rows.
+  if (!Array.isArray(inserted)) throw new Error("ai_launch_grant_unconfirmed");
+  return inserted.length === 0 ? "already_granted" : "granted";
 }
 
 async function bindAndApply(
