@@ -27,3 +27,13 @@ test('detached BUILD route prohibits free field writing and GROW without RUN',()
   assert.match(route,/reserveLaunchOperation/);
   assert.match(route,/createBudgetedProviderFetch/);
 });
+
+test('detached paid BUILD uses bounded quota admission and excludes free users',()=>{
+  const quota=fs.readFileSync(new URL('../docs/migrations/20261012_detached_build_quota_admission.sql',import.meta.url),'utf8');
+  assert.match(quota,/l\.source='stripe_purchase'/);
+  assert.match(quota,/l\.operations_total>l\.operations_used/);
+  assert.match(quota,/v_minute:=1; v_daily:=4; v_monthly:=12/);
+  assert.match(quota,/pg_advisory_xact_lock/);
+  assert.match(quota,/where s\.id=p_site_id and s\.owner_id=v_user_id and s\.privacy_state='active'/);
+  assert.match(quota,/where c\.can_generate_ai/);
+});
