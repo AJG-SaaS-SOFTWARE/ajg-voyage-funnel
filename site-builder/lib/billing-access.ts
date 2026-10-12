@@ -24,7 +24,7 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
   const site = await getMySite(siteId);
   if (!site) return null;
   const [{ data, error }, { data: subscription, error: subscriptionError }] = await Promise.all([
-    supabase.from("site_billing_states").select("state,paid_through,grace_until,restricted_at,public_suspend_at,export_until,delete_after,provider_status").eq("site_id", site.id).maybeSingle(),
+    supabase.from("site_billing_states").select("state,paid_through,grace_until,restricted_at,public_suspend_at,export_until,delete_after,provider_status").eq("site_id", site.id).eq("owner_id", site.ownerId).maybeSingle(),
     supabase.from("site_subscriptions").select("provider,provider_customer_id,provider_subscription_id,status").eq("site_id", site.id).eq("owner_id", site.ownerId).maybeSingle()
   ]);
   if (error) throw error;
