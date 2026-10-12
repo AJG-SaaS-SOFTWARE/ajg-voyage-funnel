@@ -187,9 +187,12 @@ export async function POST(request: Request) {
       .eq("owner_id", auth.user.id)
       .eq("status", "active");
 
-    if (launchError) {
+    if (launchError || !Array.isArray(launchRows)) {
+      // A null or malformed response is not evidence that no entitlement exists.
+      // Do not initiate a second paid Checkout without a confirmed ledger read.
       return NextResponse.json(
-        { error: tr("Impossible de vérifier votre droit Création IA.", "Unable to verify your AI Launch entitlement.") },
+        { error: tr("Impossible de vérifier votre droit Création IA.", "Unable to verify your AI Launch entitlement."),
+          code: "ai_launch_ledger_unavailable" },
         { status: 503 }
       );
     }
