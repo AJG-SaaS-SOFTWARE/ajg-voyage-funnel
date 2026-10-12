@@ -63,3 +63,8 @@ test('uncertain portion is not added twice to the monetary ledger total', () => 
 test('uncertain amount above total cost is rejected', () => {
   assert.throws(() => calculateSiteMonthEconomics({ ...base, aiUncertainUsdMicros: 2_000_000 }, fx), /uncertainty_exceeds_total/);
 });
+
+test('rejects malformed FX source with a controlled error', () => {
+  assert.throws(() => calculateSiteMonthEconomics(base, { ...fx, source: null }), /invalid_fx_rate/);
+  assert.throws(() => calculateSiteMonthEconomics(base, { ...fx, source: 42 }), /invalid_fx_rate/);
+});
