@@ -165,3 +165,9 @@ test('browser billing state selects only subscriptions owned by the selected sit
   const billing=fs.readFileSync(new URL('../lib/billing-access.ts',import.meta.url),'utf8');
   assert.match(billing,/\.from\("site_subscriptions"\)\.select\("provider,provider_customer_id,provider_subscription_id,status"\)\.eq\("site_id", site\.id\)\.eq\("owner_id", site\.ownerId\)/);
 });
+
+test('billing state lookup must scope both state and subscription to site owner',()=>{
+  const billing=fs.readFileSync(new URL('../lib/billing-access.ts',import.meta.url),'utf8');
+  assert.match(billing,/\.from\("site_billing_states"\)[^\n]*\.eq\("site_id", site\.id\)\.eq\("owner_id", site\.ownerId\)/);
+  assert.match(billing,/\.from\("site_subscriptions"\)[^\n]*\.eq\("site_id", site\.id\)\.eq\("owner_id", site\.ownerId\)/);
+});
