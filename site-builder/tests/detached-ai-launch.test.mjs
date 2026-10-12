@@ -77,3 +77,7 @@ test('duplicate Stripe events cannot reset an already consumed BUILD entitlement
 test('unknown webhook insert outcome must fail closed, not claim success',()=>{
   assert.match(webhook,/if \(!Array\.isArray\(inserted\)\) throw new Error\("ai_launch_grant_unconfirmed"\)/);
 });
+
+test('Checkout subscription projection must be restricted to the authenticated owner',()=>{
+  assert.match(checkout,/\.from\("site_subscriptions"\)[\s\S]*?\.eq\("site_id", site\.id\)\s*\.eq\("owner_id", auth\.user\.id\)\s*\.maybeSingle\(\)/);
+});
