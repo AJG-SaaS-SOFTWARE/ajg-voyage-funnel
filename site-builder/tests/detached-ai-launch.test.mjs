@@ -185,3 +185,15 @@ test('subscription checkout blocks duplicate subscriptions in pending or failed 
   assert.match(checkout,/\["active", "trialing", "past_due", "incomplete", "unpaid", "paused"\]\.includes\(current\.status\)/);
   assert.ok(checkout.indexOf('code: "existing_subscription"') < checkout.indexOf('createStripeSubscriptionCheckout({'));
 });
+
+test('subscription Stripe Checkout carries stable idempotency per client attempt',()=>{
+  const stripe=fs.readFileSync(new URL('../lib/stripe-billing.ts',import.meta.url),'utf8');
+  const billing=fs.readFileSync(new URL('../lib/billing-access.ts',import.meta.url),'utf8');
+  assert.match(stripe,/Idempotency-Key/);
+  assert.match(stripe,/subscriptionCheckoutIdempotencyKey/);
+  assert.match(stripe,/idempotencyKey: subscriptionCheckoutIdempotencyKey/);
+  assert.match(billing,/pendingSubscriptionAttempts\.get\(intent\)/);
+  assert.match(billing,/checkoutAttemptId/);
+  assert.match(checkout,/code: "checkout_attempt_required"/);
+  assert.match(checkout,/attemptId: checkoutAttemptId/);
+});
