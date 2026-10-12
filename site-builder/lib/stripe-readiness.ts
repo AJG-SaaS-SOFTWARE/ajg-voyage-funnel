@@ -32,7 +32,7 @@ type StripePortalSnapshot = {
     payment_method_update?: { enabled?: boolean };
     invoice_history?: { enabled?: boolean };
     subscription_cancel?: { enabled?: boolean; mode?: string };
-    subscription_update?: { enabled?: boolean };
+    subscription_update?: { enabled?: boolean; products?: Array<{ product?: string; prices?: string[] }> };
   };
 };
 
@@ -174,7 +174,20 @@ async function auditPortal(): Promise<StripeRuntimeAuditItem> {
       portal.features?.invoice_history?.enabled === true &&
       portal.features?.subscription_cancel?.enabled === true &&
       portal.features?.subscription_cancel?.mode === "at_period_end" &&
-      portal.features?.subscription_update?.enabled === true;
+      portal.features?.subscription_update?.enabled === true &&
+      // An enabled subscription editor is insufficient: the ELTARA prices
+      // must actually be selectable in the configured portal.
+      [
+        "STRIPE_ESSENTIAL_MONTHLY_PRICE_ID",
+        "STRIPE_ESSENTIAL_ANNUAL_PRICE_ID",
+        "STRIPE_GROWTH_MONTHLY_PRICE_ID",
+        "STRIPE_GROWTH_ANNUAL_PRICE_ID"
+      ].every((name) => {
+        const priceId = process.env[name]?.trim();
+        return Boolean(priceId) && (
+          portal.features?.subscription_update?.products || []
+        ).some((product) => product.prices?.includes(priceId as string));
+      });
 
     return {
       key: "stripe-portal-runtime",
