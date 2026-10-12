@@ -364,10 +364,22 @@ export async function POST(request: Request) {
   const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
   if (!capability?.can_generate_ai) return NextResponse.json({ error: tr("Les fonctions IA sont temporairement indisponibles pour ce site. Vous pouvez régulariser l’accès depuis votre espace de facturation.", "AI features are temporarily unavailable for this website. You can restore access from Billing.") }, { status: 402 });
 
-  const { data: entitlementRows } = await auth.supabase.rpc("get_my_site_entitlements", {
+  const { data: entitlementRows, error: entitlementError } = await auth.supabase.rpc("get_my_site_entitlements", {
     p_site_id: siteId
   });
+  if (entitlementError) {
+    return NextResponse.json({
+      code: "entitlement_unavailable",
+      error: tr("Impossible de vérifier votre formule actuellement.", "Unable to verify your plan right now.")
+    }, { status: 503 });
+  }
   const requestEntitlement = Array.isArray(entitlementRows) ? entitlementRows[0] : entitlementRows;
+  if (!requestEntitlement) {
+    return NextResponse.json({
+      code: "entitlement_missing",
+      error: tr("Les droits de ce site doivent être vérifiés avant une dépense IA.", "This website's rights must be verified before AI spending.")
+    }, { status: 503 });
+  }
   const requestPlanKey =
     typeof requestEntitlement?.plan_key === "string" ? requestEntitlement.plan_key : "unknown";
 
