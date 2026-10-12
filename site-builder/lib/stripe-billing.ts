@@ -179,10 +179,12 @@ export async function stripeRequest<T = any>(
   path: string,
   {
     method = "POST",
-    params
+    params,
+    idempotencyKey
   }: {
     method?: "GET" | "POST" | "DELETE";
     params?: Record<string, StripeValue>;
+    idempotencyKey?: string;
   } = {}
 ): Promise<T> {
   const key = stripeKey();
@@ -203,6 +205,7 @@ export async function stripeRequest<T = any>(
     headers: {
       Authorization: `Bearer ${key}`,
       "Stripe-Version": STRIPE_API_VERSION,
+      ...(method === "POST" && idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       ...(method !== "GET"
         ? { "Content-Type": "application/x-www-form-urlencoded" }
         : {})
@@ -232,6 +235,18 @@ function integrationIdentifier() {
   return `ajg_builder_${suffix}`;
 }
 
+export function subscriptionCheckoutIdempotencyKey(input: {
+  siteId: string; ownerId: string; priceId: string; attemptId: string;
+}): string {
+  const { siteId, ownerId, priceId, attemptId } = input;
+  if (![siteId, ownerId, priceId, attemptId].every((v) =>
+    typeof v === "string" && v.length > 0 && v.length <= 200
+  )) throw new Error("invalid_checkout_idempotency");
+  return createHmac("sha256", "eltara-subscription-checkout-v1")
+    .update(JSON.stringify([siteId, ownerId, priceId, attemptId]))
+    .digest("hex");
+}
+
 export async function createStripeSubscriptionCheckout(input: {
   siteId: string;
   ownerId: string;
@@ -241,6 +256,7 @@ export async function createStripeSubscriptionCheckout(input: {
   planKey: "essential" | "growth";
   successUrl: string;
   cancelUrl: string;
+  attemptId?: string;
 }) {
   return stripeRequest<{
     id: string;
@@ -248,6 +264,9 @@ export async function createStripeSubscriptionCheckout(input: {
     customer?: string | null;
     subscription?: string | null;
   }>("/checkout/sessions", {
+    ...(input.attemptId ? { idempotencyKey: subscriptionCheckoutIdempotencyKey({
+      siteId: input.siteId, ownerId: input.ownerId, priceId: input.priceId, attemptId: input.attemptId
+    }) } : {}),
     params: {
       mode: "subscription",
       line_items: [{ price: input.priceId, quantity: 1 }],
