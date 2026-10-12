@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          tr("Aucun compte Stripe n’est encore rattaché à ce site. Lancez d’abord la souscription Pro.", "No Stripe account is linked to this website yet. Start the Pro subscription first.")
+          tr("Aucun compte Stripe n’est encore rattaché à ce site. Choisissez d’abord une offre depuis la page des tarifs.", "No Stripe account is linked to this website yet. Choose an offer from the pricing page first.")
       },
       { status: 409 }
     );
