@@ -31,7 +31,7 @@ export function siteConfigFromRecoveryExport(
   input: unknown,
   target: { id: string; slug: string }
 ): RecoveryPreview {
-  if (!input || typeof input !== "object") throw new Error("invalid_recovery_file");
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid_recovery_file");
   const payload = input as RecoveryExport;
   if (!["ajg-builder-export-v2", "ajg-builder-export-v3"].includes(payload.format || "")) {
     throw new Error("unsupported_recovery_format");
@@ -40,7 +40,23 @@ export function siteConfigFromRecoveryExport(
     throw new Error("recovery_site_mismatch");
   }
   const raw = payload.site.config;
-  if (!raw || typeof raw !== "object") throw new Error("invalid_recovery_file");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("invalid_recovery_file");
+  const requiredText = [
+    "firstName", "lastName", "brandName", "heroTitle", "heroSubtitle", "aboutText",
+    "bookingLabel", "bookingUrl", "profileImageUrl", "instagramUrl", "facebookUrl"
+  ];
+  if (
+    requiredText.some(key => typeof raw[key] !== "string") ||
+    typeof raw.showTravelJournals !== "boolean" ||
+    !["fr", "en"].includes(String(raw.primaryLanguage)) ||
+    !Array.isArray(raw.enabledLanguages) ||
+    raw.enabledLanguages.length === 0 ||
+    raw.enabledLanguages.some(value => value !== "fr" && value !== "en") ||
+    !raw.enabledLanguages.includes(raw.primaryLanguage) ||
+    !["independent-v1", "mwr-life-independent-ambassador-v1"].includes(String(raw.complianceProfile))
+  ) {
+    throw new Error("invalid_recovery_file");
+  }
 
   const enabled = Array.isArray(raw.enabledLanguages)
     ? raw.enabledLanguages.filter((item): item is string => typeof item === "string")
@@ -85,7 +101,9 @@ export function siteConfigFromRecoveryExport(
 
   return {
     config,
-    exportedAt: typeof payload.exportedAt === "string" ? payload.exportedAt : null,
+    exportedAt: typeof payload.exportedAt === "string" && Number.isFinite(Date.parse(payload.exportedAt))
+      ? payload.exportedAt
+      : null,
     sourceSlug: stringValue(payload.site.slug, target.slug)
   };
 }
