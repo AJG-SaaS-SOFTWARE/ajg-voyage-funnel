@@ -37,7 +37,7 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
     hasStripeSubscription: Boolean(
       subscription?.provider === "stripe"
       && subscription?.provider_subscription_id
-      && ["active", "trialing", "past_due", "incomplete", "unpaid", "paused"].includes(subscription?.status || "")
+      && !["canceled", "incomplete_expired"].includes(subscription?.status || "")
     )
   };
   return {
@@ -48,7 +48,7 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
     hasStripeSubscription: Boolean(
       subscription?.provider === "stripe"
       && subscription?.provider_subscription_id
-      && ["active", "trialing", "past_due", "incomplete", "unpaid", "paused"].includes(subscription?.status || "")
+      && !["canceled", "incomplete_expired"].includes(subscription?.status || "")
     )
   };
 }
