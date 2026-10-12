@@ -156,11 +156,16 @@ export async function POST(request: Request) {
   const appUrl = billingAppUrl(request);
 
   if (purchaseType === "ai_launch") {
+    // Detached BUILD is opt-in only: existing subscription-first flow stays the default.
+    // Do not enable until database capabilities and the paid BUILD sandbox E2E are certified.
     if (
-      !current ||
-      !["essential", "growth"].includes(current.plan_key) ||
-      current.status !== "active" ||
-      !current.first_payment_confirmed_at
+      process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true" &&
+      (
+        !current ||
+        !["essential", "growth"].includes(current.plan_key) ||
+        current.status !== "active" ||
+        !current.first_payment_confirmed_at
+      )
     ) {
       return NextResponse.json(
         {
