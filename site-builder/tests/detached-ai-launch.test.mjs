@@ -192,7 +192,9 @@ test('subscription Stripe Checkout carries stable idempotency per client attempt
   assert.match(stripe,/Idempotency-Key/);
   assert.match(stripe,/subscriptionCheckoutIdempotencyKey/);
   assert.match(stripe,/idempotencyKey: subscriptionCheckoutIdempotencyKey/);
-  assert.match(billing,/pendingSubscriptionAttempts\.get\(intent\)/);\n  assert.match(billing,/if \(pending\) return pending/);\n  assert.match(billing,/\.finally\(\(\) =>/);
+  assert.match(billing,/pendingSubscriptionAttempts\.get\(intent\)/);
+  assert.match(billing,/if \(pending\) return pending/);
+  assert.match(billing,/\.finally\(\(\) =>/);
   assert.match(billing,/checkoutAttemptId/);
   assert.match(checkout,/code: "checkout_attempt_required"/);
   assert.match(checkout,/attemptId: checkoutAttemptId/);
@@ -207,7 +209,7 @@ test('changing selected website synchronizes the site id used for billing',()=>{
   const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
   assert.match(plans,/setSiteId\(site\?\.id \|\| ""\)/);
   assert.doesNotMatch(plans,/if \(site && !siteId\) setSiteId/);
-  assert.match(plans,/onChange=\{\(event\) => \{ setSiteId\(event\.target\.value\); void load\(event\.target\.value\); \}\}/);
+  assert.match(plans,/selectedSiteRef\.current = event\.target\.value; setLoaded\(false\); setBillingState\(null\)/);
 });
 
 test('plans ignores responses from stale multi-site asynchronous loads',()=>{
