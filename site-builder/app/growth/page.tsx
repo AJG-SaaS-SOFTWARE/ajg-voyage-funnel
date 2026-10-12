@@ -92,7 +92,7 @@ export default function GrowthPage() {
       }
 
       const owned = await getMySites();
-      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt, bookingUrl: site.config.bookingUrl, heroTitle: site.config.heroTitle, aboutText: site.config.aboutText }));
+      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt, bookingUrl: typeof site.config?.bookingUrl === "string" ? site.config.bookingUrl : "", heroTitle: typeof site.config?.heroTitle === "string" ? site.config.heroTitle : "", aboutText: typeof site.config?.aboutText === "string" ? site.config.aboutText : "" }));
       setSites(options);
       if (!options.length) {
         setSiteId("");
