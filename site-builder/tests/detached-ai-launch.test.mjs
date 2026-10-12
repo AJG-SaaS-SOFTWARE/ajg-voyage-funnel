@@ -37,3 +37,12 @@ test('detached paid BUILD uses bounded quota admission and excludes free users',
   assert.match(quota,/where s\.id=p_site_id and s\.owner_id=v_user_id and s\.privacy_state='active'/);
   assert.match(quota,/where c\.can_generate_ai/);
 });
+
+test('AI never spends when plan lookup fails or is missing',()=>{
+  const route=fs.readFileSync(new URL('../app/api/ai/write/route.ts',import.meta.url),'utf8');
+  assert.match(route,/if \(entitlementError\)/);
+  assert.match(route,/code: "entitlement_unavailable"/);
+  assert.match(route,/if \(!requestEntitlement\)/);
+  assert.match(route,/code: "entitlement_missing"/);
+  assert.ok(route.indexOf('code: "entitlement_missing"') < route.indexOf('createBudgetedProviderFetch({'));
+});
