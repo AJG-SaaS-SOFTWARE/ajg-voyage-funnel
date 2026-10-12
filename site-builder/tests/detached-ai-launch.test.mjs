@@ -202,3 +202,10 @@ test('subscription checkout attempt requires a structured UUID, not merely 36 al
   assert.match(checkout,/\[0-9a-f\]\{8\}-\[0-9a-f\]\{4\}-\[1-8\]\[0-9a-f\]\{3\}-\[89ab\]\[0-9a-f\]\{3\}-\[0-9a-f\]\{12\}/);
   assert.doesNotMatch(checkout,/\^\[a-f0-9-\]\{36\}\$/);
 });
+
+test('changing selected website synchronizes the site id used for billing',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  assert.match(plans,/setSiteId\(site\?\.id \|\| ""\)/);
+  assert.doesNotMatch(plans,/if \(site && !siteId\) setSiteId/);
+  assert.match(plans,/onChange=\{\(event\) => \{ setSiteId\(event\.target\.value\); void load\(event\.target\.value\); \}\}/);
+});
