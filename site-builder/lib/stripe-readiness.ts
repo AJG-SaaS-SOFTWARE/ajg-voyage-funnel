@@ -87,6 +87,8 @@ let cachedAudit:
     }
   | null = null;
 
+let pendingAudit: Promise<StripeRuntimeAuditItem[]> | null = null;
+
 function validatePrice(
   expected: ExpectedPrice,
   price: StripePriceSnapshot,
@@ -210,13 +212,24 @@ export async function auditStripeRuntimeCached(
     return cachedAudit.value.map(item => ({ ...item }));
   }
 
-  const value = await auditStripeRuntime();
-  cachedAudit = {
-    // Recover promptly from a transient provider failure, while still bounding reads.
-    expiresAt: Date.now() + (value.every(item => item.ok)
-      ? Math.max(10_000, Number.isFinite(ttlMs) ? ttlMs : 300_000)
-      : 10_000),
-    value: value.map(item => ({ ...item }))
-  };
-  return value;
+  if (!pendingAudit) {
+    pendingAudit = (async () => {
+      const value = await auditStripeRuntime();
+      cachedAudit = {
+        // Recover promptly from a transient provider failure, while still bounding reads.
+        expiresAt: Date.now() + (value.every(item => item.ok)
+          ? Math.max(10_000, Number.isFinite(ttlMs) ? ttlMs : 300_000)
+          : 10_000),
+        value: value.map(item => ({ ...item }))
+      };
+      return value;
+    })();
+  }
+  const pending = pendingAudit;
+  try {
+    const value = await pending;
+    return value.map(item => ({ ...item }));
+  } finally {
+    if (pendingAudit === pending) pendingAudit = null;
+  }
 }
