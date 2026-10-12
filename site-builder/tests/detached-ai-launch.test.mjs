@@ -209,3 +209,10 @@ test('changing selected website synchronizes the site id used for billing',()=>{
   assert.doesNotMatch(plans,/if \(site && !siteId\) setSiteId/);
   assert.match(plans,/onChange=\{\(event\) => \{ setSiteId\(event\.target\.value\); void load\(event\.target\.value\); \}\}/);
 });
+
+test('plans ignores responses from stale multi-site asynchronous loads',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  assert.match(plans,/const loadSequence = useRef\(0\)/);
+  assert.match(plans,/const sequence = \+\+loadSequence\.current/);
+  assert.equal((plans.match(/if \(sequence !== loadSequence\.current\) return;/g)||[]).length,2);
+});
