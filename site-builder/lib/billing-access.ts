@@ -142,26 +142,26 @@ async function openStripeBillingPath(
   window.location.assign(result.url);
 }
 
-const pendingSubscriptionAttempts = new Map<string, string>();
+// Coalesce concurrent requests in the same tab. All callers observe the
+// same result; a new explicit click after a failure creates a fresh attempt.
+const pendingSubscriptionAttempts = new Map<string, Promise<void>>();
 
-export async function startPlanCheckout(
+export function startPlanCheckout(
   siteId: string,
   planKey: "essential" | "growth",
   billingCycle: "monthly" | "annual"
-) {
+): Promise<void> {
   const intent = JSON.stringify([siteId, planKey, billingCycle]);
-  const checkoutAttemptId = pendingSubscriptionAttempts.get(intent) || crypto.randomUUID();
-  pendingSubscriptionAttempts.set(intent, checkoutAttemptId);
-  try {
-    return await openStripeBillingPath("/api/billing/checkout", siteId, {
-      planKey, billingCycle, checkoutAttemptId
-    });
-  } catch (error) {
-    // A confirmed failure may be retried with a fresh attempt; simultaneous
-    // requests in this tab share the same Stripe idempotency key.
+  const pending = pendingSubscriptionAttempts.get(intent);
+  if (pending) return pending;
+  const checkoutAttemptId = crypto.randomUUID();
+  const task = openStripeBillingPath("/api/billing/checkout", siteId, {
+    planKey, billingCycle, checkoutAttemptId
+  }).finally(() => {
     pendingSubscriptionAttempts.delete(intent);
-    throw error;
-  }
+  });
+  pendingSubscriptionAttempts.set(intent, task);
+  return task;
 }
 
 export async function startGrowthCheckout(siteId: string) {
