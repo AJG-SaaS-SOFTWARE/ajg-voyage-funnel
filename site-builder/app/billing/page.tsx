@@ -18,11 +18,41 @@ export default function BillingPage() {
   const [sites,setSites]=useState<Array<{id:string;slug:string}>>([]);
   const [siteId,setSiteId]=useState("");
   const [billingBusy,setBillingBusy]=useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const load=async(selectedId?:string)=>{const owned=await getMySites();const chosen=owned.find(s=>s.id===(selectedId||siteId))||owned[0];setSites(owned.map(s=>({id:s.id,slug:s.slug})));if(chosen&&!siteId)setSiteId(chosen.id);setBilling(chosen?await getMyBillingState(chosen.id):null);setMessage("");};
-  useEffect(() => { void load().catch(() => setMessage(tr("Impossible de charger l’état de facturation.", "Unable to load billing status."))); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setBilling(null);
+    setMessage("");
+    const selectedId = siteId || new URLSearchParams(window.location.search).get("siteId") || "";
+    void (async () => {
+      const owned = await getMySites();
+      const chosen = owned.find(site => site.id === selectedId) || owned[0];
+      if (cancelled) return;
+      setSites(owned.map(site => ({ id: site.id, slug: site.slug })));
+      if (!chosen) {
+        setLoading(false);
+        return;
+      }
+      if (chosen.id !== siteId) {
+        setSiteId(chosen.id);
+        return;
+      }
+      const state = await getMyBillingState(chosen.id);
+      if (cancelled) return;
+      setBilling(state);
+      setLoading(false);
+    })().catch(() => {
+      if (cancelled) return;
+      setMessage(tr("Impossible de charger l’état de facturation.", "Unable to load billing status."));
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [siteId, tr]);
 
   async function downloadExport() {
+    if (loading || !siteId) return;
     try {
       await downloadMySiteExport(siteId);
       setMessage(tr("Archive complète préparée : configuration et fichiers médias inclus.", "Full archive prepared: configuration and media files included."));
@@ -30,7 +60,7 @@ export default function BillingPage() {
   }
 
   async function manageBilling() {
-    if (!siteId) return;
+    if (loading || !siteId) return;
     setBillingBusy(true);
     setMessage("");
     try {
@@ -49,8 +79,9 @@ export default function BillingPage() {
     title={tr("Votre accès ELTARA", "Your ELTARA access")}
     description={tr("Suivez l’état de paiement du site sélectionné, les éventuelles échéances de restriction et vos options de récupération. Un impayé ne déclenche jamais la suppression automatique de vos données.", "Track the selected website’s billing status, any restriction deadlines and your recovery options. A failed payment never triggers automatic deletion of your data.")}
   >
-    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} onChange={e=>{setSiteId(e.target.value);void load(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
-    {message ? <p className="account-note">{message}</p> : null}
+    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} onChange={e=>{setBilling(null);setLoading(true);setSiteId(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
+    {loading ? <p className="account-note" role="status">{tr("Chargement de la facturation…", "Loading billing status…")}</p> : null}
+    {message ? <p className="account-note" role="alert">{message}</p> : null}
     {billing ? <section className="panel billing-guide" aria-labelledby="billing-guide-title">
       <p className="eyebrow">{tr("Parcours guidé", "Guided flow")}</p>
       <h2 id="billing-guide-title">{tr("Comprendre et gérer votre accès", "Understand and manage your access")}</h2>
