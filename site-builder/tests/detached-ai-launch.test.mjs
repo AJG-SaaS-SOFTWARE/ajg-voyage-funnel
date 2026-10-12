@@ -229,7 +229,7 @@ test('plans blocks checkout while switching websites or billing is unresolved',(
 test('plans pins billing requests to selected site and blocks concurrent switches',()=>{
   const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
   assert.match(plans,/const targetSiteId = siteId/);
-  assert.match(plans,/if \(selectedSiteRef\.current !== targetSiteId\) return/);
+  assert.match(plans,/if \(selectedSiteRef\.current !== targetSiteId\) \{/);
   assert.match(plans,/await startPlanCheckout\(targetSiteId, planKey, billingCycle\)/);
   assert.match(plans,/await openStripeBillingPortal\(targetSiteId\)/);
   assert.match(plans,/paymentInProgressRef\.current = false/);
