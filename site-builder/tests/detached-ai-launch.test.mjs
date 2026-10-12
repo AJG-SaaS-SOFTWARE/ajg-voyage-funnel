@@ -16,3 +16,14 @@ test('checkout and webhook must both require explicit detached BUILD flag',()=>{
   assert.match(webhook,/AJG_DETACHED_AI_LAUNCH_ENABLED/);
   assert.match(webhook,/input\.source !== "stripe_purchase"/);
 });
+
+test('detached BUILD route prohibits free field writing and GROW without RUN',()=>{
+  const route=fs.readFileSync(new URL('../app/api/ai/write/route.ts',import.meta.url),'utf8');
+  assert.match(route,/requestPlanKey === "free" && capability\?\.can_generate_ai/);
+  assert.match(route,/!\["siteArchitect", "siteRevision"\]\.includes\(field\)/);
+  assert.match(route,/detached\?\.access_source !== "ai_launch"/);
+  assert.match(route,/Number\(detached\?\.launch_operations_remaining\) <= 0/);
+  assert.match(route,/AJG_DETACHED_AI_LAUNCH_ENABLED/);
+  assert.match(route,/reserveLaunchOperation/);
+  assert.match(route,/createBudgetedProviderFetch/);
+});
