@@ -371,6 +371,29 @@ export async function POST(request: Request) {
   const requestPlanKey =
     typeof requestEntitlement?.plan_key === "string" ? requestEntitlement.plan_key : "unknown";
 
+  // Detached one-shot BUILD never unlocks ordinary field writing or continuous GROW.
+  // Check the server flag and the DB-owned AI Launch entitlement before reserving tokens.
+  if (requestPlanKey === "free" && capability?.can_generate_ai) {
+    if (process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true" ||
+        !["siteArchitect", "siteRevision"].includes(field)) {
+      return NextResponse.json({
+        code: "run_subscription_required",
+        error: tr("Cette fonction IA nécessite un abonnement actif.", "This AI operation requires an active subscription.")
+      }, { status: 402 });
+    }
+    const { data: detachedAccess, error: detachedError } = await auth.supabase.rpc(
+      "get_my_site_ai_access", { p_site_id: siteId }
+    );
+    const detached = Array.isArray(detachedAccess) ? detachedAccess[0] : detachedAccess;
+    if (detachedError || detached?.access_source !== "ai_launch" ||
+        Number(detached?.launch_operations_remaining) <= 0) {
+      return NextResponse.json({
+        code: "paid_ai_launch_required",
+        error: tr("Aucun droit Création IA valide n'a été trouvé.", "No valid paid AI Launch entitlement was found.")
+      }, { status: 403 });
+    }
+  }
+
   const instruction = clean(body?.instruction, 800);
   if (!instruction) {
     return NextResponse.json({ error: tr("Décrivez le texte que vous souhaitez obtenir.", "Describe the text you would like to create.") }, { status: 400 });
