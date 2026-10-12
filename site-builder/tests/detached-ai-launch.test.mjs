@@ -127,7 +127,7 @@ test('Growth preview uses the actual owned site publication state without paid A
 
 test('Essential Growth preview uses owned site action link without invoking paid AI',()=>{
   const growth=fs.readFileSync(new URL('../app/growth/page.tsx',import.meta.url),'utf8');
-  assert.match(growth,/bookingUrl: site\.config\.bookingUrl/);
+  assert.match(growth,/bookingUrl: typeof site\.config\?\.bookingUrl === "string"/);
   assert.match(growth,/bookingUrl\?\.trim\(\)/);
   assert.match(growth,/aucun lien de réservation ou d’action n’est renseigné/);
   assert.match(growth,/Son fonctionnement et ses performances ne sont pas évalués ici/);
@@ -135,8 +135,8 @@ test('Essential Growth preview uses owned site action link without invoking paid
 
 test('Essential content preview only checks configured text presence, without an SEO score',()=>{
   const growth=fs.readFileSync(new URL('../app/growth/page.tsx',import.meta.url),'utf8');
-  assert.match(growth,/heroTitle: site\.config\.heroTitle/);
-  assert.match(growth,/aboutText: site\.config\.aboutText/);
+  assert.match(growth,/heroTitle: typeof site\.config\?\.heroTitle === "string"/);
+  assert.match(growth,/aboutText: typeof site\.config\?\.aboutText === "string"/);
   assert.match(growth,/Sa qualité SEO n’est pas évaluée ici/);
   assert.match(growth,/Vous pouvez le compléter avec Essentiel/);
   assert.match(growth,/Sa pertinence n’est pas analysée ici/);
