@@ -291,7 +291,7 @@ export async function POST(request: Request) {
   if (
     current?.provider === "stripe" &&
     current.provider_subscription_id &&
-    ["active", "trialing", "past_due", "incomplete", "unpaid", "paused"].includes(current.status)
+    !["canceled", "incomplete_expired"].includes(current.status)
   ) {
     return NextResponse.json(
       {
