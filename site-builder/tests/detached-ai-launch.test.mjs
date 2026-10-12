@@ -151,3 +151,12 @@ test('Essential upgrade button accurately describes Stripe portal transition',()
   const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
   assert.match(plans,/Gérer mon passage à Growth dans Stripe/);
 });
+
+test('Stripe readiness verifies all Essential and Growth prices are selectable in portal',()=>{
+  const readiness=fs.readFileSync(new URL('../lib/stripe-readiness.ts',import.meta.url),'utf8');
+  for(const suffix of ['ESSENTIAL_MONTHLY','ESSENTIAL_ANNUAL','GROWTH_MONTHLY','GROWTH_ANNUAL']){
+    assert.match(readiness,new RegExp('STRIPE_'+suffix+'_PRICE_ID'));
+  }
+  assert.match(readiness,/subscription_update\?\.products/);
+  assert.match(readiness,/product\.prices\?\.includes\(priceId as string\)/);
+});
