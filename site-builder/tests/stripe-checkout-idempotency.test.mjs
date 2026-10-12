@@ -84,3 +84,35 @@ test('two retries of one subscription attempt send identical Checkout payloads a
     else process.env.STRIPE_RESTRICTED_KEY=previousRestricted;
   }
 });
+
+test('Stripe payment failure preserves the retry key and surfaces the provider error', async () => {
+  const previousFetch = globalThis.fetch;
+  const previousKey = process.env.STRIPE_SECRET_KEY;
+  const previousRestricted = process.env.STRIPE_RESTRICTED_KEY;
+  const seen = [];
+  process.env.STRIPE_RESTRICTED_KEY = '';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+  globalThis.fetch = async (_url, init) => {
+    seen.push(init.headers['Idempotency-Key']);
+    return {ok:false,status:429,json:async()=>({error:{code:'rate_limit'}})};
+  };
+  const input = {
+    siteId:'site-1',ownerId:'owner-1',ownerEmail:'test@example.com',
+    priceId:'price_test_essential',planKey:'essential',
+    successUrl:'https://example.org/success',cancelUrl:'https://example.org/cancel',
+    attemptId:'8d65b4d8-2a46-4b72-a4c3-d9c2119b2281'
+  };
+  try {
+    await assert.rejects(createStripeSubscriptionCheckout(input), /rate_limit/);
+    await assert.rejects(createStripeSubscriptionCheckout({...input}), /rate_limit/);
+    assert.equal(seen.length,2);
+    assert.equal(seen[0],seen[1]);
+    assert.match(seen[0],/^[a-f0-9]{64}$/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if(previousKey===undefined) delete process.env.STRIPE_SECRET_KEY;
+    else process.env.STRIPE_SECRET_KEY=previousKey;
+    if(previousRestricted===undefined) delete process.env.STRIPE_RESTRICTED_KEY;
+    else process.env.STRIPE_RESTRICTED_KEY=previousRestricted;
+  }
+});
