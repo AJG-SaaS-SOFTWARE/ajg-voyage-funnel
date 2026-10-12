@@ -6,6 +6,7 @@ import {
   recoveryMediaArchivePath,
   type RecoveryTarEntry
 } from "../../../../lib/recovery-archive";
+import { recoverySiteSnapshot } from "../../../../lib/recovery-snapshot";
 import { readRecoveryRecords } from "../../../../lib/recovery-records";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
@@ -54,7 +55,8 @@ export async function GET(request: Request) {
 
   const requestUrl = new URL(request.url);
   const siteId = requestUrl.searchParams.get("siteId");
-  const requestedFormat = requestUrl.searchParams.get("format") === "archive" ? "archive" : "json";
+  const format = requestUrl.searchParams.get("format");
+  const requestedFormat = format === "archive" ? "archive" : format === "recovery" ? "recovery" : "json";
   if (!siteId) {
     return NextResponse.json({ error: tr("Identifiant du site requis.", "Website identifier required.") }, { status: 400 });
   }
@@ -144,6 +146,18 @@ export async function GET(request: Request) {
       throw new Error("recovery_draft_unavailable");
     }
     draft = ownedDraft;
+    if (requestedFormat === "recovery") {
+      return NextResponse.json({
+        format: "ajg-builder-export-v2",
+        scope: "configuration",
+        exportedAt: new Date().toISOString(),
+        site: recoverySiteSnapshot(site, draft),
+        note: tr(
+          "Fichier de restauration de la configuration publiée et du brouillon éventuel. Pour conserver aussi les médias et les autres données, téléchargez l’archive complète.",
+          "Recovery file for the published configuration and any saved draft. Download the full archive to also preserve media and other data."
+        )
+      }, { headers: { "Cache-Control": "private, no-store" } });
+    }
     media = [
       ...await walk("site-media", prefix, true),
       ...await walk("site-private-media", prefix, false)
@@ -179,36 +193,7 @@ export async function GET(request: Request) {
 
   const commonPayload = {
     exportedAt: new Date().toISOString(),
-    site: {
-      id: site.id,
-      slug: site.slug,
-      status: site.status,
-      updatedAt: site.updated_at,
-      draftConfig: draft?.config ?? null,
-      draftUpdatedAt: draft?.updated_at ?? null,
-      config: {
-        slug: site.slug,
-        firstName: site.first_name,
-        lastName: site.last_name,
-        brandName: site.brand_name,
-        heroTitle: site.hero_title,
-        heroSubtitle: site.hero_subtitle,
-        heroTagline: site.hero_tagline,
-        aboutText: site.about_text,
-        aboutHeading: site.about_heading,
-        bookingLabel: site.booking_label,
-        bookingUrl: site.booking_url,
-        instagramUrl: site.instagram_url,
-        facebookUrl: site.facebook_url,
-        profileImageUrl: site.profile_image_url,
-        showTravelJournals: site.show_travel_journals,
-        primaryLanguage: site.primary_language,
-        enabledLanguages: site.enabled_languages,
-        designAssets: site.design_assets,
-        legalConfig: site.legal_config,
-        complianceProfile: site.compliance_profile
-      }
-    },
+    site: recoverySiteSnapshot(site, draft),
     domains,
     travelJournals: journals,
     contactMessages: contacts

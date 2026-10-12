@@ -32,7 +32,7 @@ test("recovery UI creates a draft and never immediately overwrites the public ve
 });
 
 test("data area exposes both a full archive and a dedicated JSON recovery file", () => {
-  assert.match(billing, /format=json/);
+  assert.match(billing, /format=recovery/);
   assert.match(billing, /downloadMySiteRecoveryJson/);
   assert.match(page, /Télécharger le fichier de restauration/);
   assert.match(page, /Download recovery file/);
