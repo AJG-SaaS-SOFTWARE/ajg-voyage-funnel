@@ -93,3 +93,9 @@ test('unverifiable active entitlement blocks checkout instead of causing a dupli
   assert.match(checkout,/if \(malformedLaunch\)/);
   assert.ok(checkout.indexOf('if (malformedLaunch)') < checkout.indexOf('createStripeOneTimeCheckout({'));
 });
+
+test('Checkout requires a confirmed readable BUILD ledger before starting payment',()=>{
+  assert.match(checkout,/if \(launchError \|\| !Array\.isArray\(launchRows\)\)/);
+  assert.match(checkout,/code: "ai_launch_ledger_unavailable"/);
+  assert.ok(checkout.indexOf('code: "ai_launch_ledger_unavailable"') < checkout.indexOf('createStripeOneTimeCheckout({'));
+});
