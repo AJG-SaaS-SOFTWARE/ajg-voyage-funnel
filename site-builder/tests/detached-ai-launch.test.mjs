@@ -73,3 +73,7 @@ test('duplicate Stripe events cannot reset an already consumed BUILD entitlement
   assert.match(webhook,/inserted\.length === 0/);
   assert.match(webhook,/"already_granted"/);
 });
+
+test('unknown webhook insert outcome must fail closed, not claim success',()=>{
+  assert.match(webhook,/if \(!Array\.isArray\(inserted\)\) throw new Error\("ai_launch_grant_unconfirmed"\)/);
+});
