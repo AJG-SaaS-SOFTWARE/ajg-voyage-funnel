@@ -14,7 +14,9 @@ type StripePriceSnapshot = {
   currency?: string;
   type?: string;
   unit_amount?: number | null;
-  recurring?: { interval?: string } | null;
+  billing_scheme?: string;
+  transform_quantity?: unknown;
+  recurring?: { interval?: string; interval_count?: number; usage_type?: string } | null;
   product?: string | {
     active?: boolean;
     metadata?: Record<string, string>;
@@ -87,18 +89,24 @@ let cachedAudit:
 
 function validatePrice(
   expected: ExpectedPrice,
-  price: StripePriceSnapshot
+  price: StripePriceSnapshot,
+  priceId: string
 ): StripeRuntimeAuditItem {
   const product =
     price.product && typeof price.product === "object" ? price.product : null;
   const checks = [
+    price.id === priceId,
     price.active === true,
     price.currency === "eur",
     price.unit_amount === expected.amount,
     price.type === expected.type,
+    price.billing_scheme === "per_unit",
+    price.transform_quantity == null,
     expected.type === "one_time"
       ? !price.recurring
-      : price.recurring?.interval === expected.interval,
+      : price.recurring?.interval === expected.interval &&
+        price.recurring?.interval_count === 1 &&
+        price.recurring?.usage_type === "licensed",
     product?.active === true,
     product?.metadata?.app === "ajg_site_builder"
   ];
@@ -132,7 +140,7 @@ async function auditExpectedPrice(
       `/prices/${encodeURIComponent(priceId)}`,
       { method: "GET", params: { expand: ["product"] } }
     );
-    return validatePrice(expected, price);
+    return validatePrice(expected, price, priceId);
   } catch {
     return {
       key: `stripe-price-${expected.env.toLowerCase()}`,
