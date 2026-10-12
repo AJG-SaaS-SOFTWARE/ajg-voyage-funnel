@@ -46,3 +46,10 @@ test('AI never spends when plan lookup fails or is missing',()=>{
   assert.match(route,/code: "entitlement_missing"/);
   assert.ok(route.indexOf('code: "entitlement_missing"') < route.indexOf('createBudgetedProviderFetch({'));
 });
+
+test('unknown plan cannot reach the expensive provider call',()=>{
+  const route=fs.readFileSync(new URL('../app/api/ai/write/route.ts',import.meta.url),'utf8');
+  assert.match(route,/!\["free", "essential", "growth"\]\.includes\(requestPlanKey\)/);
+  assert.match(route,/code: "invalid_plan"/);
+  assert.ok(route.indexOf('code: "invalid_plan"') < route.indexOf('createBudgetedProviderFetch({'));
+});
