@@ -15,10 +15,6 @@ installed as (
  where n.nspname in ('public','private')
 )
 select e.schema_name,e.function_name,
-       exists (select 1 from installed i where i.nspname=e.schema_name
-         and i.proname=e.function_name and
-         regexp_replace(i.args,'[[:space:]]+[a-z_][a-z_0-9]*','', 'g') is not null) as function_present,
-       coalesce((select position(e.fragment in i.definition)>0 from installed i
-         where i.nspname=e.schema_name and i.proname=e.function_name
-         order by (position(e.fragment in i.definition)>0) desc limit 1),false) as expected_guard_present
+       to_regprocedure(format('%I.%I(%s)',e.schema_name,e.function_name,e.signature)) is not null as function_present,
+       coalesce(position(e.fragment in pg_get_functiondef(to_regprocedure(format('%I.%I(%s)',e.schema_name,e.function_name,e.signature))))>0,false) as expected_guard_present
 from expected e order by e.schema_name,e.function_name;
