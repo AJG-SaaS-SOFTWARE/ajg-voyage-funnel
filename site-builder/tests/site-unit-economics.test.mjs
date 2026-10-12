@@ -25,7 +25,7 @@ test('costs are attributed with explicit FX and VAT-exclusive revenue', () => {
   assert.equal(x.meets80PercentTarget, true);
 });
 test('uncertain supplier costs remain provisioned rather than treated as zero', () => {
-  const x = calculateSiteMonthEconomics({ ...base, aiUncertainUsdMicros: 2_000_000 }, fx);
+  const x = calculateSiteMonthEconomics({ ...base, aiUsdMicros: 3_000_000, aiUncertainUsdMicros: 2_000_000 }, fx);
   assert.equal(x.unresolvedAiProvisionCents, 180);
   assert.equal(x.costCents, 438);
   assert.equal(x.meets80PercentTarget, false);
@@ -52,4 +52,14 @@ test('publishing without RUN is blocked while existing draft edits remain availa
 test('uncertain AI and low margin trigger review rather than blind spending', () => {
   assert.equal(siteCostRiskDecision({ subscriptionActive: true, operation: 'ai', forecastMarginPercent: 90, providerSpendUncertain: true }), 'review_costs');
   assert.equal(siteCostRiskDecision({ subscriptionActive: true, operation: 'ai', forecastMarginPercent: 60, providerSpendUncertain: false }), 'budget_risk');
+});
+
+test('uncertain portion is not added twice to the monetary ledger total', () => {
+  const x = calculateSiteMonthEconomics({ ...base, aiUncertainUsdMicros: 500_000 }, fx);
+  assert.equal(x.aiCostCents, 90);
+  assert.equal(x.unresolvedAiProvisionCents, 45);
+  assert.equal(x.costCents, 258);
+});
+test('uncertain amount above total cost is rejected', () => {
+  assert.throws(() => calculateSiteMonthEconomics({ ...base, aiUncertainUsdMicros: 2_000_000 }, fx), /uncertainty_exceeds_total/);
 });
