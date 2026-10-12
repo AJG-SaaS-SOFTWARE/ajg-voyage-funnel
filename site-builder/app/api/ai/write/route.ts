@@ -382,6 +382,12 @@ export async function POST(request: Request) {
   }
   const requestPlanKey =
     typeof requestEntitlement?.plan_key === "string" ? requestEntitlement.plan_key : "unknown";
+  if (!["free", "essential", "growth"].includes(requestPlanKey)) {
+    return NextResponse.json({
+      code: "invalid_plan",
+      error: tr("Le forfait de ce site n'est pas reconnu.", "This website's plan is not recognized.")
+    }, { status: 503 });
+  }
 
   // Detached one-shot BUILD never unlocks ordinary field writing or continuous GROW.
   // Check the server flag and the DB-owned AI Launch entitlement before reserving tokens.
