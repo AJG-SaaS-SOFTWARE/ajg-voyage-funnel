@@ -53,3 +53,12 @@ test('unknown plan cannot reach the expensive provider call',()=>{
   assert.match(route,/code: "invalid_plan"/);
   assert.ok(route.indexOf('code: "invalid_plan"') < route.indexOf('createBudgetedProviderFetch({'));
 });
+
+test('detached BUILD requires an unexpired Stripe-purchased entitlement',()=>{
+  const route=fs.readFileSync(new URL('../app/api/ai/write/route.ts',import.meta.url),'utf8');
+  assert.match(route,/\.eq\("source", "stripe_purchase"\)/);
+  assert.match(route,/\.eq\("owner_id", auth\.user\.id\)/);
+  assert.match(route,/row\.operations_total > row\.operations_used/);
+  assert.match(route,/Date\.parse\(row\.expires_at\) > nowMs/);
+  assert.match(route,/\|\| !hasPaidLaunch/);
+});
