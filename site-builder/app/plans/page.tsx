@@ -49,12 +49,15 @@ export default function PlansPage() {
   const [billingState, setBillingState] = useState<BillingState | null>(null);
 
   const loadSequence = useRef(0);
+  const selectedSiteRef = useRef("");
+  const paymentInProgressRef = useRef(false);
   const load = async (selectedId?: string) => {
     const sequence = ++loadSequence.current;
     const owned = await getMySites();
     const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
     if (sequence !== loadSequence.current) return;
     setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
+    selectedSiteRef.current = site?.id || "";
     setSiteId(site?.id || "");
     const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
       site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
@@ -89,7 +92,9 @@ export default function PlansPage() {
   }, []);
 
   async function beginPlanChange(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
-    if (!siteId || !loaded || !billingState || betaAccess.active) return;
+    if (!siteId || !loaded || !billingState || betaAccess.active || paymentInProgressRef.current) return;
+    const targetSiteId = siteId;
+    paymentInProgressRef.current = true;
     const key = `${planKey}:${billingCycle}`;
     setCheckoutBusy(key);
     setCheckoutMessage("");
@@ -100,15 +105,18 @@ export default function PlansPage() {
       if (!latestBilling) {
         throw new Error(tr("Impossible de vérifier votre facturation. Réessayez.", "Unable to verify your billing. Please retry."));
       }
+      if (selectedSiteRef.current !== targetSiteId) return;
       setBillingState(latestBilling);
       if (latestBilling.hasStripeSubscription) {
-        await openStripeBillingPortal(siteId);
+        await openStripeBillingPortal(targetSiteId);
         return;
       }
-      await startPlanCheckout(siteId, planKey, billingCycle);
+      await startPlanCheckout(targetSiteId, planKey, billingCycle);
     } catch (error) {
       setCheckoutMessage(error instanceof Error ? error.message : tr("Facturation indisponible.", "Billing unavailable."));
       setCheckoutBusy("");
+    } finally {
+      paymentInProgressRef.current = false;
     }
   }
 
@@ -160,7 +168,7 @@ export default function PlansPage() {
         <section className="panel">
           <label>
             {tr("Site", "Website")}
-            <select value={siteId} onChange={(event) => { setLoaded(false); setBillingState(null); setCheckoutMessage(""); setSiteId(event.target.value); void load(event.target.value).catch(() => { setCheckoutMessage(tr("Impossible de charger ce site. Réessayez.", "Unable to load this website. Please retry.")); }); }}>
+            <select value={siteId} onChange={(event) => { if (paymentInProgressRef.current) return; selectedSiteRef.current = event.target.value; setLoaded(false); setBillingState(null); setCheckoutMessage(""); setSiteId(event.target.value); void load(event.target.value).catch(() => { setCheckoutMessage(tr("Impossible de charger ce site. Réessayez.", "Unable to load this website. Please retry.")); }); }}>
               {sites.map((site) => <option key={site.id} value={site.id}>{site.slug}</option>)}
             </select>
           </label>
