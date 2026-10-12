@@ -242,3 +242,14 @@ test("provider-backed Stripe lifecycle script rejects live credentials and never
   assert.doesNotMatch(script, /sk_live_/);
   assert.doesNotMatch(script, /AJG_BILLING_CHECKOUT_ENABLED\s*=/);
 });
+
+test('detached AI Launch cannot silently bypass legacy subscription guards', () => {
+  const checkout = fs.readFileSync(new URL('../app/api/billing/checkout/route.ts', import.meta.url), 'utf8');
+  const webhook = fs.readFileSync(new URL('../app/api/billing/stripe-webhook/route.ts', import.meta.url), 'utf8');
+  assert.ok(checkout.includes('process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true"'));
+  assert.ok(webhook.includes('input.source !== "stripe_purchase"'));
+  assert.ok(webhook.includes('process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true"'));
+  assert.ok(checkout.includes('checkoutEnabled()'));
+  assert.ok(checkout.includes('commercialCheckoutReadiness()'));
+  assert.ok(webhook.includes('subscription_required'));
+});
