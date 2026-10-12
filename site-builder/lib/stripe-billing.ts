@@ -331,15 +331,17 @@ export async function createStripePortalSession(input: {
   customerId: string;
   returnUrl: string;
 }) {
+  const configuration = process.env.STRIPE_PORTAL_CONFIGURATION_ID?.trim();
+  if (!configuration) {
+    throw new Error("stripe_portal_configuration_missing");
+  }
   return stripeRequest<{ id: string; url: string }>(
     "/billing_portal/sessions",
     {
       params: {
         customer: input.customerId,
         return_url: input.returnUrl,
-        ...(process.env.STRIPE_PORTAL_CONFIGURATION_ID?.trim()
-          ? { configuration: process.env.STRIPE_PORTAL_CONFIGURATION_ID.trim() }
-          : {})
+        configuration
       }
     }
   );
