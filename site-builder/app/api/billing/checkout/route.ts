@@ -319,7 +319,7 @@ export async function POST(request: Request) {
   }
 
   const checkoutAttemptId = typeof body?.checkoutAttemptId === "string" &&
-    /^[a-f0-9-]{36}$/i.test(body.checkoutAttemptId)
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.checkoutAttemptId)
       ? body.checkoutAttemptId : "";
   if (!checkoutAttemptId) {
     return NextResponse.json({
