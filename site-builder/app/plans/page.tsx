@@ -101,7 +101,7 @@ export default function PlansPage() {
     try {
       // Never choose Checkout from potentially stale React state: a subscription
       // may have been activated since the page was loaded or changed site.
-      const latestBilling = await getMyBillingState(siteId);
+      const latestBilling = await getMyBillingState(targetSiteId);
       if (!latestBilling) {
         throw new Error(tr("Impossible de vérifier votre facturation. Réessayez.", "Unable to verify your billing. Please retry."));
       }
@@ -121,14 +121,19 @@ export default function PlansPage() {
   }
 
   async function buyAiLaunch() {
-    if (!siteId || betaAccess.active) return;
+    if (!siteId || !loaded || !billingState || betaAccess.active || paymentInProgressRef.current) return;
+    const targetSiteId = siteId;
+    paymentInProgressRef.current = true;
     setCheckoutBusy("ai_launch");
     setCheckoutMessage("");
     try {
-      await startAiLaunchCheckout(siteId);
+      if (selectedSiteRef.current !== targetSiteId) return;
+      await startAiLaunchCheckout(targetSiteId);
     } catch (error) {
       setCheckoutMessage(error instanceof Error ? error.message : tr("Paiement Création IA indisponible.", "AI Launch checkout unavailable."));
       setCheckoutBusy("");
+    } finally {
+      paymentInProgressRef.current = false;
     }
   }
 
