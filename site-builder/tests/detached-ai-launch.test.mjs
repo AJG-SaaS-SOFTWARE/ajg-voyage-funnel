@@ -216,3 +216,10 @@ test('plans ignores responses from stale multi-site asynchronous loads',()=>{
   assert.match(plans,/const sequence = \+\+loadSequence\.current/);
   assert.equal((plans.match(/if \(sequence !== loadSequence\.current\) return;/g)||[]).length,2);
 });
+
+test('plans blocks checkout while switching websites or billing is unresolved',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  assert.match(plans,/if \(!siteId \|\| !loaded \|\| !billingState \|\| betaAccess\.active\) return/);
+  assert.match(plans,/onChange=\{\(event\) => \{ setLoaded\(false\); setBillingState\(null\)/);
+  assert.match(plans,/Impossible de charger ce site/);
+});
