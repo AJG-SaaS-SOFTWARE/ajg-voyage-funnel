@@ -144,6 +144,7 @@ export async function POST(request: Request) {
     .from("site_subscriptions")
     .select("plan_key,status,provider,provider_customer_id,provider_subscription_id,first_payment_confirmed_at")
     .eq("site_id", site.id)
+    .eq("owner_id", auth.user.id)
     .maybeSingle();
 
   if (currentError) {
