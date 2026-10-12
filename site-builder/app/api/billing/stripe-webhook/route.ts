@@ -146,7 +146,7 @@ async function grantAiLaunch(
     return "subscription_required";
   }
 
-  const { error } = await service
+  const { data: inserted, error } = await service
     .from("site_ai_launch_entitlements")
     .upsert(
       {
@@ -160,9 +160,14 @@ async function grantAiLaunch(
         updated_at: new Date().toISOString()
       },
       { onConflict: "external_reference", ignoreDuplicates: true }
-    );
+    )
+    .select("id");
   if (error) throw error;
-  return "granted";
+  // Stripe may deliver the same event repeatedly. A conflict is a no-op,
+  // not a new grant, and must never reset operations_used.
+  return Array.isArray(inserted) && inserted.length === 0
+    ? "already_granted"
+    : "granted";
 }
 
 async function bindAndApply(
