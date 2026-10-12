@@ -105,7 +105,10 @@ export default function PlansPage() {
       if (!latestBilling) {
         throw new Error(tr("Impossible de vérifier votre facturation. Réessayez.", "Unable to verify your billing. Please retry."));
       }
-      if (selectedSiteRef.current !== targetSiteId) return;
+      if (selectedSiteRef.current !== targetSiteId) {
+        setCheckoutBusy("");
+        return;
+      }
       setBillingState(latestBilling);
       if (latestBilling.hasStripeSubscription) {
         await openStripeBillingPortal(targetSiteId);
@@ -127,7 +130,10 @@ export default function PlansPage() {
     setCheckoutBusy("ai_launch");
     setCheckoutMessage("");
     try {
-      if (selectedSiteRef.current !== targetSiteId) return;
+      if (selectedSiteRef.current !== targetSiteId) {
+        setCheckoutBusy("");
+        return;
+      }
       await startAiLaunchCheckout(targetSiteId);
     } catch (error) {
       setCheckoutMessage(error instanceof Error ? error.message : tr("Paiement Création IA indisponible.", "AI Launch checkout unavailable."));
