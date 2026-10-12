@@ -30,7 +30,7 @@ import {
 import type { AnalyticsOpportunity } from "../../lib/site-analytics";
 
 type GrowthState = "loading" | "guest" | "locked" | "no_site" | "draft" | "ready" | "error";
-type SiteOption = { id: string; slug: string; status: string; publishedAt: string | null };
+type SiteOption = { id: string; slug: string; status: string; publishedAt: string | null; bookingUrl: string };
 
 const groupLabels: Record<GrowthHealthGroupKey, { fr: string; en: string; detailFr: string; detailEn: string }> = {
   availability: {
@@ -92,7 +92,7 @@ export default function GrowthPage() {
       }
 
       const owned = await getMySites();
-      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt }));
+      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt, bookingUrl: site.config.bookingUrl }));
       setSites(options);
       if (!options.length) {
         setSiteId("");
@@ -340,6 +340,15 @@ export default function GrowthPage() {
                   "Your website is not published yet. Essential is enough to finish and publish it; Growth can help optimise it afterwards."
                 )}</p>
               )}
+              <p>{sites.find(site => site.id === siteId)?.bookingUrl?.trim()
+                ? tr(
+                    "Vérification de configuration : un lien de réservation ou d’action est renseigné. Son fonctionnement et ses performances ne sont pas évalués ici.",
+                    "Configuration check: a booking or action link is set. Its operation and performance have not been assessed here."
+                  )
+                : tr(
+                    "Vérification de configuration : aucun lien de réservation ou d’action n’est renseigné. Vous pouvez en ajouter un directement avec Essentiel.",
+                    "Configuration check: no booking or action link is set. You can add one directly with Essential."
+                  )}</p>
             </div>
           ) : null}
           {!betaActive ? (
