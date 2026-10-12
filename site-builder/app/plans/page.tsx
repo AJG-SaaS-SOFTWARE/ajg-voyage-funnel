@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { getMyBillingState, openStripeBillingPortal, startAiLaunchCheckout, startPlanCheckout, type BillingState } from "../../lib/billing-access";
@@ -48,9 +48,12 @@ export default function PlansPage() {
   const [checkoutMessage, setCheckoutMessage] = useState("");
   const [billingState, setBillingState] = useState<BillingState | null>(null);
 
+  const loadSequence = useRef(0);
   const load = async (selectedId?: string) => {
+    const sequence = ++loadSequence.current;
     const owned = await getMySites();
     const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
+    if (sequence !== loadSequence.current) return;
     setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
     setSiteId(site?.id || "");
     const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
@@ -61,6 +64,7 @@ export default function PlansPage() {
       getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
       site ? getMyBillingState(site.id).catch(() => null) : Promise.resolve(null)
     ]);
+    if (sequence !== loadSequence.current) return;
     setCurrent(entitlements);
     setAiAccess(access);
     setUsage(aiUsage);
@@ -77,6 +81,7 @@ export default function PlansPage() {
       .then(data => setAnnualIncludesLaunch(data?.annualIncludesLaunch === true))
       .catch(() => setAnnualIncludesLaunch(false));
     void load().catch(() => {
+      if (loadSequence.current !== 1) return;
       setCurrent(freeEntitlements);
       setAiAccess(emptyAiAccess);
       setLoaded(true);
