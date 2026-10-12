@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { CustomerErrorHelp } from "../../components/CustomerErrorHelp";
 import { useProductLocale } from "../../lib/product-i18n";
@@ -33,8 +33,10 @@ export default function DataRightsPage() {
   const [accountConfirmation, setAccountConfirmation] = useState("");
   const [busyKey, setBusyKey] = useState("");
   const [message, setMessage] = useState(tr("Chargement…", "Loading…"));
+  const [refreshSuccess, setRefreshSuccess] = useState("");
+  const [showErrorHelp, setShowErrorHelp] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const [user, ownedSites, erasureRequests] = await Promise.all([
       getCurrentUser(),
       getMySites(),
@@ -43,14 +45,14 @@ export default function DataRightsPage() {
     setEmail(user?.email || "");
     setSites(ownedSites);
     setRequests(erasureRequests);
-    setMessage("");
-  };
+  }, []);
 
   useEffect(() => {
-    void load().catch(() =>
-      setMessage(tr("Impossible de charger votre espace de données.", "Unable to load your data area."))
-    );
-  }, []);
+    void load().then(() => setMessage("")).catch(() => {
+      setShowErrorHelp(true);
+      setMessage(tr("Impossible de charger votre espace de données.", "Unable to load your data area."));
+    });
+  }, [load, tr]);
 
   const openSiteRequests = useMemo(
     () =>
@@ -73,13 +75,37 @@ export default function DataRightsPage() {
       ["requested", "processing"].includes(request.status)
   );
 
+  async function refreshAfterAction(success: string) {
+    setShowErrorHelp(false);
+    setMessage(success);
+    try {
+      await load();
+      setRefreshSuccess("");
+    } catch {
+      setRefreshSuccess(success);
+      setMessage(`${success} ${tr(
+        "L’actualisation de l’écran est indisponible. Réessayez uniquement l’actualisation ci-dessous.",
+        "The page could not refresh. Retry only the refresh below."
+      )}`);
+    }
+  }
+
+  async function retryRefresh() {
+    if (busyKey || !refreshSuccess) return;
+    setBusyKey("refresh");
+    try { await refreshAfterAction(refreshSuccess); }
+    finally { setBusyKey(""); }
+  }
+
   async function exportSite(site: RemoteSite) {
     setBusyKey("export:" + site.id);
     setMessage("");
+    setShowErrorHelp(false);
     try {
       await downloadMySiteExport(site.id);
       setMessage(`${tr("Archive de", "Archive for")} « ${site.slug} » ${tr("préparée.", "prepared.")}`);
     } catch (error) {
+      setShowErrorHelp(true);
       setMessage(error instanceof Error ? error.message : tr("Export impossible.", "Export unavailable."));
     } finally {
       setBusyKey("");
@@ -89,10 +115,12 @@ export default function DataRightsPage() {
   async function downloadRecoveryJson(site: RemoteSite) {
     setBusyKey("recovery-export:" + site.id);
     setMessage("");
+    setShowErrorHelp(false);
     try {
       await downloadMySiteRecoveryJson(site.id);
       setMessage(tr("Fichier de restauration préparé.", "Recovery file prepared."));
     } catch (error) {
+      setShowErrorHelp(true);
       setMessage(error instanceof Error ? error.message : tr("Export de restauration impossible.", "Recovery export unavailable."));
     } finally {
       setBusyKey("");
@@ -100,8 +128,10 @@ export default function DataRightsPage() {
   }
 
   async function restoreSiteConfig(site: RemoteSite, file: File) {
+    if (busyKey || refreshSuccess) return;
     setBusyKey("restore:" + site.id);
     setMessage("");
+    setShowErrorHelp(false);
     try {
       if (file.size > 2 * 1024 * 1024) {
         throw new Error(tr("Le fichier de restauration dépasse 2 Mo.", "The recovery file exceeds 2 MB."));
@@ -122,12 +152,12 @@ export default function DataRightsPage() {
       );
       if (!confirmed) return;
       await saveMySite(preview.config, false, site.id);
-      setMessage(tr(
+      await refreshAfterAction(tr(
         "Configuration restaurée dans un brouillon. Ouvrez ELTARA, contrôlez l’aperçu puis republiez si tout est correct.",
         "Configuration restored into a draft. Open ELTARA, review the preview, then republish if everything is correct."
       ));
-      await load();
     } catch (error) {
+      setShowErrorHelp(true);
       const code = error instanceof Error ? error.message : "";
       const friendly =
         code === "recovery_site_mismatch"
@@ -146,6 +176,7 @@ export default function DataRightsPage() {
   }
 
   async function requestSiteErasure(site: RemoteSite) {
+    if (busyKey || refreshSuccess) return;
     const confirmation = siteConfirmations[site.id]?.trim() || "";
     if (confirmation !== site.slug) return;
     if (
@@ -156,17 +187,18 @@ export default function DataRightsPage() {
 
     setBusyKey("site:" + site.id);
     setMessage("");
+    setShowErrorHelp(false);
     try {
       await requestDataErasure({
         scope: "site",
         siteId: site.id,
         confirmation
       });
-      setMessage(
+      await refreshAfterAction(
         tr("Demande enregistrée. Le site est retiré du public et ses nouvelles mutations sont bloquées pendant le traitement.", "Request recorded. The website has been removed from public access and new changes are blocked while it is processed.")
       );
-      await load();
     } catch (error) {
+      setShowErrorHelp(true);
       setMessage(
         error instanceof Error
           ? error.message
@@ -178,6 +210,7 @@ export default function DataRightsPage() {
   }
 
   async function requestAccountErasure() {
+    if (busyKey || refreshSuccess) return;
     if (!email || accountConfirmation.trim().toLowerCase() !== email.toLowerCase()) {
       return;
     }
@@ -189,16 +222,17 @@ export default function DataRightsPage() {
 
     setBusyKey("account");
     setMessage("");
+    setShowErrorHelp(false);
     try {
       await requestDataErasure({
         scope: "account",
         confirmation: accountConfirmation.trim()
       });
-      setMessage(
+      await refreshAfterAction(
         tr("Demande de suppression du compte enregistrée. Vos sites sont retirés du public pendant le traitement.", "Account deletion request recorded. Your websites have been removed from public access while the request is processed.")
       );
-      await load();
     } catch (error) {
+      setShowErrorHelp(true);
       setMessage(
         error instanceof Error
           ? error.message
@@ -217,7 +251,10 @@ export default function DataRightsPage() {
       description={tr("Exportez vos données ou demandez leur effacement. Une demande d’effacement reste distincte d’un impayé : un problème de paiement ne supprime jamais automatiquement vos sites.", "Export your data or request erasure. An erasure request is separate from a failed payment: payment issues never automatically delete your websites.")}
     >
       {message ? <p className="account-note" role="status">{message}</p> : null}
-      <CustomerErrorHelp message={message} />
+      {refreshSuccess ? <button type="button" className="button secondary" disabled={Boolean(busyKey)} onClick={() => void retryRefresh()}>
+        {tr("Réessayer l’actualisation", "Retry refresh")}
+      </button> : null}
+      <CustomerErrorHelp message={showErrorHelp ? message : null} />
 
       <section className="panel data-rights-panel">
         <div>
@@ -286,7 +323,7 @@ export default function DataRightsPage() {
                 <input
                   type="file"
                   accept="application/json,.json"
-                  disabled={busyKey === "restore:" + site.id}
+                  disabled={Boolean(busyKey || refreshSuccess)}
                   onChange={(event) => {
                     const file = event.currentTarget.files?.[0];
                     if (file) void restoreSiteConfig(site, file);
@@ -335,7 +372,7 @@ export default function DataRightsPage() {
                       type="button"
                       className="button secondary"
                       disabled={
-                        busyKey === "site:" + site.id ||
+                        Boolean(busyKey || refreshSuccess) ||
                         siteConfirmations[site.id]?.trim() !== site.slug
                       }
                       onClick={() => void requestSiteErasure(site)}
@@ -381,7 +418,7 @@ export default function DataRightsPage() {
               type="button"
               className="button secondary"
               disabled={
-                busyKey === "account" ||
+                Boolean(busyKey || refreshSuccess) ||
                 !email ||
                 accountConfirmation.trim().toLowerCase() !== email.toLowerCase()
               }
