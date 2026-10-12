@@ -66,3 +66,10 @@ test('detached BUILD requires an unexpired Stripe-purchased entitlement',()=>{
 test('webhook uses settled one-time payment predicate',()=>{
   assert.match(webhook,/paidAiLaunchCheckout\(session\)/);
 });
+
+test('duplicate Stripe events cannot reset an already consumed BUILD entitlement',()=>{
+  assert.match(webhook,/onConflict: "external_reference", ignoreDuplicates: true/);
+  assert.match(webhook,/\.select\("id"\)/);
+  assert.match(webhook,/inserted\.length === 0/);
+  assert.match(webhook,/"already_granted"/);
+});
