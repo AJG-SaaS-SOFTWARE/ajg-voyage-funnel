@@ -96,7 +96,7 @@ export async function downloadMySiteRecoveryJson(siteId?: string) {
   const site = await getMySite(siteId);
   if (!site) throw new Error(tr("Site introuvable.", "Website not found."));
   const response = await fetch(
-    `/api/export/site?siteId=${encodeURIComponent(site.id)}&format=json`,
+    `/api/export/site?siteId=${encodeURIComponent(site.id)}&format=recovery`,
     { headers: { Authorization: `Bearer ${session.access_token}`, "X-AJG-Locale": locale }, cache: "no-store" }
   );
   if (!response.ok) {

@@ -48,9 +48,10 @@ test("a failure after the first successful page cannot return a partial recovery
 
 function route(failure, records = [], draftRead = { data: null, error: null }) {
   const reads = [];
+  let mediaReads = 0;
   class NextResponse extends Response { static json(value, options) { return new NextResponse(JSON.stringify(value), options); } }
   const service = {
-    storage: { from: () => ({ list: async () => ({ data: [], error: null }) }) },
+    storage: { from: () => ({ list: async () => { mediaReads++; return { data: [], error: null }; } }) },
     from(table) {
       const orders = [];
       return {
@@ -95,10 +96,11 @@ function route(failure, records = [], draftRead = { data: null, error: null }) {
     "next/server": { NextResponse },
     "@supabase/supabase-js": { createClient: (_url, key) => key === "synthetic_service" ? service : user },
     "../../../../lib/recovery-records": { readRecoveryRecords },
+    "../../../../lib/recovery-snapshot": load("../lib/recovery-snapshot.ts"),
     "../../../../lib/recovery-archive": load("../lib/recovery-archive.ts", { "node:stream": stream, "node:zlib": zlib }),
     "../../../../lib/server-locale": { requestProductLocale: request => request.headers.get("x-ajg-locale") === "en" ? "en" : "fr", localize: (locale, fr, en) => locale === "en" ? en : fr }
   }, { NEXT_PUBLIC_SUPABASE_URL: "https://example.test", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "synthetic_public", SUPABASE_SECRET_KEY: "synthetic_service" });
-  return { ...loaded, reads };
+  return { ...loaded, reads, mediaReads: () => mediaReads };
 }
 const request = (format = "json", locale = "fr") => new Request(`https://example.test/api/export/site?siteId=site-owned&format=${format}`, { headers: { authorization: "Bearer synthetic", "x-ajg-locale": locale } });
 
@@ -159,4 +161,29 @@ test("a draft read failure or malformed stored draft blocks both exports with a 
       assert.equal(JSON.stringify(await response.json()).includes("private marker"), false);
     }
   }
+});
+
+test("compact recovery skips unrelated collections and still restores the saved draft", async () => {
+  const api = route("contact_messages", [{ id: "unrelated" }], {
+    data: { config: { heroTitle: "Latest draft", language: "en" }, updated_at: "2026-10-12T12:00:00Z" }, error: null
+  });
+  const response = await api.GET(request("recovery"));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.scope, "configuration");
+  assert.equal(body.domains, undefined);
+  assert.equal(body.travelJournals, undefined);
+  assert.equal(body.contactMessages, undefined);
+  assert.equal(body.media, undefined);
+  assert.deepEqual(api.reads, []);
+  assert.equal(api.mediaReads(), 0);
+  const restored = siteConfigFromRecoveryExport(body, { id: "site-owned", slug: "synthetic" });
+  assert.equal(restored.config.heroTitle, "Latest draft");
+  assert.equal(restored.source, "draft");
+});
+
+test("compact recovery still fails safely if the saved draft cannot be read", async () => {
+  const response = await route(null, [], { data: null, error: { message: "private marker" } }).GET(request("recovery"));
+  assert.equal(response.status, 503);
+  assert.equal(JSON.stringify(await response.json()).includes("private marker"), false);
 });

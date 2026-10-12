@@ -539,7 +539,7 @@ export async function POST(request: NextRequest) {
     }, { onConflict: "site_id" });
     if (recoveryDraftError) throw recoveryDraftError;
     const recoveryJsonResponse = await fetch(
-      new URL(`/api/export/site?siteId=${encodeURIComponent(siteId)}&format=json`, request.url),
+      new URL(`/api/export/site?siteId=${encodeURIComponent(siteId)}&format=recovery`, request.url),
       {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
