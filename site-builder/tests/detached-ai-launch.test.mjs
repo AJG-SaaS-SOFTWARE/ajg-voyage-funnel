@@ -232,3 +232,14 @@ test('plans pins billing requests to selected site and blocks concurrent switche
   assert.match(plans,/await openStripeBillingPortal\(targetSiteId\)/);
   assert.match(plans,/paymentInProgressRef\.current = false/);
 });
+
+test('AI Launch checkout shares the multi-site in-flight payment lock',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  const start=plans.indexOf('async function buyAiLaunch()');
+  const end=plans.indexOf('const betaExpiryLabel',start);
+  const body=plans.slice(start,end);
+  assert.match(body,/paymentInProgressRef\.current/);
+  assert.match(body,/const targetSiteId = siteId/);
+  assert.match(body,/await startAiLaunchCheckout\(targetSiteId\)/);
+  assert.match(body,/finally \{/);
+});
