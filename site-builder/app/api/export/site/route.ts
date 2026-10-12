@@ -128,11 +128,22 @@ export async function GET(request: Request) {
     return out;
   }
 
+  let draft: { config: unknown; updated_at: string | null } | null;
   let media: ExportMedia[];
   let domains: unknown[];
   let journals: unknown[];
   let contacts: unknown[];
   try {
+    const { data: ownedDraft, error: draftError } = await userClient
+      .from("site_drafts")
+      .select("config,updated_at")
+      .eq("site_id", site.id)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (draftError || (ownedDraft && (!ownedDraft.config || typeof ownedDraft.config !== "object" || Array.isArray(ownedDraft.config)))) {
+      throw new Error("recovery_draft_unavailable");
+    }
+    draft = ownedDraft;
     media = [
       ...await walk("site-media", prefix, true),
       ...await walk("site-private-media", prefix, false)
@@ -173,6 +184,8 @@ export async function GET(request: Request) {
       slug: site.slug,
       status: site.status,
       updatedAt: site.updated_at,
+      draftConfig: draft?.config ?? null,
+      draftUpdatedAt: draft?.updated_at ?? null,
       config: {
         slug: site.slug,
         firstName: site.first_name,
@@ -208,8 +221,8 @@ export async function GET(request: Request) {
         ...commonPayload,
         media,
         note: tr(
-          "Export de récupération : configuration, domaines et inventaire des médias conservés. Les médias publics incluent leur URL ; les médias privés restent référencés sans URL publique et sont conservés pour récupération serveur.",
-          "Recovery export: website configuration, domains and retained media inventory. Public media includes its URL; private media remains referenced without a public URL and is retained for server-side recovery."
+          "Export de récupération : configuration publiée, brouillon éventuel, domaines et inventaire des médias conservés. Les médias publics incluent leur URL ; les médias privés restent référencés sans URL publique et sont conservés pour récupération serveur.",
+          "Recovery export: published configuration, any saved draft, domains and retained media inventory. Public media includes its URL; private media remains referenced without a public URL and is retained for server-side recovery."
         )
       },
       { headers: { "Cache-Control": "private, no-store" } }
@@ -241,8 +254,8 @@ export async function GET(request: Request) {
         tr("ELTARA - archive de récupération", "ELTARA - recovery archive"),
         "",
         tr(
-          "ajg-builder-export.json contient la configuration du site, les domaines, les carnets, les messages de contact et l'inventaire des médias.",
-          "ajg-builder-export.json contains the website configuration, domains, journals, contact messages and media inventory."
+          "ajg-builder-export.json contient la configuration publiée, le brouillon éventuel, les domaines, les carnets, les messages de contact et l'inventaire des médias.",
+          "ajg-builder-export.json contains the published configuration, any saved draft, domains, journals, contact messages and media inventory."
         ),
         tr("media/public contient les fichiers déjà publiables.", "media/public contains files already available for public use."),
         tr("media/private contient les fichiers privés de la bibliothèque utilisateur.", "media/private contains private files from the user library."),
