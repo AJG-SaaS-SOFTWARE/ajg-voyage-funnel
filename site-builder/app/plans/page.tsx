@@ -89,7 +89,14 @@ export default function PlansPage() {
     setCheckoutBusy(key);
     setCheckoutMessage("");
     try {
-      if (billingState?.hasStripeSubscription) {
+      // Never choose Checkout from potentially stale React state: a subscription
+      // may have been activated since the page was loaded or changed site.
+      const latestBilling = await getMyBillingState(siteId);
+      if (!latestBilling) {
+        throw new Error(tr("Impossible de vérifier votre facturation. Réessayez.", "Unable to verify your billing. Please retry."));
+      }
+      setBillingState(latestBilling);
+      if (latestBilling.hasStripeSubscription) {
         await openStripeBillingPortal(siteId);
         return;
       }
