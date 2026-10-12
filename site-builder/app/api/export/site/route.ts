@@ -6,6 +6,7 @@ import {
   recoveryMediaArchivePath,
   type RecoveryTarEntry
 } from "../../../../lib/recovery-archive";
+import { readRecoveryRecords } from "../../../../lib/recovery-records";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
 
 export const runtime = "nodejs";
@@ -127,24 +128,43 @@ export async function GET(request: Request) {
     return out;
   }
 
-  const media = [
-    ...await walk("site-media", prefix, true),
-    ...await walk("site-private-media", prefix, false)
-  ];
-  const { data: domains } = await service
-    .from("domains")
-    .select("hostname,kind,verification_status,is_primary")
-    .eq("site_id", site.id);
-  const { data: journals } = await service
-    .from("travel_journals")
-    .select("slug,title,excerpt,body,status,published_at,updated_at")
-    .eq("site_id", site.id)
-    .order("updated_at", { ascending: false });
-  const { data: contacts } = await service
-    .from("contact_messages")
-    .select("sender_name,sender_email,subject,message,consent_at,created_at")
-    .eq("site_id", site.id)
-    .order("created_at", { ascending: false });
+  let media: ExportMedia[];
+  let domains: unknown[];
+  let journals: unknown[];
+  let contacts: unknown[];
+  try {
+    media = [
+      ...await walk("site-media", prefix, true),
+      ...await walk("site-private-media", prefix, false)
+    ];
+    [domains, journals, contacts] = await Promise.all([
+      readRecoveryRecords((from, to) => service
+        .from("domains")
+        .select("hostname,kind,verification_status,is_primary")
+        .eq("site_id", site.id)
+        .order("id", { ascending: true })
+        .range(from, to)),
+      readRecoveryRecords((from, to) => service
+        .from("travel_journals")
+        .select("slug,title,excerpt,body,status,published_at,updated_at")
+        .eq("site_id", site.id)
+        .order("updated_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, to)),
+      readRecoveryRecords((from, to) => service
+        .from("contact_messages")
+        .select("sender_name,sender_email,subject,message,consent_at,created_at")
+        .eq("site_id", site.id)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, to))
+    ]);
+  } catch {
+    return NextResponse.json(
+      { error: tr("Impossible de préparer un export complet pour le moment. Réessayez plus tard.", "Unable to prepare a complete export right now. Please try again later.") },
+      { status: 503, headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
 
   const commonPayload = {
     exportedAt: new Date().toISOString(),
@@ -176,9 +196,9 @@ export async function GET(request: Request) {
         complianceProfile: site.compliance_profile
       }
     },
-    domains: domains || [],
-    travelJournals: journals || [],
-    contactMessages: contacts || []
+    domains,
+    travelJournals: journals,
+    contactMessages: contacts
   };
 
   if (requestedFormat === "json") {
