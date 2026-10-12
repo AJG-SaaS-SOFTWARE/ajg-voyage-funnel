@@ -243,3 +243,9 @@ test('AI Launch checkout shares the multi-site in-flight payment lock',()=>{
   assert.match(body,/await startAiLaunchCheckout\(targetSiteId\)/);
   assert.match(body,/finally \{/);
 });
+
+test('stale site early exit clears both payment loading indicators',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  const condition='if (selectedSiteRef.current !== targetSiteId) {\n        setCheckoutBusy("");\n        return;\n      }';
+  assert.equal(plans.split(condition).length-1,2);
+});
