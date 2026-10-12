@@ -326,6 +326,20 @@ export default function GrowthPage() {
                 "Essentiel maintient votre site en ligne et vous laisse le modifier. Growth ajoute la surveillance structurée, les recommandations et les évolutions globales.",
                 "Essential keeps your website online and editable. Growth adds structured monitoring, recommendations and full-site evolution."
               )}</p>
+          {!betaActive ? (
+            <div className="growth-preview" aria-label={tr("Exemples de recommandations Growth", "Example Growth recommendations")}>
+              <p className="eyebrow">{tr("Aperçu illustratif · pas un diagnostic de votre site", "Illustrative preview · not a diagnosis of your website")}</p>
+              <ul>
+                <li>{tr("SEO : vérifier les titres et descriptions des pages importantes.", "SEO: review titles and descriptions on key pages.")}</li>
+                <li>{tr("Conversion : rendre l’appel à l’action principal immédiatement visible.", "Conversion: make the main call to action immediately visible.")}</li>
+                <li>{tr("Contenu : demander à l’IA conceptrice une révision globale du site.", "Content: ask the AI architect for a full website revision.")}</li>
+              </ul>
+              <p>{tr(
+                "Ces pistes sont des exemples, sans analyse de vos données ni appel IA facturé. Growth fournit ensuite des contrôles et recommandations adaptés à votre site.",
+                "These are examples, without analysing your data or triggering paid AI. Growth then provides checks and recommendations tailored to your website."
+              )}</p>
+            </div>
+          ) : null}
           {betaActive ? (
             <button className="button primary" type="button" onClick={() => changeBetaExperienceMode("growth")}>
               {tr("Tester Growth maintenant", "Test Growth now")}
