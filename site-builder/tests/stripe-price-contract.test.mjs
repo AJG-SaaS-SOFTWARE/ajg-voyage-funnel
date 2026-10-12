@@ -112,3 +112,43 @@ test("callers cannot corrupt the cached checkout readiness result", async () => 
   second[0].detail = "modified";
   assert.notEqual((await audit.auditStripeRuntimeCached())[0].detail, "modified");
 });
+
+test("simultaneous checkout audits share six provider reads and receive isolated results", async () => {
+  let calls = 0;
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const valid = provider();
+  const audit = load(async (...args) => { calls++; await gate; return valid(...args); });
+  const requests = Array.from({ length: 20 }, () => audit.auditStripeRuntimeCached());
+  assert.equal(calls, 6);
+  release();
+  const results = await Promise.all(requests);
+  assert.equal(calls, 6);
+  assert.equal(results.every(items => items.length === 6 && items.every(item => item.ok)), true);
+  results[0][0].ok = false;
+  results[0].pop();
+  assert.equal(results[1].length, 6);
+  assert.equal(results[1][0].ok, true);
+  assert.equal((await audit.auditStripeRuntimeCached())[0].ok, true);
+  assert.equal(calls, 6);
+});
+
+test("a shared failed audit stays blocking and allows one new audit after its short TTL", async () => {
+  let now = 1000;
+  let calls = 0;
+  let failing = true;
+  const valid = provider();
+  const audit = load(async (...args) => {
+    calls++;
+    if (failing) throw new Error("temporary outage");
+    return valid(...args);
+  }, { now: () => now });
+  const failed = await Promise.all(Array.from({ length: 10 }, () => audit.auditStripeRuntimeCached()));
+  assert.equal(failed.every(items => items.every(item => !item.ok)), true);
+  assert.equal(calls, 6);
+  now += 10000;
+  failing = false;
+  const recovered = await Promise.all(Array.from({ length: 10 }, () => audit.auditStripeRuntimeCached()));
+  assert.equal(recovered.every(items => items.every(item => item.ok)), true);
+  assert.equal(calls, 12);
+});
