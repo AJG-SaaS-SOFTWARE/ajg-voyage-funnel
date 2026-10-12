@@ -132,3 +132,12 @@ test('Essential Growth preview uses owned site action link without invoking paid
   assert.match(growth,/aucun lien de réservation ou d’action n’est renseigné/);
   assert.match(growth,/Son fonctionnement et ses performances ne sont pas évalués ici/);
 });
+
+test('Essential content preview only checks configured text presence, without an SEO score',()=>{
+  const growth=fs.readFileSync(new URL('../app/growth/page.tsx',import.meta.url),'utf8');
+  assert.match(growth,/heroTitle: site\.config\.heroTitle/);
+  assert.match(growth,/aboutText: site\.config\.aboutText/);
+  assert.match(growth,/Sa qualité SEO n’est pas évaluée ici/);
+  assert.match(growth,/Vous pouvez le compléter avec Essentiel/);
+  assert.match(growth,/Sa pertinence n’est pas analysée ici/);
+});
