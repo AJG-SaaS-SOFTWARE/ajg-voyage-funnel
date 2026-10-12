@@ -194,16 +194,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const hasRemainingLaunch = (launchRows || []).some((row: any) => {
-      const total = row.operations_total;
-      const used = row.operations_used;
-      return Number.isSafeInteger(total) && Number.isSafeInteger(used) &&
-        total > 0 && used >= 0 && used < total &&
-        (row.expires_at === null ||
-          (typeof row.expires_at === "string" &&
-            Number.isFinite(Date.parse(row.expires_at)) &&
-            Date.parse(row.expires_at) > Date.now()));
-    });
+    // Fail closed if any active entitlement is unreadable: never risk selling
+    // a second BUILD package merely because a malformed row was ignored.
+    const malformedLaunch = (launchRows || []).some((row: any) =>
+      !Number.isSafeInteger(row.operations_total) ||
+      !Number.isSafeInteger(row.operations_used) ||
+      row.operations_total < 1 || row.operations_used < 0 ||
+      row.operations_used > row.operations_total ||
+      (row.expires_at !== null &&
+        (typeof row.expires_at !== "string" ||
+          !Number.isFinite(Date.parse(row.expires_at))))
+    );
+    if (malformedLaunch) {
+      return NextResponse.json({
+        code: "ai_launch_entitlement_unverifiable",
+        error: tr("Impossible de vérifier un droit Création IA existant.", "An existing AI Launch entitlement cannot be verified.")
+      }, { status: 503 });
+    }
+    const hasRemainingLaunch = (launchRows || []).some((row: any) =>
+      row.operations_used < row.operations_total &&
+      (row.expires_at === null || Date.parse(row.expires_at) > Date.now())
+    );
     if (hasRemainingLaunch) {
       return NextResponse.json(
         {
