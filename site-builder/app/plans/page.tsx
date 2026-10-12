@@ -52,7 +52,7 @@ export default function PlansPage() {
     const owned = await getMySites();
     const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
     setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
-    if (site && !siteId) setSiteId(site.id);
+    setSiteId(site?.id || "");
     const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
       site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
       site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
