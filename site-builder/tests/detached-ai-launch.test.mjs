@@ -124,3 +124,11 @@ test('Growth preview uses the actual owned site publication state without paid A
   assert.match(growth,/Information réelle de votre site · sans appel IA/);
   assert.match(growth,/Essentiel suffit pour finaliser et publier/);
 });
+
+test('Essential Growth preview uses owned site action link without invoking paid AI',()=>{
+  const growth=fs.readFileSync(new URL('../app/growth/page.tsx',import.meta.url),'utf8');
+  assert.match(growth,/bookingUrl: site\.config\.bookingUrl/);
+  assert.match(growth,/bookingUrl\?\.trim\(\)/);
+  assert.match(growth,/aucun lien de réservation ou d’action n’est renseigné/);
+  assert.match(growth,/Son fonctionnement et ses performances ne sont pas évalués ici/);
+});
