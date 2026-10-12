@@ -198,30 +198,42 @@ export async function stripeRequest<T = any>(
       ? `${STRIPE_BASE_URL}${path}?${form.toString()}`
       : `${STRIPE_BASE_URL}${path}`;
 
-  const response = await fetch(url, {
-    method,
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Stripe-Version": STRIPE_API_VERSION,
-      ...(method !== "GET"
-        ? { "Content-Type": "application/x-www-form-urlencoded" }
-        : {})
-    },
-    body: method !== "GET" ? form.toString() : undefined,
-    cache: "no-store"
-  });
+  const deadline = AbortSignal.timeout(method === "GET" ? 10_000 : 20_000);
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Stripe-Version": STRIPE_API_VERSION,
+        ...(method !== "GET"
+          ? { "Content-Type": "application/x-www-form-urlencoded" }
+          : {})
+      },
+      body: method !== "GET" ? form.toString() : undefined,
+      cache: "no-store",
+      signal: deadline
+    });
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const code =
-      typeof data?.error?.code === "string"
-        ? data.error.code
-        : `stripe_http_${response.status}`;
-    const error = new Error(code);
-    (error as Error & { status?: number }).status = response.status;
+    const data = await response.json().catch(() => null);
+    if (deadline.aborted) throw new Error("stripe_request_timeout");
+    if (!response.ok) {
+      const code =
+        typeof data?.error?.code === "string"
+          ? data.error.code
+          : `stripe_http_${response.status}`;
+      const error = new Error(code);
+      (error as Error & { status?: number }).status = response.status;
+      throw error;
+    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new Error("stripe_response_invalid");
+    }
+    return data as T;
+  } catch (error) {
+    if (deadline.aborted) throw new Error("stripe_request_timeout");
+    // Never retry mutations here: a timed-out request may already have succeeded.
     throw error;
   }
-  return data as T;
 }
 
 function integrationIdentifier() {
