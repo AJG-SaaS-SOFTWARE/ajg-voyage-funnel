@@ -99,3 +99,12 @@ test('Checkout requires a confirmed readable BUILD ledger before starting paymen
   assert.match(checkout,/code: "ai_launch_ledger_unavailable"/);
   assert.ok(checkout.indexOf('code: "ai_launch_ledger_unavailable"') < checkout.indexOf('createStripeOneTimeCheckout({'));
 });
+
+test('Essential customers see a non-mandatory Growth upgrade path',()=>{
+  const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
+  assert.match(plans,/current\.planKey === "essential"/);
+  assert.match(plans,/Vous pouvez rester sur Essentiel sans limite de durée/);
+  assert.match(plans,/href="\/growth"/);
+  assert.match(plans,/beginPlanChange\("growth", "monthly"\)/);
+  assert.match(plans,/sans achat AI Launch obligatoire/);
+});
