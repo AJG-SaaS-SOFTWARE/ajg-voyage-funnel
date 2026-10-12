@@ -175,10 +175,10 @@ test('billing state lookup must scope both state and subscription to site owner'
 test('plan change refreshes billing state before choosing Checkout or Stripe portal',()=>{
   const plans=fs.readFileSync(new URL('../app/plans/page.tsx',import.meta.url),'utf8');
   const begin=plans.slice(plans.indexOf('async function beginPlanChange('),plans.indexOf('async function buyAiLaunch()'));
-  assert.match(begin,/const latestBilling = await getMyBillingState\(siteId\)/);
+  assert.match(begin,/const latestBilling = await getMyBillingState\(targetSiteId\)/);
   assert.match(begin,/if \(!latestBilling\)/);
   assert.match(begin,/if \(latestBilling\.hasStripeSubscription\)/);
-  assert.ok(begin.indexOf('getMyBillingState(siteId)') < begin.indexOf('startPlanCheckout(siteId, planKey, billingCycle)'));
+  assert.ok(begin.indexOf('getMyBillingState(targetSiteId)') < begin.indexOf('startPlanCheckout(targetSiteId, planKey, billingCycle)'));
 });
 
 test('subscription checkout blocks duplicate subscriptions in pending or failed states',()=>{
