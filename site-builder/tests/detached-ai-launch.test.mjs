@@ -62,3 +62,11 @@ test('detached BUILD requires an unexpired Stripe-purchased entitlement',()=>{
   assert.match(route,/Date\.parse\(row\.expires_at\) > nowMs/);
   assert.match(route,/\|\| !hasPaidLaunch/);
 });
+
+test('webhook grants BUILD only after explicit settled one-time payment',()=>{
+  const webhook=fs.readFileSync(new URL('../app/api/billing/stripe-webhook/route.ts',import.meta.url),'utf8');
+  assert.match(webhook,/const paid = session\?\.payment_status === "paid"/);
+  assert.match(webhook,/const oneTimePayment = session\?\.mode === "payment"/);
+  assert.match(webhook,/if \(isAiLaunch && oneTimePayment && paid && siteId && ownerId\)/);
+  assert.doesNotMatch(webhook,/session\?\.payment_status === "paid" \|\|\s*event\.type === "checkout\.session\.async_payment_succeeded"/);
+});
