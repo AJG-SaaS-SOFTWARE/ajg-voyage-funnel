@@ -140,8 +140,8 @@ export default function PlansPage() {
       eyebrow={tr("BUILD · RUN · GROW", "BUILD · RUN · GROW")}
       title={tr("Mon offre", "My plan")}
       description={tr(
-        "La création complète du site est un service BUILD ponctuel. Essentiel assure le RUN du site. Growth ajoute le pilotage et l'amélioration continue.",
-        "Full website creation is a one-time BUILD service. Essential covers website RUN. Growth adds ongoing management and improvement."
+        "Commencez directement avec Essentiel ou Growth. Essentiel publie et héberge votre site ; Growth ajoute l’IA conceptrice pour le faire évoluer. La création initiale complète par IA est une option distincte.",
+        "Start directly with Essential or Growth. Essential publishes and hosts your site; Growth adds the AI architect to improve it over time. Full initial AI site creation is a separate option."
       )}
     >
       {sites.length > 1 ? (
@@ -328,7 +328,7 @@ export default function PlansPage() {
           <p className="plan-price">15 € <small>/ {tr("mois", "month")}</small></p>
           <p className="annual-price">{tr("ou", "or")} 150 € / {tr("an", "year")} · 1 {tr("site", "website")}</p>
           <ul>
-            <li>{tr("Hébergement et publication", "Hosting and publishing")}</li>
+            <li>{tr("Hébergement et publication, sans achat AI Launch obligatoire", "Hosting and publishing, no mandatory AI Launch purchase")}</li>
             <li>{tr("Domaine personnalisé", "Custom domain")}</li>
             <li>{tr("Éditeur complet", "Full editor")}</li>
             <li>{tr("IA rédactionnelle légère", "Light AI writing assistance")}</li>
@@ -358,8 +358,8 @@ export default function PlansPage() {
             <li>{tr("AI Website Manager", "AI Website Manager")}</li>
             <li>{tr("Diagnostics et recommandations continues", "Continuous diagnostics and recommendations")}</li>
             <li>{tr("SEO / AEO et conversion", "SEO / AEO and conversion")}</li>
-            <li>{tr("Révisions globales du site par IA", "AI-powered global website revisions")}</li>
-            <li>{annualIncludesLaunch ? tr("Création IA initiale incluse avec Growth annuel", "Initial AI Launch included with annual Growth") : tr("Création IA disponible séparément : 49 € une fois", "AI Launch available separately: €49 once")}</li>
+            <li>{tr("IA conceptrice : révisions globales du site existant", "AI architect: full revisions of an existing site")}</li>
+            <li>{annualIncludesLaunch ? tr("Création initiale IA incluse avec Growth annuel ; Growth mensuel : option AI Launch à 49 €", "Initial AI site creation included with annual Growth; monthly Growth: optional €49 AI Launch") : tr("Création initiale complète par IA : option AI Launch à 49 €", "Full initial AI site creation: optional €49 AI Launch")}</li>
           </ul>
           <p className="plan-status">
             {betaAccess.active
