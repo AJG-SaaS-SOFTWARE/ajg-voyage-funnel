@@ -108,3 +108,11 @@ test('Essential customers see a non-mandatory Growth upgrade path',()=>{
   assert.match(plans,/beginPlanChange\("growth", "monthly"\)/);
   assert.match(plans,/sans achat AI Launch obligatoire/);
 });
+
+test('Growth locked state offers honest illustrative preview without calling AI',()=>{
+  const growth=fs.readFileSync(new URL('../app/growth/page.tsx',import.meta.url),'utf8');
+  assert.match(growth,/Aperçu illustratif · pas un diagnostic de votre site/);
+  assert.match(growth,/sans analyse de vos données ni appel IA facturé/);
+  assert.match(growth,/state === "locked"/);
+  assert.match(growth,/!betaActive \? \(/);
+});
