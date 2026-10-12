@@ -9,7 +9,7 @@ const code = ts.transpileModule(fs.readFileSync(new URL('../lib/site-unit-econom
 }).outputText;
 const moduleRef = { exports: {} };
 new Function('require', 'module', 'exports', code)(require, moduleRef, moduleRef.exports);
-const { calculateSiteMonthEconomics } = moduleRef.exports;
+const { calculateSiteMonthEconomics, siteCostRiskDecision } = moduleRef.exports;
 const base = {
   revenueExVatCents: 1500, paymentFeesCents: 48, hostingCents: 75,
   storageCents: 15, bandwidthCents: 10, backupsCents: 20, mediaCents: 0,
@@ -40,4 +40,16 @@ test('refuses absent exchange evidence, negative and fractional costs', () => {
   assert.throws(() => calculateSiteMonthEconomics({ ...base, hostingCents: -1 }, fx), /invalid_hostingCents/);
   assert.throws(() => calculateSiteMonthEconomics({ ...base, paymentFeesCents: 3.4 }, fx), /invalid_paymentFeesCents/);
   assert.throws(() => calculateSiteMonthEconomics({ ...base, aiUsdMicros: -1 }, fx), /invalid_usd_micros/);
+});
+
+test('a malformed calendar date is rejected', () => {
+  assert.throws(() => calculateSiteMonthEconomics(base, { ...fx, effectiveDate: '2026-02-31' }), /invalid_fx_rate/);
+});
+test('publishing without RUN is blocked while existing draft edits remain available', () => {
+  assert.equal(siteCostRiskDecision({ subscriptionActive: false, operation: 'publish', forecastMarginPercent: 90, providerSpendUncertain: false }), 'subscription_required');
+  assert.equal(siteCostRiskDecision({ subscriptionActive: false, operation: 'edit', forecastMarginPercent: null, providerSpendUncertain: true }), 'allow');
+});
+test('uncertain AI and low margin trigger review rather than blind spending', () => {
+  assert.equal(siteCostRiskDecision({ subscriptionActive: true, operation: 'ai', forecastMarginPercent: 90, providerSpendUncertain: true }), 'review_costs');
+  assert.equal(siteCostRiskDecision({ subscriptionActive: true, operation: 'ai', forecastMarginPercent: 60, providerSpendUncertain: false }), 'budget_risk');
 });
