@@ -192,7 +192,7 @@ test('subscription Stripe Checkout carries stable idempotency per client attempt
   assert.match(stripe,/Idempotency-Key/);
   assert.match(stripe,/subscriptionCheckoutIdempotencyKey/);
   assert.match(stripe,/idempotencyKey: subscriptionCheckoutIdempotencyKey/);
-  assert.match(billing,/pendingSubscriptionAttempts\.get\(intent\)/);
+  assert.match(billing,/pendingSubscriptionAttempts\.get\(intent\)/);\n  assert.match(billing,/if \(pending\) return pending/);\n  assert.match(billing,/\.finally\(\(\) =>/);
   assert.match(billing,/checkoutAttemptId/);
   assert.match(checkout,/code: "checkout_attempt_required"/);
   assert.match(checkout,/attemptId: checkoutAttemptId/);
