@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     .from("site_subscriptions")
     .select("provider,provider_customer_id")
     .eq("site_id", site.id)
+    .eq("owner_id", auth.user.id)
     .maybeSingle();
 
   if (error) {
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          tr("Aucun compte Stripe n’est encore rattaché à ce site. Lancez d’abord la souscription Pro.", "No Stripe account is linked to this website yet. Start the Pro subscription first.")
+          tr("Aucun compte Stripe n’est encore rattaché à ce site. Souscrivez d’abord une offre Essentiel ou Growth.", "No Stripe account is linked to this website yet. Subscribe to Essential or Growth first.")
       },
       { status: 409 }
     );
