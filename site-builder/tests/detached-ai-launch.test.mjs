@@ -251,3 +251,10 @@ test('stale site early exit clears both payment loading indicators',()=>{
   const condition='if (selectedSiteRef.current !== targetSiteId) {\n        setCheckoutBusy("");\n        return;\n      }';
   assert.equal(plans.split(condition).length-1,2);
 });
+
+test('client and server agree which Stripe statuses require the existing-account portal',()=>{
+  const billing=fs.readFileSync(new URL('../lib/billing-access.ts',import.meta.url),'utf8');
+  const statuses='["active", "trialing", "past_due", "incomplete", "unpaid", "paused"]';
+  assert.equal(billing.split(statuses).length-1,2);
+  assert.ok(checkout.includes(statuses+'.includes(current.status)'));
+});
