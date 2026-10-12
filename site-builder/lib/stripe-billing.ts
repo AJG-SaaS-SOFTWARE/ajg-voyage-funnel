@@ -273,7 +273,12 @@ export async function createStripeSubscriptionCheckout(input: {
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
       client_reference_id: input.siteId,
-      integration_identifier: integrationIdentifier(),
+      integration_identifier: input.attemptId
+        ? "ajg_builder_" + subscriptionCheckoutIdempotencyKey({
+            siteId: input.siteId, ownerId: input.ownerId,
+            priceId: input.priceId, attemptId: input.attemptId
+          }).slice(0, 16)
+        : integrationIdentifier(),
       billing_address_collection: "required",
       tax_id_collection: { enabled: true, required: "if_supported" },
       ...(process.env.AJG_STRIPE_TAX_ENABLED?.trim().toLowerCase() === "true"
