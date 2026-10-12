@@ -89,7 +89,7 @@ export default function PlansPage() {
   }, []);
 
   async function beginPlanChange(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
-    if (!siteId || betaAccess.active) return;
+    if (!siteId || !loaded || !billingState || betaAccess.active) return;
     const key = `${planKey}:${billingCycle}`;
     setCheckoutBusy(key);
     setCheckoutMessage("");
@@ -160,7 +160,7 @@ export default function PlansPage() {
         <section className="panel">
           <label>
             {tr("Site", "Website")}
-            <select value={siteId} onChange={(event) => { setSiteId(event.target.value); void load(event.target.value); }}>
+            <select value={siteId} onChange={(event) => { setLoaded(false); setBillingState(null); setCheckoutMessage(""); setSiteId(event.target.value); void load(event.target.value).catch(() => { setCheckoutMessage(tr("Impossible de charger ce site. Réessayez.", "Unable to load this website. Please retry.")); }); }}>
               {sites.map((site) => <option key={site.id} value={site.id}>{site.slug}</option>)}
             </select>
           </label>
