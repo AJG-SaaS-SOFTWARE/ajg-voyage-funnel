@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { siteConfigFromRecoveryExport } from "../../../../lib/site-recovery";
 import { preferredPublishedRootDomain } from "../../../../lib/published-domain";
 
 export const runtime = "nodejs";
@@ -530,6 +531,31 @@ export async function POST(request: NextRequest) {
     });
 
     currentStage = "export";
+    const draftMarker = `${marker} saved draft`;
+    const { error: recoveryDraftError } = await userClient.from("site_drafts").upsert({
+      site_id: siteId,
+      owner_id: user.id,
+      config: { heroTitle: draftMarker, language: locale }
+    }, { onConflict: "site_id" });
+    if (recoveryDraftError) throw recoveryDraftError;
+    const recoveryJsonResponse = await fetch(
+      new URL(`/api/export/site?siteId=${encodeURIComponent(siteId)}&format=json`, request.url),
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(20000)
+      }
+    );
+    const recoveryJson = await recoveryJsonResponse.json();
+    if (!recoveryJsonResponse.ok || recoveryJson?.site?.config?.heroTitle !== republishMarker ||
+      recoveryJson?.site?.draftConfig?.heroTitle !== draftMarker) {
+      throw new Error("Recovery export did not preserve published content and saved draft separately.");
+    }
+    const restoredDraft = siteConfigFromRecoveryExport(recoveryJson, { id: siteId, slug });
+    if (restoredDraft.source !== "draft" || restoredDraft.config.heroTitle !== draftMarker ||
+      restoredDraft.config.language !== locale || restoredDraft.config.slug !== slug) {
+      throw new Error("Saved draft recovery validation failed.");
+    }
     const exportResponse = await fetch(
       new URL(`/api/export/site?siteId=${encodeURIComponent(siteId)}&format=archive`, request.url),
       {
@@ -550,7 +576,7 @@ export async function POST(request: NextRequest) {
       key: "data",
       label: "Données & récupération",
       status: "pass",
-      detail: `Archive TAR.GZ réelle générée avec succès (${archive.byteLength} octets) via la route d’export authentifiée.`
+      detail: `Archive TAR.GZ réelle générée avec succès (${archive.byteLength} octets), brouillon et version publiée exportés séparément, reconstruction du brouillon validée via la route authentifiée.`
     });
 
     currentStage = "complete";

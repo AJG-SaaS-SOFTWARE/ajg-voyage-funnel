@@ -13,6 +13,7 @@ type RecoveryExport = {
     id?: string;
     slug?: string;
     config?: Record<string, unknown>;
+    draftConfig?: Record<string, unknown> | null;
   };
   exportedAt?: string;
 };
@@ -21,6 +22,7 @@ export type RecoveryPreview = {
   config: SiteConfig;
   exportedAt: string | null;
   sourceSlug: string;
+  source: "draft" | "published";
 };
 
 function stringValue(value: unknown, fallback = "") {
@@ -39,8 +41,39 @@ export function siteConfigFromRecoveryExport(
   if (!payload.site || payload.site.id !== target.id) {
     throw new Error("recovery_site_mismatch");
   }
-  const raw = payload.site.config;
+  let raw = payload.site.config;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("invalid_recovery_file");
+  const source = payload.site.draftConfig == null ? "published" : "draft";
+  if (source === "draft") {
+    const draft = payload.site.draftConfig;
+    if (!draft || typeof draft !== "object" || Array.isArray(draft)) throw new Error("invalid_recovery_file");
+    const publishedDesign = raw.designAssets && typeof raw.designAssets === "object"
+      ? raw.designAssets as Record<string, unknown> : {};
+    const language = draft.language ?? (
+      Array.isArray(raw.enabledLanguages) && raw.enabledLanguages.includes("fr") && raw.enabledLanguages.includes("en")
+        ? "both" : raw.primaryLanguage
+    );
+    const affiliation = draft.affiliation ?? (
+      raw.complianceProfile === "independent-v1" ? "independent"
+        : raw.complianceProfile === "mwr-life-independent-ambassador-v1" ? "mwr" : null
+    );
+    if (!["fr", "en", "both"].includes(String(language)) || !["independent", "mwr"].includes(String(affiliation))) {
+      throw new Error("invalid_recovery_file");
+    }
+    raw = {
+      ...raw,
+      ...draft,
+      primaryLanguage: language === "both" ? "fr" : language,
+      enabledLanguages: language === "both" ? ["fr", "en"] : [language],
+      designAssets: {
+        ...normalizeSiteDesign(draft.design ?? publishedDesign),
+        architecture: draft.architecture ?? publishedDesign.architecture,
+        contentLibrary: draft.contentLibrary ?? publishedDesign.contentLibrary
+      },
+      legalConfig: draft.legal ?? raw.legalConfig,
+      complianceProfile: affiliation === "independent" ? "independent-v1" : "mwr-life-independent-ambassador-v1"
+    };
+  }
   const requiredText = [
     "firstName", "lastName", "brandName", "heroTitle", "heroSubtitle", "aboutText",
     "bookingLabel", "bookingUrl", "profileImageUrl", "instagramUrl", "facebookUrl"
@@ -101,6 +134,7 @@ export function siteConfigFromRecoveryExport(
 
   return {
     config,
+    source,
     exportedAt: typeof payload.exportedAt === "string" && Number.isFinite(Date.parse(payload.exportedAt))
       ? payload.exportedAt
       : null,

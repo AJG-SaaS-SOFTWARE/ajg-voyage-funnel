@@ -111,10 +111,13 @@ export default function DataRightsPage() {
       const when = preview.exportedAt
         ? new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(preview.exportedAt))
         : tr("date inconnue", "unknown date");
+      const version = preview.source === "draft"
+        ? tr("le brouillon sauvegardé", "the saved draft")
+        : tr("la configuration publiée", "the published configuration");
       const confirmed = window.confirm(
         tr(
-          `Restaurer la configuration du site « ${site.slug} » depuis la sauvegarde du ${when} ? La version publique actuelle reste en ligne : ELTARA créera uniquement un brouillon à vérifier avant republication.`,
-          `Restore the configuration for “${site.slug}” from the backup dated ${when}? The current public version stays online: ELTARA will only create a draft to review before republishing.`
+          `Restaurer la configuration du site « ${site.slug} » avec ${version} de la sauvegarde du ${when} ? La version publique actuelle reste en ligne : ELTARA créera uniquement un brouillon à vérifier avant republication.`,
+          `Restore the configuration for “${site.slug}” using ${version} from the backup dated ${when}? The current public version stays online: ELTARA will only create a draft to review before republishing.`
         )
       );
       if (!confirmed) return;

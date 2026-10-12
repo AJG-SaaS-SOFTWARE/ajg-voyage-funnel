@@ -85,3 +85,32 @@ test("invalid timestamps become unknown dates and cross-site recovery stays bloc
   input.site.id = "another-site";
   assert.throws(() => siteConfigFromRecoveryExport(input, target), { message: "recovery_site_mismatch" });
 });
+
+test("saved draft content, language, design and affiliation take precedence during recovery", () => {
+  const input = fixture();
+  input.site.draftConfig = {
+    heroTitle: "Unpublished title", language: "en", affiliation: "mwr",
+    design: { accent: "#abcdef" }, legal: { legalName: "Draft publisher" },
+    architecture: { mode: "multi", pages: [] }, contentLibrary: { assets: [] }
+  };
+  const preview = siteConfigFromRecoveryExport(input, target);
+  assert.equal(preview.source, "draft");
+  assert.equal(preview.config.heroTitle, "Unpublished title");
+  assert.equal(preview.config.brandName, "Synthetic studio");
+  assert.equal(preview.config.language, "en");
+  assert.equal(preview.config.affiliation, "mwr");
+  assert.equal(preview.config.design.accent, "#abcdef");
+  assert.equal(preview.config.legal.legalName, "Draft publisher");
+  assert.equal(preview.config.slug, target.slug);
+  assert.equal(input.site.config.heroTitle, "A useful website");
+});
+
+test("older exports without drafts keep published recovery; malformed drafts never silently fall back", () => {
+  assert.equal(siteConfigFromRecoveryExport(fixture(), target).source, "published");
+  const input = fixture(); input.site.draftConfig = null;
+  assert.equal(siteConfigFromRecoveryExport(input, target).source, "published");
+  for (const draft of [[], "invalid", { language: "de" }, { affiliation: "unknown" }, { heroTitle: 42 }]) {
+    input.site.draftConfig = draft;
+    assert.throws(() => siteConfigFromRecoveryExport(input, target), { message: "invalid_recovery_file" });
+  }
+});
