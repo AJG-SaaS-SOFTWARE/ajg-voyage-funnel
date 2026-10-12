@@ -385,11 +385,12 @@ export async function POST(request: Request) {
             : "";
         const isAiLaunch =
           session?.metadata?.purchase_type === "ai_launch";
-        const paid =
-          session?.payment_status === "paid" ||
-          event.type === "checkout.session.async_payment_succeeded";
+        // Only an explicitly paid one-time Checkout can grant BUILD.
+        // The event type alone must never substitute for settled payment status.
+        const paid = session?.payment_status === "paid";
+        const oneTimePayment = session?.mode === "payment";
 
-        if (isAiLaunch && paid && siteId && ownerId) {
+        if (isAiLaunch && oneTimePayment && paid && siteId && ownerId) {
           const result = await grantAiLaunch(service, {
             siteId,
             ownerId,
