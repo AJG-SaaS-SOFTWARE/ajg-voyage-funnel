@@ -197,3 +197,8 @@ test('subscription Stripe Checkout carries stable idempotency per client attempt
   assert.match(checkout,/code: "checkout_attempt_required"/);
   assert.match(checkout,/attemptId: checkoutAttemptId/);
 });
+
+test('subscription checkout attempt requires a structured UUID, not merely 36 allowed characters',()=>{
+  assert.match(checkout,/\[0-9a-f\]\{8\}-\[0-9a-f\]\{4\}-\[1-8\]\[0-9a-f\]\{3\}-\[89ab\]\[0-9a-f\]\{3\}-\[0-9a-f\]\{12\}/);
+  assert.doesNotMatch(checkout,/\^\[a-f0-9-\]\{36\}\$/);
+});
