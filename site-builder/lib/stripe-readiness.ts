@@ -207,13 +207,16 @@ export async function auditStripeRuntimeCached(
 ): Promise<StripeRuntimeAuditItem[]> {
   const now = Date.now();
   if (cachedAudit && cachedAudit.expiresAt > now) {
-    return cachedAudit.value;
+    return cachedAudit.value.map(item => ({ ...item }));
   }
 
   const value = await auditStripeRuntime();
   cachedAudit = {
-    expiresAt: now + Math.max(10_000, ttlMs),
-    value
+    // Recover promptly from a transient provider failure, while still bounding reads.
+    expiresAt: Date.now() + (value.every(item => item.ok)
+      ? Math.max(10_000, Number.isFinite(ttlMs) ? ttlMs : 300_000)
+      : 10_000),
+    value: value.map(item => ({ ...item }))
   };
   return value;
 }

@@ -10,14 +10,14 @@ const offers = [
   ["STRIPE_GROWTH_ANNUAL_PRICE_ID", 29000, "year"],
   ["STRIPE_AI_LAUNCH_PRICE_ID", 4900, null],
 ];
-function load(request) {
+function load(request, clock = Date) {
   const env = Object.fromEntries(offers.map(([name]) => [name, "price_" + name]));
   env.STRIPE_PORTAL_CONFIGURATION_ID = "bpc_synthetic";
   const code = ts.transpileModule(fs.readFileSync(new URL("../lib/stripe-readiness.ts", import.meta.url), "utf8"),
     { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const module = { exports: {} };
-  new Function("require", "module", "exports", "process", code)(
-    () => ({ stripeRequest: request }), module, module.exports, { env });
+  new Function("require", "module", "exports", "process", "Date", code)(
+    () => ({ stripeRequest: request }), module, module.exports, { env }, clock);
   return module.exports;
 }
 function price([name, amount, interval]) {
@@ -74,4 +74,41 @@ test("invalid provider responses and read failures remain blockers with generic 
     assert.equal(result.every(item => item.ok === false), true);
     assert.equal(JSON.stringify(result).includes("private-provider-marker"), false);
   }
+});
+
+test("cached provider failures recover after ten seconds without waiting for the success TTL", async () => {
+  let now = 1000;
+  let calls = 0;
+  let failing = true;
+  const valid = provider();
+  const audit = load(async (...args) => {
+    calls++;
+    if (failing) throw new Error("temporary outage");
+    return valid(...args);
+  }, { now: () => now });
+  assert.equal((await audit.auditStripeRuntimeCached()).every(item => !item.ok), true);
+  failing = false;
+  now += 9999;
+  assert.equal((await audit.auditStripeRuntimeCached()).every(item => !item.ok), true);
+  assert.equal(calls, 6);
+  now++;
+  assert.equal((await audit.auditStripeRuntimeCached()).every(item => item.ok), true);
+  assert.equal(calls, 12);
+  now += 299999;
+  await audit.auditStripeRuntimeCached();
+  assert.equal(calls, 12);
+  now++;
+  await audit.auditStripeRuntimeCached();
+  assert.equal(calls, 18);
+});
+test("callers cannot corrupt the cached checkout readiness result", async () => {
+  const audit = load(provider());
+  const first = await audit.auditStripeRuntimeCached();
+  first[0].ok = false;
+  first.pop();
+  const second = await audit.auditStripeRuntimeCached();
+  assert.equal(second.length, 6);
+  assert.equal(second.every(item => item.ok), true);
+  second[0].detail = "modified";
+  assert.notEqual((await audit.auditStripeRuntimeCached())[0].detail, "modified");
 });
