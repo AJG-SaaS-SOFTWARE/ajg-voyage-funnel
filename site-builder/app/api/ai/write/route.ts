@@ -403,8 +403,28 @@ export async function POST(request: Request) {
       "get_my_site_ai_access", { p_site_id: siteId }
     );
     const detached = Array.isArray(detachedAccess) ? detachedAccess[0] : detachedAccess;
+    // An admin or promotional launch entitlement must not be mistaken for a
+    // standalone Stripe purchase. Supabase RLS limits this read to the owner.
+    const { data: paidLaunchRows, error: paidLaunchError } = await auth.supabase
+      .from("site_ai_launch_entitlements")
+      .select("operations_total,operations_used,expires_at")
+      .eq("site_id", siteId)
+      .eq("owner_id", auth.user.id)
+      .eq("source", "stripe_purchase")
+      .eq("status", "active")
+      .gt("operations_total", 0);
+    const nowMs = Date.now();
+    const hasPaidLaunch = !paidLaunchError && (paidLaunchRows || []).some(row =>
+      Number.isSafeInteger(row.operations_total) &&
+      Number.isSafeInteger(row.operations_used) &&
+      row.operations_total > row.operations_used &&
+      (row.expires_at === null ||
+        (typeof row.expires_at === "string" &&
+         Number.isFinite(Date.parse(row.expires_at)) &&
+         Date.parse(row.expires_at) > nowMs))
+    );
     if (detachedError || detached?.access_source !== "ai_launch" ||
-        Number(detached?.launch_operations_remaining) <= 0) {
+        Number(detached?.launch_operations_remaining) <= 0 || !hasPaidLaunch) {
       return NextResponse.json({
         code: "paid_ai_launch_required",
         error: tr("Aucun droit Création IA valide n'a été trouvé.", "No valid paid AI Launch entitlement was found.")
