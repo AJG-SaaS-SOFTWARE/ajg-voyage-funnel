@@ -11,7 +11,7 @@ const compiled = ts.transpileModule(source, {
 }).outputText;
 const module = { exports: {} };
 new Function('require', 'module', 'exports', compiled)(require, module, module.exports);
-const { subscriptionCheckoutIdempotencyKey, stripeRequest } = module.exports;
+const { subscriptionCheckoutIdempotencyKey, stripeRequest, createStripeSubscriptionCheckout } = module.exports;
 
 test('Stripe subscription retry uses the same derived key', () => {
   const input = {siteId: 'site-123', ownerId: 'owner-456', priceId: 'price_789', attemptId: '8d65b4d8-2a46-4b72-a4c3-d9c2119b2281'};
@@ -47,5 +47,40 @@ test('Stripe emits Idempotency-Key only for POST requests that specify it', asyn
     else process.env.STRIPE_SECRET_KEY = oldKey;
     if (oldRestrictedKey === undefined) delete process.env.STRIPE_RESTRICTED_KEY;
     else process.env.STRIPE_RESTRICTED_KEY = oldRestrictedKey;
+  }
+});
+
+test('two retries of one subscription attempt send identical Checkout payloads and idempotency headers', async () => {
+  const previousFetch = globalThis.fetch;
+  const previousKey = process.env.STRIPE_SECRET_KEY;
+  const previousRestricted = process.env.STRIPE_RESTRICTED_KEY;
+  const seen = [];
+  process.env.STRIPE_RESTRICTED_KEY = '';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+  globalThis.fetch = async (_url, init) => {
+    seen.push({body: init.body, key: init.headers['Idempotency-Key']});
+    return {ok:true, json:async()=>({id:'cs_test_one',url:'https://checkout.stripe.com/test'})};
+  };
+  const checkout = {
+    siteId:'site-1', ownerId:'owner-1', ownerEmail:'test@example.com',
+    customerId:null, priceId:'price_test_essential', planKey:'essential',
+    successUrl:'https://example.org/success',cancelUrl:'https://example.org/cancel',
+    attemptId:'8d65b4d8-2a46-4b72-a4c3-d9c2119b2281'
+  };
+  try {
+    await createStripeSubscriptionCheckout(checkout);
+    await createStripeSubscriptionCheckout({...checkout});
+    assert.equal(seen.length,2);
+    assert.equal(seen[0].key,seen[1].key);
+    assert.equal(seen[0].body,seen[1].body);
+    await createStripeSubscriptionCheckout({...checkout,attemptId:'8d65b4d8-2a46-4b72-a4c3-d9c2119b2282'});
+    assert.notEqual(seen[0].key,seen[2].key);
+    assert.notEqual(seen[0].body,seen[2].body);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if(previousKey===undefined) delete process.env.STRIPE_SECRET_KEY;
+    else process.env.STRIPE_SECRET_KEY=previousKey;
+    if(previousRestricted===undefined) delete process.env.STRIPE_RESTRICTED_KEY;
+    else process.env.STRIPE_RESTRICTED_KEY=previousRestricted;
   }
 });
