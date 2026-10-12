@@ -1,4 +1,5 @@
 import { growthAnnualIncludesLaunch } from "../../../../lib/growth-launch-offer";
+import { paidAiLaunchCheckout } from "@/lib/stripe-ai-launch-payment";
 import { NextResponse } from "next/server";
 import { billingServiceClient } from "../../../../lib/server-billing";
 import {
@@ -383,14 +384,8 @@ export async function POST(request: Request) {
           typeof session?.metadata?.owner_id === "string"
             ? session.metadata.owner_id
             : "";
-        const isAiLaunch =
-          session?.metadata?.purchase_type === "ai_launch";
-        // Only an explicitly paid one-time Checkout can grant BUILD.
-        // The event type alone must never substitute for settled payment status.
-        const paid = session?.payment_status === "paid";
-        const oneTimePayment = session?.mode === "payment";
-
-        if (isAiLaunch && oneTimePayment && paid && siteId && ownerId) {
+        // Event names cannot substitute for settled payment evidence.
+        if (paidAiLaunchCheckout(session) && siteId && ownerId) {
           const result = await grantAiLaunch(service, {
             siteId,
             ownerId,
