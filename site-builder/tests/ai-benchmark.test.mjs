@@ -20,3 +20,28 @@ test("different tasks stay separate and latency percentiles include failed attem
   const result=summarizeAiBenchmark([attempt({durationMs:100}),attempt({durationMs:9000}),attempt({task:"creation"})]);
   assert.equal(result.length,2); assert.equal(result[0].p95DurationMs,9000);
 });
+
+ test("creation requires independent desktop and mobile visual reviews", () => {
+  const missing = summarizeAiBenchmark([attempt({task:"creation"})])[0];
+  assert.equal(missing.accepted,0); assert.equal(missing.fullyReviewed,0);
+  assert.equal(missing.missingVisualReview,1); assert.equal(missing.acceptanceRate,null);
+  assert.equal(missing.comparisonReady,false);
+  for (const visualReview of [{desktop:true,mobile:false},{desktop:false,mobile:true}]) {
+    const result=summarizeAiBenchmark([attempt({task:"creation",visualReview})])[0];
+    assert.equal(result.accepted,0); assert.equal(result.fullyReviewed,1);
+    assert.equal(result.acceptanceRate,0); assert.equal(result.estimatedUsdMicrosPerAccepted,null);
+  }
+  const accepted=summarizeAiBenchmark([attempt({task:"creation",visualReview:{desktop:true,mobile:true}})])[0];
+  assert.equal(accepted.accepted,1); assert.equal(accepted.comparisonReady,true);
+ });
+ test("incomplete reviews cannot produce a final cost per accepted result", () => {
+  const result=summarizeAiBenchmark([attempt({}),attempt({review:null})])[0];
+  assert.equal(result.estimatedUsdMicrosPerAccepted,null);
+  assert.equal(result.comparisonReady,false);
+ });
+ test("malformed evidence and unsafe cumulative monetary sums are rejected", () => {
+  for (const row of [attempt({candidate:null}),attempt({review:undefined}),attempt({review:false}),attempt({review:[]}),attempt({visualReview:{desktop:"true",mobile:true}})]) {
+    assert.throws(()=>summarizeAiBenchmark([row]),/invalid_benchmark/);
+  }
+  assert.throws(()=>summarizeAiBenchmark([attempt({estimatedUsdMicros:Number.MAX_SAFE_INTEGER}),attempt({})]),/measurement/);
+ });
