@@ -46,10 +46,11 @@ test("analytics supports 7 30 90 day comparisons against the previous period", (
 });
 
 test("analytics exposes per-page conversion without inventing unique visitors", () => {
-  assert.match(page, /Conversion des pages/);
+  assert.match(page, /Actions par page/);
+  assert.match(page, /pas des visiteurs uniques ni des ventes/);
   assert.match(page, /page\.ctaClicks \+ page\.formSubmits/);
   assert.match(analytics, /actionRate: ratio\(value\.ctaClicks \+ value\.formSubmits, value\.views\)/);
-  assert.doesNotMatch(page, /visiteurs uniques|unique visitors/i);
+  assert.doesNotMatch(page, /<small>\s*\{tr\("Visiteurs uniques"/i);
 });
 
 test("Growth opportunities lead to concrete builder actions", () => {
@@ -58,3 +59,4 @@ test("Growth opportunities lead to concrete builder actions", () => {
   assert.match(page, /return "\/builder\?step=booking"/);
   assert.match(page, /analytics-opportunity-action/);
 });
+

@@ -19,6 +19,28 @@ function harness(admission = 'ok', settlementError = null) {
   return { calls, service: { async rpc(name, args) { calls.push({ name, args }); return { data: name.startsWith('reserve') ? admission : true, error: name.startsWith('settle') ? settlementError : null }; } } };
 }
 const context = service => ({ service, userId: 'user', siteId: 'site', requestId: 'root', planKey: 'essential', pool: 'run', operation: 'heroTitle' });
+test('an exhausted pipeline deadline prevents any provider admission or spend', async () => {
+  const h = harness(); let spent = 0;
+  const fetcher = createBudgetedProviderFetch({ ...context(h.service), deadlineAt: Date.now() - 1 }, async () => { spent++; });
+  await assert.rejects(fetcher('https://api.openai.com/v1/responses', { body }), /request_time_budget_exhausted/);
+  assert.equal(spent, 0); assert.equal(h.calls.length, 0);
+});
+
+test('admission exhausting the deadline settles zero without calling the provider', async () => {
+  const h = harness(); let spent = 0;
+  const original = h.service.rpc;
+  let now = Date.now(); const realNow = Date.now;
+  const deadlineAt = now + 50;
+  h.service.rpc = async (...args) => { const result = await original(...args); if (args[0].startsWith('reserve')) now += 100; return result; };
+  Date.now = () => now;
+  try {
+    const fetcher = createBudgetedProviderFetch({ ...context(h.service), deadlineAt }, async () => { spent++; });
+    await assert.rejects(fetcher('https://api.openai.com/v1/responses', { body }), /request_time_budget_exhausted/);
+    assert.equal(spent, 0);
+    assert.equal(h.calls[1].args.p_cost_micros, 0);
+    assert.equal(h.calls[1].args.p_state, 'settled');
+  } finally { Date.now = realNow; }
+});
 test('ceiling accounts for UTF8 and framing, refuses unknown models and Premium field routing', () => {
   assert.ok(providerCostCeiling(body, false).micros > 0);
   assert.throws(() => providerCostCeiling(JSON.stringify({ model: 'unknown', max_output_tokens: 100 }), true), /unpriced_model/);
@@ -123,3 +145,4 @@ test('Premium Architect worst-case correction path is allowed through provider c
   assert.match(migration, /p_sequence not between 1 and 7/);
   assert.doesNotMatch(migration, /global_daily_micros\s*=|global_monthly_micros\s*=/);
 });
+

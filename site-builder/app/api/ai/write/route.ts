@@ -318,6 +318,7 @@ function extractText(data: any) {
 }
 
 export async function POST(request: Request) {
+  const requestDeadlineAt = Date.now() + 80_000;
   const uiLocale = requestProductLocale(request);
   const tr = (fr: string, en: string) => localize(uiLocale, fr, en);
   const auth = await authenticatedContext(request);
@@ -364,9 +365,12 @@ export async function POST(request: Request) {
   const capability = Array.isArray(capabilities) ? capabilities[0] : capabilities;
   if (!capability?.can_generate_ai) return NextResponse.json({ error: tr("Les fonctions IA sont temporairement indisponibles pour ce site. Vous pouvez régulariser l’accès depuis votre espace de facturation.", "AI features are temporarily unavailable for this website. You can restore access from Billing.") }, { status: 402 });
 
-  const { data: entitlementRows } = await auth.supabase.rpc("get_my_site_entitlements", {
+  const { data: entitlementRows, error: entitlementError } = await auth.supabase.rpc("get_my_site_entitlements", {
     p_site_id: siteId
   });
+  if (entitlementError || !entitlementRows) {
+    return NextResponse.json({ error: tr("Impossible de vérifier votre offre IA. Réessayez plus tard.", "Unable to verify your AI plan. Please try again later.") }, { status: 503 });
+  }
   const requestEntitlement = Array.isArray(entitlementRows) ? entitlementRows[0] : entitlementRows;
   const requestPlanKey =
     typeof requestEntitlement?.plan_key === "string" ? requestEntitlement.plan_key : "unknown";
@@ -379,7 +383,7 @@ export async function POST(request: Request) {
   const currentText = clean(body?.currentText, 3500);
   const context = body?.context && typeof body.context === "object" ? body.context : {};
   const language = context.language === "en" ? "English" : "French";
-  const affiliation = context.affiliation === "independent" ? "independent" : "mwr";
+  const affiliation = context.affiliation === "mwr" ? "mwr" : "independent";
   const firstName = clean(context.firstName, 80);
   const brandName = clean(context.brandName, 120);
   const moduleType = clean(context.moduleType, 30);
@@ -489,14 +493,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (field === "siteRevision" && access?.can_revise_site !== true) {
+    if (field === "siteRevision" && (access?.can_revise_site !== true ||
+      (premiumAccessSource !== "beta" && !(Number(access?.launch_operations_remaining) > 0)))) {
       return NextResponse.json(
         {
           error: tr(
-            "Le pilotage global du site nécessite Growth ou une Création IA encore disponible.",
-            "Global website management requires Growth or a remaining AI Launch entitlement."
+            "La refonte complète nécessite un crédit Création IA disponible. Growth mensuel permet des améliorations ciblées, sans refonte globale incluse.",
+            "A full redesign requires an available AI Creation credit. Monthly Growth supports targeted improvements, without an included full redesign."
           ),
-          code: "growth_or_ai_launch_required"
+          code: "ai_launch_required"
         },
         { status: 403 }
       );
@@ -575,13 +580,13 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!["ok", "unmetered_beta", "unmetered_growth"].includes(launchReservation)) {
+    if (!["ok", "unmetered_beta"].includes(launchReservation)) {
       await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
       return NextResponse.json(
         {
           error: tr(
-            "Votre forfait Création IA ne dispose plus d’opération complète. Growth conserve les révisions globales, mais une nouvelle création complète nécessite un nouveau droit BUILD.",
-            "Your AI Launch package has no full operation remaining. Growth keeps global revisions, but a new full website creation requires a new BUILD entitlement."
+            "Votre forfait Création IA ne dispose plus d’opération complète. Vous pouvez continuer à modifier votre site ; une nouvelle création ou refonte complète nécessite un crédit BUILD.",
+            "Your AI Creation package has no full operation remaining. You can continue editing your website; a new full creation or redesign requires a BUILD credit."
           ),
           code: launchReservation
         },
@@ -589,7 +594,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (launchReservation === "unmetered_growth" || launchReservation === "unmetered_beta") {
+    if (launchReservation === "unmetered_beta") {
       let heavyAllowance = "unavailable";
       try {
         heavyAllowance = await reserveHeavyAiOperation(
@@ -630,7 +635,8 @@ export async function POST(request: Request) {
       userId: auth.user.id, siteId, requestId: premiumRequestId,
       planKey: requestPlanKey,
       pool: launchReservation === "ok" ? "launch" : premiumAccessSource === "beta" ? "beta" : "run",
-      operation: field
+      operation: field,
+      deadlineAt: requestDeadlineAt
     });
   if (field === "siteArchitect" || field === "siteRevision") {
     try {
@@ -999,7 +1005,7 @@ export async function POST(request: Request) {
         "Cette demande IA est temporairement suspendue pour protéger votre capacité. Réessayez plus tard ou utilisez l’éditeur manuel ; votre site reste disponible.",
         "This AI request is temporarily paused to protect your allowance. Try again later or use the manual editor; your website remains available."
       )
-    }, { status: error instanceof AiBudgetError ? 429 : 503 });
+    }, { status: error instanceof AiBudgetError && code !== "request_time_budget_exhausted" ? 429 : 503 });
   } finally {
     if (!usableResult && quotaReserved) {
       await releasePremiumAiAllowance(auth.supabase, premiumRequestId).catch(() => undefined);
@@ -1013,3 +1019,4 @@ export async function POST(request: Request) {
     if (finishError) console.warn("AI admission completion deferred", { requestId: premiumRequestId });
   }
 }
+

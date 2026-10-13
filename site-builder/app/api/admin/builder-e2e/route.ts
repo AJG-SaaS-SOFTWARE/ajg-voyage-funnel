@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { siteConfigFromRecoveryExport } from "../../../../lib/site-recovery";
 import { preferredPublishedRootDomain } from "../../../../lib/published-domain";
+import { summarizeAiRecipeMetrics } from "../../../../lib/ai-recipe-metrics.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 type StepStatus = "pass" | "skipped";
-type Step = { key: string; label: string; status: StepStatus; detail: string };
+type Step = { key: string; label: string; status: StepStatus; detail: string; metrics?: ReturnType<typeof summarizeAiRecipeMetrics> };
 
 function bearer(request: Request) {
   const value = request.headers.get("authorization") || "";
@@ -123,6 +124,24 @@ export async function POST(request: NextRequest) {
   let publicPath = "";
   let currentStage = "site-create";
   let cleanupOk = true;
+  let aiStartedAt = 0;
+  let metricsRecorded = false;
+  const captureAiMetrics = async () => {
+    if (!includeAi || !siteId || !aiStartedAt || metricsRecorded) return;
+    const [usage, costs] = await Promise.all([
+      service.from("ai_provider_usage").select("operation,duration_ms,estimated_cost_usd_micros,pricing_known")
+        .eq("site_id", siteId).eq("user_id", user.id).order("id").limit(101),
+      service.from("ai_cost_reservations").select("state,charged_micros")
+        .eq("site_id", siteId).eq("user_id", user.id).order("created_at").limit(101)
+    ]);
+    if (usage.error || costs.error || (usage.data || []).length > 100 || (costs.data || []).length > 100) {
+      throw new Error("recipe_provider_metrics_unavailable");
+    }
+    const metrics = summarizeAiRecipeMetrics(usage.data || [], costs.data || [], Date.now() - aiStartedAt);
+    steps.push({ key: "ai_metrics", label: "Coût et durée IA", status: "pass",
+      detail: "Résumé anonyme conservé avant nettoyage ; montants estimés USD, provisions incertaines séparées des coûts réglés.", metrics });
+    metricsRecorded = true;
+  };
 
   try {
     const { data: site, error: createError } = await userClient
@@ -181,6 +200,7 @@ export async function POST(request: NextRequest) {
     if (entitlementError) throw entitlementError;
 
     if (includeAi) {
+      aiStartedAt = Date.now();
       const { error: launchGrantError } = await service
         .from("site_ai_launch_entitlements")
         .insert({
@@ -268,6 +288,7 @@ export async function POST(request: NextRequest) {
       });
 
       const aiBody = await aiResponse.json().catch(() => null);
+      await captureAiMetrics();
       if (!aiResponse.ok || !aiBody?.proposal) {
         throw new Error(aiBody?.error || `AI Site Architect returned HTTP ${aiResponse.status}.`);
       }
@@ -581,6 +602,13 @@ export async function POST(request: NextRequest) {
 
     currentStage = "complete";
   } catch (error) {
+    // Preserve failure spend too; missing metrics are explicit, never recorded as zero cost.
+    if (aiStartedAt && !metricsRecorded) {
+      await captureAiMetrics().catch(() => {
+        steps.push({ key: "ai_metrics", label: "Coût et durée IA", status: "skipped",
+          detail: "Preuve de coût indisponible ; aucun coût nul ne doit être déduit de cet échec." });
+      });
+    }
     const failure = {
       error: "ELTARA E2E validation failed",
       stage: currentStage,
@@ -699,3 +727,4 @@ export async function POST(request: NextRequest) {
     }
   );
 }
+

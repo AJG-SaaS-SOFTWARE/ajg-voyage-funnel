@@ -29,7 +29,7 @@ test("checkout keeps commercial charging closed by an explicit server gate", () 
   assert.ok(checkout.includes("AJG_BILLING_CHECKOUT_ENABLED"));
   assert.ok(checkout.includes('body?.planKey === "growth"'));
   assert.ok(checkout.includes('body?.purchaseType === "ai_launch"'));
-  assert.ok(checkout.includes("STRIPE_AI_LAUNCH_PRICE_ID"));
+  assert.ok(checkout.includes("STRIPE_AI_LAUNCH_ACTIVE_CLIENT_PRICE_ID"));
   assert.ok(checkout.includes("return 0"));
   assert.ok(!stripe.includes("trial_period_days"));
   assert.ok(stripe.includes('mode: "payment"'));
@@ -50,14 +50,14 @@ test("webhook maps new recurring prices and grants BUILD idempotently", () => {
   assert.ok(webhook.includes("ignoreDuplicates: true"));
 });
 
-test("AI Architect separates BUILD creation from Growth revisions", () => {
+test("full creation and redesign require BUILD rather than an unmetered Growth revision", () => {
   assert.ok(aiRoute.includes("get_my_site_ai_access"));
   assert.ok(aiRoute.includes("reserve_my_site_launch_operation"));
   assert.ok(aiRoute.includes("commit_my_site_launch_operation"));
   assert.ok(aiRoute.includes("release_my_site_launch_operation"));
   assert.ok(aiRoute.includes("ai_launch_required"));
-  assert.ok(aiRoute.includes("growth_or_ai_launch_required"));
-  assert.ok(aiRoute.includes("unmetered_growth"));
+  assert.ok(aiRoute.includes('premiumAccessSource !== "beta"'));
+  assert.ok(aiRoute.includes('["ok", "unmetered_beta"].includes(launchReservation)'));
 });
 
 test("commercial readiness requires the complete new catalogue and cost guardrails", () => {
@@ -107,3 +107,4 @@ test("AI Launch requires an active subscription with a confirmed first payment",
   assert.ok(checkout.includes('current.status !== "active"'));
   assert.ok(checkout.includes("!current.first_payment_confirmed_at"));
 });
+
