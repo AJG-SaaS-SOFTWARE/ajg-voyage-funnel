@@ -12,6 +12,7 @@ type BudgetContext = {
   planKey: string;
   pool: "run" | "launch" | "beta";
   operation: string;
+  deadlineAt?: number;
 };
 
 export function providerCostCeiling(body: string, heavy: boolean) {
@@ -37,7 +38,10 @@ export function providerCostCeiling(body: string, heavy: boolean) {
 
 export function createBudgetedProviderFetch(context: BudgetContext, providerFetch: typeof fetch = fetch): typeof fetch {
   let sequence = 0;
+  // One deadline for the whole writer pipeline, including repairs and final review.
+  const deadlineAt = context.deadlineAt ?? Date.now() + 80_000;
   return async (url, init) => {
+    if (Date.now() >= deadlineAt) throw new AiBudgetError("request_time_budget_exhausted");
     if (String(url) !== "https://api.openai.com/v1/responses" || typeof init?.body !== "string") {
       throw new AiBudgetError("invalid_provider_endpoint");
     }
@@ -61,9 +65,15 @@ export function createBudgetedProviderFetch(context: BudgetContext, providerFetc
       settled = true;
     };
     try {
+      const remainingMs = deadlineAt - Date.now();
+      if (remainingMs <= 0) {
+        // Admission took the remaining time; no provider request was made.
+        await settle(0, "settled");
+        throw new AiBudgetError("request_time_budget_exhausted");
+      }
       const response = await providerFetch(url, {
         ...init,
-        signal: AbortSignal.any([AbortSignal.timeout(70_000), ...(init.signal ? [init.signal] : [])])
+        signal: AbortSignal.any([AbortSignal.timeout(Math.min(70_000, remainingMs)), ...(init.signal ? [init.signal] : [])])
       });
       // Read a clone so existing structured-output and telemetry code keeps its response.
       const data: any = await response.clone().json().catch(() => null);
@@ -89,3 +99,4 @@ export function createBudgetedProviderFetch(context: BudgetContext, providerFetc
     }
   };
 }
+

@@ -81,7 +81,7 @@ test("keeps the synchronized commercial pricing grid bilingual", () => {
   assert.match(plans, /150 €/);
   assert.match(plans, /29 €/);
   assert.match(plans, /290 €/);
-  assert.match(plans, /Création IA · 49 €/);
+  assert.match(plans, /Création IA · 39 € client actif/);
   assert.match(plans, /Essential €15 \/ Growth €29 \/ AI Launch €49/);
   assert.match(home, /\/pricing/);
   assert.match(home, /\/tarifs/);
@@ -307,3 +307,4 @@ test("billing notification catalogue covers every customer state in both languag
   assert.match(source, /Accéder à votre espace/);
   assert.match(source, /ajg_builder_locale/);
 });
+

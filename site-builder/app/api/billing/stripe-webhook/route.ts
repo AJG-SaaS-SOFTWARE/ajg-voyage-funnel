@@ -1,4 +1,4 @@
-import { growthAnnualIncludesLaunch } from "../../../../lib/growth-launch-offer";
+import { growthAnnualIncludesLaunch, growthAnnualLaunchReference } from "../../../../lib/growth-launch-offer";
 import { NextResponse } from "next/server";
 import { billingServiceClient } from "../../../../lib/server-billing";
 import {
@@ -112,6 +112,7 @@ async function grantAiLaunch(
     ownerId: string;
     source: "stripe_purchase" | "growth_annual";
     externalReference: string;
+    expiresAt?: string;
   }
 ) {
   const { data: site, error: siteError } = await service
@@ -150,6 +151,7 @@ async function grantAiLaunch(
         operations_total: aiLaunchOperations(),
         operations_used: 0,
         external_reference: input.externalReference,
+        ...(input.expiresAt ? { expires_at: input.expiresAt } : {}),
         updated_at: new Date().toISOString()
       },
       { onConflict: "external_reference", ignoreDuplicates: true }
@@ -314,17 +316,19 @@ async function bindAndApplyInvoice(
     !["duplicate", "stale_ignored", "terminal_ignored"].includes(data);
 
   if (
-    applied &&
+    (applied || data === "duplicate") &&
     paid &&
     growthAnnualIncludesLaunch() &&
     planKey === "growth" &&
+    invoicePaidThrough && new Date(invoicePaidThrough).getTime() > Date.now() &&
     priceId === process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID?.trim()
   ) {
     await grantAiLaunch(service, {
       siteId,
       ownerId,
       source: "growth_annual",
-      externalReference: `growth_annual:${siteId}`
+      externalReference: growthAnnualLaunchReference(siteId, subscriptionId, invoicePaidThrough),
+      expiresAt: invoicePaidThrough
     });
   }
 
@@ -446,3 +450,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

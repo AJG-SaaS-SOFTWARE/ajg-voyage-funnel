@@ -218,7 +218,7 @@ export default function PlansPage() {
             <p>{tr("Création ou refonte globale d’une première version du site.", "Create or globally refine a first website version.")}</p>
             {!betaAccess.active && paidPlan && aiAccess.launchOperationsRemaining === 0 ? (
               <button type="button" className="button secondary account-metric-action" disabled={Boolean(checkoutBusy)} onClick={() => void buyAiLaunch()}>
-                {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter la Création IA · 49 €", "Add AI Launch · €49")}
+                {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter la Création IA · 39 € client actif", "Add AI Creation · €39 active-client price")}
               </button>
             ) : null}
           </article>
@@ -359,7 +359,7 @@ export default function PlansPage() {
             <li>{tr("Diagnostics et recommandations continues", "Continuous diagnostics and recommendations")}</li>
             <li>{tr("SEO / AEO et conversion", "SEO / AEO and conversion")}</li>
             <li>{tr("Révisions globales du site par IA", "AI-powered global website revisions")}</li>
-            <li>{annualIncludesLaunch ? tr("Création IA initiale incluse avec Growth annuel", "Initial AI Launch included with annual Growth") : tr("Création IA disponible séparément : 49 € une fois", "AI Launch available separately: €49 once")}</li>
+            <li>{annualIncludesLaunch ? tr("Une Création IA incluse par période annuelle Growth", "One AI Creation included per annual Growth period") : tr("Création IA en complément : 39 € pour un client actif", "Additional AI Creation: €39 for an active client")}</li>
           </ul>
           <p className="plan-status">
             {betaAccess.active
@@ -399,3 +399,4 @@ export default function PlansPage() {
     </AccountShell>
   );
 }
+

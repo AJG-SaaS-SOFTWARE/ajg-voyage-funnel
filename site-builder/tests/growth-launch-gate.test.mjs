@@ -12,14 +12,21 @@ function load(path, overrides = {}) {
   new Function('require', 'module', 'exports', code)(name => overrides[name] || require(name), module, module.exports);
   return module.exports;
 }
-test('annual launch benefit is disabled unless explicitly enabled', () => {
+test('the validated annual offer includes BUILD without depending on the obsolete profitability flag', () => {
   const { growthAnnualIncludesLaunch } = load('../lib/growth-launch-offer.ts');
   const old = process.env.AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH;
   try {
-    for (const value of ['', 'false', '1', 'yes']) { process.env.AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH = value; assert.equal(growthAnnualIncludesLaunch(), false); }
+    for (const value of ['', 'false', '1', 'yes']) { process.env.AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH = value; assert.equal(growthAnnualIncludesLaunch(), true); }
     process.env.AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH = ' true ';
     assert.equal(growthAnnualIncludesLaunch(), true);
   } finally { if (old === undefined) delete process.env.AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH; else process.env.AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH = old; }
+});
+test('annual BUILD reference is stable within a paid period and changes on renewal', () => {
+  const { growthAnnualLaunchReference } = load('../lib/growth-launch-offer.ts');
+  const first = growthAnnualLaunchReference('site','sub','2027-10-13T00:00:00Z');
+  assert.equal(first,growthAnnualLaunchReference('site','sub','2027-10-13T00:00:00.000Z'));
+  assert.notEqual(first,growthAnnualLaunchReference('site','sub','2028-10-13T00:00:00Z'));
+  assert.throws(()=>growthAnnualLaunchReference('site','sub','invalid'),/invalid_annual_build_period/);
 });
 test('public pricing renders the actual enabled offer in both languages', () => {
   const { PricingPage } = load('../components/PricingPage.tsx', { 'next/link': { default: props => React.createElement('a', props, props.children) }, './PricingPage.module.css': { default: {} } });
@@ -37,3 +44,4 @@ test('annual Growth AI grant is applied only from the paid invoice path', () => 
   assert.ok(webhook.includes('const paid = event.type === "invoice.paid"'));
   assert.ok(webhook.includes('paid &&\n    growthAnnualIncludesLaunch()'));
 });
+

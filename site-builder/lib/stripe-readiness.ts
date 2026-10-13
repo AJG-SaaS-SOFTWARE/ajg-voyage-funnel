@@ -153,6 +153,16 @@ async function auditExpectedPrice(
   }
 }
 
+// The active-client discount is a distinct fixed Price, never browser-selected.
+export async function auditAiLaunchActiveClientPrice() {
+  return auditExpectedPrice({
+    env: "STRIPE_AI_LAUNCH_ACTIVE_CLIENT_PRICE_ID",
+    label: "Création IA · client actif",
+    amount: 3900,
+    type: "one_time"
+  });
+}
+
 async function auditPortal(): Promise<StripeRuntimeAuditItem> {
   const portalId = process.env.STRIPE_PORTAL_CONFIGURATION_ID?.trim();
   if (!portalId) {
@@ -233,3 +243,4 @@ export async function auditStripeRuntimeCached(
     if (pendingAudit === pending) pendingAudit = null;
   }
 }
+

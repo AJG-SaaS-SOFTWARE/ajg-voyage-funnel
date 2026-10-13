@@ -56,7 +56,7 @@ const copy = {
         "Diagnostics et recommandations continues",
         "SEO / AEO et opportunités de contenu",
         "Analyse conversion et CTA",
-        "Création et adaptation de pages",
+        "Conception limitée de sections et variantes",
         "Capacité IA supérieure",
         "Création IA initiale incluse avec Growth annuel"
       ],
@@ -131,7 +131,7 @@ const copy = {
         "Continuous diagnostics and recommendations",
         "SEO / AEO and content opportunities",
         "Conversion and CTA analysis",
-        "Page creation and adaptation",
+        "Limited section design and variants",
         "Higher AI capacity",
         "Initial AI Launch included with annual Growth"
       ],
@@ -244,3 +244,4 @@ export function PricingPage({ locale, annualIncludesLaunch = false }: PricingPag
     </main>
   );
 }
+

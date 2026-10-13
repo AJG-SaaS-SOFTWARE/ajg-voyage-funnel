@@ -323,8 +323,8 @@ export default function GrowthPage() {
                 "Your beta rights remain complete. Simply switch to Growth mode to test this cockpit, then return to Essential whenever you want."
               )
             : tr(
-                "Essentiel maintient votre site en ligne et vous laisse le modifier. Growth ajoute la surveillance structurée, les recommandations et les évolutions globales.",
-                "Essential keeps your website online and editable. Growth adds structured monitoring, recommendations and full-site evolution."
+                "Essentiel maintient votre site en ligne et vous aide à le modifier. Growth ajoute les diagnostics, recommandations et améliorations ciblées. Une création ou refonte complète utilise un crédit Création IA.",
+                "Essential keeps your website online and helps you edit it. Growth adds diagnostics, recommendations and targeted improvements. A full creation or redesign uses an AI Creation credit."
               )}</p>
           {betaActive ? (
             <button className="button primary" type="button" onClick={() => changeBetaExperienceMode("growth")}>
@@ -530,10 +530,11 @@ export default function GrowthPage() {
                   <strong>{postPublishPerformance.actionRatePoints > 0 ? "+" : ""}{postPublishPerformance.actionRatePoints.toFixed(1)} pt</strong>
                 </div>
                 <p>{postPublishPerformance.outcome === "improved"
-                  ? tr("Signal positif : la performance s’est améliorée après publication.", "Positive signal: performance improved after publishing.")
+                  ? tr("Le taux d’actions observé a augmenté après publication.", "The observed action rate increased after publishing.")
                   : postPublishPerformance.outcome === "declined"
-                    ? tr("Signal négatif : la performance a reculé après publication. Une nouvelle correction peut être utile.", "Negative signal: performance declined after publishing. Another correction may help.")
+                    ? tr("Le taux d’actions observé a diminué après publication. Examinez le contexte avant de décider d’une correction.", "The observed action rate decreased after publishing. Review the context before deciding on a correction.")
                     : tr("Signal stable : aucune évolution suffisamment nette n’est encore visible.", "Stable signal: no sufficiently clear change is visible yet.")}</p>
+                <p>{tr("Cette comparaison ne prouve pas que la modification a causé l’évolution. Le trafic, les sources et la période peuvent aussi l’expliquer.", "This comparison does not prove that the change caused the difference. Traffic, sources and timing can also explain it.")}</p>
               </div>
             ) : postPublishPerformance.status === "collecting" ? (
               <div className="growth-measurement-wait">
@@ -651,3 +652,4 @@ export default function GrowthPage() {
     </main>
   );
 }
+

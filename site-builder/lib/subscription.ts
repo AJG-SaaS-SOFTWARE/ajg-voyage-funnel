@@ -140,7 +140,8 @@ export async function getMySiteAiAccess(siteId: string): Promise<SiteAiAccess> {
       : "none";
   return {
     canCreateSite: row?.can_create_site === true,
-    canReviseSite: row?.can_revise_site === true,
+    canReviseSite: row?.can_revise_site === true &&
+      (source === "beta" || Number(row?.launch_operations_remaining) > 0),
     accessSource: source,
     launchOperationsRemaining: Math.max(
       0,
@@ -148,3 +149,4 @@ export async function getMySiteAiAccess(siteId: string): Promise<SiteAiAccess> {
     )
   };
 }
+

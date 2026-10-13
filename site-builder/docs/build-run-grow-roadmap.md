@@ -1,6 +1,6 @@
 # ELTARA — Roadmap BUILD / RUN / GROW
 
-Dernière mise à jour : 30 septembre 2026.
+Dernière mise à jour commerciale : 13 octobre 2026. Les états de phases ci-dessous restent à rapprocher des preuves réelles ; voir `offer-quality-rollout.md` pour les limites de la tranche actuelle.
 
 ## 1. Vision produit
 
@@ -101,13 +101,13 @@ Inclus :
 - capacité IA supérieure ;
 - synthèses et actions prioritaires.
 
-Hypothèse commerciale retenue :
+Offre commerciale validée le 13 octobre :
 
-- Création IA : +49 € en Essentiel mensuel/annuel ;
-- Création IA : +49 € en Growth mensuel ;
-- Création IA offerte avec Growth annuel à 290 €.
+- Création IA : 49 € au public, 39 € pour un client actif Essentiel ou Growth ;
+- Growth mensuel : améliorations ciblées, aucune création/refonte complète gratuite ;
+- Growth annuel : un paquet Création IA inclus par période annuelle payée à 290 €.
 
-Cette gratuité annuelle ne doit être activée qu’une fois le coût réel moyen du Concepteur IA mesuré sur la bêta. Le gate serveur `AJG_GROWTH_ANNUAL_INCLUDES_AI_LAUNCH` est désactivé par défaut ; tant qu’il reste désactivé, Growth annuel n’accorde pas de droit BUILD gratuit.
+La mesure des coûts reste obligatoire pour maîtriser la marge. L'ancien gate d'inclusion ne définit plus l'offre annuelle validée ; les gates d'ouverture Checkout restent indépendants. L'attribution et la consommation BUILD doivent être vérifiées avant publication de cet alignement.
 
 ---
 
@@ -842,3 +842,4 @@ Toute nouvelle fonctionnalité doit répondre à au moins une de ces questions :
 7. réduit-elle un risque sécurité / abus / conformité ?
 
 Si la réponse est non partout, elle n'est pas prioritaire.
+

@@ -11,6 +11,7 @@ import {
 } from "../../../../lib/stripe-billing";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
 import { commercialCheckoutReadiness } from "../../../../lib/commercial-checkout-readiness";
+import { auditAiLaunchActiveClientPrice } from "../../../../lib/stripe-readiness";
 
 export const runtime = "nodejs";
 
@@ -205,10 +206,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const priceId = process.env.STRIPE_AI_LAUNCH_PRICE_ID?.trim() || "";
-    if (!priceId) {
+    const priceId = process.env.STRIPE_AI_LAUNCH_ACTIVE_CLIENT_PRICE_ID?.trim() || "";
+    const activeClientPrice = await auditAiLaunchActiveClientPrice();
+    if (!priceId || !activeClientPrice.ok) {
       return NextResponse.json(
-        { error: tr("Le tarif Création IA n’est pas configuré.", "AI Launch pricing is not configured.") },
+        { error: tr("Le tarif Création IA client actif à 39 € n’est pas encore disponible. Aucun paiement n’a été créé.", "The €39 active-client AI Creation price is not available yet. No payment was created.") },
         { status: 503 }
       );
     }
@@ -333,3 +335,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

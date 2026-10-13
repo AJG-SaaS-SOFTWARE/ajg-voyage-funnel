@@ -213,9 +213,14 @@ export default function AnalyticsPage() {
             <article>
               <div><small>{tr("Taux d’action", "Action rate")}</small><DeltaBadge value={comparison.deltas.actionRatePoints} unit="pt" tr={tr} locale={locale} /></div>
               <strong>{formatProductNumber(summary.actionRate, locale, 1, 1)}%</strong>
-              <span>{tr("actions / visites", "actions / views")}</span>
+              <span>{tr("clics et envois / pages vues", "clicks and submissions / page views")}</span>
             </article>
           </section>
+
+          <p className="account-muted">{tr(
+            "Ces indicateurs comptent des événements, pas des visiteurs uniques ni des ventes. Plusieurs actions sur une page peuvent produire un taux supérieur à 100 %.",
+            "These metrics count events, not unique visitors or sales. Multiple actions on a page can produce a rate above 100%."
+          )}</p>
 
           {summary.views === 0 ? (
             <section className="panel analytics-empty">
@@ -285,7 +290,7 @@ export default function AnalyticsPage() {
                 <div className="analytics-card-head">
                   <div>
                     <p className="eyebrow">{tr("Par page", "By page")}</p>
-                    <h2>{tr("Conversion des pages", "Page conversion")}</h2>
+                    <h2>{tr("Actions par page", "Actions by page")}</h2>
                   </div>
                   <small>{tr("CTA + contacts / vues", "CTA + contacts / views")}</small>
                 </div>
@@ -391,3 +396,4 @@ export default function AnalyticsPage() {
     </AccountShell>
   );
 }
+
