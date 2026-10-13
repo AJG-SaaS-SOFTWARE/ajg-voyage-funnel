@@ -1,4 +1,5 @@
 import { growthAnnualIncludesLaunch, growthAnnualLaunchReference } from "../../../../lib/growth-launch-offer";
+import { paidAiLaunchCheckout } from "../../../../lib/stripe-ai-launch-payment";
 import { NextResponse } from "next/server";
 import { billingServiceClient } from "../../../../lib/server-billing";
 import {
@@ -131,16 +132,22 @@ async function grantAiLaunch(
     .eq("owner_id", input.ownerId)
     .maybeSingle();
   if (subscriptionError) throw subscriptionError;
+  // The purchased BUILD entitlement is distinct from RUN hosting.
+  // Feature gate remains disabled until the capability RPC supports detached BUILD.
   if (
-    !subscription ||
-    !["essential", "growth"].includes(subscription.plan_key) ||
-    subscription.status !== "active" ||
-    !subscription.first_payment_confirmed_at
+    (input.source !== "stripe_purchase" ||
+      process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true") &&
+    (
+      !subscription ||
+      !["essential", "growth"].includes(subscription.plan_key) ||
+      subscription.status !== "active" ||
+      !subscription.first_payment_confirmed_at
+    )
   ) {
     return "subscription_required";
   }
 
-  const { error } = await service
+  const { data: inserted, error } = await service
     .from("site_ai_launch_entitlements")
     .upsert(
       {
@@ -155,9 +162,13 @@ async function grantAiLaunch(
         updated_at: new Date().toISOString()
       },
       { onConflict: "external_reference", ignoreDuplicates: true }
-    );
+    )
+    .select("id");
   if (error) throw error;
-  return "granted";
+  // A replayed payment must not reset previously consumed operations.
+  // Do not report "granted" if PostgREST fails to return inserted rows.
+  if (!Array.isArray(inserted)) throw new Error("ai_launch_grant_unconfirmed");
+  return inserted.length === 0 ? "already_granted" : "granted";
 }
 
 async function bindAndApply(
@@ -381,13 +392,8 @@ export async function POST(request: Request) {
           typeof session?.metadata?.owner_id === "string"
             ? session.metadata.owner_id
             : "";
-        const isAiLaunch =
-          session?.metadata?.purchase_type === "ai_launch";
-        const paid =
-          session?.payment_status === "paid" ||
-          event.type === "checkout.session.async_payment_succeeded";
-
-        if (isAiLaunch && paid && siteId && ownerId) {
+        // Event names cannot substitute for settled payment evidence.
+        if (paidAiLaunchCheckout(session) && siteId && ownerId) {
           const result = await grantAiLaunch(service, {
             siteId,
             ownerId,

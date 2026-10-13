@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { getMyBillingState, openStripeBillingPortal, startAiLaunchCheckout, startPlanCheckout, type BillingState } from "../../lib/billing-access";
@@ -38,6 +38,7 @@ export default function PlansPage() {
   const [aiAccess, setAiAccess] = useState<SiteAiAccess>(emptyAiAccess);
   const [betaAccess, setBetaAccess] = useState<BetaAccess>({ active: false, startsAt: null, expiresAt: null });
   const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
+  const [detachedLaunchEnabled, setDetachedLaunchEnabled] = useState(false);
   const [annualIncludesLaunch, setAnnualIncludesLaunch] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
@@ -48,11 +49,17 @@ export default function PlansPage() {
   const [checkoutMessage, setCheckoutMessage] = useState("");
   const [billingState, setBillingState] = useState<BillingState | null>(null);
 
+  const loadSequence = useRef(0);
+  const selectedSiteRef = useRef("");
+  const paymentInProgressRef = useRef(false);
   const load = async (selectedId?: string) => {
+    const sequence = ++loadSequence.current;
     const owned = await getMySites();
     const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
+    if (sequence !== loadSequence.current) return;
     setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
-    if (site && !siteId) setSiteId(site.id);
+    selectedSiteRef.current = site?.id || "";
+    setSiteId(site?.id || "");
     const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
       site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
       site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
@@ -61,6 +68,7 @@ export default function PlansPage() {
       getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
       site ? getMyBillingState(site.id).catch(() => null) : Promise.resolve(null)
     ]);
+    if (sequence !== loadSequence.current) return;
     setCurrent(entitlements);
     setAiAccess(access);
     setUsage(aiUsage);
@@ -74,9 +82,10 @@ export default function PlansPage() {
   useEffect(() => {
     void fetch("/api/billing/offer", { cache: "no-store" })
       .then(response => response.ok ? response.json() : null)
-      .then(data => setAnnualIncludesLaunch(data?.annualIncludesLaunch === true))
+      .then(data => { setAnnualIncludesLaunch(data?.annualIncludesLaunch === true); setDetachedLaunchEnabled(data?.detachedLaunchEnabled === true); })
       .catch(() => setAnnualIncludesLaunch(false));
     void load().catch(() => {
+      if (loadSequence.current !== 1) return;
       setCurrent(freeEntitlements);
       setAiAccess(emptyAiAccess);
       setLoaded(true);
@@ -84,31 +93,54 @@ export default function PlansPage() {
   }, []);
 
   async function beginPlanChange(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
-    if (!siteId || betaAccess.active) return;
+    if (!siteId || !loaded || !billingState || betaAccess.active || paymentInProgressRef.current) return;
+    const targetSiteId = siteId;
+    paymentInProgressRef.current = true;
     const key = `${planKey}:${billingCycle}`;
     setCheckoutBusy(key);
     setCheckoutMessage("");
     try {
-      if (billingState?.hasStripeSubscription) {
-        await openStripeBillingPortal(siteId);
+      // Never choose Checkout from potentially stale React state: a subscription
+      // may have been activated since the page was loaded or changed site.
+      const latestBilling = await getMyBillingState(targetSiteId);
+      if (!latestBilling) {
+        throw new Error(tr("Impossible de vérifier votre facturation. Réessayez.", "Unable to verify your billing. Please retry."));
+      }
+      if (selectedSiteRef.current !== targetSiteId) {
+        setCheckoutBusy("");
         return;
       }
-      await startPlanCheckout(siteId, planKey, billingCycle);
+      setBillingState(latestBilling);
+      if (latestBilling.hasStripeSubscription) {
+        await openStripeBillingPortal(targetSiteId);
+        return;
+      }
+      await startPlanCheckout(targetSiteId, planKey, billingCycle);
     } catch (error) {
       setCheckoutMessage(error instanceof Error ? error.message : tr("Facturation indisponible.", "Billing unavailable."));
       setCheckoutBusy("");
+    } finally {
+      paymentInProgressRef.current = false;
     }
   }
 
   async function buyAiLaunch() {
-    if (!siteId || betaAccess.active) return;
+    if (!siteId || !loaded || !billingState || betaAccess.active || paymentInProgressRef.current) return;
+    const targetSiteId = siteId;
+    paymentInProgressRef.current = true;
     setCheckoutBusy("ai_launch");
     setCheckoutMessage("");
     try {
-      await startAiLaunchCheckout(siteId);
+      if (selectedSiteRef.current !== targetSiteId) {
+        setCheckoutBusy("");
+        return;
+      }
+      await startAiLaunchCheckout(targetSiteId);
     } catch (error) {
       setCheckoutMessage(error instanceof Error ? error.message : tr("Paiement Création IA indisponible.", "AI Launch checkout unavailable."));
       setCheckoutBusy("");
+    } finally {
+      paymentInProgressRef.current = false;
     }
   }
 
@@ -118,6 +150,7 @@ export default function PlansPage() {
       : "";
 
   const paidPlan = current.planKey === "essential" || current.planKey === "growth";
+  const activePaidPlan = paidPlan && current.status === "active" && billingState?.state === "active";
   const displayedPlanKey = betaAccess.active ? betaExperienceMode : current.planKey;
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     setBetaExperienceMode(mode);
@@ -140,15 +173,15 @@ export default function PlansPage() {
       eyebrow={tr("BUILD · RUN · GROW", "BUILD · RUN · GROW")}
       title={tr("Mon offre", "My plan")}
       description={tr(
-        "La création complète du site est un service BUILD ponctuel. Essentiel assure le RUN du site. Growth ajoute le pilotage et l'amélioration continue.",
-        "Full website creation is a one-time BUILD service. Essential covers website RUN. Growth adds ongoing management and improvement."
+        "Commencez directement avec Essentiel ou Growth. Essentiel publie et héberge votre site ; Growth ajoute l’IA conceptrice pour le faire évoluer. La création initiale complète par IA est une option distincte.",
+        "Start directly with Essential or Growth. Essential publishes and hosts your site; Growth adds the AI architect to improve it over time. Full initial AI site creation is a separate option."
       )}
     >
       {sites.length > 1 ? (
         <section className="panel">
           <label>
             {tr("Site", "Website")}
-            <select value={siteId} onChange={(event) => { setSiteId(event.target.value); void load(event.target.value); }}>
+            <select value={siteId} onChange={(event) => { if (paymentInProgressRef.current) return; selectedSiteRef.current = event.target.value; setLoaded(false); setBillingState(null); setCheckoutMessage(""); setSiteId(event.target.value); void load(event.target.value).catch(() => { setCheckoutMessage(tr("Impossible de charger ce site. Réessayez.", "Unable to load this website. Please retry.")); }); }}>
               {sites.map((site) => <option key={site.id} value={site.id}>{site.slug}</option>)}
             </select>
           </label>
@@ -216,9 +249,10 @@ export default function PlansPage() {
                   : tr("Non incluse", "Not included")}
             </h3>
             <p>{tr("Création ou refonte globale d’une première version du site.", "Create or globally refine a first website version.")}</p>
-            {!betaAccess.active && paidPlan && aiAccess.launchOperationsRemaining === 0 ? (
+            <p>{tr("Cet achat ne comprend pas l’hébergement ni la publication. Un abonnement Essentiel ou Growth est nécessaire pour mettre le site en ligne.", "This purchase does not include hosting or publishing. An Essential or Growth subscription is required to put the website online.")}</p>
+            {!betaAccess.active && (activePaidPlan || (current.planKey === "free" && detachedLaunchEnabled)) && aiAccess.launchOperationsRemaining === 0 ? (
               <button type="button" className="button secondary account-metric-action" disabled={Boolean(checkoutBusy)} onClick={() => void buyAiLaunch()}>
-                {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter la Création IA · 39 € client actif", "Add AI Creation · €39 active-client price")}
+                {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : activePaidPlan ? tr("Ajouter la Création IA · 39 € client actif", "Add AI Creation · €39 active-client price") : tr("Créer mon site par IA · 49 €", "Create my website with AI · €49")}
               </button>
             ) : null}
           </article>
@@ -328,7 +362,7 @@ export default function PlansPage() {
           <p className="plan-price">15 € <small>/ {tr("mois", "month")}</small></p>
           <p className="annual-price">{tr("ou", "or")} 150 € / {tr("an", "year")} · 1 {tr("site", "website")}</p>
           <ul>
-            <li>{tr("Hébergement et publication", "Hosting and publishing")}</li>
+            <li>{tr("Hébergement et publication, sans achat AI Launch obligatoire", "Hosting and publishing, no mandatory AI Launch purchase")}</li>
             <li>{tr("Domaine personnalisé", "Custom domain")}</li>
             <li>{tr("Éditeur complet", "Full editor")}</li>
             <li>{tr("IA rédactionnelle légère", "Light AI writing assistance")}</li>
@@ -348,6 +382,27 @@ export default function PlansPage() {
           ) : null}
         </article>
 
+        {loaded && !betaAccess.active && current.planKey === "essential" ? (
+          <article className="plan-card pro-offer-card" aria-label={tr("Découvrir Growth", "Discover Growth")}>
+            <p className="eyebrow">{tr("Votre prochaine étape, à votre rythme", "Your next step, at your pace")}</p>
+            <h2>{tr("Et si votre site pouvait progresser avec vous ?", "What if your website could improve with you?")}</h2>
+            <p>{tr(
+              "Vous pouvez rester sur Essentiel sans limite de durée. Growth ajoute des diagnostics, des recommandations SEO et conversion, et l’IA conceptrice pour réviser votre site existant.",
+              "You can stay on Essential indefinitely. Growth adds diagnostics, SEO and conversion recommendations, and an AI architect to revise your existing website."
+            )}</p>
+            <p className="plan-status">{tr(
+              "Découvrez la valeur de Growth sans achat AI Launch obligatoire. L’activation reste votre choix.",
+              "Explore Growth without a mandatory AI Launch purchase. Upgrading is entirely your choice."
+            )}</p>
+            <div className="builder-actions">
+              <Link className="button secondary" href="/growth">{tr("Découvrir les possibilités Growth", "Explore Growth features")}</Link>
+              <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "monthly")}>
+                {checkoutBusy === "growth:monthly" ? tr("Ouverture…", "Opening…") : billingState?.hasStripeSubscription ? tr("Gérer mon passage à Growth dans Stripe", "Manage my Growth upgrade in Stripe") : tr("Passer à Growth · 29 €/mois", "Upgrade to Growth · €29/month")}
+              </button>
+            </div>
+          </article>
+        ) : null}
+
         <article className={displayedPlanKey === "growth" ? "plan-card current pro-offer-card" : "plan-card pro-offer-card"}>
           <p className="eyebrow">RUN + GROW</p>
           <h2>Growth</h2>
@@ -358,7 +413,7 @@ export default function PlansPage() {
             <li>{tr("AI Website Manager", "AI Website Manager")}</li>
             <li>{tr("Diagnostics et recommandations continues", "Continuous diagnostics and recommendations")}</li>
             <li>{tr("SEO / AEO et conversion", "SEO / AEO and conversion")}</li>
-            <li>{tr("Révisions globales du site par IA", "AI-powered global website revisions")}</li>
+            <li>{tr("Améliorations ciblées de sections et variantes IA", "Targeted section improvements and AI variants")}</li>
             <li>{annualIncludesLaunch ? tr("Une Création IA incluse par période annuelle Growth", "One AI Creation included per annual Growth period") : tr("Création IA en complément : 39 € pour un client actif", "Additional AI Creation: €39 for an active client")}</li>
           </ul>
           <p className="plan-status">

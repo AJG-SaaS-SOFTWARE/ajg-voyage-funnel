@@ -11,7 +11,7 @@ import {
 } from "../../../../lib/stripe-billing";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
 import { commercialCheckoutReadiness } from "../../../../lib/commercial-checkout-readiness";
-import { auditAiLaunchActiveClientPrice } from "../../../../lib/stripe-readiness";
+import { auditAiLaunchActiveClientPrice, auditAiLaunchPublicPrice } from "../../../../lib/stripe-readiness";
 
 export const runtime = "nodejs";
 
@@ -145,6 +145,7 @@ export async function POST(request: Request) {
     .from("site_subscriptions")
     .select("plan_key,status,provider,provider_customer_id,provider_subscription_id,first_payment_confirmed_at")
     .eq("site_id", site.id)
+    .eq("owner_id", auth.user.id)
     .maybeSingle();
 
   if (currentError) {
@@ -157,11 +158,16 @@ export async function POST(request: Request) {
   const appUrl = billingAppUrl(request);
 
   if (purchaseType === "ai_launch") {
+    // Detached BUILD is opt-in only: existing subscription-first flow stays the default.
+    // Do not enable until database capabilities and the paid BUILD sandbox E2E are certified.
     if (
-      !current ||
-      !["essential", "growth"].includes(current.plan_key) ||
-      current.status !== "active" ||
-      !current.first_payment_confirmed_at
+      process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true" &&
+      (
+        !current ||
+        !["essential", "growth"].includes(current.plan_key) ||
+        current.status !== "active" ||
+        !current.first_payment_confirmed_at
+      )
     ) {
       return NextResponse.json(
         {
@@ -182,16 +188,36 @@ export async function POST(request: Request) {
       .eq("owner_id", auth.user.id)
       .eq("status", "active");
 
-    if (launchError) {
+    if (launchError || !Array.isArray(launchRows)) {
+      // A null or malformed response is not evidence that no entitlement exists.
+      // Do not initiate a second paid Checkout without a confirmed ledger read.
       return NextResponse.json(
-        { error: tr("Impossible de vérifier votre droit Création IA.", "Unable to verify your AI Launch entitlement.") },
+        { error: tr("Impossible de vérifier votre droit Création IA.", "Unable to verify your AI Launch entitlement."),
+          code: "ai_launch_ledger_unavailable" },
         { status: 503 }
       );
     }
 
+    // Fail closed if any active entitlement is unreadable: never risk selling
+    // a second BUILD package merely because a malformed row was ignored.
+    const malformedLaunch = (launchRows || []).some((row: any) =>
+      !Number.isSafeInteger(row.operations_total) ||
+      !Number.isSafeInteger(row.operations_used) ||
+      row.operations_total < 1 || row.operations_used < 0 ||
+      row.operations_used > row.operations_total ||
+      (row.expires_at !== null &&
+        (typeof row.expires_at !== "string" ||
+          !Number.isFinite(Date.parse(row.expires_at))))
+    );
+    if (malformedLaunch) {
+      return NextResponse.json({
+        code: "ai_launch_entitlement_unverifiable",
+        error: tr("Impossible de vérifier un droit Création IA existant.", "An existing AI Launch entitlement cannot be verified.")
+      }, { status: 503 });
+    }
     const hasRemainingLaunch = (launchRows || []).some((row: any) =>
-      Number(row.operations_total) > Number(row.operations_used) &&
-      (!row.expires_at || row.expires_at > now)
+      row.operations_used < row.operations_total &&
+      (row.expires_at === null || Date.parse(row.expires_at) > Date.now())
     );
     if (hasRemainingLaunch) {
       return NextResponse.json(
@@ -206,11 +232,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const priceId = process.env.STRIPE_AI_LAUNCH_ACTIVE_CLIENT_PRICE_ID?.trim() || "";
-    const activeClientPrice = await auditAiLaunchActiveClientPrice();
-    if (!priceId || !activeClientPrice.ok) {
+    const activePaidClient = Boolean(current &&
+      ["essential", "growth"].includes(current.plan_key) &&
+      current.status === "active" && current.first_payment_confirmed_at);
+    if (!activePaidClient && current && current.plan_key !== "free") {
+      return NextResponse.json({
+        code: "subscription_restore_required",
+        error: tr("Régularisez votre abonnement avant un nouvel achat Création IA.", "Restore your subscription before another AI Creation purchase.")
+      }, { status: 409 });
+    }
+    const priceId = activePaidClient
+      ? process.env.STRIPE_AI_LAUNCH_ACTIVE_CLIENT_PRICE_ID?.trim() || ""
+      : process.env.STRIPE_AI_LAUNCH_PRICE_ID?.trim() || "";
+    const priceAudit = activePaidClient
+      ? await auditAiLaunchActiveClientPrice()
+      : await auditAiLaunchPublicPrice();
+    if (!priceId || !priceAudit.ok) {
       return NextResponse.json(
-        { error: tr("Le tarif Création IA client actif à 39 € n’est pas encore disponible. Aucun paiement n’a été créé.", "The €39 active-client AI Creation price is not available yet. No payment was created.") },
+        { error: tr("Le tarif Création IA correspondant à votre situation n’est pas encore disponible. Aucun paiement n’a été créé.", "The AI Creation price for your account is not available yet. No payment was created.") },
         { status: 503 }
       );
     }
@@ -267,7 +306,7 @@ export async function POST(request: Request) {
   if (
     current?.provider === "stripe" &&
     current.provider_subscription_id &&
-    ["active", "trialing", "past_due"].includes(current.status)
+    !["canceled", "incomplete_expired"].includes(current.status)
   ) {
     return NextResponse.json(
       {
@@ -294,6 +333,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const checkoutAttemptId = typeof body?.checkoutAttemptId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.checkoutAttemptId)
+      ? body.checkoutAttemptId : "";
+  if (!checkoutAttemptId) {
+    return NextResponse.json({
+      error: tr("Identifiant de tentative de paiement manquant.", "Missing checkout attempt identifier."),
+      code: "checkout_attempt_required"
+    }, { status: 400 });
+  }
+
   const trialDays = configuredTrialDays(planKey, billingCycle);
 
   try {
@@ -305,6 +354,7 @@ export async function POST(request: Request) {
         current?.provider === "stripe" ? current.provider_customer_id : null,
       priceId,
       planKey,
+      attemptId: checkoutAttemptId,
       successUrl: `${appUrl}/billing?checkout=success&siteId=${encodeURIComponent(site.id)}`,
       cancelUrl: `${appUrl}/plans?checkout=cancel&siteId=${encodeURIComponent(site.id)}`
     });

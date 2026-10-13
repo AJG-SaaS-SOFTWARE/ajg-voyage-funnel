@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     .from("site_subscriptions")
     .select("provider,provider_customer_id")
     .eq("site_id", site.id)
+    .eq("owner_id", auth.user.id)
     .maybeSingle();
 
   if (error) {
@@ -70,3 +71,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
