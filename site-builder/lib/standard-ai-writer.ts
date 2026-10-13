@@ -1,3 +1,5 @@
+import { unsupportedQuantitativeClaims } from "./ai-quantitative-evidence.ts";
+
 export type StandardAiField =
   | "heroTagline"
   | "heroTitle"
@@ -109,10 +111,9 @@ export function selectStandardContextEntries(
     return pick(
       [
         ...commonDiscovery,
-        "headline",
-        "intro",
+        "about",
         "about heading",
-        "about"
+        "headline"
       ],
       7
     );
@@ -501,18 +502,11 @@ export function standardQualityIssues(
   const issues: StandardQualityIssue[] = [];
   const visible = standardVisibleOutputTexts(field, moduleType, output);
   const normalizedEvidence = normalizeComparable(sourceEvidenceText);
-  const supportedNumbers = new Set(
-    (sourceEvidenceText.match(/\d+(?:[.,]\d+)?/g) || []).map((value) =>
-      value.replace(",", ".").replace(/^0+(?=\d)/, "")
-    )
-  );
 
   const templatePattern =
     /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|\b(?:lorem ipsum|todo|tbd)\b)/iu;
   const presentationMarkupPattern =
     /(?:\*\*[^*\n]+\*\*|__[^_\n]+__|(?:^|\n)\s{0,3}#{1,6}\s+\S|\x60\x60\x60|!?\[[^\]\n]+\]\([^)\n]+\)|<\/?(?:strong|em|b|i|h[1-6]|p|a|ul|ol|li)\b[^>]*>)/iu;
-  const quantitativePattern =
-    /(?:[€£$]\s*\d+(?:[.,]\d+)?)|(?:\b\d+(?:[.,]\d+)?\s*(?:%|€|£|\$))|(?:\b\d+(?:[.,]\d+)?\s*(?:euros?|dollars?|usd|gbp|minutes?|mins?|heures?|hours?|hrs?|jours?|days?|semaines?|weeks?|mois|months?|ans?|années?|years?|clients?|customers?|projets?|projects?|pays|countries|destinations?|voyages?|trips?|réservations?|bookings?)\b)|(?:\b(?:19|20)\d{2}\b)|(?:\b24\s*\/\s*7\b)/giu;
 
   const groundedClaims = [
     { pattern: /\b(?:meilleur(?:e|s)?|best)\b/giu, label: "meilleur / best" },
@@ -553,12 +547,7 @@ export function standardQualityIssues(
       });
     }
 
-    for (const claim of text.match(quantitativePattern) || []) {
-      const number = claim.match(/\d+(?:[.,]\d+)?/)?.[0];
-      const normalized = number
-        ? number.replace(",", ".").replace(/^0+(?=\d)/, "")
-        : "";
-      if (!normalized || supportedNumbers.has(normalized)) continue;
+    for (const claim of unsupportedQuantitativeClaims(text, sourceEvidenceText)) {
       issues.push({
         code: "unsupported_quantitative_claim",
         detail: location + " introduit un chiffre non fourni : « " + claim + " »."
@@ -579,4 +568,5 @@ export function standardQualityIssues(
 
   return issues.slice(0, 8);
 }
+
 

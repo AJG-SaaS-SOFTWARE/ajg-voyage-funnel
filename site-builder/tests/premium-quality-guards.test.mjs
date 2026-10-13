@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+// Unit-aware regression: a number with a different meaning is not grounding.
 import {
   deterministicQualityIssues,
   quantitativeEvidenceText
@@ -138,6 +139,12 @@ test("visible section labels cannot be left empty", () => {
   assert.ok(found.includes("missing_about_heading"));
   assert.ok(found.includes("missing_primary_cta_label"));
   assert.ok(found.includes("missing_faq_title"));
+});
+
+test("premium numeric grounding rejects a matching number with another unit", () => {
+  const value = proposal({ heroSubtitle: "Déjà 20 clients accompagnés avec une approche personnalisée." });
+  assert.ok(codes(value, "20 ans d'expérience.").includes("unsupported_quantitative_claim"));
+  assert.ok(!codes(value, "20 clients accompagnés.").includes("unsupported_quantitative_claim"));
 });
 
 test("unsupported quantitative claims are blocked unless grounded in source evidence", () => {
@@ -459,3 +466,4 @@ test("quantitative checks cover section and page titles as visible copy", () => 
   pageValue.architecture.pages[0].title = "Accueil 2027";
   assert.ok(codes(pageValue).includes("unsupported_quantitative_claim"));
 });
+
