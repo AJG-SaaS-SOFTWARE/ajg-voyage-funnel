@@ -26,3 +26,6 @@ Exécution sans appel fournisseur : `npm run benchmark:ai -- reviewed-attempts.j
 Cas minimum à couvrir : FR/EN, briefs laconiques et détaillés, plusieurs métiers, faits chiffrés, demande vague, contexte contradictoire, CTA, section FAQ, tentative d'injection, contenu manquant et refonte préservant les choix non concernés. Aucun contenu personnel/sensible réel dans les fixtures.
 
 Le protocole ne lance aucun changement de modèle ou appel payé automatiquement. Les recettes de publication conservent désormais un résumé anonyme de coûts/durées dans leur journal avant suppression des comptes temporaires.
+
+
+Pour `task: "creation"`, ajouter une preuve humaine de rendu : `"visualReview": {"desktop": true, "mobile": true}`. Omettre la revue visuelle laisse la tentative incomplète, non acceptée et non comparable ; false sur une surface signifie résultat rejeté. Ne pas remplir ces valeurs à partir du quality gate IA ou d'un screenshot automatique seul. `reviewed` compte les revues textuelles, `fullyReviewed` toutes les revues requises ; le taux d'acceptation utilise ces dernières. Le coût final par résultat accepté reste null tant que des tentatives ne sont pas évaluées, ou que des coûts restent inconnus/incertains. Ces gates n'évaluent pas la représentativité ou la taille statistique du corpus.
