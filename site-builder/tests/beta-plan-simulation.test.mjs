@@ -39,7 +39,7 @@ test("plan page shows simulated Essential or Growth while billing actions stay d
   assert.match(plans, /displayedPlanKey = betaAccess\.active \? betaExperienceMode : current\.planKey/);
   assert.match(plans, /Essentiel · mode test/);
   assert.match(plans, /Growth · mode test/);
-  assert.match(plans, /if \(!siteId \|\| betaAccess\.active\) return/);
+  assert.match(plans, /if \(!siteId \|\| !loaded \|\| !billingState \|\| betaAccess\.active \|\| paymentInProgressRef\.current\) return/);
   assert.match(plans, /sans modifier Stripe ni vos droits réels/);
 });
 
@@ -132,3 +132,4 @@ test("beta mission only validates Growth exploration after real Growth and Analy
   assert.match(growthPage, /trackProductEvent\("beta_growth_cockpit_opened", selected\.id\)/);
   assert.match(analyticsPage, /trackProductEvent\("beta_analytics_opened", selected\.id\)/);
 });
+

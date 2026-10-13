@@ -28,7 +28,7 @@ function price([name, amount, interval]) {
 }
 const portal = { active: true, metadata: { app: "ajg_site_builder" }, features: {
   payment_method_update: { enabled: true }, invoice_history: { enabled: true },
-  subscription_cancel: { enabled: true, mode: "at_period_end" }, subscription_update: { enabled: true },
+  subscription_cancel: { enabled: true, mode: "at_period_end" }, subscription_update: { enabled: true, products: [{ product: "prod_synthetic", prices: offers.slice(0,4).map(([name])=>"price_"+name) }] },
 } };
 function provider(mutate = value => value) {
   return async (path, options) => {
@@ -152,3 +152,11 @@ test("a shared failed audit stays blocking and allows one new audit after its sh
   assert.equal(recovered.every(items => items.every(item => item.ok)), true);
   assert.equal(calls, 12);
 });
+
+
+ test("enabled portal without selectable ELTARA offers remains blocked", async () => {
+ const result = await load(async (path, options) => path.includes("billing_portal")
+   ? {...portal, features:{...portal.features, subscription_update:{enabled:true,products:[]}}}
+   : provider()(path,options)).auditStripeRuntime();
+ assert.equal(result.at(-1).ok,false);
+ });

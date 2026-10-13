@@ -25,8 +25,8 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
   const site = await getMySite(siteId);
   if (!site) return null;
   const [{ data, error }, { data: subscription, error: subscriptionError }] = await Promise.all([
-    supabase.from("site_billing_states").select("state,paid_through,grace_until,restricted_at,public_suspend_at,export_until,delete_after,provider_status").eq("site_id", site.id).maybeSingle(),
-    supabase.from("site_subscriptions").select("provider,provider_customer_id,provider_subscription_id,status").eq("site_id", site.id).maybeSingle()
+    supabase.from("site_billing_states").select("state,paid_through,grace_until,restricted_at,public_suspend_at,export_until,delete_after,provider_status").eq("site_id", site.id).eq("owner_id", site.ownerId).maybeSingle(),
+    supabase.from("site_subscriptions").select("provider,provider_customer_id,provider_subscription_id,status").eq("site_id", site.id).eq("owner_id", site.ownerId).maybeSingle()
   ]);
   if (error) throw error;
   if (subscriptionError) throw subscriptionError;
@@ -38,7 +38,7 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
     hasStripeSubscription: Boolean(
       subscription?.provider === "stripe"
       && subscription?.provider_subscription_id
-      && ["active", "trialing", "past_due"].includes(subscription?.status || "")
+      && !["canceled", "incomplete_expired"].includes(subscription?.status || "")
     )
   };
   return {
@@ -49,7 +49,7 @@ export async function getMyBillingState(siteId?: string): Promise<BillingState |
     hasStripeSubscription: Boolean(
       subscription?.provider === "stripe"
       && subscription?.provider_subscription_id
-      && ["active", "trialing", "past_due"].includes(subscription?.status || "")
+      && !["canceled", "incomplete_expired"].includes(subscription?.status || "")
     )
   };
 }
@@ -165,12 +165,26 @@ async function openStripeBillingPath(
   window.location.assign(result.url);
 }
 
-export async function startPlanCheckout(
+// Coalesce concurrent requests in the same tab. All callers observe the
+// same result; a new explicit click after a failure creates a fresh attempt.
+const pendingSubscriptionAttempts = new Map<string, Promise<void>>();
+
+export function startPlanCheckout(
   siteId: string,
   planKey: "essential" | "growth",
   billingCycle: "monthly" | "annual"
-) {
-  return openStripeBillingPath("/api/billing/checkout", siteId, { planKey, billingCycle });
+): Promise<void> {
+  const intent = JSON.stringify([siteId, planKey, billingCycle]);
+  const pending = pendingSubscriptionAttempts.get(intent);
+  if (pending) return pending;
+  const checkoutAttemptId = crypto.randomUUID();
+  const task = openStripeBillingPath("/api/billing/checkout", siteId, {
+    planKey, billingCycle, checkoutAttemptId
+  }).finally(() => {
+    pendingSubscriptionAttempts.delete(intent);
+  });
+  pendingSubscriptionAttempts.set(intent, task);
+  return task;
 }
 
 export async function startGrowthCheckout(siteId: string) {
@@ -186,3 +200,4 @@ export async function startAiLaunchCheckout(siteId: string) {
 export async function openStripeBillingPortal(siteId: string) {
   return openStripeBillingPath("/api/billing/portal", siteId);
 }
+

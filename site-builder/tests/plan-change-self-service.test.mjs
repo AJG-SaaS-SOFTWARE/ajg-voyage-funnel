@@ -9,13 +9,13 @@ const checkout = fs.readFileSync(new URL("../app/api/billing/checkout/route.ts",
 test("billing state distinguishes a Stripe customer from an active Stripe subscription", () => {
   assert.match(billing, /provider_subscription_id/);
   assert.match(billing, /hasStripeSubscription/);
-  assert.match(billing, /\["active", "trialing", "past_due"\]/);
+  assert.match(billing, /!\["canceled", "incomplete_expired"\]\.includes/);
 });
 
 test("plan changes use the portal when an active Stripe subscription already exists", () => {
   assert.match(plans, /billingState\?\.hasStripeSubscription/);
-  assert.match(plans, /openStripeBillingPortal\(siteId\)/);
-  assert.match(plans, /startPlanCheckout\(siteId, planKey, billingCycle\)/);
+  assert.match(plans, /openStripeBillingPortal\(targetSiteId\)/);
+  assert.match(plans, /startPlanCheckout\(targetSiteId, planKey, billingCycle\)/);
 });
 
 test("frontend routing mirrors the checkout duplicate-subscription guard", () => {
@@ -26,5 +26,6 @@ test("frontend routing mirrors the checkout duplicate-subscription guard", () =>
 });
 
 test("Beta Tester still cannot enter a paid plan-change flow", () => {
-  assert.match(plans, /if \(!siteId \|\| betaAccess\.active\) return/);
+  assert.match(plans, /if \(!siteId \|\| !loaded \|\| !billingState \|\| betaAccess\.active \|\| paymentInProgressRef\.current\) return/);
 });
+

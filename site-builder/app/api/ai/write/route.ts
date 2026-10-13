@@ -368,12 +368,70 @@ export async function POST(request: Request) {
   const { data: entitlementRows, error: entitlementError } = await auth.supabase.rpc("get_my_site_entitlements", {
     p_site_id: siteId
   });
-  if (entitlementError || !entitlementRows) {
-    return NextResponse.json({ error: tr("Impossible de vérifier votre offre IA. Réessayez plus tard.", "Unable to verify your AI plan. Please try again later.") }, { status: 503 });
+  if (entitlementError) {
+    return NextResponse.json({
+      code: "entitlement_unavailable",
+      error: tr("Impossible de vérifier votre formule actuellement.", "Unable to verify your plan right now.")
+    }, { status: 503 });
   }
   const requestEntitlement = Array.isArray(entitlementRows) ? entitlementRows[0] : entitlementRows;
+  if (!requestEntitlement) {
+    return NextResponse.json({
+      code: "entitlement_missing",
+      error: tr("Les droits de ce site doivent être vérifiés avant une dépense IA.", "This website's rights must be verified before AI spending.")
+    }, { status: 503 });
+  }
   const requestPlanKey =
     typeof requestEntitlement?.plan_key === "string" ? requestEntitlement.plan_key : "unknown";
+  if (!["free", "essential", "growth"].includes(requestPlanKey)) {
+    return NextResponse.json({
+      code: "invalid_plan",
+      error: tr("Le forfait de ce site n'est pas reconnu.", "This website's plan is not recognized.")
+    }, { status: 503 });
+  }
+
+  // Detached one-shot BUILD never unlocks ordinary field writing or continuous GROW.
+  // Check the server flag and the DB-owned AI Launch entitlement before reserving tokens.
+  if (requestPlanKey === "free" && capability?.can_generate_ai) {
+    if (process.env.AJG_DETACHED_AI_LAUNCH_ENABLED !== "true" ||
+        !["siteArchitect", "siteRevision"].includes(field)) {
+      return NextResponse.json({
+        code: "run_subscription_required",
+        error: tr("Cette fonction IA nécessite un abonnement actif.", "This AI operation requires an active subscription.")
+      }, { status: 402 });
+    }
+    const { data: detachedAccess, error: detachedError } = await auth.supabase.rpc(
+      "get_my_site_ai_access", { p_site_id: siteId }
+    );
+    const detached = Array.isArray(detachedAccess) ? detachedAccess[0] : detachedAccess;
+    // An admin or promotional launch entitlement must not be mistaken for a
+    // standalone Stripe purchase. Supabase RLS limits this read to the owner.
+    const { data: paidLaunchRows, error: paidLaunchError } = await auth.supabase
+      .from("site_ai_launch_entitlements")
+      .select("operations_total,operations_used,expires_at")
+      .eq("site_id", siteId)
+      .eq("owner_id", auth.user.id)
+      .eq("source", "stripe_purchase")
+      .eq("status", "active")
+      .gt("operations_total", 0);
+    const nowMs = Date.now();
+    const hasPaidLaunch = !paidLaunchError && (paidLaunchRows || []).some(row =>
+      Number.isSafeInteger(row.operations_total) &&
+      Number.isSafeInteger(row.operations_used) &&
+      row.operations_total > row.operations_used &&
+      (row.expires_at === null ||
+        (typeof row.expires_at === "string" &&
+         Number.isFinite(Date.parse(row.expires_at)) &&
+         Date.parse(row.expires_at) > nowMs))
+    );
+    if (detachedError || detached?.access_source !== "ai_launch" ||
+        Number(detached?.launch_operations_remaining) <= 0 || !hasPaidLaunch) {
+      return NextResponse.json({
+        code: "paid_ai_launch_required",
+        error: tr("Aucun droit Création IA valide n'a été trouvé.", "No valid paid AI Launch entitlement was found.")
+      }, { status: 403 });
+    }
+  }
 
   const instruction = clean(body?.instruction, 800);
   if (!instruction) {
