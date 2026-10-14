@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { type CSSProperties } from "react";
-import { siteDisclaimer, type SiteConfig } from "../lib/site-config";
+import { type SiteConfig } from "../lib/site-config";
 import SoundControl from "./SoundControl";
 import SiteModulesView from "./SiteModulesView";
 import { readableInk, safeHttpsUrl, surfaceInk } from "../lib/site-design";
@@ -62,7 +62,7 @@ export default function PublishedSite({
           {config.design.backgroundPhotoUrl || config.design.heroImage ? <img className="public-hero-image" src={config.design.backgroundPhotoUrl || config.design.heroImage!.url} alt="" style={backgroundImageStyle} /> : null}
           <div className="public-hero-copy">
             {config.heroTagline.trim() ? <p className="mini">{config.heroTagline}</p> : null}
-            <h1>{config.heroTitle || (english ? "Discover another way to travel" : "Découvrez une autre façon de voyager")}</h1>
+            <h1>{config.heroTitle || (english ? "Your website" : "Votre site")}</h1>
             <p>{config.heroSubtitle}</p>
             <div className="public-actions">
               {hasBooking && config.design.showPrimaryButton ? <a className="button primary" data-eltara-analytics="booking" href={bookingHref} target="_blank" rel="noopener">{actionLabel}</a> : null}
@@ -80,7 +80,7 @@ export default function PublishedSite({
         </section> : null}
 
         {(isHome || currentPage?.kind === "about") && config.aboutText.trim() ? <section className="public-about" id="presentation">
-          <p className="mini">{config.affiliation === "mwr" ? (english ? "Who is presenting the platform?" : "Qui vous présente la plateforme ?") : (english ? "About me" : "Qui suis-je ?")}</p>
+          <p className="mini">{english ? "About" : "Présentation"}</p>
           <h2>{config.aboutHeading || `${config.firstName} ${config.lastName}`}</h2>
           <p>{config.aboutText}</p>
         </section> : null}
@@ -96,14 +96,10 @@ export default function PublishedSite({
 
       <footer className="public-footer">
         <strong>{config.brandName}</strong>
-        {siteDisclaimer(config) ? <p>{siteDisclaimer(config)}</p> : null}
+
         {instagramHref || facebookHref ? <div className="public-socials">
           {instagramHref ? <a data-eltara-analytics="social_instagram" href={instagramHref} target="_blank" rel="noopener noreferrer">Instagram</a> : null}
           {facebookHref ? <a data-eltara-analytics="social_facebook" href={facebookHref} target="_blank" rel="noopener noreferrer">Facebook</a> : null}
-        </div> : null}
-        {config.affiliation === "mwr" && (config.design.showMwrLogo || config.design.showTravelAdvantageLogo) ? <div className="public-brand-marks">
-          {config.design.showMwrLogo ? <img src="/logos/mwr-life-independent.svg" alt={english ? "MWR Life — independent distributor" : "MWR Life — distributeur indépendant"} /> : null}
-          {config.design.showTravelAdvantageLogo ? <img src="/logos/travel-advantage-independent.svg" alt={english ? "Travel Advantage — independent distributor" : "Travel Advantage — distributeur indépendant"} /> : null}
         </div> : null}
         {(config.design.heroImage || config.design.audio) ? <div className="public-credits">
           {config.design.heroImage ? <a href={config.design.heroImage.sourceUrl} target="_blank" rel="noopener noreferrer">Image : {config.design.heroImage.title} — {config.design.heroImage.creator} ↗</a> : null}

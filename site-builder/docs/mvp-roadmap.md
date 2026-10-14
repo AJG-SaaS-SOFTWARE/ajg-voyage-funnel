@@ -18,7 +18,7 @@ Dernière mise à jour : 29 septembre 2026.
 - [x] personnalisation des couleurs, fonds, motifs, image et son ;
 - [x] photo personnelle en arrière-plan, compression WebP, rendu `cover` et point focal intelligent ajustable ;
 - [x] contraste automatique texte/fond et contraste du CTA ;
-- [x] profil MWR ou activité indépendante, logos facultatifs ;
+- [x] sites généralistes, images et mentions propres à chaque activité via les outils de contenu ;
 - [x] conformité centralisée et verrouillée ;
 - [x] base FR / EN.
 
@@ -264,7 +264,7 @@ Les quotas actuels (Gratuit : 80 générations IA/mois et 250 Mo ; Pro : 500/moi
 
 ## Principe de conformité
 
-Pour le profil ambassadeur MWR, la mention d'indépendance reste un bloc système. Les logos sont facultatifs et leur activation suppose que le membre dispose du droit d'utiliser les visuels. Pour une autre activité, les mentions MWR sont supprimées. L'éditeur ne génère pas encore toutes les informations légales propres à une activité indépendante ; elles doivent être vérifiées avant diffusion.
+ELTARA ne fournit plus de profil de marque spécialisée, de logos intégrés ou de mention d’affiliation automatique. Les informations légales et médias restent renseignés et vérifiés par le client.
 
 
 ## Checkpoint fin des sprints codables — 28 septembre 2026

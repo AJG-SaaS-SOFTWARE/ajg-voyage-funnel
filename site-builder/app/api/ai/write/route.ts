@@ -2,7 +2,7 @@ import { aiRequestHashes } from "../../../../lib/ai-request-admission";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
-import { normalizeStandardStructuredOutput, sanitizeStandardText, selectStandardContextEntries, standardQualityIssues, standardStructuredFormat } from "../../../../lib/standard-ai-writer";
+import { normalizeStandardStructuredOutput, omitRepeatedEditableContext, sanitizeStandardText, selectStandardContextEntries, standardQualityIssues, standardStructuredFormat } from "../../../../lib/standard-ai-writer";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
 import { AiBudgetError, createBudgetedProviderFetch } from "../../../../lib/ai-provider-budget";
 import { estimateAiCostUsdMicros } from "../../../../lib/ai-cost";
@@ -383,7 +383,6 @@ export async function POST(request: Request) {
   const currentText = clean(body?.currentText, 3500);
   const context = body?.context && typeof body.context === "object" ? body.context : {};
   const language = context.language === "en" ? "English" : "French";
-  const affiliation = context.affiliation === "mwr" ? "mwr" : "independent";
   const firstName = clean(context.firstName, 80);
   const brandName = clean(context.brandName, 120);
   const moduleType = clean(context.moduleType, 30);
@@ -413,8 +412,8 @@ export async function POST(request: Request) {
   );
   const selectedContextEntries =
     field === "siteArchitect" || field === "siteRevision"
-      ? contextEntries.slice(0, 12)
-      : selectStandardContextEntries(field, contextEntries);
+      ? contextEntries.filter(([key]) => key !== "site architect brief").slice(0, 12)
+      : selectStandardContextEntries(field, omitRepeatedEditableContext(field, currentText, contextEntries));
   const editorialContext = selectedContextEntries
     .map(([key, value]) => `${key}: ${value}`)
     .join("\n");
@@ -424,9 +423,7 @@ export async function POST(request: Request) {
       ? { ...fieldSpec, ...englishWritableFields[field] }
       : fieldSpec;
 
-  const complianceRules = affiliation === "mwr"
-    ? "The member is an independent MWR Life Lifestyle Ambassador. Do not present the site as official. Do not invent prices, discounts, savings, guarantees, income claims, affiliations, certifications or product capabilities. Mention MWR Life or Travel Advantage only when the user's request or existing text makes it relevant."
-    : "This is an independent site. Do not introduce MWR Life or Travel Advantage unless they already appear in the user's request. Do not invent affiliations, certifications, guarantees, prices, savings, income claims or product capabilities.";
+  const complianceRules = "Use only the business identity and facts supplied by the user. Do not invent affiliations, certifications, guarantees, prices, discounts, savings, income claims or product capabilities. Do not present an independent business as an official representative without explicit evidence.";
 
   const modulePrompt = field === "moduleDraft"
     ? moduleType === "faq"

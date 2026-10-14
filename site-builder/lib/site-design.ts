@@ -20,8 +20,6 @@ export type SiteDesign = {
   pattern: "none" | "dots" | "lines" | "grid" | "rays";
   background: "ivory" | "sand" | "mist" | "sage" | "slate";
   patternStrength: "soft" | "bold";
-  showMwrLogo: boolean;
-  showTravelAdvantageLogo: boolean;
   showPortrait: boolean;
   showPrimaryButton: boolean;
   showBooking: boolean;
@@ -85,8 +83,6 @@ export const defaultSiteDesign: SiteDesign = {
   pattern: "none",
   background: "ivory",
   patternStrength: "soft",
-  showMwrLogo: false,
-  showTravelAdvantageLogo: false,
   showPortrait: true,
   showPrimaryButton: true,
   showBooking: true,
@@ -172,8 +168,6 @@ export function normalizeSiteDesign(value: unknown): SiteDesign {
     pattern: patterns.find((pattern) => pattern === input.pattern) || defaultSiteDesign.pattern,
     background: backgrounds.find((background) => background === input.background) || defaultSiteDesign.background,
     patternStrength: input.patternStrength === "bold" ? "bold" : "soft",
-    showMwrLogo: input.showMwrLogo === true,
-    showTravelAdvantageLogo: input.showTravelAdvantageLogo === true,
     showPortrait: input.showPortrait !== false,
     showPrimaryButton: input.showPrimaryButton !== false,
     showBooking: input.showBooking !== false,

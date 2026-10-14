@@ -57,7 +57,10 @@ function harness({ rows = [], recent = 0, open = 0, lookupFails = false,
     "@supabase/supabase-js": { createClient: (_url, key) => key === "synthetic-service"
       ? service : { auth: { getUser: async (token) => ({ data: { user: token === "valid-token" ? { id: "owner-a" } : null }, error: null }) } } },
     "../../../../lib/support-health-server": { diagnoseSupportHealth: async () => { stats.diagnoses++; return structuredClone(health); } },
-    "../../../../lib/support-reconcile-policy": { supportReconcileDecision() { throw new Error("Unexpected PATCH"); } },
+    "../../../../lib/support-reconcile-policy": {
+      supportReconcileDecision() { throw new Error("Unexpected PATCH"); },
+      supportCustomerAction() { return null; }
+    },
     "../../../../lib/support-events": { recordSupportEvent: async (_service, event) => { stats.events.push(event); if (auditThrows) throw new Error("Synthetic audit crash"); } },
     "../../../../lib/run-intake-reporting": { reportSupportTicketToRun: async (report) => { stats.reports.push(report); return { ok: true }; } },
     "../../../../lib/server-locale": {

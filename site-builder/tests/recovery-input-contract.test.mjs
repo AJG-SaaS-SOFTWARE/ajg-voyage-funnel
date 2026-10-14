@@ -67,7 +67,7 @@ test("invalid language, compliance and boolean fields cannot silently switch sit
     assert.throws(() => siteConfigFromRecoveryExport(input, target), { message: "invalid_recovery_file" });
   }
   const mwr = fixture(); mwr.site.config.complianceProfile = "mwr-life-independent-ambassador-v1";
-  assert.equal(siteConfigFromRecoveryExport(mwr, target).config.affiliation, "mwr");
+  assert.equal(siteConfigFromRecoveryExport(mwr, target).config.affiliation, "independent");
 });
 
 test("missing newer optional fields and empty text remain compatible with older valid exports", () => {
@@ -98,7 +98,7 @@ test("saved draft content, language, design and affiliation take precedence duri
   assert.equal(preview.config.heroTitle, "Unpublished title");
   assert.equal(preview.config.brandName, "Synthetic studio");
   assert.equal(preview.config.language, "en");
-  assert.equal(preview.config.affiliation, "mwr");
+  assert.equal(preview.config.affiliation, "independent");
   assert.equal(preview.config.design.accent, "#abcdef");
   assert.equal(preview.config.legal.legalName, "Draft publisher");
   assert.equal(preview.config.slug, target.slug);

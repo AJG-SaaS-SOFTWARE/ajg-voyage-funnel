@@ -16,7 +16,6 @@ type Props = {
   moduleType: AssistedModuleType;
   brief: string;
   language: SiteLanguage;
-  affiliation: "mwr" | "independent";
   firstName: string;
   brandName: string;
   currentValue: unknown;
@@ -65,7 +64,6 @@ export default function ModuleDraftAssistant({
   moduleType,
   brief,
   language,
-  affiliation,
   firstName,
   brandName,
   currentValue,
@@ -112,7 +110,6 @@ export default function ModuleDraftAssistant({
           currentText: JSON.stringify(currentValue),
           context: {
             language,
-            affiliation,
             firstName,
             brandName,
             moduleType,

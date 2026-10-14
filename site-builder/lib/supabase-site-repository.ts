@@ -56,7 +56,7 @@ function configFromRow(row: any): SiteConfig {
     instagramUrl: row.instagram_url,
     facebookUrl: row.facebook_url,
     design: normalizeSiteDesign(row.design_assets),
-    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr",
+    affiliation: "independent",
     legal: normalizeSiteLegalConfig(row.legal_config),
     architecture: normalizeSiteArchitecture(row.design_assets?.architecture),
     contentLibrary: normalizeContentLibrary(row.design_assets?.contentLibrary)
@@ -92,7 +92,7 @@ function payload(user: User, config: SiteConfig, status: "draft" | "published") 
     legal_config: config.legal,
     profile_image_url: config.profileImageUrl,
     show_travel_journals: config.showTravelJournals,
-    compliance_profile: config.affiliation === "independent" ? "independent-v1" : "mwr-life-independent-ambassador-v1",
+    compliance_profile: "independent-v1",
     published_at: status === "published" ? new Date().toISOString() : null
   };
 }

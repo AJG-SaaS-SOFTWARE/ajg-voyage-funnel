@@ -28,28 +28,11 @@ export type SiteConfig = {
   instagramUrl: string;
   facebookUrl: string;
   design: SiteDesign;
-  affiliation: "mwr" | "independent";
+  affiliation: "independent";
   legal: SiteLegalConfig;
   architecture: SiteArchitecture;
   contentLibrary: ContentLibrary;
 };
-
-export const requiredDisclaimer =
-  "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de MWR Life ou Travel Advantage.";
-
-export function siteDisclaimer(config: SiteConfig) {
-  if (config.affiliation !== "mwr") return "";
-  const usesMwr = config.design.showMwrLogo;
-  const usesTravelAdvantage = config.design.showTravelAdvantageLogo ||
-    /\btravel\s*advantage\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName].join(" "));
-  if (usesMwr && !usesTravelAdvantage) {
-    return "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de MWR Life.";
-  }
-  if (usesTravelAdvantage && !usesMwr) {
-    return "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de Travel Advantage.";
-  }
-  return requiredDisclaimer;
-}
 
 export const defaultSiteConfig: SiteConfig = {
   slug: "",
@@ -57,20 +40,19 @@ export const defaultSiteConfig: SiteConfig = {
   lastName: "",
   brandName: "",
   language: "fr",
-  heroTitle: "Découvrez une autre façon de voyager",
-  heroSubtitle:
-    "Une présentation simple et personnalisée de la plateforme Travel Advantage, de ses services voyage et de son fonctionnement.",
+  heroTitle: "",
+  heroSubtitle: "",
   heroTagline: "",
   aboutText: "",
   aboutHeading: "",
-  bookingLabel: "Réserver une présentation",
+  bookingLabel: "Nous contacter",
   bookingUrl: "",
   profileImageUrl: "",
   showTravelJournals: false,
   instagramUrl: "",
   facebookUrl: "",
   design: defaultSiteDesign,
-  affiliation: "mwr",
+  affiliation: "independent",
   legal: defaultSiteLegalConfig,
   architecture: { mode: "single", pages: [{ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] }] },
   contentLibrary: { assets: [] }

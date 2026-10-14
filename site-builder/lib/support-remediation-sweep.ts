@@ -140,11 +140,13 @@ async function sweepWithClient(
     });
 
     result.attempted++;
-    if (repair.status === "succeeded") result.succeeded++;
+    if (repair.status === "succeeded" && repair.verified === true && repair.audited === true) result.succeeded++;
+    else if (repair.status === "succeeded") result.failed++;
     else if (repair.status === "no_change") result.noChange++;
     else result.failed++;
   }
 
+  result.ok = result.failed === 0;
   return result;
 }
 

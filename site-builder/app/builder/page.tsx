@@ -22,7 +22,6 @@ import AiTextAssistant from "../../components/AiTextAssistant";
 import ComplianceEditor from "../../components/ComplianceEditor";
 import {
   defaultSiteConfig,
-  requiredDisclaimer,
   type SiteConfig,
   type SiteLanguage
 } from "../../lib/site-config";
@@ -550,25 +549,6 @@ export default function BuilderPage() {
     });
   };
 
-  const updateAffiliation = (affiliation: SiteConfig["affiliation"]) => {
-    setChangeVersion((version) => version + 1);
-    latestVersion.current += 1;
-    const neutralIntro = tr("Présentez votre activité, votre approche et ce que vos visiteurs peuvent découvrir avec vous.", "Present your activity, your approach and what visitors can discover with you.");
-    setSaved(false);
-    setPublished(false);
-    setSyncError("");
-    setConfig((current) => {
-      const heroSubtitle = affiliation === "independent" && current.heroSubtitle === defaultSiteConfig.heroSubtitle
-        ? neutralIntro
-        : affiliation === "mwr" && current.heroSubtitle === neutralIntro
-          ? defaultSiteConfig.heroSubtitle
-          : current.heroSubtitle;
-      const next = { ...current, affiliation, heroSubtitle };
-      saveDraft(next);
-      return next;
-    });
-  };
-
   const slugify = (value: string) =>
     value
       .normalize("NFD")
@@ -629,7 +609,6 @@ export default function BuilderPage() {
           currentText: "",
           context: {
             language: config.language,
-            affiliation: config.affiliation,
             firstName: config.firstName,
             brandName: config.brandName,
             siteContext: {
@@ -678,7 +657,6 @@ export default function BuilderPage() {
     const strategyContextKey = JSON.stringify({
       brief: briefForRequest,
       language: config.language,
-      affiliation: config.affiliation,
       firstName: config.firstName.trim(),
       brandName: config.brandName.trim(),
       siteContext: aiSiteContext,
@@ -716,7 +694,6 @@ export default function BuilderPage() {
           instruction: "Construis une première proposition cohérente de site à partir du besoin décrit. N'invente aucune information absente. Utilise en priorité les contenus utilisateur publiables dont les droits sont connus et ne recommande jamais pour publication un média aux droits inconnus.",
           context: {
             language: config.language,
-            affiliation: config.affiliation,
             firstName: config.firstName,
             brandName: config.brandName,
             architectBrief: briefForRequest,
@@ -859,7 +836,7 @@ export default function BuilderPage() {
       };
       const response = await fetch("/api/ai/write", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale }, body: JSON.stringify({
         field: "siteRevision", siteId: revisionSiteId, instruction: revisionRequest,
-        context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
+        context: { language: config.language, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
       }) });
       const result = await response.json();
       if (!response.ok || !result?.proposal) throw new Error(result?.error || tr("Impossible de préparer cette révision.", "Unable to prepare this revision."));
@@ -1053,7 +1030,6 @@ export default function BuilderPage() {
     checks.push({ label: tr("Qualité visuelle", "Visual quality"), detail: mediaOk ? tr("Au moins un visuel personnel ou principal est présent.", "At least one personal or primary visual is present.") : tr("Ajoutez une photo ou une image principale pour renforcer l’impact visuel.", "Add a photo or main image to strengthen the visual impact."), status: mediaOk ? "pass" : "warn", step: "design" });
     const portraitOk = !config.design.showPortrait || Boolean(config.profileImageUrl);
     checks.push({ label: tr("Photo de profil", "Profile photo"), detail: portraitOk ? (config.design.showPortrait ? tr("Le portrait affiché dispose d’une photo.", "The displayed portrait has a photo.") : tr("Le portrait est volontairement masqué.", "The portrait is intentionally hidden.")) : tr("Le portrait est activé sans photo : les initiales seront affichées. Ajoutez une photo ou masquez le portrait.", "The portrait is enabled without a photo: initials will be displayed. Add a photo or hide the portrait."), status: portraitOk ? "pass" : "warn", step: "identity" });
-    checks.push({ label: tr("Conformité activité", "Activity compliance"), detail: config.affiliation === "mwr" ? tr("La mention d’indépendance obligatoire sera affichée.", "The required independence disclosure will be displayed.") : tr("Le profil d’activité indépendant est appliqué.", "The independent activity profile is applied."), status: "pass", step: "options" });
     const legalMissing = legalMissingFields(config.legal, config.firstName, config.lastName);
     checks.push({
       label: tr("Mentions légales & RGPD", "Legal notice & GDPR"),
@@ -1156,9 +1132,6 @@ export default function BuilderPage() {
     if (!config.heroTitle.trim()) next.push({ message: tr("Titre principal manquant", "Main headline missing"), step: "story" });
     if (config.design.showBooking && bookingLinkStatus === "invalid") {
       next.push({ message: tr("Lien de rendez-vous invalide", "Invalid booking link"), step: "booking" });
-    }
-    if (config.affiliation === "independent" && /\b(mwr\s*life|travel\s*advantage)\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName, JSON.stringify(config.design.modules)].join(" "))) {
-      next.push({ message: tr("Les textes citent MWR Life ou Travel Advantage : choisissez l’activité correspondante ou retirez ces références", "The copy mentions MWR Life or Travel Advantage: choose the matching activity or remove those references"), step: "options" });
     }
     const missingLegal = legalMissingFields(config.legal, config.firstName, config.lastName);
     if (missingLegal.length) {
@@ -1270,7 +1243,7 @@ export default function BuilderPage() {
       if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour lancer la relecture IA.", "Sign in again to run the AI review."));
       const response = await fetch("/api/ai/write", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale },
-        body: JSON.stringify({ field: "qualityReview", instruction: "Relis les textes du site et propose uniquement des corrections utiles.", context: { language: config.language, affiliation: config.affiliation, firstName: config.firstName, brandName: config.brandName, siteContext: { ...aiSiteContext, bookingLabel: config.bookingLabel } } })
+        body: JSON.stringify({ field: "qualityReview", instruction: "Relis les textes du site et propose uniquement des corrections utiles.", context: { language: config.language, firstName: config.firstName, brandName: config.brandName, siteContext: { ...aiSiteContext, bookingLabel: config.bookingLabel } } })
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || tr("Relecture indisponible.", "Review unavailable."));
@@ -1962,7 +1935,6 @@ export default function BuilderPage() {
                   label="cette petite phrase"
                   value={config.heroTagline}
                   language={config.language}
-                  affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
@@ -1977,7 +1949,6 @@ export default function BuilderPage() {
                   label="le titre principal"
                   value={config.heroTitle}
                   language={config.language}
-                  affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
@@ -1992,7 +1963,6 @@ export default function BuilderPage() {
                   label="l'introduction"
                   value={config.heroSubtitle}
                   language={config.language}
-                  affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
@@ -2012,7 +1982,6 @@ export default function BuilderPage() {
                   label={tr("le titre de votre présentation", "your presentation title")}
                   value={config.aboutHeading}
                   language={config.language}
-                  affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
@@ -2027,7 +1996,6 @@ export default function BuilderPage() {
                   label={tr("votre présentation", "your presentation")}
                   value={config.aboutText}
                   language={config.language}
-                  affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
@@ -2130,7 +2098,6 @@ export default function BuilderPage() {
                   label={tr("le bouton de rendez-vous", "the booking button")}
                   value={config.bookingLabel}
                   language={config.language}
-                  affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
                   siteContext={aiSiteContext}
@@ -2196,7 +2163,6 @@ export default function BuilderPage() {
                   onImage={(event) => void uploadDesignImage(event, "gallery")}
                   uploading={uploadingImage || busy}
                   language={config.language}
-                  affiliation={config.affiliation}
                   firstName={config.firstName}
                   brandName={config.brandName}
                   architectureMode={config.architecture.mode}
@@ -2205,58 +2171,12 @@ export default function BuilderPage() {
 
                 <div className="section-kicker">
                   <span>02</span>
-                  <div><b>{tr("Activité et identité", "Activity and identity")}</b><p>{tr("Les mentions MWR Life concernent uniquement les sites d’ambassadeurs.", "MWR Life disclosures only apply to ambassador websites.")}</p></div>
-                </div>
-                <Field label={tr("Votre activité", "Your activity")}>
-                  <select value={config.affiliation} onChange={(event) => updateAffiliation(event.target.value as SiteConfig["affiliation"])}>
-                    <option value="mwr">{tr("Ambassadeur indépendant MWR Life", "Independent MWR Life Ambassador")}</option>
-                    <option value="independent">{tr("Autre activité indépendante", "Other independent activity")}</option>
-                  </select>
-                </Field>
-                {config.affiliation === "mwr" ? <>
-                  <div className="locked premium-locked">
-                    <span>{tr("Mention d’indépendance maintenue", "Independence disclosure retained")}</span>
-                    <p>{requiredDisclaimer}</p>
-                  </div>
-                  <p className="media-license-note">{tr("Les logos sont facultatifs. Activez uniquement les visuels que votre activité vous autorise à utiliser ; ils ne remplacent pas la mention d’indépendance.", "Logos are optional. Enable only visuals your activity permits you to use; they do not replace the independence disclosure.")}</p>
-                  <div className="visibility-options-stack logo-visibility-options">
-                    <VisibilityOption
-                      checked={config.design.showMwrLogo}
-                      title="Logo MWR Life « Independent Distributor »"
-                      activeLabel={tr("Affiché", "Shown")}
-                      inactiveLabel={tr("Masqué", "Hidden")}
-                      description={config.design.showMwrLogo
-                        ? tr("Le logo sera visible en bas du site avec la mention d’indépendance obligatoire.", "The logo will appear at the bottom of the website with the required independence disclosure.")
-                        : tr("Le logo n’apparaît pas sur le site. La mention d’indépendance reste affichée.", "The logo does not appear on the website. The independence disclosure remains visible.")}
-                      logo="/logos/mwr-life-independent.svg"
-                      onChange={(checked) => update("design", { ...config.design, showMwrLogo: checked })}
-                    />
-                    <VisibilityOption
-                      checked={config.design.showTravelAdvantageLogo}
-                      title="Logo Travel Advantage « Independent Distributor »"
-                      activeLabel={tr("Affiché", "Visible")}
-                      inactiveLabel={tr("Masqué", "Hidden")}
-                      description={config.design.showTravelAdvantageLogo
-                        ? tr("Le logo sera visible en bas du site avec la mention d’indépendance obligatoire.", "The logo will appear in the footer with the required independence disclosure.")
-                        : tr("Le logo n’apparaît pas sur le site. La mention d’indépendance reste affichée.", "The logo will not appear on the website. The independence disclosure remains visible.")}
-                      logo="/logos/travel-advantage-independent.svg"
-                      onChange={(checked) => update("design", { ...config.design, showTravelAdvantageLogo: checked })}
-                    />
-                  </div>
-                </> : <div className="helper-card premium-helper-card">
-                  <b>{tr("Site indépendant sans mention MWR Life", "Independent website without MWR Life disclosure")}</b>
-                  <p>{tr("Les mentions automatiques et logos MWR Life et Travel Advantage seront absents. Les pages légales ci-dessous seront adaptées aux informations que vous renseignez.", "Automatic MWR Life and Travel Advantage disclosures and logos will be absent. The legal pages below will adapt to the information you provide.")}</p>
-                </div>}
-
-                <div className="section-kicker">
-                  <span>03</span>
-                  <div><b>{tr("Conformité du site", "Website compliance")}</b><p>{tr("Préparez automatiquement les pages légales et la transparence RGPD du site.", "Prepare legal pages and GDPR transparency information automatically.")}</p></div>
+                  <div><b>{tr("Conformité du site", "Website compliance")}</b><p>{tr("Préparez les pages légales à partir des informations de votre activité.", "Prepare legal pages from your business information.")}</p></div>
                 </div>
                 <ComplianceEditor
                   value={config.legal}
                   firstName={config.firstName}
                   lastName={config.lastName}
-                  affiliation={config.affiliation}
                   onChange={(legal) => update("legal", legal)}
                 />
               </>
@@ -2328,10 +2248,6 @@ export default function BuilderPage() {
                   <div className={config.bookingUrl ? "done" : "optional"}>
                     <span>{config.bookingUrl ? "✓" : "○"}</span>
                     <p><b>{tr("Rendez-vous", "Booking")}</b><small>{config.bookingUrl ? tr("Lien ajouté", "Link added") : tr("Facultatif", "Optional")}</small></p>
-                  </div>
-                  <div className={config.affiliation === "mwr" ? "done" : "optional"}>
-                    <span>{config.affiliation === "mwr" ? "✓" : "○"}</span>
-                    <p><b>{tr("Activité", "Activity")}</b><small>{config.affiliation === "mwr" ? tr("Mention d’indépendance affichée", "Independence disclosure shown") : tr("Mentions légales à vérifier", "Legal notice to verify")}</small></p>
                   </div>
                 </div>
 

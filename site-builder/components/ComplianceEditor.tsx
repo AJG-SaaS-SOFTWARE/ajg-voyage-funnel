@@ -7,11 +7,10 @@ type Props = {
   value: SiteLegalConfig;
   firstName: string;
   lastName: string;
-  affiliation: "mwr" | "independent";
   onChange: (value: SiteLegalConfig) => void;
 };
 
-export default function ComplianceEditor({ value, firstName, lastName, affiliation, onChange }: Props) {
+export default function ComplianceEditor({ value, firstName, lastName, onChange }: Props) {
   const { tr } = useProductLocale();
   const update = <K extends keyof SiteLegalConfig>(key: K, next: SiteLegalConfig[K]) => onChange({ ...value, [key]: next });
   const individualName = `${firstName} ${lastName}`.trim();
@@ -134,12 +133,6 @@ export default function ComplianceEditor({ value, firstName, lastName, affiliati
         <p>{tr("Les sites AJG n’activent pas de publicité ni de mesure d’audience marketing par défaut. Les vidéos YouTube sont chargées seulement après action du visiteur. Les liens Calendly, Instagram, Facebook ou autres services externes ouvrent ces services tiers sans stocker leurs données dans AJG.", "AJG websites do not enable advertising or marketing analytics by default. YouTube videos load only after visitor action. Calendly, Instagram, Facebook and other external links open those third-party services without storing their data in AJG.")}</p>
       </div>
 
-      {affiliation === "mwr" ? (
-        <div className="compliance-mwr-note">
-          <b>{tr("Profil MWR Life", "MWR Life profile")}</b>
-          <p>{tr("Ces informations légales complètent la mention d’indépendance MWR Life ; elles ne la remplacent pas.", "This legal information complements the MWR Life independence disclosure; it does not replace it.")}</p>
-        </div>
-      ) : null}
 
       <label className={`compliance-confirm ${value.confirmedAccuracy ? "confirmed" : ""}`}>
         <input type="checkbox" checked={value.confirmedAccuracy} onChange={(e) => update("confirmedAccuracy", e.target.checked)} />

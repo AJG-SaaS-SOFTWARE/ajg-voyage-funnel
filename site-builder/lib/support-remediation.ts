@@ -91,16 +91,46 @@ async function finish(
     metadata?: Record<string, unknown>;
   }
 ): Promise<SupportRepairResult> {
-  const audited = await auditRepair(service, input);
+  const verified = input.status === "succeeded"
+    ? await verifyManagedRepair(service, input)
+    : input.verified;
+  const outcome = input.status === "succeeded" && !verified
+    ? { ...input, status: "failed" as const, code: "repair_verification_failed", verified: false }
+    : { ...input, verified };
+  const audited = await auditRepair(service, outcome);
   return {
     action: input.action,
-    status: input.status,
-    code: input.code,
+    status: audited ? outcome.status : "failed",
+    code: audited ? outcome.code : "repair_audit_unavailable",
     siteId: input.siteId,
     changed: input.changed,
-    verified: input.verified,
+    verified,
     audited
   };
+}
+
+export async function verifyManagedRepair(
+  service: SupabaseClient,
+  input: { userId: string; siteId: string }
+): Promise<boolean> {
+  try {
+    const [{ data: site, error: siteError }, { data: domains, error: domainError }] = await Promise.all([
+      service.from("sites").select("slug,status,privacy_state")
+        .eq("id", input.siteId).eq("owner_id", input.userId).maybeSingle(),
+      service.from("domains").select("hostname,kind,verification_status,is_primary")
+        .eq("site_id", input.siteId)
+    ]);
+    if (siteError || domainError || !site || !Array.isArray(domains) ||
+      site.status !== "published" || site.privacy_state !== "active") return false;
+    const expected = expectedManagedHostname(site.slug);
+    const managed = domains.filter(row => row.kind === "managed_subdomain");
+    return Boolean(expected) && managed.length === 1 &&
+      managed[0].hostname === expected && managed[0].verification_status === "verified" &&
+      managed[0].is_primary === true && domains.filter(row => row.is_primary === true).length === 1 &&
+      !domains.some(row => row.kind === "custom_domain");
+  } catch {
+    return false;
+  }
 }
 
 async function repairManagedDomain(

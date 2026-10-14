@@ -59,8 +59,8 @@ test("billing notification emails support French and English", () => {
 
 test("core builder surfaces expose English product copy", () => {
   const builder = read("app/builder/page.tsx");
-  const plans = read("app/plans/page.tsx");
   const compliance = read("components/ComplianceEditor.tsx");
+  const plans = read("app/plans/page.tsx");
   const modules = read("components/ModulesEditor.tsx");
 
   assert.match(builder, /Create my website with AI/);
@@ -158,15 +158,12 @@ test("Builder quality and publish summary labels are localized", () => {
 
 test("guided Builder and compliance labels are localized", () => {
   const builder = read("app/builder/page.tsx");
-  const compliance = read("components/ComplianceEditor.tsx");
 
   assert.match(
     builder,
     /tr\("Vous pourrez modifier chaque phrase ensuite\.", "You can edit every sentence afterwards\."\)/
   );
   assert.doesNotMatch(builder, /\n\s*Vous pourrez modifier chaque phrase ensuite\./);
-  assert.match(compliance, /tr\("Profil MWR Life", "MWR Life profile"\)/);
-  assert.doesNotMatch(compliance, /<b>Profil MWR Life<\/b>/);
 });
 
 test("customer website selectors use the same Site / Website terminology", () => {

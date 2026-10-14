@@ -411,7 +411,7 @@ async function structuredResponse(args: {
   }
 }
 
-function safeAssets(assets: PremiumArchitectAsset[] = []) {
+export function safeAssets(assets: PremiumArchitectAsset[] = []): PremiumArchitectAsset[] {
   return assets.slice(0, 20).map((asset) => ({
     id: clean(asset.id, 80),
     kind: clean(asset.kind, 30),
@@ -421,7 +421,7 @@ function safeAssets(assets: PremiumArchitectAsset[] = []) {
     publishable: asset.publishable === true,
     sourceUrl: clean(asset.sourceUrl, 600),
     notes: clean(asset.notes, 500)
-  }));
+  })).map(asset => Object.fromEntries(Object.entries(asset).filter(([, value]) => value !== "")));
 }
 
 type PremiumArchitectCore = Omit<PremiumArchitectProposal, "intelligence" | "premiumAudit">;

@@ -24,6 +24,18 @@ type EditableField = (typeof editableFields)[number];
 
 export type StandardContextEntry = readonly [string, string];
 
+// The editable field is already sent in full as currentText. Do not send its
+// truncated site-context copy as well; retain every other contextual fact.
+export function omitRepeatedEditableContext(
+  field: string, currentText: string, entries: StandardContextEntry[]
+): StandardContextEntry[] {
+  if (!currentText.trim()) return entries;
+  const key = ({ heroTagline: "tagline", heroTitle: "headline", heroSubtitle: "intro",
+    aboutHeading: "about heading", aboutText: "about", bookingLabel: "booking button"
+  } as Record<string, string>)[field];
+  return key ? entries.filter(([name]) => name !== key) : entries;
+}
+
 export function selectStandardContextEntries(
   field: StandardAiField,
   entries: StandardContextEntry[]

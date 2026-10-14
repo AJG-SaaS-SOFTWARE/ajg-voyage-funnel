@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
-import { supportReconcileDecision } from "../../../../lib/support-reconcile-policy";
+import { supportCustomerAction, supportReconcileDecision } from "../../../../lib/support-reconcile-policy";
 import { recordSupportEvent } from "../../../../lib/support-events";
 import { reportSupportTicketToRun } from "../../../../lib/run-intake-reporting";
 import { localize, requestProductLocale } from "../../../../lib/server-locale";
@@ -130,7 +130,8 @@ export async function POST(request: Request) {
 
   const health = await diagnoseSupportHealth(auth.service, auth.user.id, preferredSiteId);
   const incident = health.diagnosis.overall === "incident";
-  const waitingCustomer = !incident && Boolean(health.diagnosis.clientAction);
+  const clientAction = supportCustomerAction(category, health.diagnosis.checks);
+  const waitingCustomer = !incident && Boolean(clientAction);
   const status = waitingCustomer ? "waiting_customer" : "diagnosed";
   const severity = incident ? "high" : "normal";
 
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
       message,
       status,
       diagnosis: health.diagnosis,
-      client_action: health.diagnosis.clientAction
+      client_action: clientAction
     })
     .select("id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at")
     .single();
@@ -197,7 +198,7 @@ export async function PATCH(request: Request) {
 
   const { data: current, error: currentError } = await auth.service
     .from("support_tickets")
-    .select("id,user_id,site_id,status,created_at")
+    .select("id,user_id,site_id,category,diagnosis,status,created_at")
     .eq("id", id)
     .eq("user_id", auth.user.id)
     .maybeSingle();
@@ -226,7 +227,10 @@ export async function PATCH(request: Request) {
     : 72;
   const decision = supportReconcileDecision({
     overall: health.diagnosis.overall,
-    clientAction: health.diagnosis.clientAction,
+    clientAction: supportCustomerAction(current.category, health.diagnosis.checks),
+    category: current.category,
+    previousDiagnosis: current.diagnosis,
+    checks: health.diagnosis.checks,
     ageHours
   });
   const now = new Date().toISOString();
@@ -234,7 +238,7 @@ export async function PATCH(request: Request) {
   const patch: Record<string, unknown> = {
     status: decision.status,
     diagnosis: health.diagnosis,
-    client_action: health.diagnosis.clientAction,
+    client_action: supportCustomerAction(current.category, health.diagnosis.checks),
     resolution_code: decision.resolutionCode,
     resolved_at: decision.resolved ? now : null,
     updated_at: now
