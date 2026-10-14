@@ -43,7 +43,7 @@ test("dedicated authenticated support cron delegates remediation to the operatio
   const agentCall = cron.indexOf("runSupportOperationsAgentFromEnvironment()");
   assert.ok(auth >= 0);
   assert.ok(agentCall > auth);
-  assert.match(agent, /runSupportRemediationSweepSafely/);
+  assert.match(agent, /runSupportRemediationSweepSafely\(now, service\)/);
   assert.match(agent, /remediation\.ok/);
 });
 
