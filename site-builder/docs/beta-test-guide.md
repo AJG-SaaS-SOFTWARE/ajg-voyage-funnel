@@ -15,8 +15,8 @@ Merci de relever le type d'appareil et de navigateur, l'étape concernée, ce qu
 
 ## Portée actuelle
 
-- Bêta fermée pour des activités variées en français et en anglais. Les pages légales utilisent les informations renseignées par le client.
-- Couleurs, fonds et motifs configurables ; les images et mentions propres à chaque activité sont ajoutées avec les outils de contenu.
+- Bêta fermée destinée à des sites indépendants généralistes. Le profil MWR Life reste disponible explicitement pour les ambassadeurs concernés, mais il n'est plus le parcours par défaut.
+- Couleurs, fonds et motifs configurables ; les logos MWR Life et Travel Advantage sont facultatifs et uniquement affichés lorsque le profil MWR est choisi, tandis que la mention d'indépendance reste affichée pour ce profil.
 - Un site par compte, sans paiement ni domaine personnalisé.
 - Lien public utilisable après publication. Les nouveaux sites utilisent `prenom.eltara.ajgsolutionsgroup.com`. Les anciens sous-domaines `prenom.voyage.ajgsolutionsgroup.com` restent pris en charge pendant la transition.
 - Les médias recherchés sont déclarés CC0 par leurs sources via Openverse ; vérifier la fiche source et les droits éventuels liés aux personnes ou marques.
