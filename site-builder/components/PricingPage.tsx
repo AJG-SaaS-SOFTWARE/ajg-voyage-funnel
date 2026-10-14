@@ -33,6 +33,7 @@ const copy = {
       description: "Pour garder un site professionnel en ligne, le modifier et le maintenir en autonomie.",
       features: [
         "1 site professionnel",
+        "Jusqu'à 6 pages sur le même site / domaine",
         "Hébergement et publication inclus",
         "Domaine personnalisé",
         "Éditeur complet et personnalisation",
@@ -108,6 +109,7 @@ const copy = {
       description: "For keeping a professional website online, editable and maintained with self-service tools.",
       features: [
         "1 professional website",
+        "Up to 6 pages on the same website / domain",
         "Hosting and publishing included",
         "Custom domain",
         "Full editor and customization",

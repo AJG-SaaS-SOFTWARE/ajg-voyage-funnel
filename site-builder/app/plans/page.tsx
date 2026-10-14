@@ -329,6 +329,7 @@ export default function PlansPage() {
           <p className="annual-price">{tr("ou", "or")} 150 € / {tr("an", "year")} · 1 {tr("site", "website")}</p>
           <ul>
             <li>{tr("Hébergement et publication", "Hosting and publishing")}</li>
+            <li>{tr("Jusqu’à 6 pages sur le même site / domaine", "Up to 6 pages on the same website / domain")}</li>
             <li>{tr("Domaine personnalisé", "Custom domain")}</li>
             <li>{tr("Éditeur complet", "Full editor")}</li>
             <li>{tr("IA rédactionnelle légère", "Light AI writing assistance")}</li>

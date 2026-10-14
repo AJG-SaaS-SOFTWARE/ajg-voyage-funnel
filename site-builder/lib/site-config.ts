@@ -57,9 +57,9 @@ export const defaultSiteConfig: SiteConfig = {
   lastName: "",
   brandName: "",
   language: "fr",
-  heroTitle: "Découvrez une autre façon de voyager",
+  heroTitle: "Présentez votre activité simplement",
   heroSubtitle:
-    "Une présentation simple et personnalisée de la plateforme Travel Advantage, de ses services voyage et de son fonctionnement.",
+    "Créez un site clair pour expliquer votre offre, rassurer vos visiteurs et faciliter le premier contact.",
   heroTagline: "",
   aboutText: "",
   aboutHeading: "",
@@ -70,7 +70,7 @@ export const defaultSiteConfig: SiteConfig = {
   instagramUrl: "",
   facebookUrl: "",
   design: defaultSiteDesign,
-  affiliation: "mwr",
+  affiliation: "independent",
   legal: defaultSiteLegalConfig,
   architecture: { mode: "single", pages: [{ id: "home", slug: "", title: "Accueil", kind: "home", purpose: "Présenter l’activité et orienter le visiteur.", enabled: true, assetIds: [] }] },
   contentLibrary: { assets: [] }
