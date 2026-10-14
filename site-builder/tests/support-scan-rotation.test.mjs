@@ -33,7 +33,7 @@ function load(name,dependencies){
     assert.ok(id in dependencies,id);return dependencies[id];
   },module,module.exports);return module.exports;
 }
-function db({count=151,sites=[],tickets=[]}={}){
+function db({count=151,sites=[],tickets=[],healthyDomains=true,repairRuns=[]}={}){
   const requests=[];
   const service=createClient("https://synthetic.example.test","synthetic-service",{
     auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(url,init)=>{
@@ -44,10 +44,15 @@ function db({count=151,sites=[],tickets=[]}={}){
       if(u.pathname.endsWith("/sites"))return Response.json(sites.slice(offset,offset+limit));
       if(u.pathname.endsWith("/support_tickets"))return Response.json(tickets.slice(offset,offset+limit));
       if(u.pathname.endsWith("/domains")){
+        if(!healthyDomains)return Response.json([]);
         const selected=new Set((u.searchParams.get("site_id")||"").slice(4,-1).split(","));
         return Response.json(sites.filter(s=>selected.has(s.id)).map(s=>({site_id:s.id,kind:"managed_subdomain",verification_status:"verified",is_primary:true})));
       }
-      if(u.pathname.endsWith("/support_remediation_runs"))return Response.json([]);
+      if(u.pathname.endsWith("/support_remediation_runs")){
+        const selected=new Set((u.searchParams.get("site_id")||"").slice(4,-1).split(","));
+        const since=Date.parse((u.searchParams.get("created_at")||"").slice(4));
+        return Response.json(repairRuns.filter(r=>selected.has(r.site_id)&&Date.parse(r.created_at)>=since));
+      }
       throw new Error(`Unexpected request ${url}`);
     }}});
   return {service,requests};
@@ -96,4 +101,21 @@ test("a ticket transition with an unconfirmed audit event is not counted as an a
   const result=await runSupportReconciliationSafely(at(0),app.service);
   assert.equal(result.ok,false);assert.equal(result.failed,1);assert.equal(result.resolved,0);
   assert.equal(app.requests.filter(r=>r.method==="PATCH").length,1,"an uncertain audit must not replay the transition");
+});
+
+test("persistent failed repairs cannot monopolize slots ahead of later customers",async()=>{
+  const sites=Array.from({length:151},(_,i)=>({id:`site-${i}`,owner_id:"owner"}));
+  const repairRuns=[],visited=new Set();let currentHour=0;
+  const app=db({sites,healthyDomains:false,repairRuns});
+  const {runSupportRemediationSweepSafely}=load("support-remediation-sweep",{
+    "./support-remediation":{runSupportRepair:async(_service,input)=>{
+      visited.add(input.siteId);repairRuns.push({site_id:input.siteId,created_at:at(currentHour).toISOString()});
+      return {status:"failed",verified:false,audited:true};
+    }}});
+  for(currentHour=0;currentHour<20;currentHour++){
+    const result=await runSupportRemediationSweepSafely(at(currentHour),app.service);
+    assert.ok(result.attempted<=10);assert.ok(result.scanned<=50);
+    assert.equal(result.failed,result.attempted);
+  }
+  assert.equal(visited.size,151,"five complete scan cycles must give every stable candidate a chance even if all attempts fail");
 });

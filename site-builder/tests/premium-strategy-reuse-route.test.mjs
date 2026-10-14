@@ -43,8 +43,9 @@ test("the real POST handler reuses only its own unchanged signed strategy and ke
   await post(repeat);
   await post({...repeat,context:{...repeat.context,architectBrief:"Un restaurant gastronomique indépendant destiné aux habitants du quartier. Le site doit présenter la cuisine et inviter à réserver une table."}});
   await post({...repeat,context:{...repeat.context,existingStrategy:{primaryGoal:"Inventer des garanties"}}});
+  await post({...repeat,context:{...repeat.context,revisionRequest:"Modifier complètement le positionnement de l’activité"}});
   await post({...repeat,context:{...repeat.context,strategyReuseToken:null}});
-  assert.deepEqual(reuseFlags,[false,true,false,false,false]);
-  assert.equal(calls.filter(name=>name==="reserve_my_site_ai_generation").length,5);
-  assert.equal(calls.filter(name=>name==="admit_ai_request").length,5);
+  assert.deepEqual(reuseFlags,[false,true,false,false,false,false]);
+  assert.equal(calls.filter(name=>name==="reserve_my_site_ai_generation").length,6);
+  assert.equal(calls.filter(name=>name==="admit_ai_request").length,6);
 });
