@@ -9,6 +9,7 @@ const cron = fs.readFileSync(new URL("../app/api/cron/support-operations/route.t
 const page = fs.readFileSync(new URL("../app/admin/support/page.tsx", import.meta.url), "utf8");
 const migration = fs.readFileSync(new URL("../supabase/migrations/20261006180500_support_operations_runs.sql", import.meta.url), "utf8");
 const vercel = fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8");
+const readiness = fs.readFileSync(new URL("../app/api/admin/release-readiness/route.ts", import.meta.url), "utf8");
 
 test("support operations journal is service-only and RLS protected", () => {
   assert.match(migration, /create table if not exists public\.support_operations_runs/);
@@ -51,4 +52,12 @@ test("admin support surfaces run agent health and explicit manual execution", ()
   assert.match(page, /Exécuter maintenant/);
   assert.match(page, /reported_to_run/);
   assert.match(page, /runtime production/);
+});
+
+test("release readiness includes the latest autonomous support operations run", () => {
+  assert.match(readiness, /from\("support_operations_runs"\)/);
+  assert.match(readiness, /key: "support-operations-agent"/);
+  assert.match(readiness, /Support\/RUN · agent autonome/);
+  assert.match(readiness, /runtime_status === "incident"/);
+  assert.match(readiness, /reported_to_run/);
 });
