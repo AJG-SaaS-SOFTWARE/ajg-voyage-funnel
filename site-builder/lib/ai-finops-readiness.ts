@@ -42,8 +42,17 @@ export function aiFinopsMonitorReadiness(
     };
   }
 
-  const ageHours = Math.max(0, (nowMs - lastRunMs) / 3_600_000);
-  const activeAlerts = Math.max(0, Number(input.activeAlerts) || 0);
+  if (!Number.isFinite(nowMs) || lastRunMs > nowMs ||
+      !Number.isSafeInteger(input.activeAlerts) || input.activeAlerts < 0) {
+    return {
+      status: "blocker",
+      detail: "La preuve du monitor FinOps IA est incohérente : horodatage ou compteur d’alertes invalide.",
+      ageHours: null
+    };
+  }
+
+  const ageHours = (nowMs - lastRunMs) / 3_600_000;
+  const activeAlerts = input.activeAlerts;
 
   if (ageHours > 48) {
     return {
