@@ -26,7 +26,7 @@ function price([name, amount, interval]) {
     recurring: interval ? { interval, interval_count: 1, usage_type: "licensed" } : null,
     product: { active: true, metadata: { app: "ajg_site_builder" } } };
 }
-const portal = { active: true, metadata: { app: "ajg_site_builder" }, features: {
+const portal = { id: "bpc_synthetic", active: true, metadata: { app: "ajg_site_builder" }, features: {
   payment_method_update: { enabled: true }, invoice_history: { enabled: true },
   subscription_cancel: { enabled: true, mode: "at_period_end" }, subscription_update: { enabled: true },
 } };
@@ -151,4 +151,24 @@ test("a shared failed audit stays blocking and allows one new audit after its sh
   const recovered = await Promise.all(Array.from({ length: 10 }, () => audit.auditStripeRuntimeCached()));
   assert.equal(recovered.every(items => items.every(item => item.ok)), true);
   assert.equal(calls, 12);
+});
+
+
+test("portal audit requires the requested identity and every customer control", async () => {
+  for (const mutate of [
+    p => { delete p.id; }, p => { p.id = "bpc_other"; },
+    p => { p.active = false; }, p => { p.metadata.app = "other"; },
+    p => { p.features.payment_method_update.enabled = false; },
+    p => { p.features.invoice_history.enabled = false; },
+    p => { p.features.subscription_cancel.enabled = false; },
+    p => { p.features.subscription_cancel.mode = "immediately"; },
+    p => { p.features.subscription_update.enabled = false; }
+  ]) {
+    const changed = structuredClone(portal);
+    mutate(changed);
+    const valid = provider();
+    const result = await load((path, options) => path.includes("billing_portal") ? changed : valid(path, options)).auditStripeRuntime();
+    assert.equal(result.slice(0, 5).every(item => item.ok), true);
+    assert.equal(result[5].ok, false);
+  }
 });
