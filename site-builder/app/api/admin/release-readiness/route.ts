@@ -411,7 +411,9 @@ export async function GET(request: Request) {
         : latestSupportRun.status === "failed" ||
             latestSupportRun.runtime_status === "incident"
           ? "blocker"
-          : latestSupportRun.status === "attention" || supportFailedChecks > 0
+          : latestSupportRun.status !== "healthy" ||
+              !latestSupportRun.completed_at ||
+              latestSupportRun.runtime_status !== "healthy" || supportFailedChecks > 0
             ? "warn"
             : "pass",
       detail: supportRunError || !latestSupportRun
@@ -422,7 +424,9 @@ export async function GET(request: Request) {
             ? `Incident runtime détecté${latestSupportRun.reported_to_run ? " et transmis au cockpit AJG Run" : " mais non transmis au cockpit AJG Run"}.`
             : supportFailedChecks > 0
               ? `${supportFailedChecks} échec(s) technique(s) agrégé(s) lors de la dernière exécution Support/RUN.`
-              : `Agent Support/RUN exécuté avec succès : ${latestSupportRun.completed_at || "horodatage indisponible"}.`
+              : latestSupportRun.status !== "healthy" || !latestSupportRun.completed_at || latestSupportRun.runtime_status !== "healthy"
+                ? "Exécution Support/RUN inachevée ou état runtime non confirmé."
+                : `Agent Support/RUN exécuté avec succès : ${latestSupportRun.completed_at}.`
     });
 
     if (present(deploymentSha)) {
