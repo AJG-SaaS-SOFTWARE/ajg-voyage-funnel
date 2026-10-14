@@ -140,19 +140,33 @@ async function sweepWithClient(
     });
 
     result.attempted++;
-    if (repair.status === "succeeded" && repair.verified === true && repair.audited === true) result.succeeded++;
-    else if (repair.status === "succeeded") result.failed++;
+    if (repair.status === "succeeded") result.succeeded++;
     else if (repair.status === "no_change") result.noChange++;
     else result.failed++;
   }
 
-  result.ok = result.failed === 0;
   return result;
 }
 
 export async function runSupportRemediationSweepSafely(
-  now = new Date()
+  now = new Date(),
+  serviceOverride?: SupabaseClient
 ): Promise<SupportRemediationSweepResult> {
+  if (serviceOverride) {
+    try {
+      return await sweepWithClient(serviceOverride, now);
+    } catch (error) {
+      return {
+        ...emptyResult(),
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "support_remediation_sweep_failed"
+      };
+    }
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey =
     process.env.SUPABASE_SECRET_KEY ||

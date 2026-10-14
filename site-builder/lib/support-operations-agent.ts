@@ -29,7 +29,9 @@ function statusFor(input: {
   if (!input.reconcile.ok || !input.remediation.ok || input.platform.status === "failed") return "failed" as const;
   if (
     input.runtime.status === "incident" ||
-    !input.runtime.checked || input.runtime.status === "unknown" || input.runtime.truncated ||
+    input.runtime.status === "warning" ||
+    input.runtime.status === "unknown" ||
+    !input.runtime.checked || input.runtime.truncated ||
     input.platform.status === "attention" ||
     input.reconcile.failed > 0 ||
     input.remediation.failed > 0
@@ -52,11 +54,11 @@ export async function runSupportOperationsAgent(
   try {
     const platform = await runPlatformSelfHealing(service);
     const [remediation, runtime] = await Promise.all([
-      runSupportRemediationSweepSafely(now),
+      runSupportRemediationSweepSafely(now, service),
       getRecentRuntimeHealth()
     ]);
-    // Verify after repair, so tickets use fresh evidence from this operation.
-    const reconcile = await runSupportReconciliationSafely(now);
+    // Verify after repair, using the same authenticated service client.
+    const reconcile = await runSupportReconciliationSafely(now, service);
 
     const errors = [
       reconcile.error ? `reconcile:${reconcile.error}` : null,
