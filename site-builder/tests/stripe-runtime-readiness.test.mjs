@@ -180,7 +180,7 @@ test("provider-backed billing harness is sandbox-only, fail-closed and disposabl
   assert.ok(route.includes('action === "provision"'));
   assert.ok(route.includes('action === "status"'));
   assert.ok(route.includes('action === "cleanup"'));
-  assert.ok(route.includes("user_metadata"));
+  assert.ok(route.includes("app_metadata"));
   assert.ok(route.includes("attempt_id"));
   assert.ok(route.includes("getUserById(ownerId)"));
   assert.ok(route.includes('site.brand_name !== "ELTARA Provider Billing E2E"'));

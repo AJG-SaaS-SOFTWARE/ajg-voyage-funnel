@@ -195,6 +195,9 @@ try {
     const state = await harness("status", fixture);
     const ok =
       state?.subscription?.provider === "stripe" &&
+      state?.subscription?.providerCustomerId === customerId &&
+      state?.subscription?.providerSubscriptionId === subscriptionId &&
+      state?.subscription?.providerPriceId === growthPriceId &&
       state?.subscription?.status === "active" &&
       state?.subscription?.firstPaymentConfirmed === true &&
       state?.billing?.state === "active";
