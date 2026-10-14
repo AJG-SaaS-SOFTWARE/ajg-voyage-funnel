@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { runSupportOperationsAgent } from "../../../../lib/support-operations-agent";
+import { supportAgentStatus } from "../../../../lib/support-agent-status";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,12 +38,11 @@ async function status(service: SupabaseClient) {
   const latest = runs[0] || null;
   return {
     latest,
-    attentionRequired: Boolean(latest && (
-      latest.status === "failed" ||
+    attentionRequired: !latest || supportAgentStatus(latest) !== "healthy" || (
       latest.runtime_status === "incident" ||
       latest.reconcile_failed > 0 ||
       latest.remediation_failed > 0
-    )),
+    ),
     runs
   };
 }
