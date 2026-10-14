@@ -8,7 +8,8 @@ function agent({runtimeStatus="healthy",checked=true,truncated=false,remediation
   const service={from(name){
     assert.equal(name,"support_operations_runs");
     const query={insert(){return query},select(){return query},single:async()=>({data:{id:1},error:null}),
-      update(value){journal.push(value);return query},eq:async()=>({error:null})};
+      update(value){journal.push(value);return query},eq(){return query},
+      then(resolve,reject){return Promise.resolve({error:null}).then(resolve,reject)}};
     return query;
   }};
   const dependencies={
