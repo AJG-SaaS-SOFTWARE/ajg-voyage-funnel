@@ -29,6 +29,9 @@ function statusFor(input: {
   if (!input.reconcile.ok || !input.remediation.ok || input.platform.status === "failed") return "failed" as const;
   if (
     input.runtime.status === "incident" ||
+    input.runtime.status === "warning" ||
+    input.runtime.status === "unknown" ||
+    !input.runtime.checked || input.runtime.truncated ||
     input.platform.status === "attention" ||
     input.reconcile.failed > 0 ||
     input.remediation.failed > 0
