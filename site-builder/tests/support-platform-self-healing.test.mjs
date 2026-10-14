@@ -26,7 +26,7 @@ test("platform self-healing only refreshes backup when freshness is degraded", (
 
 test("platform repair runs before ticket reconciliation", () => {
   const heal = agent.indexOf("runPlatformSelfHealing(service)");
-  const reconcile = agent.indexOf("runSupportReconciliationSafely(now)");
+  const reconcile = agent.indexOf("runSupportReconciliationSafely(now, service)");
   assert.ok(heal >= 0);
   assert.ok(reconcile > heal);
   assert.match(agent, /platform_status: platform\.status/);
