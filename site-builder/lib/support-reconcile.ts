@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "./support-health-server";
-import { supportCustomerAction, supportReconcileDecision } from "./support-reconcile-policy";
+import { supportReconcileDecision } from "./support-reconcile-policy";
 import { recordSupportEvent } from "./support-events";
 
 export type SupportReconcileResult = {
@@ -18,8 +18,6 @@ type WaitingTicket = {
   user_id: string;
   site_id: string | null;
   created_at: string;
-  category: string;
-  diagnosis: unknown;
 };
 
 async function reconcileWithClient(
@@ -28,7 +26,7 @@ async function reconcileWithClient(
 ): Promise<SupportReconcileResult> {
   const { data, error } = await service
     .from("support_tickets")
-    .select("id,user_id,site_id,category,diagnosis,created_at")
+    .select("id,user_id,site_id,created_at")
     .eq("status", "waiting_customer")
     .order("created_at", { ascending: true })
     .limit(50);
@@ -66,17 +64,14 @@ async function reconcileWithClient(
 
       const decision = supportReconcileDecision({
         overall: health.diagnosis.overall,
-        clientAction: supportCustomerAction(ticket.category, health.diagnosis.checks),
-        category: ticket.category,
-        previousDiagnosis: ticket.diagnosis,
-        checks: health.diagnosis.checks,
+        clientAction: health.diagnosis.clientAction,
         ageHours
       });
 
       const patch: Record<string, unknown> = {
         status: decision.status,
         diagnosis: health.diagnosis,
-        client_action: supportCustomerAction(ticket.category, health.diagnosis.checks),
+        client_action: health.diagnosis.clientAction,
         resolution_code: decision.resolutionCode,
         resolved_at: decision.resolved ? now.toISOString() : null,
         updated_at: now.toISOString()
@@ -128,8 +123,28 @@ async function reconcileWithClient(
 }
 
 export async function runSupportReconciliationSafely(
-  now = new Date()
+  now = new Date(),
+  serviceOverride?: SupabaseClient
 ): Promise<SupportReconcileResult> {
+  if (serviceOverride) {
+    try {
+      return await reconcileWithClient(serviceOverride, now);
+    } catch (error) {
+      return {
+        ok: false,
+        scanned: 0,
+        resolved: 0,
+        escalated: 0,
+        waiting: 0,
+        failed: 1,
+        error:
+          error instanceof Error
+            ? error.message
+            : "support_reconciliation_failed"
+      };
+    }
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey =
     process.env.SUPABASE_SECRET_KEY ||
