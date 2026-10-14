@@ -204,9 +204,11 @@ export async function buildBuilderBusinessReport() {
         status:
           latestSupportRun.status === "failed"
             ? ("failed" as const)
-            : latestSupportRun.status === "attention"
-              ? ("attention" as const)
-              : ("healthy" as const),
+            : latestSupportRun.status === "healthy" &&
+                latestSupportRun.completed_at &&
+                latestSupportRun.runtime_status === "healthy"
+              ? ("healthy" as const)
+              : ("attention" as const),
         checkedAt: latestSupportRun.completed_at || null,
         escalatedTickets: latestSupportRun.reconcile_escalated || 0,
         failedChecks:
