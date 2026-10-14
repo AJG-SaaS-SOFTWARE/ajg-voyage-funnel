@@ -12,6 +12,8 @@ La signature n’est pas envoyée au fournisseur IA et ne contient aucune donné
 
 Les contrôles de sites et de tickets en attente comptent leur population admissible puis sélectionnent une fenêtre horaire de 50 éléments. L’ordre est stable : identifiant pour les sites ; date de création puis identifiant pour les tickets. Les réparations restent limitées à 10 par passage et conservent leur temporisation de six heures.
 
+L’ordre des sites candidats aux réparations tourne aussi de 10 positions à chaque nouveau cycle complet, avant le filtrage des droits et de la temporisation. Des erreurs persistantes en début de lot ne peuvent ainsi monopoliser les tentatives. Un test avec 151 sites durablement en échec et le cooldown réel vérifie que chaque candidat est tenté sur cinq cycles de fenêtres, sans dépasser les plafonds. Ce résultat sur population synthétique stable ne constitue pas un SLA de résolution.
+
 Avec une population stable et une exécution chaque heure, les `ceil(nombre / 50)` fenêtres successives couvrent toute la population. L’ajout, la suppression ou le changement de statut d’éléments peuvent déplacer les fenêtres ; le calcul ne garantit donc pas un SLA ni une couverture réelle si des exécutions sont manquées. Un compte indisponible bloque le passage au lieu de prétendre que la file est vide.
 
 Chaque passage conserve le cache de diagnostic par propriétaire/site : plusieurs tickets du même site nécessitent un seul diagnostic dans ce passage. Les mises à jour sont liées au propriétaire et au statut encore en attente, pour protéger les changements simultanés du support.

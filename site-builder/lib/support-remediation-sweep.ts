@@ -106,7 +106,11 @@ async function sweepWithClient(
 
   const eligible: CandidateSite[] = [];
 
-  for (const site of sites) {
+  // Rotate before eligibility/cooldown filtering, otherwise permanent failures
+  // at the front can repeatedly consume every available repair slot.
+  const repairStart = (window.cycle * MAX_REPAIRS) % sites.length;
+  const repairOrder = [...sites.slice(repairStart), ...sites.slice(0, repairStart)];
+  for (const site of repairOrder) {
     const siteDomains = domains.filter((domain) => domain.site_id === site.id);
     const customDomains = siteDomains.filter(
       (domain) => domain.kind === "custom_domain"

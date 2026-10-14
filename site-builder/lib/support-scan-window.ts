@@ -6,6 +6,7 @@ export function supportScanWindow(count: number | null, now: Date, batchSize = 5
     throw new Error("support_scan_count_unavailable");
   }
   const windows = Math.max(1, Math.ceil(count / batchSize));
-  const offset = (Math.floor(now.getTime() / 3_600_000) % windows) * batchSize;
-  return { offset, end: Math.min(count, offset + batchSize) - 1, count };
+  const hour = Math.floor(now.getTime() / 3_600_000);
+  const offset = (hour % windows) * batchSize;
+  return { offset, end: Math.min(count, offset + batchSize) - 1, count, cycle: Math.floor(hour / windows) };
 }
