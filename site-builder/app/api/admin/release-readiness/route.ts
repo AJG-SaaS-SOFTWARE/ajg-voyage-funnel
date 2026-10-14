@@ -199,7 +199,7 @@ export async function GET(request: Request) {
       commercialConfig.tax.ok,
       "commercial",
       commercialConfig.tax.vatRegime === "franchise_base"
-        ? "Régime franchise en base confirmé : Stripe Tax reste volontairement désactivé."
+        ? "Régime franchise en base confirmé : Stripe Tax reste désactivé et une facture test avec mention 293 B est validée."
         : "Régime TVA collectée confirmé : Stripe Tax est activé avec TVA intracommunautaire renseignée.",
       commercialConfig.tax.reason,
       "deferred"
@@ -388,6 +388,42 @@ export async function GET(request: Request) {
         detail: monitorReadiness.detail
       });
     }
+
+    const { data: latestSupportRun, error: supportRunError } = await service
+      .from("support_operations_runs")
+      .select("completed_at,status,reconcile_failed,remediation_failed,platform_failed,runtime_status,reported_to_run")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const supportFailedChecks = latestSupportRun
+      ? (latestSupportRun.reconcile_failed || 0) +
+        (latestSupportRun.remediation_failed || 0) +
+        (latestSupportRun.platform_failed || 0)
+      : 0;
+
+    checks.push({
+      key: "support-operations-agent",
+      label: "Support/RUN · agent autonome",
+      scope: "commercial",
+      status: supportRunError || !latestSupportRun
+        ? "warn"
+        : latestSupportRun.status === "failed" ||
+            latestSupportRun.runtime_status === "incident"
+          ? "blocker"
+          : latestSupportRun.status === "attention" || supportFailedChecks > 0
+            ? "warn"
+            : "pass",
+      detail: supportRunError || !latestSupportRun
+        ? "Aucune exécution récente de l’agent Support/RUN n’est disponible."
+        : latestSupportRun.status === "failed"
+          ? "Dernière exécution de l’agent Support/RUN en échec."
+          : latestSupportRun.runtime_status === "incident"
+            ? `Incident runtime détecté${latestSupportRun.reported_to_run ? " et transmis au cockpit AJG Run" : " mais non transmis au cockpit AJG Run"}.`
+            : supportFailedChecks > 0
+              ? `${supportFailedChecks} échec(s) technique(s) agrégé(s) lors de la dernière exécution Support/RUN.`
+              : `Agent Support/RUN exécuté avec succès : ${latestSupportRun.completed_at || "horodatage indisponible"}.`
+    });
 
     if (present(deploymentSha)) {
       const mirrorRuns = await Promise.all(
