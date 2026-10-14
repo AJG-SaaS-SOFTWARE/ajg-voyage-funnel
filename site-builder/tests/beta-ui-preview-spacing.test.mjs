@@ -40,3 +40,11 @@ test("UI explains the relationship between site pages and homepage sections", ()
   assert.match(architecture, /Ici vous organisez les pages et la navigation/);
   assert.match(builder, /architectureMode=\{config\.architecture\.mode\}/);
 });
+
+test("plan surfaces clarify that one website can contain several pages", () => {
+  const pricing = fs.readFileSync(new URL("../components/PricingPage.tsx", import.meta.url), "utf8");
+  const plans = fs.readFileSync(new URL("../app/plans/page.tsx", import.meta.url), "utf8");
+  assert.match(pricing, /Jusqu'à 6 pages sur le même site \/ domaine/);
+  assert.match(pricing, /Up to 6 pages on the same website \/ domain/);
+  assert.match(plans, /Jusqu’à 6 pages sur le même site \/ domaine/);
+});
