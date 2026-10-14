@@ -145,6 +145,7 @@ async function sweepWithClient(
     else result.failed++;
   }
 
+  result.ok = result.failed === 0;
   return result;
 }
 
