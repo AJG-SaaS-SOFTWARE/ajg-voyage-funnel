@@ -1,4 +1,5 @@
 import "server-only";
+import { supportAgentStatus } from "./support-agent-status";
 
 import { authorizedReportingRequest } from "./cockpit-reporting-auth";
 import { billingServiceClient } from "./server-billing";
@@ -201,14 +202,7 @@ export async function buildBuilderBusinessReport() {
         reportedToRun: false
       }
     : {
-        status:
-          latestSupportRun.status === "failed"
-            ? ("failed" as const)
-            : latestSupportRun.status === "healthy" &&
-                latestSupportRun.completed_at &&
-                latestSupportRun.runtime_status === "healthy"
-              ? ("healthy" as const)
-              : ("attention" as const),
+        status: supportAgentStatus(latestSupportRun),
         checkedAt: latestSupportRun.completed_at || null,
         escalatedTickets: latestSupportRun.reconcile_escalated || 0,
         failedChecks:
