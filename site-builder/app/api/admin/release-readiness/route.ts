@@ -199,7 +199,7 @@ export async function GET(request: Request) {
       commercialConfig.tax.ok,
       "commercial",
       commercialConfig.tax.vatRegime === "franchise_base"
-        ? "Régime franchise en base confirmé : Stripe Tax reste volontairement désactivé."
+        ? "Régime franchise en base confirmé : Stripe Tax reste désactivé et une facture test avec mention 293 B est validée."
         : "Régime TVA collectée confirmé : Stripe Tax est activé avec TVA intracommunautaire renseignée.",
       commercialConfig.tax.reason,
       "deferred"

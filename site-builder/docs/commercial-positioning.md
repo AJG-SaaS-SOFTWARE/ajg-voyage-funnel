@@ -199,7 +199,7 @@ Checkout collecte :
 
 Le calcul automatique de taxe n’est jamais activé par défaut. Le runtime distingue deux régimes possibles à confirmer avant lancement :
 
-- `AJG_VAT_REGIME=franchise_base` : Stripe Tax doit rester désactivé ;
+- `AJG_VAT_REGIME=franchise_base` : Stripe Tax doit rester désactivé et une facture test Stripe doit être validée avec `AJG_STRIPE_INVOICE_293B_READY=true` et la mention exacte `TVA non applicable - article 293 B du CGI` ;
 - `AJG_VAT_REGIME=vat_registered` : le numéro de TVA du vendeur doit être renseigné et Stripe Tax doit être explicitement activé.
 
 `AJG_VAT_REGIME=unconfirmed` reste la valeur sûre tant que la situation fiscale réelle du vendeur n’est pas établie. Le gate commercial refuse alors l’ouverture des paiements.
