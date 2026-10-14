@@ -18,7 +18,6 @@ type Props = {
   label: string;
   value: string;
   language: SiteLanguage;
-  affiliation: "mwr" | "independent";
   firstName: string;
   brandName: string;
   siteContext?: {
@@ -41,7 +40,6 @@ export default function AiTextAssistant({
   label,
   value,
   language,
-  affiliation,
   firstName,
   brandName,
   siteContext,
@@ -90,7 +88,6 @@ export default function AiTextAssistant({
           currentText: value,
           context: {
             language,
-            affiliation,
             firstName,
             brandName,
             siteContext

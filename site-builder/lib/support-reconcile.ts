@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "./support-health-server";
-import { supportReconcileDecision } from "./support-reconcile-policy";
+import { supportCustomerAction, supportReconcileDecision } from "./support-reconcile-policy";
 import { recordSupportEvent } from "./support-events";
 
 export type SupportReconcileResult = {
@@ -18,6 +18,8 @@ type WaitingTicket = {
   user_id: string;
   site_id: string | null;
   created_at: string;
+  category: string;
+  diagnosis: unknown;
 };
 
 async function reconcileWithClient(
@@ -26,7 +28,7 @@ async function reconcileWithClient(
 ): Promise<SupportReconcileResult> {
   const { data, error } = await service
     .from("support_tickets")
-    .select("id,user_id,site_id,created_at")
+    .select("id,user_id,site_id,category,diagnosis,created_at")
     .eq("status", "waiting_customer")
     .order("created_at", { ascending: true })
     .limit(50);
@@ -64,14 +66,17 @@ async function reconcileWithClient(
 
       const decision = supportReconcileDecision({
         overall: health.diagnosis.overall,
-        clientAction: health.diagnosis.clientAction,
+        clientAction: supportCustomerAction(ticket.category, health.diagnosis.checks),
+        category: ticket.category,
+        previousDiagnosis: ticket.diagnosis,
+        checks: health.diagnosis.checks,
         ageHours
       });
 
       const patch: Record<string, unknown> = {
         status: decision.status,
         diagnosis: health.diagnosis,
-        client_action: health.diagnosis.clientAction,
+        client_action: supportCustomerAction(ticket.category, health.diagnosis.checks),
         resolution_code: decision.resolutionCode,
         resolved_at: decision.resolved ? now.toISOString() : null,
         updated_at: now.toISOString()

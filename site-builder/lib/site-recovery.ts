@@ -129,7 +129,7 @@ export function siteConfigFromRecoveryExport(
     legal: normalizeSiteLegalConfig(raw.legalConfig),
     architecture: normalizeSiteArchitecture((designAssets as Record<string, unknown>).architecture),
     contentLibrary: normalizeContentLibrary((designAssets as Record<string, unknown>).contentLibrary),
-    affiliation: raw.complianceProfile === "independent-v1" ? "independent" : "mwr"
+    affiliation: "independent"
   };
 
   return {

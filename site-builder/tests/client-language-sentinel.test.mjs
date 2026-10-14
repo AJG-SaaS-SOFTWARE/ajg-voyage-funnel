@@ -200,7 +200,6 @@ const neutralVisibleLiteralPatterns = [
   /^· hero$/i,
   /^· CC0$/i,
   /^Code HEX$/i,
-  /^Logo (?:MWR Life|Travel Advantage) « Independent Distributor »$/,
   /^https?:\/\//i,
   /^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/,
 ];

@@ -12,7 +12,6 @@ type Props = {
   onImage: (event: ChangeEvent<HTMLInputElement>) => void;
   uploading: boolean;
   language: SiteLanguage;
-  affiliation: "mwr" | "independent";
   firstName: string;
   brandName: string;
   architectureMode: "single" | "multi";
@@ -25,7 +24,6 @@ export default function ModulesEditor({
   onImage,
   uploading,
   language,
-  affiliation,
   firstName,
   brandName,
   architectureMode,
@@ -33,7 +31,7 @@ export default function ModulesEditor({
 }: Props) {
   const { tr } = useProductLocale();
   const moduleLabels: Record<SiteModuleKey, string> = {
-    gallery: tr("Galerie / Voyages", "Gallery"),
+    gallery: tr("Galerie", "Gallery"),
     faq: "FAQ",
     testimonials: tr("Témoignages", "Testimonials"),
     video: tr("Vidéo", "Video"),
@@ -86,7 +84,6 @@ export default function ModulesEditor({
   const assistantProps = {
     brief: modules.assistantBrief,
     language,
-    affiliation,
     firstName,
     brandName,
     siteContext
@@ -109,9 +106,7 @@ export default function ModulesEditor({
           maxLength={1000}
           value={modules.assistantBrief}
           onChange={(event) => change("assistantBrief", event.target.value)}
-          placeholder={affiliation === "mwr"
-            ? tr("Ex. Je suis ambassadeur indépendant MWR Life. Je veux présenter ma façon de voyager, répondre aux questions des personnes curieuses et les inviter à découvrir la plateforme sans pression.", "e.g. I am an independent MWR Life ambassador. I want to present how I travel, answer questions from curious visitors and invite them to discover the platform without pressure.")
-            : tr("Ex. Je suis coach sportif indépendant. Je veux expliquer mon accompagnement, rassurer les nouveaux visiteurs et obtenir des prises de contact.", "e.g. I am an independent fitness coach. I want to explain my coaching, reassure new visitors and generate inquiries.")}
+          placeholder={tr("Ex. Je suis coach sportif indépendant. Je veux expliquer mon accompagnement, rassurer les nouveaux visiteurs et obtenir des prises de contact.", "e.g. I am an independent fitness coach. I want to explain my coaching, reassure new visitors and generate inquiries.")}
         />
         <small>{modules.assistantBrief.trim() ? tr("Contexte prêt ✓ — les assistants des rubriques peuvent l’utiliser.", "Context ready ✓ — section assistants can use it.") : tr("Quelques mots suffisent. Vous pourrez compléter ou modifier les propositions ensuite.", "A few words are enough. You can complete or edit the proposals afterwards.")}</small>
       </section>

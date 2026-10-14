@@ -82,7 +82,7 @@ function configFromRow(row: any): SiteConfig {
     instagramUrl: row.instagram_url,
     facebookUrl: row.facebook_url,
     design: normalizeSiteDesign(row.design_assets),
-    affiliation: row.compliance_profile === "independent-v1" ? "independent" : "mwr",
+    affiliation: "independent",
     legal: normalizeSiteLegalConfig(row.legal_config),
     architecture: normalizeSiteArchitecture(row.design_assets?.architecture),
     contentLibrary: normalizeContentLibrary(row.design_assets?.contentLibrary)

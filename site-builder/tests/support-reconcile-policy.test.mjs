@@ -7,7 +7,10 @@ test("waiting customer ticket auto-resolves only after its diagnosed cause disap
     supportReconcileDecision({
       overall: "healthy",
       clientAction: null,
-      ageHours: 12
+      ageHours: 12,
+      category: "domain",
+      previousDiagnosis: { checks: [{ key: "domain", status: "action" }] },
+      checks: ["backend", "public_render", "domain"].map(key => ({ key, status: "healthy" }))
     }),
     {
       status: "resolved",

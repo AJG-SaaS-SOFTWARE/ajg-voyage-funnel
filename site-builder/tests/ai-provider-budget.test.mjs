@@ -118,6 +118,7 @@ test('writer refunds standard quota only when no usable result is returned', asy
         '../../../../lib/server-locale': { requestProductLocale: () => 'en', localize: (_, fr, en) => en },
         '../../../../lib/openai-readiness': { isOpenAiUnavailableError: (code, status) => ['expired_secret_key', 'invalid_api_key', 'credit_balance_exhausted', 'insufficient_quota'].includes(code) || status === 401 || status === 403 },
         '../../../../lib/standard-ai-writer': {
+          omitRepeatedEditableContext: (_, _text, entries) => entries,
           selectStandardContextEntries: (_, entries) => entries,
           standardStructuredFormat: () => null,
           sanitizeStandardText: text => text,
