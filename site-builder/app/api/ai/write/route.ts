@@ -639,7 +639,7 @@ export async function POST(request: Request) {
   if (field === "siteArchitect" || field === "siteRevision") {
     try {
       const strategyScope = { userId: auth.user.id, siteId, source: {
-        language, firstName, brandName, instruction, architectBrief, editorialContext, currentText,
+        language, firstName, brandName, instruction, architectBrief, revisionRequest, editorialContext, currentText,
         contentLibrary: Array.isArray(context.contentLibrary) ? context.contentLibrary : [],
         complianceRules, auxiliaryModel: process.env.OPENAI_ARCHITECT_AUX_MODEL || "gpt-5.6-terra"
       } };
