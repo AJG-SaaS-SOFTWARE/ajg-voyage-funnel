@@ -4,7 +4,7 @@ import fs from "node:fs";
 import ts from "typescript";
 import { createClient } from "@supabase/supabase-js";
 
-function harness({ completion = "ok", cleanupThrows = false, platformThrows = false } = {}) {
+function harness({ initial = { id: 17 }, completion = "ok", cleanupThrows = false, platformThrows = false } = {}) {
   const writes = [];
   let operations = 0;
   const originalFailure = new Error("synthetic_platform_failure");
@@ -13,7 +13,7 @@ function harness({ completion = "ok", cleanupThrows = false, platformThrows = fa
     global: { fetch: async (url, init) => {
       const body = JSON.parse(init.body);
       writes.push({ url: String(url), headers: new Headers(init.headers), body });
-      if (init.method === "POST") return Response.json({ id: 17 }, { status: 201 });
+      if (init.method === "POST") return Response.json(initial, { status: 201 });
       assert.equal(init.method, "PATCH");
       if (body.status === "failed") {
         if (cleanupThrows) throw new Error("synthetic_cleanup_failure");
@@ -60,6 +60,15 @@ test("a healthy RUN requires the SDK to return its persisted completion row", as
   assert.equal(url.searchParams.get("id"), "eq.17");
   assert.equal(url.searchParams.get("select"), "id");
   assert.match(completion.headers.get("prefer"), /return=representation/);
+});
+
+test("unconfirmed or unsafe journal identifiers prevent every repair operation", async () => {
+  for (const initial of [null, {}, { id: 0 }, { id: -1 }, { id: 1.5 }, { id: "17" }, { id: Number.MAX_SAFE_INTEGER + 1 }]) {
+    const app = harness({ initial });
+    await assert.rejects(app.run(), { message: "support_operations_journal_unavailable" });
+    assert.equal(app.operations(), 0);
+    assert.equal(app.writes.length, 1, "do not update a journal without a confirmed identifier");
+  }
 });
 
 test("missing, mismatched and failed completion writes cannot report success", async () => {
