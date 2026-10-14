@@ -1,3 +1,5 @@
+import { verifyProviderInvoiceFooter } from "./provider-invoice-proof.mjs";
+
 const STRIPE_API = "https://api.stripe.com/v1";
 const STRIPE_VERSION = "2026-08-26.dahlia";
 
@@ -115,6 +117,8 @@ let clockId = "";
 let customerId = "";
 let subscriptionId = "";
 let cleanupOk = true;
+let lifecycleResult = null;
+let initialInvoice = null;
 
 try {
   const provisioned = await harness("provision");
@@ -197,6 +201,16 @@ try {
     return { ok, value: state };
   }, 120000, 2000);
 
+  const initialInvoices = await stripe("/invoices", {
+    method: "GET",
+    params: { customer: customerId, limit: 10 }
+  });
+  initialInvoice = initialInvoices?.data?.find((invoice) =>
+    invoice?.status === "paid" &&
+    (invoice?.subscription === subscriptionId ||
+      invoice?.parent?.subscription_details?.subscription === subscriptionId)
+  ) || null;
+
   await attachPaymentMethod(failedPaymentMethod, customerId);
   await setCustomerPaymentMethod(customerId, failedPaymentMethod);
   await setSubscriptionPaymentMethod(subscriptionId, failedPaymentMethod);
@@ -259,8 +273,10 @@ try {
     return { ok, value: state };
   }, 120000, 2000);
 
-  console.log(JSON.stringify({
+  const invoiceProof = verifyProviderInvoiceFooter(initialInvoice, { customerId, subscriptionId });
+  lifecycleResult = {
     ok: true,
+    ...invoiceProof,
     mode: "provider_backed_stripe_lifecycle",
     initialPayment: true,
     renewalFailure: true,
@@ -268,7 +284,7 @@ try {
     cancellation: true,
     checkoutEnabled: false,
     sandbox: true
-  }));
+  };
 } finally {
   if (clockId) {
     try {
@@ -303,4 +319,8 @@ try {
     console.error("provider_billing_e2e_cleanup_incomplete");
     process.exitCode = 1;
   }
+}
+
+if (lifecycleResult && cleanupOk) {
+  console.log(JSON.stringify({ ...lifecycleResult, cleanupOk: true }));
 }
