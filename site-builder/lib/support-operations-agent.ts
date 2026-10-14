@@ -50,11 +50,12 @@ export async function runSupportOperationsAgent(
 
   try {
     const platform = await runPlatformSelfHealing(service);
-    const [reconcile, remediation, runtime] = await Promise.all([
-      runSupportReconciliationSafely(now, service),
+    const [remediation, runtime] = await Promise.all([
       runSupportRemediationSweepSafely(now, service),
       getRecentRuntimeHealth()
     ]);
+    // Verify after repair, using the same authenticated service client.
+    const reconcile = await runSupportReconciliationSafely(now, service);
 
     const errors = [
       reconcile.error ? `reconcile:${reconcile.error}` : null,
