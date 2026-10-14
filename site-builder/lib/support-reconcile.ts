@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { diagnoseSupportHealth } from "./support-health-server";
-import { supportReconcileDecision } from "./support-reconcile-policy";
+import { supportCustomerAction, supportReconcileDecision } from "./support-reconcile-policy";
+import { supportScanWindow } from "./support-scan-window";
 import { recordSupportEvent } from "./support-events";
 
 export type SupportReconcileResult = {
@@ -18,18 +19,27 @@ type WaitingTicket = {
   user_id: string;
   site_id: string | null;
   created_at: string;
+  category: string;
+  diagnosis: unknown;
 };
 
 async function reconcileWithClient(
   service: SupabaseClient,
   now: Date
 ): Promise<SupportReconcileResult> {
+  const { count, error: countError } = await service.from("support_tickets")
+    .select("id", { count: "exact", head: true }).eq("status", "waiting_customer");
+  if (countError) throw new Error("support_queue_count_unavailable");
+  const window = supportScanWindow(count, now);
+  if (!window.count) return { ok: true, scanned: 0, resolved: 0, escalated: 0, waiting: 0, failed: 0 };
   const { data, error } = await service
     .from("support_tickets")
-    .select("id,user_id,site_id,created_at")
+    .select("id,user_id,site_id,category,diagnosis,created_at")
     .eq("status", "waiting_customer")
     .order("created_at", { ascending: true })
-    .limit(50);
+    .order("id", { ascending: true })
+    .limit(50)
+    .range(window.offset, window.end);
 
   if (error) throw new Error("support_queue_unavailable");
 
@@ -64,14 +74,17 @@ async function reconcileWithClient(
 
       const decision = supportReconcileDecision({
         overall: health.diagnosis.overall,
-        clientAction: health.diagnosis.clientAction,
+        clientAction: supportCustomerAction(ticket.category, health.diagnosis.checks),
+        category: ticket.category,
+        previousDiagnosis: ticket.diagnosis,
+        checks: health.diagnosis.checks,
         ageHours
       });
 
       const patch: Record<string, unknown> = {
         status: decision.status,
         diagnosis: health.diagnosis,
-        client_action: health.diagnosis.clientAction,
+        client_action: supportCustomerAction(ticket.category, health.diagnosis.checks),
         resolution_code: decision.resolutionCode,
         resolved_at: decision.resolved ? now.toISOString() : null,
         updated_at: now.toISOString()
@@ -82,6 +95,7 @@ async function reconcileWithClient(
         .from("support_tickets")
         .update(patch)
         .eq("id", ticket.id)
+        .eq("user_id", ticket.user_id)
         .eq("status", "waiting_customer")
         .select("id")
         .maybeSingle();
@@ -91,7 +105,7 @@ async function reconcileWithClient(
         continue;
       }
 
-      await recordSupportEvent(service, {
+      const recorded = await recordSupportEvent(service, {
         ticketId: ticket.id,
         actor: "system",
         type: decision.resolved ? "resolution" : "diagnostic",
@@ -103,6 +117,7 @@ async function reconcileWithClient(
           age_hours: Math.round(ageHours)
         }
       });
+      if (!recorded) throw new Error("support_ticket_event_unconfirmed");
 
       if (decision.status === "resolved") resolved++;
       else if (decision.status === "diagnosed") escalated++;

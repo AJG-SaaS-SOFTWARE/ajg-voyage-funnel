@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { runSupportRepair } from "./support-remediation";
+import { supportScanWindow } from "./support-scan-window";
 
 const MAX_SCAN = 50;
 const MAX_REPAIRS = 10;
@@ -52,13 +53,21 @@ async function sweepWithClient(
 ): Promise<SupportRemediationSweepResult> {
   const result = emptyResult();
 
+  const { count, error: countError } = await service.from("sites")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "published").eq("privacy_state", "active");
+  if (countError) throw new Error("remediation_site_count_unavailable");
+  const window = supportScanWindow(count, now, MAX_SCAN);
+  if (!window.count) return result;
+
   const { data: siteRows, error: siteError } = await service
     .from("sites")
     .select("id,owner_id")
     .eq("status", "published")
     .eq("privacy_state", "active")
-    .order("updated_at", { ascending: true })
-    .limit(MAX_SCAN);
+    .order("id", { ascending: true })
+    .limit(MAX_SCAN)
+    .range(window.offset, window.end);
 
   if (siteError) throw new Error("remediation_sites_unavailable");
 
@@ -140,7 +149,8 @@ async function sweepWithClient(
     });
 
     result.attempted++;
-    if (repair.status === "succeeded") result.succeeded++;
+    if (repair.status === "succeeded" && repair.verified === true && repair.audited === true) result.succeeded++;
+    else if (repair.status === "succeeded") result.failed++;
     else if (repair.status === "no_change") result.noChange++;
     else result.failed++;
   }
