@@ -49,7 +49,9 @@ export async function runSupportOperationsAgent(
     .insert({ started_at: startedAt, status: "running" })
     .select("id")
     .single();
-  if (runError || !run) throw runError || new Error("support_operations_journal_unavailable");
+  if (runError || !Number.isSafeInteger(run?.id) || run.id <= 0) {
+    throw runError || new Error("support_operations_journal_unavailable");
+  }
 
   try {
     const platform = await runPlatformSelfHealing(service);
