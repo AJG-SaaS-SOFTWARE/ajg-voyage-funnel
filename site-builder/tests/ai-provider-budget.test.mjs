@@ -113,6 +113,7 @@ test('writer refunds standard quota only when no usable result is returned', asy
         '@supabase/supabase-js': { createClient: () => client },
         '../../../../lib/ai-cost': cost,
         '../../../../lib/ai-request-admission': load('../lib/ai-request-admission.ts'),
+        '../../../../lib/premium-strategy-reuse': { issueStrategyReuseToken: () => "", verifyStrategyReuseToken: () => false },
         '../../../../lib/ai-provider-budget': { AiBudgetError, createBudgetedProviderFetch: ctx => createBudgetedProviderFetch(ctx, provider) },
         '../../../../lib/premium-site-architect': { PremiumArchitectError: class extends Error {} },
         '../../../../lib/server-locale': { requestProductLocale: () => 'en', localize: (_, fr, en) => en },

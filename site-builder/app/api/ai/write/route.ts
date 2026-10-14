@@ -1,4 +1,5 @@
 import { aiRequestHashes } from "../../../../lib/ai-request-admission";
+import { issueStrategyReuseToken, verifyStrategyReuseToken } from "../../../../lib/premium-strategy-reuse";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generatePremiumSiteArchitect, PremiumArchitectError } from "../../../../lib/premium-site-architect";
@@ -637,6 +638,11 @@ export async function POST(request: Request) {
     });
   if (field === "siteArchitect" || field === "siteRevision") {
     try {
+      const strategyScope = { userId: auth.user.id, siteId, source: {
+        language, firstName, brandName, instruction, architectBrief, editorialContext, currentText,
+        contentLibrary: Array.isArray(context.contentLibrary) ? context.contentLibrary : [],
+        complianceRules, auxiliaryModel: process.env.OPENAI_ARCHITECT_AUX_MODEL || "gpt-5.6-terra"
+      } };
       const proposal = await generatePremiumSiteArchitect({
         apiKey,
         providerFetch,
@@ -649,7 +655,8 @@ export async function POST(request: Request) {
         architectBrief,
         revisionRequest,
         existingProposal,
-        reuseStrategy: field === "siteArchitect" && reuseStrategy,
+        reuseStrategy: field === "siteArchitect" && reuseStrategy &&
+          verifyStrategyReuseToken(strategyScope, existingStrategy, context.strategyReuseToken, serviceKey),
         existingStrategy,
         variationReference,
         editorialContext,
@@ -700,6 +707,8 @@ export async function POST(request: Request) {
       usableResult = true;
       return NextResponse.json({
         proposal,
+        strategyReuseToken: field === "siteArchitect"
+          ? issueStrategyReuseToken(strategyScope, proposal.intelligence, serviceKey) : null,
         premium: true,
         premiumAccessSource
       });

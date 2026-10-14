@@ -270,6 +270,7 @@ export default function BuilderPage() {
   };
   const [architectProposal, setArchitectProposal] = useState<ArchitectProposal | null>(null);
   const [architectStrategyContextKey, setArchitectStrategyContextKey] = useState("");
+  const [architectStrategyReuseToken, setArchitectStrategyReuseToken] = useState("");
   const [architectClarifications, setArchitectClarifications] = useState<Record<string, string>>({});
   const [architectProposalKey, setArchitectProposalKey] = useState("");
   const [architectAttemptKind, setArchitectAttemptKind] = useState<"first" | "regeneration">("first");
@@ -675,6 +676,7 @@ export default function BuilderPage() {
       isRegeneration &&
       !extraBrief.trim() &&
       architectStrategyContextKey === strategyContextKey &&
+      Boolean(architectStrategyReuseToken) &&
       Boolean(architectProposal?.intelligence);
     setArchitectLoading(true);
     setSyncError("");
@@ -698,6 +700,7 @@ export default function BuilderPage() {
             brandName: config.brandName,
             architectBrief: briefForRequest,
             reuseStrategy: canReuseStrategy,
+            strategyReuseToken: canReuseStrategy ? architectStrategyReuseToken : null,
             existingStrategy: canReuseStrategy ? architectProposal?.intelligence : null,
             variationReference: canReuseStrategy && architectProposal
               ? {
@@ -732,6 +735,7 @@ export default function BuilderPage() {
       }
       if (!response.ok || !result?.proposal) throw new Error(result?.error || tr("Impossible de préparer le site complet.", "Unable to prepare the complete website."));
       setArchitectProposal(result.proposal);
+      setArchitectStrategyReuseToken(typeof result.strategyReuseToken === "string" ? result.strategyReuseToken : "");
       setArchitectStrategyContextKey(strategyContextKey);
       setArchitectProposalKey(crypto.randomUUID());
       setArchitectAttemptKind(isRegeneration ? "regeneration" : "first");

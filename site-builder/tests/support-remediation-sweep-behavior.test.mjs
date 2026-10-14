@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
+import { supportScanWindow } from "../lib/support-scan-window.ts";
 
 const code = ts.transpileModule(fs.readFileSync(new URL("../lib/support-remediation-sweep.ts", import.meta.url), "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
@@ -11,15 +12,17 @@ test("repair sweep reports failure when any attempted repair fails", async () =>
   for (const statuses of [["succeeded"], ["no_change"], ["failed"], ["succeeded", "failed"]]) {
     const sites = statuses.map((_, i) => ({ id: `site-${i}`, owner_id: "synthetic-user" }));
     const service = { from(table) {
+      let counting = false;
       return {
-        select() { return this; }, eq() { return this; }, order() { return this; }, limit() { return this; }, gte() { return this; }, in() { return this; },
-        then(resolve, reject) { return Promise.resolve({ data: table === "sites" ? sites : [], error: null }).then(resolve, reject); }
+        select(_columns, options) { counting = Boolean(options?.head); return this; }, eq() { return this; }, order() { return this; }, limit() { return this; }, range() { return this; }, gte() { return this; }, in() { return this; },
+        then(resolve, reject) { return Promise.resolve({ data: counting ? null : table === "sites" ? sites : [], count: counting ? sites.length : null, error: null }).then(resolve, reject); }
       };
     } };
     let calls = 0;
     const dependencies = {
       "@supabase/supabase-js": {},
-      "./support-remediation": { runSupportRepair: async () => ({ status: statuses[calls++] }) }
+      "./support-scan-window": { supportScanWindow },
+      "./support-remediation": { runSupportRepair: async () => ({ status: statuses[calls++], verified: true, audited: true }) }
     };
     const module = { exports: {} };
     new Function("require", "module", "exports", code)(name => dependencies[name], module, module.exports);
