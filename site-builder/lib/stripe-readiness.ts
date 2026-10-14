@@ -180,6 +180,7 @@ async function auditPortal(): Promise<StripeRuntimeAuditItem> {
       { method: "GET" }
     );
     const ok =
+      portal.id === portalId &&
       portal.active === true &&
       portal.metadata?.app === "ajg_site_builder" &&
       portal.features?.payment_method_update?.enabled === true &&
