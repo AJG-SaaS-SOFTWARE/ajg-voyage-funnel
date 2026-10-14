@@ -60,4 +60,7 @@ test("release readiness includes the latest autonomous support operations run", 
   assert.match(readiness, /Support\/RUN · agent autonome/);
   assert.match(readiness, /runtime_status === "incident"/);
   assert.match(readiness, /reported_to_run/);
+  assert.match(readiness, /supportAgentStatus\(latestSupportRun\)/);
+  assert.match(readiness, /supportStatus !== "healthy"/);
+  assert.match(readiness, /preuve périmée/);
 });

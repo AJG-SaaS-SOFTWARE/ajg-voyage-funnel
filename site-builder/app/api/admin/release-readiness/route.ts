@@ -5,6 +5,7 @@ import { getStorageBackupStatus } from "../../../../lib/storage-backup";
 import { commercialConfigurationReadiness } from "../../../../lib/commercial-checkout-readiness";
 import { auditStripeRuntimeCached } from "../../../../lib/stripe-readiness";
 import { auditOpenAiRuntimeCached } from "../../../../lib/openai-readiness";
+import { supportAgentStatus } from "../../../../lib/support-agent-status";
 import {
   aiFinopsMonitorReadiness,
   aiFinopsPolicyReadiness
@@ -401,6 +402,7 @@ export async function GET(request: Request) {
         (latestSupportRun.remediation_failed || 0) +
         (latestSupportRun.platform_failed || 0)
       : 0;
+    const supportStatus = latestSupportRun ? supportAgentStatus(latestSupportRun) : null;
 
     checks.push({
       key: "support-operations-agent",
@@ -408,12 +410,10 @@ export async function GET(request: Request) {
       scope: "commercial",
       status: supportRunError || !latestSupportRun
         ? "warn"
-        : latestSupportRun.status === "failed" ||
+        : supportStatus === "failed" ||
             latestSupportRun.runtime_status === "incident"
           ? "blocker"
-          : latestSupportRun.status !== "healthy" ||
-              !latestSupportRun.completed_at ||
-              latestSupportRun.runtime_status !== "healthy" || supportFailedChecks > 0
+          : supportStatus !== "healthy" || supportFailedChecks > 0
             ? "warn"
             : "pass",
       detail: supportRunError || !latestSupportRun
@@ -424,8 +424,8 @@ export async function GET(request: Request) {
             ? `Incident runtime détecté${latestSupportRun.reported_to_run ? " et transmis au cockpit AJG Run" : " mais non transmis au cockpit AJG Run"}.`
             : supportFailedChecks > 0
               ? `${supportFailedChecks} échec(s) technique(s) agrégé(s) lors de la dernière exécution Support/RUN.`
-              : latestSupportRun.status !== "healthy" || !latestSupportRun.completed_at || latestSupportRun.runtime_status !== "healthy"
-                ? "Exécution Support/RUN inachevée ou état runtime non confirmé."
+              : supportStatus !== "healthy"
+                ? "Exécution Support/RUN inachevée, preuve périmée ou état runtime non confirmé."
                 : `Agent Support/RUN exécuté avec succès : ${latestSupportRun.completed_at}.`
     });
 
