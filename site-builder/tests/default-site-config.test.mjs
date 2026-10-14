@@ -32,10 +32,9 @@ test("new ELTARA drafts start as independent generalist websites", () => {
   assert.doesNotMatch(config.defaultSiteConfig.heroSubtitle, /MWR|Travel Advantage/i);
 });
 
-test("MWR disclosure remains available only when the profile is explicit", () => {
-  assert.equal(config.siteDisclaimer(config.defaultSiteConfig), "");
-  assert.match(
-    config.siteDisclaimer({ ...config.defaultSiteConfig, affiliation: "mwr" }),
-    /MWR Life/
-  );
+test("new drafts contain no inserted promotional content or dedicated affiliation profile", () => {
+  assert.equal(config.defaultSiteConfig.heroTitle, "");
+  assert.equal(config.defaultSiteConfig.heroSubtitle, "");
+  assert.equal(config.defaultSiteConfig.bookingLabel, "Nous contacter");
+  assert.doesNotMatch(configSource, /MWR|Travel Advantage|siteDisclaimer/);
 });
