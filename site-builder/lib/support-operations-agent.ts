@@ -90,7 +90,7 @@ export async function runSupportOperationsAgent(
       errors.push(`run_reporting:${"reason" in report ? report.reason : "unknown"}`);
     }
 
-    const { error: updateError } = await service
+    const { data: completedRun, error: updateError } = await service
       .from("support_operations_runs")
       .update({
         completed_at: completedAt,
@@ -120,8 +120,12 @@ export async function runSupportOperationsAgent(
         report_reason: reportReason,
         errors
       })
-      .eq("id", run.id);
-    if (updateError) throw updateError;
+      .eq("id", run.id)
+      .select("id")
+      .single();
+    if (updateError || completedRun?.id !== run.id) {
+      throw new Error("support_operations_completion_unconfirmed");
+    }
 
     return {
       ok: runStatus !== "failed",
@@ -140,14 +144,18 @@ export async function runSupportOperationsAgent(
   } catch (error) {
     const completedAt = new Date().toISOString();
     const message = error instanceof Error ? error.message : "support_operations_failed";
-    await service
-      .from("support_operations_runs")
-      .update({
-        completed_at: completedAt,
-        status: "failed",
-        errors: [message]
-      })
-      .eq("id", run.id);
+    try {
+      await service
+        .from("support_operations_runs")
+        .update({
+          completed_at: completedAt,
+          status: "failed",
+          errors: [message]
+        })
+        .eq("id", run.id);
+    } catch {
+      // A failed best-effort journal write must not hide the original failure.
+    }
     throw error;
   }
 }
