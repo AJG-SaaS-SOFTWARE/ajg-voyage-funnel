@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       await service.auth.admin.createUser({
         email,
         email_confirm: true,
-        user_metadata: {
+        app_metadata: {
           purpose: PURPOSE,
           attempt_id: attemptId
         }
@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
 
   const { data: userData, error: userError } =
     await service.auth.admin.getUserById(ownerId);
-  const purpose = userData?.user?.user_metadata?.purpose;
-  const storedAttempt = userData?.user?.user_metadata?.attempt_id;
+  const purpose = userData?.user?.app_metadata?.purpose;
+  const storedAttempt = userData?.user?.app_metadata?.attempt_id;
 
   if (
     userError ||
@@ -219,7 +219,8 @@ export async function POST(request: NextRequest) {
         .eq("status", "active")
     ]);
 
-    if (subscriptionError || billingError || launchError) {
+    if (subscriptionError || billingError || launchError ||
+        !Number.isSafeInteger(activeLaunches) || activeLaunches === null || activeLaunches < 0) {
       console.error("ELTARA provider billing E2E status failed", {
         subscription: subscriptionError?.message || null,
         billing: billingError?.message || null,
@@ -241,6 +242,9 @@ export async function POST(request: NextRequest) {
             planKey: subscription.plan_key,
             status: subscription.status,
             provider: subscription.provider,
+            providerCustomerId: subscription.provider_customer_id || null,
+            providerSubscriptionId: subscription.provider_subscription_id || null,
+            providerPriceId: subscription.provider_price_id || null,
             hasCustomer: Boolean(subscription.provider_customer_id),
             hasSubscription: Boolean(subscription.provider_subscription_id),
             hasPrice: Boolean(subscription.provider_price_id),
@@ -255,7 +259,7 @@ export async function POST(request: NextRequest) {
             hasGraceExpiry: Boolean(billing.grace_expires_at)
           }
         : null,
-      activeAiLaunchEntitlements: activeLaunches || 0
+      activeAiLaunchEntitlements: activeLaunches
     });
   }
 
