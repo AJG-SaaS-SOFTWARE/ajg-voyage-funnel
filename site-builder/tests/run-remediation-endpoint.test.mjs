@@ -13,9 +13,11 @@ test("internal autonomous run endpoint requires a dedicated server-side run toke
 });
 
 test("internal autonomous run endpoint allows only deterministic low-risk actions", () => {
+  assert.match(source, /"support_operations_agent"/);
   assert.match(source, /"support_reconcile"/);
   assert.match(source, /"support_remediation_sweep"/);
   assert.match(source, /"storage_backup"/);
+  assert.match(source, /runSupportOperationsAgentFromEnvironment/);
   assert.doesNotMatch(source, /stripe/i);
   assert.doesNotMatch(source, /delete/i);
 });
