@@ -28,11 +28,28 @@ export type SiteConfig = {
   instagramUrl: string;
   facebookUrl: string;
   design: SiteDesign;
-  affiliation: "independent";
+  affiliation: "mwr" | "independent";
   legal: SiteLegalConfig;
   architecture: SiteArchitecture;
   contentLibrary: ContentLibrary;
 };
+
+export const requiredDisclaimer =
+  "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de MWR Life ou Travel Advantage.";
+
+export function siteDisclaimer(config: SiteConfig) {
+  if (config.affiliation !== "mwr") return "";
+  const usesMwr = config.design.showMwrLogo;
+  const usesTravelAdvantage = config.design.showTravelAdvantageLogo ||
+    /\btravel\s*advantage\b/i.test([config.heroTitle, config.heroSubtitle, config.aboutText, config.brandName].join(" "));
+  if (usesMwr && !usesTravelAdvantage) {
+    return "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de MWR Life.";
+  }
+  if (usesTravelAdvantage && !usesMwr) {
+    return "Site créé par un Ambassadeur Lifestyle indépendant MWR Life. Ce site n'est pas un site officiel de Travel Advantage.";
+  }
+  return requiredDisclaimer;
+}
 
 export const defaultSiteConfig: SiteConfig = {
   slug: "",
@@ -40,12 +57,13 @@ export const defaultSiteConfig: SiteConfig = {
   lastName: "",
   brandName: "",
   language: "fr",
-  heroTitle: "",
-  heroSubtitle: "",
+  heroTitle: "Présentez votre activité simplement",
+  heroSubtitle:
+    "Créez un site clair pour expliquer votre offre, rassurer vos visiteurs et faciliter le premier contact.",
   heroTagline: "",
   aboutText: "",
   aboutHeading: "",
-  bookingLabel: "Nous contacter",
+  bookingLabel: "Réserver une présentation",
   bookingUrl: "",
   profileImageUrl: "",
   showTravelJournals: false,
