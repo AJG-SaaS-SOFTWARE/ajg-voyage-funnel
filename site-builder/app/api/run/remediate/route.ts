@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { runStorageBackup } from "../../../../lib/storage-backup";
 import { runSupportReconciliationSafely } from "../../../../lib/support-reconcile";
 import { runSupportRemediationSweepSafely } from "../../../../lib/support-remediation-sweep";
+import { runSupportOperationsAgentFromEnvironment } from "../../../../lib/support-operations-agent";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 type RunAction =
+  | "support_operations_agent"
   | "support_reconcile"
   | "support_remediation_sweep"
   | "storage_backup";
@@ -37,6 +39,7 @@ export async function POST(request: Request) {
   const action = body?.action as RunAction | undefined;
 
   if (
+    action !== "support_operations_agent" &&
     action !== "support_reconcile" &&
     action !== "support_remediation_sweep" &&
     action !== "storage_backup"
@@ -48,6 +51,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (action === "support_operations_agent") {
+      const result = await runSupportOperationsAgentFromEnvironment();
+      return NextResponse.json(
+        { ok: result.ok, action, result },
+        { status: result.ok ? 200 : 503 },
+      );
+    }
+
     if (action === "support_reconcile") {
       const result = await runSupportReconciliationSafely();
       return NextResponse.json(
