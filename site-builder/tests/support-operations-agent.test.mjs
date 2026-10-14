@@ -20,6 +20,8 @@ test("support operations journal is service-only and RLS protected", () => {
 test("support agent composes reconciliation, safe remediation and bounded runtime health", () => {
   assert.match(agent, /runSupportReconciliationSafely/);
   assert.match(agent, /runSupportRemediationSweepSafely/);
+  assert.match(agent, /runSupportReconciliationSafely\(now, service\)/);
+  assert.match(agent, /runSupportRemediationSweepSafely\(now, service\)/);
   assert.match(agent, /getRecentRuntimeHealth/);
   assert.match(agent, /from\("support_operations_runs"\)/);
   assert.match(agent, /status: "running"/);
