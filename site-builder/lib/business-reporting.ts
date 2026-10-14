@@ -181,6 +181,45 @@ export async function buildBuilderBusinessReport() {
         checkedAt: latestBetaRun.completed_at || null
       };
 
+  const { data: latestSupportRun, error: supportRunError } = await service
+    .from("support_operations_runs")
+    .select(
+      "completed_at,status,reconcile_escalated,reconcile_failed,remediation_succeeded,remediation_failed,platform_repaired,platform_failed,runtime_status,reported_to_run"
+    )
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const supportOperations = supportRunError || !latestSupportRun
+    ? {
+        status: "unavailable" as const,
+        checkedAt: null,
+        escalatedTickets: 0,
+        failedChecks: 0,
+        repairsSucceeded: 0,
+        runtimeStatus: "unknown" as const,
+        reportedToRun: false
+      }
+    : {
+        status:
+          latestSupportRun.status === "failed"
+            ? ("failed" as const)
+            : latestSupportRun.status === "attention"
+              ? ("attention" as const)
+              : ("healthy" as const),
+        checkedAt: latestSupportRun.completed_at || null,
+        escalatedTickets: latestSupportRun.reconcile_escalated || 0,
+        failedChecks:
+          (latestSupportRun.reconcile_failed || 0) +
+          (latestSupportRun.remediation_failed || 0) +
+          (latestSupportRun.platform_failed || 0),
+        repairsSucceeded:
+          (latestSupportRun.remediation_succeeded || 0) +
+          (latestSupportRun.platform_repaired || 0),
+        runtimeStatus: latestSupportRun.runtime_status || "unknown",
+        reportedToRun: Boolean(latestSupportRun.reported_to_run)
+      };
+
   const [
     successful30d,
     failed30d,
@@ -299,6 +338,8 @@ export async function buildBuilderBusinessReport() {
     failedProviderEvents > 0 ||
     commercialLaunchState === "blocked" ||
     betaOperations.status === "failed" ||
+    supportOperations.status === "failed" ||
+    supportOperations.runtimeStatus === "incident" ||
     betaRuntime.openAi === "blocker" ||
     betaRuntime.e2eMirror === "blocked"
       ? "critical"
@@ -307,35 +348,46 @@ export async function buildBuilderBusinessReport() {
           recurring.unmappedActivePrices > 0 ||
           betaOperations.status === "attention" ||
           betaOperations.status === "unavailable" ||
+          supportOperations.status === "attention" ||
+          supportOperations.status === "unavailable" ||
+          supportOperations.failedChecks > 0 ||
           betaRuntime.openAi === "warn" ||
           ["pending", "unavailable"].includes(betaRuntime.e2eMirror)
         ? "warning"
         : "healthy";
 
-  const detail =
-    commercialLaunchState === "blocked"
-      ? "Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme."
-      : failedProviderEvents > 0
-        ? `${failedProviderEvents} événement(s) Stripe Builder nécessitent une reprise automatique.`
-        : betaRuntime.openAi === "blocker"
-          ? "Le fournisseur IA refuse la configuration runtime ELTARA ; une intervention sur le credential serveur est requise."
-          : betaRuntime.e2eMirror === "blocked"
-            ? "Le miroir E2E FR/EN du déploiement courant a épuisé son budget de reprises automatiques."
-            : betaOperations.status === "failed"
-              ? "L’agent de suivi bêta ELTARA est en échec et nécessite une intervention technique."
-              : betaRuntime.openAi === "warn"
-                ? "Le contrôle fournisseur IA est temporairement incertain."
-                : betaRuntime.e2eMirror === "pending"
-                  ? `Validation E2E miroir en attente : ${betaRuntime.validatedLocales}/${betaRuntime.requiredLocales} locale(s) validée(s).`
-                  : betaRuntime.e2eMirror === "unavailable"
-                    ? "L’état E2E miroir du déploiement courant est indisponible."
-                    : betaOperations.status === "attention"
-                      ? `${betaOperations.followUpCandidates} relance(s) Beta Tester à préparer · ${betaOperations.unresponsiveAfterFollowUp} sans reprise après relance.`
-                      : betaOperations.status === "unavailable"
-                        ? "Le dernier état agrégé du suivi bêta ELTARA est indisponible."
-                        : recurring.unmappedActivePrices > 0
-                          ? `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`
-                          : "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
+  let detail = "Reporting agrégé ELTARA. Aucun identifiant utilisateur, site, client Stripe ou abonnement n’est exposé.";
+  if (commercialLaunchState === "blocked") {
+    detail = "Checkout ELTARA est activé alors que la readiness commerciale n’est pas conforme.";
+  } else if (failedProviderEvents > 0) {
+    detail = `${failedProviderEvents} événement(s) Stripe Builder nécessitent une reprise automatique.`;
+  } else if (betaRuntime.openAi === "blocker") {
+    detail = "Le fournisseur IA refuse la configuration runtime ELTARA ; une intervention sur le credential serveur est requise.";
+  } else if (betaRuntime.e2eMirror === "blocked") {
+    detail = "Le miroir E2E FR/EN du déploiement courant a épuisé son budget de reprises automatiques.";
+  } else if (supportOperations.status === "failed") {
+    detail = "L’agent Support/RUN ELTARA est en échec et nécessite une intervention technique.";
+  } else if (supportOperations.runtimeStatus === "incident") {
+    detail = "L’agent Support/RUN détecte un incident runtime production.";
+  } else if (betaOperations.status === "failed") {
+    detail = "L’agent de suivi bêta ELTARA est en échec et nécessite une intervention technique.";
+  } else if (betaRuntime.openAi === "warn") {
+    detail = "Le contrôle fournisseur IA est temporairement incertain.";
+  } else if (betaRuntime.e2eMirror === "pending") {
+    detail = `Validation E2E miroir en attente : ${betaRuntime.validatedLocales}/${betaRuntime.requiredLocales} locale(s) validée(s).`;
+  } else if (betaRuntime.e2eMirror === "unavailable") {
+    detail = "L’état E2E miroir du déploiement courant est indisponible.";
+  } else if (betaOperations.status === "attention") {
+    detail = `${betaOperations.followUpCandidates} relance(s) Beta Tester à préparer · ${betaOperations.unresponsiveAfterFollowUp} sans reprise après relance.`;
+  } else if (betaOperations.status === "unavailable") {
+    detail = "Le dernier état agrégé du suivi bêta ELTARA est indisponible.";
+  } else if (supportOperations.status === "attention" || supportOperations.failedChecks > 0) {
+    detail = `Agent Support/RUN à surveiller : ${supportOperations.failedChecks} échec(s) technique(s) agrégé(s).`;
+  } else if (supportOperations.status === "unavailable") {
+    detail = "Le dernier état agrégé de l’agent Support/RUN ELTARA est indisponible.";
+  } else if (recurring.unmappedActivePrices > 0) {
+    detail = `${recurring.unmappedActivePrices} abonnement(s) actif(s) utilisent un Price ID non reconnu par le catalogue Builder.`;
+  }
 
   return {
     status,
@@ -369,6 +421,7 @@ export async function buildBuilderBusinessReport() {
       stripeRuntimeReady
     },
     betaOperations,
+    supportOperations,
     betaRuntime,
     detail,
     checkedAt: new Date().toISOString()
