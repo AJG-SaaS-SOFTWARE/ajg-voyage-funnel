@@ -28,6 +28,10 @@ type QuotaInput = {
   heavyMonthlyUsed?: number;
 };
 
+function validCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
 function normalized(value: unknown) {
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -46,7 +50,11 @@ export function deriveAiQuotaHealth(input: QuotaInput): AiQuotaHealth {
   const heavyMonthly = heavyLimit > 0 ? { used: heavyUsed, limit: heavyLimit } : undefined;
 
   const required = [minute.limit, daily.limit, monthly.limit];
-  if (required.some((limit) => limit < 1)) {
+  const evidence = [input.minuteUsed, input.dailyUsed, input.monthlyUsed,
+    input.minuteLimit, input.dailyLimit, input.monthlyLimit];
+  if (input.heavyMonthlyLimit !== undefined) evidence.push(input.heavyMonthlyLimit);
+  if (heavyLimit > 0) evidence.push(input.heavyMonthlyUsed as number);
+  if (required.some((limit) => limit < 1) || evidence.some((value) => !validCount(value))) {
     return {
       planKey: input.planKey,
       planName: input.planName,
@@ -98,7 +106,8 @@ async function countSince(
   for (const [column, value] of Object.entries(filters)) query = query.eq(column, value);
   const { count, error } = await query;
   if (error) throw error;
-  return count || 0;
+  if (!validCount(count)) throw new Error("ai_quota_count_unavailable");
+  return count;
 }
 
 export async function getAiQuotaHealth(
