@@ -29,6 +29,8 @@ export type CommercialConfigurationReadiness = {
     vatRegime: string;
     stripeTaxEnabled: boolean;
     taxCode: string;
+    invoice293bReady: boolean;
+    invoiceFooterText: string;
     reason: string;
   };
   stripe: {
@@ -51,10 +53,17 @@ export function commercialConfigurationReadiness(): CommercialConfigurationReadi
   const stripeTaxEnabled = enabled("AJG_STRIPE_TAX_ENABLED");
   const taxCode = process.env.AJG_STRIPE_TAX_CODE?.trim() || "";
   const vatNumber = process.env.AJG_VAT_NUMBER?.trim() || "";
+  const invoiceFooterText = process.env.AJG_STRIPE_INVOICE_FOOTER_TEXT?.trim() || "";
+  const invoice293bReady = enabled("AJG_STRIPE_INVOICE_293B_READY");
+  const expectedFranchiseFooter = "TVA non applicable - article 293 B du CGI";
+  const invoice293bOk =
+    vatRegime !== "franchise_base" ||
+    (invoice293bReady && invoiceFooterText === expectedFranchiseFooter);
 
   const taxConfigurationValid =
     market === "B2B" &&
     taxCode === "txcd_10103001" &&
+    invoice293bOk &&
     (
       (vatRegime === "franchise_base" && !stripeTaxEnabled) ||
       (vatRegime === "vat_registered" && stripeTaxEnabled && Boolean(vatNumber))
@@ -71,6 +80,10 @@ export function commercialConfigurationReadiness(): CommercialConfigurationReadi
     taxReason = "Régime TVA non confirmé.";
   } else if (vatRegime === "franchise_base" && stripeTaxEnabled) {
     taxReason = "Stripe Tax doit rester désactivé sous franchise en base.";
+  } else if (vatRegime === "franchise_base" && !invoice293bReady) {
+    taxReason = "Facture Stripe test avec mention 293 B non validée.";
+  } else if (vatRegime === "franchise_base" && invoiceFooterText !== expectedFranchiseFooter) {
+    taxReason = "Mention facture 293 B absente ou différente du texte validé.";
   } else if (vatRegime === "vat_registered" && !stripeTaxEnabled) {
     taxReason = "Stripe Tax doit être activé pour le régime TVA collectée.";
   } else if (vatRegime === "vat_registered" && !vatNumber) {
@@ -125,6 +138,8 @@ export function commercialConfigurationReadiness(): CommercialConfigurationReadi
       vatRegime,
       stripeTaxEnabled,
       taxCode,
+      invoice293bReady,
+      invoiceFooterText,
       reason: taxReason
     },
     stripe: {

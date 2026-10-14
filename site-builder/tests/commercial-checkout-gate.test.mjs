@@ -25,6 +25,9 @@ test("commercial Checkout requires legal, tax and Stripe readiness in addition t
   assert.ok(gate.includes("AJG_COMMERCIAL_MARKET"));
   assert.ok(gate.includes("AJG_VAT_REGIME"));
   assert.ok(gate.includes("AJG_STRIPE_TAX_CODE"));
+  assert.ok(gate.includes("AJG_STRIPE_INVOICE_293B_READY"));
+  assert.ok(gate.includes("AJG_STRIPE_INVOICE_FOOTER_TEXT"));
+  assert.ok(gate.includes("TVA non applicable - article 293 B du CGI"));
   assert.ok(gate.includes("STRIPE_WEBHOOK_SECRET"));
   assert.ok(gate.includes("STRIPE_PORTAL_CONFIGURATION_ID"));
   assert.ok(gate.includes("auditStripeRuntimeCached"));
@@ -48,6 +51,7 @@ test("admin readiness and Checkout share the same local commercial configuration
   assert.ok(admin.includes("commercialConfig.legal.ok"));
   assert.ok(admin.includes("commercialConfig.tax.ok"));
   assert.ok(admin.includes("commercialConfig.stripe.ok"));
+  assert.ok(admin.includes("facture test avec mention 293 B"));
 });
 
 test("Stripe remote readiness is parallelized and cached before Checkout", () => {
