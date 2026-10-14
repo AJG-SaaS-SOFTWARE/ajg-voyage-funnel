@@ -71,6 +71,17 @@ test("Builder report exposes only aggregate beta-operations state", () => {
   assert.doesNotMatch(source, /betaOperations:\s*{[^}]*\b(?:user|email|site|owner)\b/s);
 });
 
+test("Builder report exposes only aggregate support operations state", () => {
+  assert.match(source, /from\("support_operations_runs"\)/);
+  assert.match(source, /reconcile_escalated/);
+  assert.match(source, /remediation_succeeded/);
+  assert.match(source, /platform_repaired/);
+  assert.match(source, /runtime_status/);
+  assert.match(source, /supportOperations,/);
+  assert.match(source, /Agent Support\/RUN/);
+  assert.doesNotMatch(source, /supportOperations:\s*{[^}]*\b(?:user|email|site|owner|ticketId)\b/s);
+});
+
 test("Builder report turns beta agent state into aggregate operational severity", () => {
   assert.match(source, /betaOperations\.status === "failed"/);
   assert.match(source, /betaOperations\.status === "attention"/);
@@ -78,6 +89,16 @@ test("Builder report turns beta agent state into aggregate operational severity"
   assert.match(source, /relance\(s\) Beta Tester à préparer/);
   assert.match(source, /sans reprise après relance/);
 });
+
+test("Builder report turns support agent state into aggregate operational severity", () => {
+  assert.match(source, /supportOperations\.status === "failed"/);
+  assert.match(source, /supportOperations\.runtimeStatus === "incident"/);
+  assert.match(source, /supportOperations\.status === "attention"/);
+  assert.match(source, /supportOperations\.status === "unavailable"/);
+  assert.match(source, /supportOperations\.failedChecks > 0/);
+  assert.match(source, /dernier état agrégé de l’agent Support\/RUN ELTARA est indisponible/);
+});
+
 
 test("missing beta journal degrades reporting without exposing or inventing tester identities", () => {
   assert.match(source, /status: "unavailable" as const/);
