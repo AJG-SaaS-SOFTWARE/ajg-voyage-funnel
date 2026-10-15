@@ -766,6 +766,7 @@ export async function POST(request: Request) {
     `Field to write: ${localizedFieldSpec.name}.`,
     `Goal: ${localizedFieldSpec.purpose}`,
     `Hard constraint: ${localizedFieldSpec.constraint}`,
+    "Every customer-facing text field must contain plain text without HTML tags, Markdown formatting or unresolved template variables. Preserve factual contact details and ordinary URLs.",
     `Language: ${language}.`,
     firstName ? `First name: ${firstName}.` : "",
     brandName ? `Site/brand name: ${brandName}.` : "",

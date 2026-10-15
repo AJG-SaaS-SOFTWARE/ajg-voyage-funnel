@@ -1,3 +1,4 @@
+import { hasHtmlMarkup, hasMarkdownMarkup } from "./ai-presentation-markup.ts";
 import { unsupportedQuantitativeClaims } from "./ai-quantitative-evidence.ts";
 
 export type StandardAiField =
@@ -517,8 +518,7 @@ export function standardQualityIssues(
 
   const templatePattern =
     /(?:\{\{[^{}]{1,50}\}\}|\$\{[^{}]{1,50}\}|\[(?:nom|name|ville|city|email|e-mail|telephone|téléphone|phone|entreprise|company|lien|link|url|date|prix|price)(?:[^\]]{0,30})\]|\b(?:lorem ipsum|todo|tbd)\b)/iu;
-  const presentationMarkupPattern =
-    /(?:\*\*[^*\n]+\*\*|__[^_\n]+__|(?:^|\n)\s{0,3}#{1,6}\s+\S|\x60\x60\x60|!?\[[^\]\n]+\]\([^)\n]+\)|<\/?(?:strong|em|b|i|h[1-6]|p|a|ul|ol|li)\b[^>]*>)/iu;
+
 
   const groundedClaims = [
     { pattern: /\b(?:meilleur(?:e|s)?|best)\b/giu, label: "meilleur / best" },
@@ -552,7 +552,7 @@ export function standardQualityIssues(
       });
     }
 
-    if (presentationMarkupPattern.test(text)) {
+    if (hasMarkdownMarkup(text) || hasHtmlMarkup(text)) {
       issues.push({
         code: "presentation_markup",
         detail: location + " contient du balisage de présentation brut."
