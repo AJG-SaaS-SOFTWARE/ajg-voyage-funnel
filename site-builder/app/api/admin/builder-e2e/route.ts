@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { siteConfigFromRecoveryExport } from "../../../../lib/site-recovery";
 import { preferredPublishedRootDomain } from "../../../../lib/published-domain";
 import { summarizeAiRecipeMetrics } from "../../../../lib/ai-recipe-metrics.ts";
+import { finishBuilderE2EJournal, validBuilderE2ERunId } from "../../../../lib/builder-e2e-journal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     .select("id")
     .single();
 
-  if (journalStartError || !journalRun) {
+  if (journalStartError || !validBuilderE2ERunId(journalRun?.id)) {
     return NextResponse.json(
       { error: "E2E validation journal unavailable" },
       { status: 503 }
@@ -103,16 +104,13 @@ export async function POST(request: NextRequest) {
     stage: string | null,
     detail: string | null
   ) =>
-    service
-      .from("builder_e2e_runs")
-      .update({
+    finishBuilderE2EJournal(service, journalRunId, {
         completed_at: new Date().toISOString(),
         status,
         failure_stage: stage,
         detail: detail ? detail.slice(0, 500) : null,
         steps
-      })
-      .eq("id", journalRunId);
+      });
 
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   const slug = `ajg-e2e-${suffix}`;
