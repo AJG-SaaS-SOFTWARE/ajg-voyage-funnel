@@ -45,3 +45,35 @@ test("different tasks stay separate and latency percentiles include failed attem
   }
   assert.throws(()=>summarizeAiBenchmark([attempt({estimatedUsdMicros:Number.MAX_SAFE_INTEGER}),attempt({})]),/measurement/);
  });
+
+test("a matched comparison needs the same cases and frequencies for every candidate", () => {
+  const rows = [attempt({candidate:"baseline",caseId:"fr-short"}), attempt({candidate:"baseline",caseId:"en-detailed"}),
+    attempt({candidate:"cheaper",caseId:"en-detailed",estimatedUsdMicros:50}), attempt({candidate:"cheaper",caseId:"fr-short",estimatedUsdMicros:50})];
+  assert.ok(summarizeAiBenchmark(rows).every(row => row.caseCoverageMatched && row.matchedComparisonReady));
+  for (const changed of [
+    [...rows.slice(0,3), attempt({candidate:"cheaper",caseId:"other-brief"})],
+    [...rows, attempt({candidate:"cheaper",caseId:"fr-short"})],
+    rows.map((row,i) => i === 3 ? attempt({candidate:"cheaper"}) : row)
+  ]) {
+    const results = summarizeAiBenchmark(changed);
+    assert.ok(results.every(row => row.comparisonReady));
+    assert.ok(results.every(row => !row.caseCoverageMatched && !row.matchedComparisonReady));
+  }
+});
+
+test("missing peer evidence prevents a matched comparison even for the fully reviewed candidate", () => {
+  for (const missing of [{review:null}, {estimatedUsdMicros:null}, {uncertainCeilingUsdMicros:10}]) {
+    const results = summarizeAiBenchmark([attempt({caseId:"same"}), attempt({candidate:"cheaper",caseId:"same",...missing})]);
+    assert.ok(results.every(row => row.caseCoverageMatched));
+    assert.ok(results.every(row => !row.matchedComparisonReady));
+  }
+  assert.equal(summarizeAiBenchmark([attempt({caseId:"same"})])[0].matchedComparisonReady,false);
+});
+
+test("task cohorts remain separate and malformed case IDs are rejected", () => {
+  const rows = [attempt({caseId:"same"}), attempt({candidate:"cheaper",caseId:"same"}), attempt({task:"diagnostic",caseId:"same"})];
+  const result = summarizeAiBenchmark(rows);
+  assert.equal(result[0].matchedComparisonReady,true);
+  assert.equal(result[2].matchedComparisonReady,false);
+  for (const caseId of [null,"", " ",1,[]]) assert.throws(() => summarizeAiBenchmark([attempt({caseId})]),/invalid_benchmark_case/);
+});

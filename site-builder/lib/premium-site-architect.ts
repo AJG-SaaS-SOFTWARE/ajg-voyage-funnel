@@ -1328,7 +1328,7 @@ export async function generatePremiumSiteArchitect(
   const auxiliaryModel = process.env.OPENAI_ARCHITECT_AUX_MODEL || "gpt-5.6-terra";
   const assets = safeAssets(input.contentLibrary || []);
 
-  const sourceContext = {
+  const sourceContext = Object.fromEntries(Object.entries({
     mode: input.mode,
     language: input.language,
     firstName: input.firstName,
@@ -1340,7 +1340,8 @@ export async function generatePremiumSiteArchitect(
     currentText: input.currentText || "",
     existingProposal: input.mode === "revision" ? input.existingProposal || null : null,
     contentLibrary: assets
-  };
+  }).filter(([, value]) => value !== "" && value !== null &&
+    !(Array.isArray(value) && value.length === 0)));
   const sourceEvidenceText = quantitativeEvidenceText(input, assets);
 
   const revisionScopeRules =
