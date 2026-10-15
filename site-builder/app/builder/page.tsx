@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useProductLocale } from "../../lib/product-i18n";
 import { formatProductNumber } from "../../lib/product-format";
+import { architectRequestAssets, architectRevisionBaseline } from "../../lib/architect-request-context";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { EltaraBrand } from "../../components/EltaraBrand";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
@@ -661,16 +662,7 @@ export default function BuilderPage() {
       firstName: config.firstName.trim(),
       brandName: config.brandName.trim(),
       siteContext: aiSiteContext,
-      contentLibrary: config.contentLibrary.assets.map((asset) => ({
-        id: asset.id,
-        kind: asset.kind,
-        name: asset.name,
-        text: asset.kind === "text" ? asset.text : "",
-        rights: asset.rights,
-        publishable: asset.publishable,
-        sourceUrl: asset.sourceUrl,
-        notes: asset.notes
-      }))
+      contentLibrary: architectRequestAssets(config.contentLibrary.assets)
     });
     const canReuseStrategy =
       isRegeneration &&
@@ -713,16 +705,7 @@ export default function BuilderPage() {
                   design: architectProposal.design
                 }
               : null,
-            contentLibrary: config.contentLibrary.assets.map((asset) => ({
-              id: asset.id,
-              kind: asset.kind,
-              name: asset.name,
-              text: asset.kind === "text" ? asset.text : "",
-              rights: asset.rights,
-              publishable: asset.publishable,
-              sourceUrl: asset.sourceUrl,
-              notes: asset.notes
-            })),
+            contentLibrary: architectRequestAssets(config.contentLibrary.assets),
             siteContext: aiSiteContext
           }
         })
@@ -830,17 +813,10 @@ export default function BuilderPage() {
       if (!data.session?.access_token) throw new Error(tr("Reconnectez-vous pour utiliser la révision globale.", "Sign in again to use full-site revision."));
       const revisionSiteId = remoteSiteId || (await saveMySite(config, false)).id;
       if (!remoteSiteId) setRemoteSiteId(revisionSiteId);
-      const existingProposal = {
-        heroTagline: config.heroTagline, heroTitle: config.heroTitle, heroSubtitle: config.heroSubtitle, aboutHeading: config.aboutHeading, aboutText: config.aboutText, bookingLabel: config.bookingLabel,
-        architecture: config.architecture,
-        design: { layout: config.design.layout, heroLayout: config.design.heroLayout, contentWidth: config.design.contentWidth, accent: config.design.accent, background: config.design.background, pattern: config.design.pattern, patternStrength: config.design.patternStrength },
-        recommendedModules: config.design.modules.order.filter((key) => config.design.modules[key]?.enabled),
-        faq: config.design.modules.faq,
-        benefits: config.design.modules.benefits
-      };
+      const existingProposal = architectRevisionBaseline(config);
       const response = await fetch("/api/ai/write", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, "X-AJG-Locale": locale }, body: JSON.stringify({
         field: "siteRevision", siteId: revisionSiteId, instruction: revisionRequest,
-        context: { language: config.language, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: config.contentLibrary.assets.map((asset) => ({ id: asset.id, kind: asset.kind, name: asset.name, rights: asset.rights, publishable: asset.publishable, notes: asset.notes })), siteContext: aiSiteContext }
+        context: { language: config.language, firstName: config.firstName, brandName: config.brandName, revisionRequest, existingProposal, contentLibrary: architectRequestAssets(config.contentLibrary.assets), siteContext: aiSiteContext }
       }) });
       const result = await response.json();
       if (!response.ok || !result?.proposal) throw new Error(result?.error || tr("Impossible de préparer cette révision.", "Unable to prepare this revision."));

@@ -309,6 +309,23 @@ test("unresolved template variables are blocked in visible copy", () => {
   assert.ok(codes(value).includes("template_residue"));
 });
 
+test("each consecutive unresolved field is reported in a single quality pass", () => {
+  const value = proposal({ heroTagline: "{{CITY}}", heroTitle: "{{CITY}}", heroSubtitle: "{{CITY}}",
+    aboutHeading: "{{CITY}}", aboutText: "{{CITY}}", bookingLabel: "{{CITY}}" });
+  value.faq.title = "{{CITY}}";
+  value.benefits.title = "{{CITY}}";
+  const residues = deterministicQualityIssues(value).filter(issue => issue.code === "template_residue");
+  assert.equal(residues.length, 8);
+  for (const field of ["heroTagline", "heroTitle", "heroSubtitle", "aboutHeading", "aboutText", "bookingLabel", "faqTitle", "benefitsTitle"]) {
+    assert.ok(residues.some(issue => issue.detail.includes(` ${field} `)));
+  }
+});
+
+test("capitalized French and English template labels are also detected", () => {
+  const value = proposal({ heroTitle: "Bienvenue chez [Nom]", heroSubtitle: "Located in [CITY]" });
+  assert.equal(deterministicQualityIssues(value).filter(issue => issue.code === "template_residue").length, 2);
+});
+
 test("normal bracket-free copy is not treated as a template residue", () => {
   const value = proposal({
     heroSubtitle:
