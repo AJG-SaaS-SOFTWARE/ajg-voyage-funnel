@@ -412,16 +412,30 @@ async function structuredResponse(args: {
 }
 
 export function safeAssets(assets: PremiumArchitectAsset[] = []): PremiumArchitectAsset[] {
-  return assets.slice(0, 20).map((asset) => ({
-    id: clean(asset.id, 80),
-    kind: clean(asset.kind, 30),
-    name: clean(asset.name, 160),
-    text: clean(asset.text, 1600),
-    rights: clean(asset.rights, 40),
-    publishable: asset.publishable === true,
-    sourceUrl: clean(asset.sourceUrl, 600),
-    notes: clean(asset.notes, 500)
-  })).map(asset => Object.fromEntries(Object.entries(asset).filter(([, value]) => value !== "")));
+  const selected: PremiumArchitectAsset[] = [];
+  const seen = new Set<string>();
+  for (const asset of assets) {
+    if (!asset || typeof asset !== "object") continue;
+    const compact = Object.fromEntries(Object.entries({
+      id: clean(asset.id, 80),
+      kind: clean(asset.kind, 30),
+      name: clean(asset.name, 160),
+      text: clean(asset.text, 1600),
+      rights: clean(asset.rights, 40),
+      publishable: asset.publishable === true,
+      sourceUrl: clean(asset.sourceUrl, 600),
+      notes: clean(asset.notes, 500)
+    }).filter(([, value]) => value !== ""));
+    // Empty records and exact repeats must not displace distinct source material.
+    // Keep IDs, publication refusals and rights differences in the identity.
+    if (Object.keys(compact).length === 1) continue;
+    const identity = JSON.stringify(compact);
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    selected.push(compact);
+    if (selected.length === 20) break;
+  }
+  return selected;
 }
 
 type PremiumArchitectCore = Omit<PremiumArchitectProposal, "intelligence" | "premiumAudit">;
