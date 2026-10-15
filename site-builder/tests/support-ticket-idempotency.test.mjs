@@ -195,3 +195,25 @@ test("legacy clients remain supported and new identities still obey quotas", asy
   assert.equal((await blocked.post()).status, 429);
   assert.equal(blocked.stats.inserts.length, 0);
 });
+
+test("missing or incoherent intake counters block before diagnosis, insert or reporting", async () => {
+  for (const field of ["recent", "open"]) {
+    for (const value of [null, NaN, Infinity, -1, 0.5, "0", Number.MAX_SAFE_INTEGER + 1]) {
+      const app = harness({ [field]: value });
+      assert.equal((await app.post()).status, 503, `${field}=${String(value)}`);
+      assert.equal(app.stats.diagnoses, 0);
+      assert.equal(app.stats.inserts.length, 0);
+      assert.deepEqual(app.stats.events, []);
+      assert.deepEqual(app.stats.reports, []);
+    }
+  }
+});
+
+test("confirmed replay remains available when intake counters are unavailable", async () => {
+  const app = harness({ rows: [fixture()], recent: null, open: null });
+  const response = await app.post();
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).replayed, true);
+  assert.equal(app.stats.counts, 0);
+  assert.equal(app.stats.inserts.length, 0);
+});
