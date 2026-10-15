@@ -63,6 +63,7 @@ export async function runSupportOperationsAgent(
     const reconcile = await runSupportReconciliationSafely(now, service);
 
     const errors = [
+      runtime.unavailableReason ? `runtime:${runtime.unavailableReason}` : null,
       reconcile.error ? `reconcile:${reconcile.error}` : null,
       remediation.error ? `remediation:${remediation.error}` : null,
       ...platform.actions
