@@ -5,7 +5,7 @@ import ts from "typescript";
 const code = ts.transpileModule(fs.readFileSync(new URL("../app/api/run/support-sync/route.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 const id = "10000000-0000-4000-8000-000000000001";
 
-function harness(initial = "diagnosed", writeError = false) {
+function harness(initial = "diagnosed", writeError = false, audit = true) {
   const row = { id, status: initial, resolution_code: initial === "resolved" ? "original-proof" : null, resolved_at: initial === "resolved" ? "2026-10-15T00:00:00Z" : null };
   const stats = { writes: 0, events: [], clients: 0 };
   const service = { from(table) {
@@ -26,7 +26,7 @@ function harness(initial = "diagnosed", writeError = false) {
   const deps = {
     "next/server": { NextResponse: { json: (body, init) => Response.json(body, init) } },
     "@supabase/supabase-js": { createClient: () => { stats.clients++; return service; } },
-    "../../../../lib/support-events": { recordSupportEvent: async (_service, event) => { stats.events.push(event); return true; } }
+    "../../../../lib/support-events": { recordSupportEvent: async (_service, event) => { stats.events.push(event); if (audit instanceof Error) throw audit; return audit; } }
   };
   const module = { exports: {} };
   new Function("require", "module", "exports", "process", code)(name => { assert.ok(name in deps); return deps[name]; }, module, module.exports, { env: { AJG_RUN_TOKEN: "synthetic-token", NEXT_PUBLIC_SUPABASE_URL: "https://synthetic.invalid", SUPABASE_SECRET_KEY: "synthetic-key" } });
@@ -73,4 +73,36 @@ test("unauthorized delivery cannot instantiate a privileged client", async () =>
   assert.equal((await app.sync("resolved", "invalid")).status, 401);
   assert.equal(app.stats.clients, 0);
   assert.deepEqual(app.stats.events, []);
+});
+
+
+test("unconfirmed callback audit reports the committed state without a false success or retry", async () => {
+  for (const audit of [false, null, new Error("sensitive-provider-detail")]) {
+    const app = harness("diagnosed", false, audit);
+    const response = await app.sync("resolved");
+    assert.equal(response.status, 503);
+    const body = await response.json();
+    assert.equal(body.ok, false);
+    assert.equal(body.changed, true);
+    assert.equal(body.status, "resolved");
+    assert.equal(body.auditRecorded, false);
+    assert.equal(body.error, "support sync audit unavailable");
+    assert.equal(JSON.stringify(body).includes("sensitive-provider-detail"), false);
+    assert.equal(app.row.status, "resolved");
+    assert.equal(app.stats.writes, 1);
+    assert.equal(app.stats.events.length, 1);
+    const replay = await app.sync("resolved");
+    const replayBody = await replay.json();
+    assert.equal(replayBody.changed, false);
+    assert.equal(replayBody.auditRecorded, null);
+    assert.equal(app.stats.writes, 1);
+    assert.equal(app.stats.events.length, 1);
+  }
+});
+
+test("successful callback explicitly confirms its audit", async () => {
+  const app = harness();
+  const response = await app.sync("in_progress");
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {ok: true, changed: true, status: "in_progress", auditRecorded: true});
 });

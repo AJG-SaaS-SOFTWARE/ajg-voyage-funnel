@@ -107,19 +107,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "support sync failed" }, { status: 503 });
   }
   if (!ticket) {
-    return NextResponse.json({ ok: true, changed: false });
+    return NextResponse.json({ ok: true, changed: false, auditRecorded: null });
   }
 
-  await recordSupportEvent(service, {
-    ticketId: id,
-    actor: "system",
-    type: status === "resolved" ? "resolution" : "diagnostic",
-    metadata: {
-      source: "ajg-run",
+  let auditRecorded = false;
+  try {
+    auditRecorded = await recordSupportEvent(service, {
+      ticketId: id,
+      actor: "system",
+      type: status === "resolved" ? "resolution" : "diagnostic",
+      metadata: {
+        source: "ajg-run",
+        status,
+        resolution_code: status === "resolved" ? "run_work_item_closed" : null,
+      },
+    }) === true;
+  } catch {
+    // The ticket update is already committed. Do not repeat or undo it when
+    // the independent audit write fails, and do not expose provider details.
+    auditRecorded = false;
+  }
+  if (!auditRecorded) {
+    return NextResponse.json({
+      ok: false,
+      changed: true,
       status,
-      resolution_code: status === "resolved" ? "run_work_item_closed" : null,
-    },
-  });
+      auditRecorded: false,
+      error: "support sync audit unavailable",
+    }, { status: 503 });
+  }
 
-  return NextResponse.json({ ok: true, changed: true, status });
+  return NextResponse.json({ ok: true, changed: true, status, auditRecorded: true });
 }
