@@ -59,3 +59,8 @@ Six tests execute saveMySite with synthetic Supabase dependencies. Explicit miss
 ## 15 October — RUN support event ordering
 
 Five tests execute the support-sync POST handler with synthetic persistence: delayed in_progress cannot reopen resolved/closed; repeated progress/resolution deliveries do not rewrite timestamps or emit duplicate transitions; simultaneous duplicate deliveries converge in the harness; write errors do not emit events; unauthorized calls instantiate no privileged client. Three regressions fail before the conditional update and pass afterward. The status exclusion is applied atomically in the update query, using existing columns. This is handler and query-construction coverage, not a live database concurrency exercise, durable event-delivery guarantee or proof that a closed RUN item was actually repaired. Complete incident repair verification remains open.
+
+
+## 15 October — automatic reconciliation version check
+
+Four tests execute the actual reconciler with synthetic persistence. A same-status newer ticket update is preserved and independent tickets still reconcile; unchanged tickets succeed; failed writes produce no resolution event; unconfirmed audit results make the cycle fail. The stale-evidence regression fails before comparing updated_at and passes afterward. The existing non-null timestamp is selected and matched in the update alongside owner/status, consistent with customer rediagnosis. No new schema, live ticket mutation or provider repair is involved. This relies on all writers maintaining updated_at and is not live database concurrency or complete support journey proof. PR retains exact-head CI and deployment evidence.

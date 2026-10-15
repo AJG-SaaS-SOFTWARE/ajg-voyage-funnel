@@ -19,6 +19,7 @@ type WaitingTicket = {
   user_id: string;
   site_id: string | null;
   created_at: string;
+  updated_at: string;
   category: string;
   diagnosis: unknown;
 };
@@ -34,7 +35,7 @@ async function reconcileWithClient(
   if (!window.count) return { ok: true, scanned: 0, resolved: 0, escalated: 0, waiting: 0, failed: 0 };
   const { data, error } = await service
     .from("support_tickets")
-    .select("id,user_id,site_id,category,diagnosis,created_at")
+    .select("id,user_id,site_id,category,diagnosis,created_at,updated_at")
     .eq("status", "waiting_customer")
     .order("created_at", { ascending: true })
     .order("id", { ascending: true })
@@ -97,6 +98,7 @@ async function reconcileWithClient(
         .eq("id", ticket.id)
         .eq("user_id", ticket.user_id)
         .eq("status", "waiting_customer")
+        .eq("updated_at", ticket.updated_at)
         .select("id")
         .maybeSingle();
 
