@@ -1,5 +1,6 @@
 export type AiBenchmarkAttempt = {
   candidate: string;
+  caseId?: string;
   task: "assistance" | "diagnostic" | "section" | "creation";
   estimatedUsdMicros: number | null;
   uncertainCeilingUsdMicros: number;
@@ -28,6 +29,7 @@ export function summarizeAiBenchmark(attempts: AiBenchmarkAttempt[]) {
   const groups = new Map<string, AiBenchmarkAttempt[]>();
   for (const row of attempts) {
     if (!row || typeof row.candidate !== "string" || !row.candidate.trim() || !["assistance","diagnostic","section","creation"].includes(row.task)) throw new Error("invalid_benchmark_task");
+    if (row.caseId !== undefined && (typeof row.caseId !== "string" || !row.caseId.trim())) throw new Error("invalid_benchmark_case");
     integer(row.durationMs); integer(row.uncertainCeilingUsdMicros);
     if (row.estimatedUsdMicros !== null) integer(row.estimatedUsdMicros);
     if (row.review !== null && (!row.review || typeof row.review !== "object" || Array.isArray(row.review))) throw new Error("invalid_benchmark_review");
@@ -41,7 +43,7 @@ export function summarizeAiBenchmark(attempts: AiBenchmarkAttempt[]) {
     if (group) group.push(row);
     else groups.set(key,[row]);
   }
-  return [...groups.values()].map(rows => {
+  const summaries = [...groups.values()].map(rows => {
     const reviewed = rows.filter(row => row.review !== null);
     const fullyReviewed = reviewed.filter(row => row.task !== "creation" || row.visualReview != null);
     const accepted = fullyReviewed.filter(row => row.review!.factual && row.review!.followsRequest && row.review!.usefulness>=4 && row.review!.clarity>=4 &&
@@ -59,6 +61,27 @@ export function summarizeAiBenchmark(attempts: AiBenchmarkAttempt[]) {
       medianDurationMs: percentile(rows.map(row=>row.durationMs),0.5),
       p95DurationMs: percentile(rows.map(row=>row.durationMs),0.95),
       comparisonReady: fullyReviewed.length===rows.length && !unknownCost && !uncertainCeilingUsdMicros
+    };
+  });
+  return summaries.map(summary => {
+    const peers = summaries.filter(peer => peer.task === summary.task);
+    const coverage = peers.map(peer => {
+      const rows = groups.get(JSON.stringify([peer.candidate, peer.task]))!;
+      if (rows.some(row => row.caseId === undefined)) return null;
+      const counts = new Map<string, number>();
+      for (const row of rows) {
+        const id = row.caseId!.trim();
+        counts.set(id, (counts.get(id) || 0) + 1);
+      }
+      return JSON.stringify([...counts.entries()].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0));
+    });
+    // Equal case frequencies prevent an easier brief mix from looking cheaper.
+    const caseCoverageMatched = peers.length > 1 && coverage[0] !== null &&
+      coverage.every(signature => signature === coverage[0]);
+    return {
+      ...summary,
+      caseCoverageMatched,
+      matchedComparisonReady: caseCoverageMatched && peers.every(peer => peer.comparisonReady)
     };
   });
 }
