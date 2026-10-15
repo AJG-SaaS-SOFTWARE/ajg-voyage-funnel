@@ -106,17 +106,8 @@ async function latestProductionDeployment(token: string, projectId: string, team
   }
 }
 
-function parseLine(line: string): RuntimeLogRow | null {
-  const value = line.trim();
-  if (!value) return null;
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" ? parsed as RuntimeLogRow : null;
-  } catch {
-    return null;
-  }
-}
-
+// Finite historical query used by Vercel CLI logs-v2, not the live runtime stream.
+// Source: https://github.com/vercel/vercel/blob/main/packages/cli/src/util/logs-v2.ts
 export async function getRecentRuntimeHealth(): Promise<RuntimeHealth> {
   const token = process.env.VERCEL_TOKEN?.trim() || "";
   const projectId = process.env.VERCEL_PROJECT_ID?.trim() || "";
@@ -126,55 +117,57 @@ export async function getRecentRuntimeHealth(): Promise<RuntimeHealth> {
   const deploymentId = await latestProductionDeployment(token, projectId, teamId);
   if (!deploymentId) return unknown(null, "runtime_deployment_unavailable");
 
+  const now = Date.now();
+  const query = new URLSearchParams({ projectId, ownerId: teamId, deploymentId,
+    environment: "production", page: "0",
+    startDate: String(now - LOOKBACK_MINUTES * 60_000), endDate: String(now) });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  const rows: RuntimeLogRow[] = [];
-  let bytes = 0;
-  let truncated = false;
-  let pending = "";
-
   try {
-    const response = await fetch(
-      `https://api.vercel.com/v1/projects/${encodeURIComponent(projectId)}/deployments/${encodeURIComponent(deploymentId)}/runtime-logs?teamId=${encodeURIComponent(teamId)}`,
-      {
-        cache: "no-store",
-        signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/x-ndjson, application/json"
-        }
-      }
-    );
+    const response = await fetch(`https://vercel.com/api/logs/request-logs?${query}`, {
+      cache: "no-store", signal: controller.signal,
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }
+    });
     if (!response.ok) return unknown(deploymentId, `runtime_http_${response.status}`);
     if (!response.body) return unknown(deploymentId, "runtime_body_unavailable");
-
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    while (rows.length < MAX_ROWS && bytes < MAX_BYTES) {
+    let text = "";
+    let bytes = 0;
+    while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       bytes += value.byteLength;
-      pending += decoder.decode(value, { stream: true });
-      const lines = pending.split("\n");
-      pending = lines.pop() || "";
-      for (const line of lines) {
-        const row = parseLine(line);
-        if (row) rows.push(row);
-        if (rows.length >= MAX_ROWS) break;
+      if (bytes > MAX_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        return unknown(deploymentId, "runtime_response_too_large");
       }
+      text += decoder.decode(value, { stream: true });
     }
-    if (bytes >= MAX_BYTES || rows.length >= MAX_ROWS) {
-      truncated = true;
-      await reader.cancel().catch(() => undefined);
-    } else if (pending.trim()) {
-      const row = parseLine(pending);
-      if (row) rows.push(row);
+    text += decoder.decode();
+    const payload = JSON.parse(text);
+    if (!Array.isArray(payload?.rows) || typeof payload.hasMoreRows !== "boolean") {
+      return unknown(deploymentId, "runtime_response_invalid");
     }
-    return summarizeRuntimeRows(rows, Date.now(), truncated, deploymentId);
+    const rows: RuntimeLogRow[] = [];
+    for (const row of payload.rows.slice(0, MAX_ROWS)) {
+      const timestamp = typeof row?.timestamp === "string" ? Date.parse(row.timestamp) : NaN;
+      if (!Number.isFinite(timestamp) || !Number.isInteger(row?.statusCode) ||
+          row.statusCode < 100 || row.statusCode > 599 ||
+          (row.logs !== undefined && !Array.isArray(row.logs))) {
+        return unknown(deploymentId, "runtime_row_invalid");
+      }
+      const levels = (row.logs || []).map((log: { level?: string }) => log?.level);
+      if (levels.some((level: unknown) => typeof level !== "string" ||
+          !["debug", "trace", "info", "warning", "error", "fatal"].includes(level))) {
+        return unknown(deploymentId, "runtime_row_invalid");
+      }
+      const level = levels.includes("fatal") ? "fatal" : levels.includes("error") ? "error" : "info";
+      rows.push({ timestampInMs: timestamp, responseStatusCode: row.statusCode, level });
+    }
+    return summarizeRuntimeRows(rows, now, payload.hasMoreRows || payload.rows.length > MAX_ROWS, deploymentId);
   } catch {
-    return rows.length
-      ? summarizeRuntimeRows(rows, Date.now(), true, deploymentId)
-      : unknown(deploymentId, controller.signal.aborted ? "runtime_timeout" : "runtime_transport_failed");
+    return unknown(deploymentId, controller.signal.aborted ? "runtime_timeout" : "runtime_response_unavailable");
   } finally {
     clearTimeout(timeout);
   }

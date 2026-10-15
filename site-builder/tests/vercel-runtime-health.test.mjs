@@ -95,7 +95,7 @@ test("runtime transport failure never exposes raw provider errors", async t => {
   await withRuntimeEnvironment(async () => {
     t.mock.method(globalThis, "fetch", async () => { throw new Error("private token and provider URL"); });
     const result = await getRecentRuntimeHealth();
-    assert.equal(result.unavailableReason, "runtime_transport_failed");
+    assert.equal(result.unavailableReason, "runtime_response_unavailable");
     assert.equal(result.checked, false);
     assert.doesNotMatch(JSON.stringify(result), /private token|provider URL/);
   });
@@ -103,11 +103,60 @@ test("runtime transport failure never exposes raw provider errors", async t => {
 
 test("complete runtime response preserves checked evidence", async t => {
   await withRuntimeEnvironment(async () => {
-    t.mock.method(globalThis, "fetch", async () => new Response(JSON.stringify({level: "error", timestampInMs: Date.now(), responseStatusCode: 500}) + "\n"));
+    t.mock.method(globalThis, "fetch", async () => Response.json({rows: [{timestamp: new Date().toISOString(), statusCode: 500, logs: [{level: "error", message: "private"}]}], hasMoreRows: false}));
     const result = await getRecentRuntimeHealth();
     assert.equal(result.checked, true);
     assert.equal(result.status, "warning");
     assert.equal(result.errorCount, 1);
     assert.equal(result.unavailableReason, undefined);
+  });
+});
+
+
+test("historical query is finite, deployment scoped and bounded to the last hour", async t => {
+  await withRuntimeEnvironment(async () => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+      const request = new URL(url);
+      assert.equal(request.origin, "https://vercel.com");
+      assert.equal(request.pathname, "/api/logs/request-logs");
+      assert.equal(request.searchParams.get("deploymentId"), "dpl_fixture");
+      assert.equal(request.searchParams.get("environment"), "production");
+      assert.equal(Number(request.searchParams.get("endDate")) - Number(request.searchParams.get("startDate")), 3600000);
+      return Response.json({rows: [], hasMoreRows: false});
+    });
+    const result = await getRecentRuntimeHealth();
+    assert.equal(result.checked, true);
+    assert.equal(result.status, "healthy");
+    assert.equal(result.truncated, false);
+  });
+});
+
+test("historical pagination remains incomplete evidence", async t => {
+  await withRuntimeEnvironment(async () => {
+    t.mock.method(globalThis, "fetch", async () => Response.json({rows: [], hasMoreRows: true}));
+    const result = await getRecentRuntimeHealth();
+    assert.equal(result.truncated, true);
+  });
+});
+
+test("invalid historical evidence cannot masquerade as an empty healthy window", async t => {
+  await withRuntimeEnvironment(async () => {
+    let payload;
+    t.mock.method(globalThis, "fetch", async () => Response.json(payload));
+    for (payload of [{}, {rows: []}, {rows: [{timestamp: "bad", statusCode: 500}], hasMoreRows: false},
+      {rows: [{timestamp: new Date().toISOString(), statusCode: 500, logs: [{level: "invalid"}]}], hasMoreRows: false}]) {
+      const result = await getRecentRuntimeHealth();
+      assert.equal(result.checked, false);
+      assert.equal(result.status, "unknown");
+    }
+  });
+});
+
+test("oversized historical responses remain unavailable", async t => {
+  await withRuntimeEnvironment(async () => {
+    t.mock.method(globalThis, "fetch", async () => new Response("x".repeat(128 * 1024 + 1)));
+    const result = await getRecentRuntimeHealth();
+    assert.equal(result.unavailableReason, "runtime_response_too_large");
+    assert.equal(result.checked, false);
   });
 });

@@ -16,7 +16,7 @@ test("runtime probe is server-only, bounded and never exposes log messages", () 
   assert.match(probe, /MAX_BYTES = 128 \* 1024/);
   assert.match(probe, /MAX_ROWS = 500/);
   assert.match(probe, /TIMEOUT_MS = 3500/);
-  assert.match(probe, /runtime-logs/);
+  assert.match(probe, /request-logs/);
   assert.doesNotMatch(page, /messageTruncated|requestPath|requestMethod/);
   assert.doesNotMatch(route, /runtimeHealth\.message/);
 });
