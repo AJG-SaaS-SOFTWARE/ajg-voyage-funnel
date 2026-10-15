@@ -34,6 +34,7 @@ function harness({ concurrent = false, auditOk = true, writeError = false } = {}
     "./support-reconcile-policy": { supportCustomerAction: () => null, supportReconcileDecision: () => ({ status: "resolved", resolved: true, resolutionCode: "synthetic-proof" }) },
     "./support-events": { recordSupportEvent: async (_service, event) => { stats.events.push(event); return auditOk; } }
   };
+  deps["./support-health-server"].createSupportHealthDiagnoser = service => (...args) => deps["./support-health-server"].diagnoseSupportHealth(service, ...args);
   const module = { exports: {} };
   new Function("require", "module", "exports", code)(name => { assert.ok(name in deps); return deps[name]; }, module, module.exports);
   return { rows, stats, run: () => module.exports.runSupportReconciliationSafely(new Date("2026-10-15T02:00:00Z"), service) };

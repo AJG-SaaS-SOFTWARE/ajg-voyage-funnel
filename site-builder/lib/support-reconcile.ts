@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { diagnoseSupportHealth } from "./support-health-server";
+import { createSupportHealthDiagnoser, type diagnoseSupportHealth } from "./support-health-server";
 import { supportCustomerAction, supportReconcileDecision } from "./support-reconcile-policy";
 import { supportScanWindow } from "./support-scan-window";
 import { recordSupportEvent } from "./support-events";
@@ -45,6 +45,7 @@ async function reconcileWithClient(
   if (error) throw new Error("support_queue_unavailable");
 
   const tickets = (data || []) as WaitingTicket[];
+  const diagnose = createSupportHealthDiagnoser(service);
   const cache = new Map<
     string,
     Awaited<ReturnType<typeof diagnoseSupportHealth>>
@@ -60,8 +61,7 @@ async function reconcileWithClient(
       const cacheKey = `${ticket.user_id}:${ticket.site_id || "none"}`;
       let health = cache.get(cacheKey);
       if (!health) {
-        health = await diagnoseSupportHealth(
-          service,
+        health = await diagnose(
           ticket.user_id,
           ticket.site_id
         );

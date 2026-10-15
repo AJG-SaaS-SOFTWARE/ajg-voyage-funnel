@@ -196,10 +196,52 @@ async function safeBackupStatus() {
   }
 }
 
+async function supportInfrastructure(service: SupabaseClient) {
+  const [backup, storage] = await Promise.all([
+    safeBackupStatus(), safeStorageAvailability(service)
+  ]);
+  return { backup, storage };
+}
+
+// A short-lived snapshot belongs to one execution and one service client only.
+// No customer data, billing, domain, quota or AI authorization enters this cache.
+export function createSupportHealthDiagnoser(service: SupabaseClient) {
+  let snapshot: ReturnType<typeof supportInfrastructure> | undefined;
+  let loadedAt = 0;
+  let settled = false;
+  const infrastructure = () => {
+    const age = performance.now() - loadedAt;
+    if (!snapshot || (settled && (age < 0 || age >= 30_000))) {
+      settled = false;
+      snapshot = supportInfrastructure(service).then(result => {
+        loadedAt = performance.now();
+        settled = true;
+        return result;
+      }, error => {
+        snapshot = undefined;
+        throw error;
+      });
+    }
+    return snapshot;
+  };
+  return (userId: string, preferredSiteId?: string | null) =>
+    diagnoseWithInfrastructure(service, userId, preferredSiteId, infrastructure);
+}
+
 export async function diagnoseSupportHealth(
   service: SupabaseClient,
   userId: string,
   preferredSiteId?: string | null
+): Promise<{ siteId: string | null; diagnosis: SupportDiagnosis }> {
+  return diagnoseWithInfrastructure(service, userId, preferredSiteId,
+    () => supportInfrastructure(service));
+}
+
+async function diagnoseWithInfrastructure(
+  service: SupabaseClient,
+  userId: string,
+  preferredSiteId: string | null | undefined,
+  infrastructure: () => ReturnType<typeof supportInfrastructure>
 ): Promise<{ siteId: string | null; diagnosis: SupportDiagnosis }> {
   let siteQuery = service
     .from("sites")
@@ -249,8 +291,7 @@ export async function diagnoseSupportHealth(
     { data: domains, error: domainError },
     { data: billing, error: billingError },
     { data: aiPolicy, error: aiPolicyError },
-    backup,
-    storage,
+    { backup, storage },
     publicRender,
     sitemap,
     externalLinks,
@@ -270,8 +311,7 @@ export async function diagnoseSupportHealth(
       .select("ai_enabled,heavy_enabled")
       .eq("singleton", true)
       .maybeSingle(),
-    safeBackupStatus(),
-    safeStorageAvailability(service),
+    infrastructure(),
     site.status === "published" && site.public_access_state !== "suspended"
       ? publicSiteProbe(site.slug)
       : Promise.resolve({ checked: false, ok: false, status: null }),

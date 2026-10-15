@@ -24,6 +24,8 @@ test("unknown counts and invalid clocks stop scanning instead of claiming an emp
 });
 
 function load(name,dependencies){
+  const health = dependencies["./support-health-server"];
+  if (health?.diagnoseSupportHealth) health.createSupportHealthDiagnoser = service => (...args) => health.diagnoseSupportHealth(service, ...args);
   const code=ts.transpileModule(fs.readFileSync(new URL(`../lib/${name}.ts`,import.meta.url),"utf8"),{
     compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
   const module={exports:{}};
