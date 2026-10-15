@@ -242,6 +242,9 @@ export async function saveMySite(config: SiteConfig, publish = false, siteId?: s
   if (!user) throw new Error(clientTr("Vous devez être connecté.", "You must be signed in."));
 
   const existing = await getMySite(siteId);
+  if (siteId && !existing) {
+    throw new Error(clientTr("Site introuvable. Actualisez votre liste de sites avant de réessayer.", "Website not found. Refresh your website list before trying again."));
+  }
   const publishConfig = config;
   if (existing?.id) {
     const { data: capabilities, error: capabilityError } = await supabase.rpc("get_my_site_capabilities", { p_site_id: existing.id });

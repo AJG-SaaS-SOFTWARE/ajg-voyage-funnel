@@ -49,3 +49,8 @@ Fresh public health verification on 15 October at 00:59 UTC returned HTTP 200, d
 ## 15 October — customer ticket diagnosis concurrency
 
 The actual PATCH handler is exercised against synthetic persistence. A newer update retaining waiting_customer must return 409, preserve the newer evidence and emit no resolution event. Unchanged owned tickets may complete; foreign tickets are rejected before diagnosis; failed writes emit no resolution. Regression reproduced as HTTP 200 with overwritten state before the fix, then HTTP 409 after matching updated_at as well as owner/status. This is optimistic concurrency using the existing timestamp, not a database version counter or a complete provider-backed support journey. Tests rely on writers maintaining updated_at; no schema migration or real ticket mutation is performed. Exact-head CI and public deployment evidence are retained in the PR.
+
+
+## 15 October — publication client behavior
+
+Six tests execute saveMySite with synthetic Supabase dependencies. Explicit missing/foreign site identities must not silently create a replacement; capability denial/unavailability stops existing-site writes; new publication inserts a draft before checking publish rights; authorized owned publication persists FR/EN and prepares the managed domain; unsigned clients cannot write. The first two tests reproduced unintended replacement creation before the guard and pass afterward. This is client repository control-flow coverage, NOT proof of database RLS, actual hosting/DNS, browser rendering or the complete customer publication journey. Existing server authorization remains required. No provider/domain/client-data mutation was executed by these tests. CI/deployment evidence is retained in the PR.
