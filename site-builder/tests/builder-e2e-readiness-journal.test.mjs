@@ -39,7 +39,7 @@ test("E2E completion records success failure and cleanup failure durably", () =>
   assert.match(route, /finishJournal\(\s*"cleanup_failed",\s*"cleanup"/);
   assert.match(route, /failure_stage: stage/);
   assert.match(route, /completed_at: new Date\(\)\.toISOString\(\)/);
-  assert.match(route, /steps\s*\n\s*}\)\s*\n\s*\.eq\("id", journalRunId\)/);
+  assert.match(route, /finishBuilderE2EJournal\(service, journalRunId/);
 });
 
 test("release readiness only accepts mirrored AI E2E success for the current SHA", () => {
