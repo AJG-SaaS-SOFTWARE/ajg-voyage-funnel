@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
       setRows(analyticsRows);
       setBetaActive(beta.active);
       if (beta.active) setBetaMode(resolvedMode);
-      setGrowthExperience(beta.active ? resolvedMode === "growth" : paidGrowth);
+      setGrowthExperience(beta.active ? resolvedMode !== "essential" : paidGrowth);
       if (beta.active && resolvedMode === "growth") {
         void trackProductEvent("beta_analytics_opened", selected.id);
       }
@@ -129,8 +129,8 @@ export default function AnalyticsPage() {
   function changeBetaMode(mode: BetaExperienceMode) {
     writeBetaExperienceMode(mode);
     setBetaMode(mode);
-    setGrowthExperience(mode === "growth");
-    void trackProductEvent(mode === "growth" ? "beta_growth_selected" : "beta_essential_selected", siteId || null);
+    setGrowthExperience(mode !== "essential");
+    void trackProductEvent(mode === "growth" ? "beta_growth_selected" : mode === "architect" ? "beta_architect_selected" : "beta_essential_selected", siteId || null);
     void load(siteId || undefined, mode);
   }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
+import { AiArchitectDiscovery } from "../../components/AiArchitectDiscovery";
 import { getMyBillingState, openStripeBillingPortal, startAiLaunchCheckout, startPlanCheckout, type BillingState } from "../../lib/billing-access";
 import {
   freeEntitlements,
@@ -118,13 +119,13 @@ export default function PlansPage() {
       : "";
 
   const paidPlan = current.planKey === "essential" || current.planKey === "growth";
-  const displayedPlanKey = betaAccess.active ? betaExperienceMode : current.planKey;
+  const displayedPlanKey = betaAccess.active ? (betaExperienceMode === "architect" ? "essential" : betaExperienceMode) : current.planKey;
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     setBetaExperienceMode(mode);
     writeBetaExperienceMode(mode);
     if (betaAccess.active) {
       void trackProductEvent(
-        mode === "growth" ? "beta_growth_selected" : "beta_essential_selected",
+        mode === "growth" ? "beta_growth_selected" : mode === "architect" ? "beta_architect_selected" : "beta_essential_selected",
         siteId || null
       );
     }
@@ -164,7 +165,7 @@ export default function PlansPage() {
                 {betaAccess.active ? "Beta Tester" : tr("Accès actif", "Active access")}
               </span>
             </div>
-            <h2>{betaAccess.active ? (betaExperienceMode === "essential" ? tr("Essentiel · mode test", "Essential · test mode") : tr("Growth · mode test", "Growth · test mode")) : productPlanLabel(current.planKey, locale)}</h2>
+            <h2>{betaAccess.active ? (betaExperienceMode === "essential" ? tr("Essentiel · mode test", "Essential · test mode") : betaExperienceMode === "growth" ? tr("Growth · mode test", "Growth · test mode") : tr("Concepteur IA · mode test", "AI Architect · test mode")) : productPlanLabel(current.planKey, locale)}</h2>
             <p>
               {betaAccess.active
                 ? tr(
@@ -188,6 +189,8 @@ export default function PlansPage() {
         </section>
       ) : null}
 
+      {loaded && !betaAccess.active && current.planKey === "essential" && !aiAccess.canCreateSite ? <AiArchitectDiscovery /> : null}
+
       {loaded && betaAccess.active ? (
         <BetaExperienceSwitch
           compact
@@ -198,7 +201,7 @@ export default function PlansPage() {
 
       {loaded ? (
         <section className="account-metrics-grid" aria-label={tr("Capacités et utilisation", "Capabilities and usage")}>
-          <article className="account-metric-card">
+          <article id="ai-launch" className="account-metric-card">
             <div className="account-metric-heading">
               <span className="account-metric-icon" aria-hidden="true">✦</span>
               <div>
@@ -208,9 +211,9 @@ export default function PlansPage() {
             </div>
             <h3>
               {betaAccess.active
-                ? betaExperienceMode === "essential"
-                  ? tr("Hors parcours Essentiel", "Outside Essential journey")
-                  : tr("Disponible en mode bêta Growth", "Available in beta Growth mode")
+                ? betaExperienceMode === "architect"
+                  ? tr("Disponible · mode BUILD", "Available · BUILD mode")
+                  : tr("À découvrir au niveau BUILD", "Explore in BUILD mode")
                 : aiAccess.launchOperationsRemaining > 0
                   ? `${aiAccess.launchOperationsRemaining} ${tr("restante(s)", "remaining")}`
                   : tr("Non incluse", "Not included")}

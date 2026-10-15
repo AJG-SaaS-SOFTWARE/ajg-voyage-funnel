@@ -67,6 +67,7 @@ export default function Home() {
   const [betaJourney, setBetaJourney] = useState<BetaJourneyProgress>({
     essentialTested: false,
     growthTested: false,
+    architectTested: false,
     essentialThenGrowth: false,
     growthCockpitOpened: false,
     analyticsOpened: false,
@@ -184,16 +185,18 @@ export default function Home() {
         ? `/builder?step=${onboarding.nextStep}`
         : "/builder";
   const effectiveCanCreateWithAi =
-    betaAccess.active && betaExperienceMode === "essential" ? false : canCreateWithAi;
+    betaAccess.active && betaExperienceMode !== "architect" ? false : canCreateWithAi;
   const experiencePlanName = betaAccess.active
     ? betaExperienceMode === "essential"
       ? tr("Essentiel · mode test", "Essential · test mode")
-      : tr("Growth · mode test", "Growth · test mode")
+      : betaExperienceMode === "growth"
+        ? tr("Growth · mode test", "Growth · test mode")
+        : tr("Concepteur IA · mode test", "AI Architect · test mode")
     : productPlanLabel(planKey, locale);
   const growthExperienceAvailable =
     entitlementActive &&
     draft?.status === "published" &&
-    (betaAccess.active ? betaExperienceMode === "growth" : planKey === "growth");
+    (betaAccess.active ? betaExperienceMode === "growth" || betaExperienceMode === "architect" : planKey === "growth");
   const creationPath = onboarding
     ? deriveOnboardingCreationPath({
         progress: onboarding,
@@ -207,6 +210,7 @@ export default function Home() {
     betaJourney.published || draft?.status === "published",
     betaJourney.essentialThenGrowth,
     betaJourney.growthExplored,
+    betaJourney.architectTested,
     betaJourney.feedbackSent
   ];
   const betaMissionCompleteCount = betaMissionChecks.filter(Boolean).length;
@@ -223,15 +227,17 @@ export default function Home() {
             ? { kind: "growth" as const, label: tr("Ouvrir le cockpit Growth", "Open Growth cockpit") }
             : !betaJourney.analyticsOpened
               ? { kind: "analytics" as const, label: tr("Vérifier Analytics", "Review Analytics") }
-              : !betaJourney.feedbackSent
-                ? { kind: "feedback" as const, label: tr("Envoyer votre retour", "Send your feedback") }
+              : !betaJourney.architectTested
+                ? { kind: "architect-mode" as const, label: tr("Découvrir le Concepteur IA", "Explore AI Architect") }
+                : !betaJourney.feedbackSent
+                  ? { kind: "feedback" as const, label: tr("Envoyer votre retour", "Send your feedback") }
                 : { kind: "done" as const, label: tr("Mission bêta terminée", "Beta mission complete") };
 
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     setBetaExperienceMode(mode);
     writeBetaExperienceMode(mode);
     if (betaAccess.active && remoteStatus === "authenticated") {
-      const eventName = mode === "growth" ? "beta_growth_selected" : "beta_essential_selected";
+      const eventName = mode === "growth" ? "beta_growth_selected" : mode === "architect" ? "beta_architect_selected" : "beta_essential_selected";
       void trackProductEvent(eventName, remoteSiteId).then(() =>
         getMyBetaJourneyProgress(remoteSiteId)
           .then(setBetaJourney)
@@ -402,8 +408,15 @@ export default function Home() {
                       : "Open both views to test management and performance data."
               )}</small></div>
             </li>
-            <li className={betaJourney.feedbackSent ? "done" : betaJourney.growthExplored ? "next" : ""}>
-              <span>{betaJourney.feedbackSent ? "✓" : "5"}</span>
+            <li className={betaJourney.architectTested ? "done" : betaJourney.growthExplored ? "next" : ""}>
+              <span>{betaJourney.architectTested ? "✓" : "5"}</span>
+              <div><b>{tr("Découvrir BUILD · Concepteur IA", "Explore BUILD · AI Architect")}</b><small>{tr(
+                betaJourney.architectTested ? "Mode BUILD exploré. Vous pouvez revenir à RUN ou GROW librement." : "Activez BUILD pour explorer la conception IA. Le choix reste gratuit pour les bêta-testeurs et soumis aux quotas IA.",
+                betaJourney.architectTested ? "BUILD explored. You can return to RUN or GROW at any time." : "Switch to BUILD to explore AI design. Beta selection is free and subject to AI quotas."
+              )}</small></div>
+            </li>
+            <li className={betaJourney.feedbackSent ? "done" : betaJourney.architectTested ? "next" : ""}>
+              <span>{betaJourney.feedbackSent ? "✓" : "6"}</span>
               <div><b>{tr("Envoyer un retour", "Send feedback")}</b><small>{tr(
                 betaJourney.feedbackSent
                   ? "Au moins un retour a été enregistré."
@@ -432,6 +445,10 @@ export default function Home() {
                 <Link className="button primary" href="/growth">{betaNextAction.label} <span aria-hidden="true">→</span></Link>
               ) : betaNextAction.kind === "analytics" ? (
                 <Link className="button primary" href="/analytics">{betaNextAction.label} <span aria-hidden="true">→</span></Link>
+              ) : betaNextAction.kind === "architect-mode" ? (
+                <button type="button" className="button primary" onClick={() => changeBetaExperienceMode("architect")}>
+                  {betaNextAction.label} <span aria-hidden="true">→</span>
+                </button>
               ) : betaNextAction.kind === "feedback" ? (
                 <Link className="button primary" href="/feedback">{betaNextAction.label} <span aria-hidden="true">→</span></Link>
               ) : (
@@ -442,7 +459,7 @@ export default function Home() {
             )}
           </div>
                     <div className="actions beta-mission-actions">
-            {betaExperienceMode === "growth" && draft?.status === "published" ? (
+            {(betaExperienceMode === "growth" || betaExperienceMode === "architect") && draft?.status === "published" ? (
               <Link className="button primary" href="/growth">
                 {tr("Ouvrir Growth", "Open Growth")} <span aria-hidden="true">→</span>
               </Link>
@@ -451,8 +468,8 @@ export default function Home() {
                 {tr("Passer en Growth", "Switch to Growth")} <span aria-hidden="true">→</span>
               </button>
             ) : (
-              <Link className="button primary" href={onboardingHref}>
-                {tr("Publier pour tester Growth", "Publish to test Growth")} <span aria-hidden="true">→</span>
+              <Link className="button primary" href={betaExperienceMode === "architect" ? "/builder?step=story&focus=architect" : onboardingHref}>
+                {betaExperienceMode === "architect" ? tr("Ouvrir le Concepteur IA", "Open AI Architect") : tr("Publier pour tester Growth", "Publish to test Growth")} <span aria-hidden="true">→</span>
               </Link>
             )}
             <Link className="button secondary" href={onboardingHref}>

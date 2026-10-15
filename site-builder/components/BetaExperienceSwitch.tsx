@@ -32,8 +32,8 @@ export function BetaExperienceSwitch({
             <b>{tr("Tester l’expérience client", "Test the customer experience")}</b>
             {!compact ? (
               <small>{tr(
-                "Ce sélecteur change uniquement les fonctions visibles. Vos droits bêta complets restent actifs et aucun abonnement Stripe n’est modifié.",
-                "This switch only changes visible capabilities. Your full beta rights remain active and no Stripe subscription is changed."
+                "Parcours de test : RUN, puis Growth, puis Concepteur IA. Vos droits bêta restent actifs et aucun paiement n’est déclenché.",
+                "Test RUN, then Growth, then AI Architect. Beta rights remain active and no payment is triggered."
               )}</small>
             ) : null}
           </div>
@@ -63,7 +63,24 @@ export function BetaExperienceSwitch({
           <span>{inline ? "GROW" : "RUN + GROW"}</span>
           {!inline ? <b>Growth</b> : null}
         </button>
+        <button
+          type="button"
+          className={mode === "architect" ? "active" : ""}
+          aria-pressed={mode === "architect"}
+          onClick={() => onChange("architect")}
+          title={tr("Tester la Création IA complète", "Try full AI creation")}
+        >
+          <span>BUILD</span>
+          {!inline ? <b>{tr("Concepteur IA", "AI Architect")}</b> : null}
+        </button>
       </div>
+      {!inline && !compact ? (
+        <p className="beta-experience-guidance">{mode === "essential"
+          ? tr("Étape 1/3 : créez votre site avec les fonctions Essentiel.", "Step 1/3: build with Essential features.")
+          : mode === "growth"
+          ? tr("Étape 2/3 : testez les outils Growth et les optimisations du site.", "Step 2/3: explore Growth tools and website improvements.")
+          : tr("Étape 3/3 : faites concevoir une première proposition complète par IA, à valider avant application.", "Step 3/3: generate a complete AI website proposal, subject to your approval.")}</p>
+      ) : null}
     </section>
   );
 }
