@@ -4,7 +4,7 @@ import fs from "node:fs";
 import ts from "typescript";
 import { createClient } from "@supabase/supabase-js";
 
-function harness({ initial = { id: 17 }, completion = "ok", cleanupThrows = false, platformThrows = false } = {}) {
+function harness({ initial = { id: 17 }, completion = "ok", cleanupThrows = false, platformThrows = false, runtime = { status: "healthy", checked: true, truncated: false } } = {}) {
   const writes = [];
   let operations = 0;
   const originalFailure = new Error("synthetic_platform_failure");
@@ -34,7 +34,7 @@ function harness({ initial = { id: 17 }, completion = "ok", cleanupThrows = fals
     } },
     "./support-reconcile": { runSupportReconciliationSafely: async () => ({ ok: true, failed: 0 }) },
     "./support-remediation-sweep": { runSupportRemediationSweepSafely: async () => ({ ok: true, failed: 0 }) },
-    "./vercel-runtime-health": { getRecentRuntimeHealth: async () => ({ status: "healthy", checked: true, truncated: false }) },
+    "./vercel-runtime-health": { getRecentRuntimeHealth: async () => runtime },
     "./run-intake-reporting": { reportRuntimeIncidentToRun: async () => ({ ok: true }) }
   };
   const code = ts.transpileModule(fs.readFileSync(new URL("../lib/support-operations-agent.ts", import.meta.url), "utf8"), {
@@ -85,4 +85,15 @@ test("journal cleanup never replaces the failure that interrupted the RUN", asyn
   const app = harness({ platformThrows: true, cleanupThrows: true });
   await assert.rejects(app.run(), error => error === app.originalFailure);
   assert.equal(app.writes.at(-1).body.status, "failed");
+});
+
+
+test("unavailable runtime cause is persisted without declaring the agent healthy", async () => {
+  const app = harness({ runtime: { status: "unknown", checked: false, truncated: false, unavailableReason: "runtime_http_403" } });
+  const result = await app.run();
+  assert.equal(result.runStatus, "attention");
+  assert.deepEqual(result.errors, ["runtime:runtime_http_403"]);
+  assert.equal(app.writes[1].body.status, "attention");
+  assert.deepEqual(app.writes[1].body.errors, ["runtime:runtime_http_403"]);
+  assert.equal(app.operations(), 1);
 });
