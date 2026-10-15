@@ -198,7 +198,7 @@ export async function PATCH(request: Request) {
 
   const { data: current, error: currentError } = await auth.service
     .from("support_tickets")
-    .select("id,user_id,site_id,category,diagnosis,status,created_at")
+    .select("id,user_id,site_id,category,diagnosis,status,created_at,updated_at")
     .eq("id", id)
     .eq("user_id", auth.user.id)
     .maybeSingle();
@@ -251,6 +251,7 @@ export async function PATCH(request: Request) {
     .eq("id", id)
     .eq("user_id", auth.user.id)
     .eq("status", "waiting_customer")
+    .eq("updated_at", current.updated_at)
     .select("id,site_id,category,severity,subject,message,status,diagnosis,client_action,resolution_code,created_at,updated_at,resolved_at")
     .maybeSingle();
 

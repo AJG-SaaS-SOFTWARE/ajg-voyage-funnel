@@ -44,3 +44,8 @@ Invite 2–3 first customers/testers only after the gates below pass. Preserve t
 Behavioral test executes the actual sweep with a rejected repair at the first, middle and last position. Completed successes and failed attempts remain visible, each isolated site is attempted once, later independent sites continue, and raw exception details are excluded from the result. The failed site's potentially partial action is not retried within that sweep. This proves control flow using synthetic dependencies, not a real provider repair, durable cross-process exclusion or the complete customer-ticket journey. Exact-head CI and deployment evidence are recorded in the associated PR.
 
 Fresh public health verification on 15 October at 00:59 UTC returned HTTP 200, database ok and production SHA 6a55d9ea via Vercel web fetch.
+
+
+## 15 October — customer ticket diagnosis concurrency
+
+The actual PATCH handler is exercised against synthetic persistence. A newer update retaining waiting_customer must return 409, preserve the newer evidence and emit no resolution event. Unchanged owned tickets may complete; foreign tickets are rejected before diagnosis; failed writes emit no resolution. Regression reproduced as HTTP 200 with overwritten state before the fix, then HTTP 409 after matching updated_at as well as owner/status. This is optimistic concurrency using the existing timestamp, not a database version counter or a complete provider-backed support journey. Tests rely on writers maintaining updated_at; no schema migration or real ticket mutation is performed. Exact-head CI and public deployment evidence are retained in the PR.
