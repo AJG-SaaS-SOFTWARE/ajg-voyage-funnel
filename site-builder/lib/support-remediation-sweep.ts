@@ -145,18 +145,26 @@ async function sweepWithClient(
   result.eligible = eligible.length;
 
   for (const site of eligible.slice(0, MAX_REPAIRS)) {
-    const repair = await runSupportRepair(service, {
-      userId: site.owner_id,
-      siteId: site.id,
-      action: "managed_domain_repair",
-      trigger: "system"
-    });
-
     result.attempted++;
-    if (repair.status === "succeeded" && repair.verified === true && repair.audited === true) result.succeeded++;
-    else if (repair.status === "succeeded") result.failed++;
-    else if (repair.status === "no_change") result.noChange++;
-    else result.failed++;
+    try {
+      const repair = await runSupportRepair(service, {
+        userId: site.owner_id,
+        siteId: site.id,
+        action: "managed_domain_repair",
+        trigger: "system"
+      });
+
+      if (repair.status === "succeeded" && repair.verified === true && repair.audited === true) result.succeeded++;
+      else if (repair.status === "succeeded") result.failed++;
+      else if (repair.status === "no_change") result.noChange++;
+      else result.failed++;
+    } catch {
+      // A rejected query can escape before the repair's own provider handler.
+      // Preserve completed work and let independent sites finish; never retry
+      // this site's potentially partial mutation within the same sweep.
+      result.failed++;
+      result.error = "support_repair_execution_failed";
+    }
   }
 
   result.ok = result.failed === 0;
