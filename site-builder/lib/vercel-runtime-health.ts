@@ -6,6 +6,7 @@ type RuntimeLogRow = {
 
 export type RuntimeHealth = {
   checked: boolean;
+  unavailableReason?: string;
   deploymentId: string | null;
   lookbackMinutes: number;
   sampledLogs: number;
@@ -56,9 +57,10 @@ export function summarizeRuntimeRows(
   };
 }
 
-function unknown(deploymentId: string | null = null): RuntimeHealth {
+function unknown(deploymentId: string | null = null, unavailableReason = "runtime_unavailable"): RuntimeHealth {
   return {
     checked: false,
+    unavailableReason,
     deploymentId,
     lookbackMinutes: LOOKBACK_MINUTES,
     sampledLogs: 0,
@@ -119,10 +121,10 @@ export async function getRecentRuntimeHealth(): Promise<RuntimeHealth> {
   const token = process.env.VERCEL_TOKEN?.trim() || "";
   const projectId = process.env.VERCEL_PROJECT_ID?.trim() || "";
   const teamId = process.env.VERCEL_TEAM_ID?.trim() || process.env.VERCEL_ORG_ID?.trim() || "";
-  if (!token || !projectId || !teamId) return unknown();
+  if (!token || !projectId || !teamId) return unknown(null, "runtime_not_configured");
 
   const deploymentId = await latestProductionDeployment(token, projectId, teamId);
-  if (!deploymentId) return unknown();
+  if (!deploymentId) return unknown(null, "runtime_deployment_unavailable");
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -143,7 +145,8 @@ export async function getRecentRuntimeHealth(): Promise<RuntimeHealth> {
         }
       }
     );
-    if (!response.ok || !response.body) return unknown(deploymentId);
+    if (!response.ok) return unknown(deploymentId, `runtime_http_${response.status}`);
+    if (!response.body) return unknown(deploymentId, "runtime_body_unavailable");
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -171,7 +174,7 @@ export async function getRecentRuntimeHealth(): Promise<RuntimeHealth> {
   } catch {
     return rows.length
       ? summarizeRuntimeRows(rows, Date.now(), true, deploymentId)
-      : unknown(deploymentId);
+      : unknown(deploymentId, controller.signal.aborted ? "runtime_timeout" : "runtime_transport_failed");
   } finally {
     clearTimeout(timeout);
   }
