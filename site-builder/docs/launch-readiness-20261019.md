@@ -37,3 +37,10 @@ Invite 2–3 first customers/testers only after the gates below pass. Preserve t
 ## Working target
 
 15–16 October: remove technical blockers and collect provider/invoice evidence. 16–18 October: isolated customer and support recipes, then critical fixes. During the week of 19 October: limited invitation only if all gates are evidenced; otherwise continue the free beta. A healthy homepage, mocked test, old invoice or green release step that skipped work cannot replace missing evidence.
+
+
+## 15 October — repair sweep partial-failure verification
+
+Behavioral test executes the actual sweep with a rejected repair at the first, middle and last position. Completed successes and failed attempts remain visible, each isolated site is attempted once, later independent sites continue, and raw exception details are excluded from the result. The failed site's potentially partial action is not retried within that sweep. This proves control flow using synthetic dependencies, not a real provider repair, durable cross-process exclusion or the complete customer-ticket journey. Exact-head CI and deployment evidence are recorded in the associated PR.
+
+Fresh public health verification on 15 October at 00:59 UTC returned HTTP 200, database ok and production SHA 6a55d9ea via Vercel web fetch.
