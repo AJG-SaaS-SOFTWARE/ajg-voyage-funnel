@@ -54,3 +54,8 @@ The actual PATCH handler is exercised against synthetic persistence. A newer upd
 ## 15 October — publication client behavior
 
 Six tests execute saveMySite with synthetic Supabase dependencies. Explicit missing/foreign site identities must not silently create a replacement; capability denial/unavailability stops existing-site writes; new publication inserts a draft before checking publish rights; authorized owned publication persists FR/EN and prepares the managed domain; unsigned clients cannot write. The first two tests reproduced unintended replacement creation before the guard and pass afterward. This is client repository control-flow coverage, NOT proof of database RLS, actual hosting/DNS, browser rendering or the complete customer publication journey. Existing server authorization remains required. No provider/domain/client-data mutation was executed by these tests. CI/deployment evidence is retained in the PR.
+
+
+## 15 October — RUN support event ordering
+
+Five tests execute the support-sync POST handler with synthetic persistence: delayed in_progress cannot reopen resolved/closed; repeated progress/resolution deliveries do not rewrite timestamps or emit duplicate transitions; simultaneous duplicate deliveries converge in the harness; write errors do not emit events; unauthorized calls instantiate no privileged client. Three regressions fail before the conditional update and pass afterward. The status exclusion is applied atomically in the update query, using existing columns. This is handler and query-construction coverage, not a live database concurrency exercise, durable event-delivery guarantee or proof that a closed RUN item was actually repaired. Complete incident repair verification remains open.
