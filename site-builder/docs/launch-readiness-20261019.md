@@ -2,6 +2,47 @@
 
 Updated: 15 October 2026. Conditional target; no approval to open Checkout.
 
+## Consolidated evidence — 15 October 2026, 05:58 UTC
+
+**Commercial opening remains blocked.** A limited launch during the week of 19 October is conditional on the missing end-to-end evidence below. No claim of fully autonomous business operations, proven margin or 98% satisfaction.
+
+- Main and release branch rechecked at `b913e81913e61525a5b639c9cf67e64234a84c9b`.
+- Public /api/health: HTTP 200, database ok, same served SHA; active deployment `dpl_PfpCB7bB7dpmEGg8TiUAKqdhg1Pa`.
+- /tarifs HTTP 200 lang=fr; /pricing HTTP 200 lang=en. Unauthenticated support tickets and admin support operations return 401.
+- Public support health: HTTP 200/healthy. This measures current workload/availability, not successful resolution of a complete customer incident.
+- Latest complete exact-head CI: [38684323706](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38684323706), **775 tests, 775 passes, zero failures**, lint, TypeScript, production build and smoke passed before #493 merged.
+- Night runtime changes were published directly through Vercel after CI. Post-deploy checks above were read-only. The billing mutation/provider recipes were not re-executed by those direct deployments.
+- Previous complete release [38634562749](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38634562749) remains the evidence for sandbox Checkout mutation smoke, injected billing transitions, signed AI Launch webhook, structural FR/EN and private cockpit reporting on `6a55d9ea`. Do not attribute those executions to the latest runtime SHA.
+- Paid AI recipe remains opt-in/default false. No paid inference was requested for the night work.
+
+### Completed night changes
+
+| PR | Delivered behavior | Exact-head CI |
+| --- | --- | --- |
+| [#488](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/pull/488) | Reconciled launch evidence; green provider step explicitly distinguished from deferred recipe | [38657981922](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38657981922), passed after documentation merge |
+| [#489](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/pull/489) | Thrown repair preserves completed counters and permits independent sites to continue; no same-sweep retry | [38663220546](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38663220546), 756 tests |
+| [#490](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/pull/490) | Customer rediagnosis rejects stale same-status ticket updates without false resolution event | [38669112622](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38669112622), 760 tests |
+| [#491](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/pull/491) | Missing selected site cannot silently create a replacement; publication client behavior exercised | [38674350991](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38674350991), 766 tests |
+| [#492](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/pull/492) | Delayed RUN progress cannot reopen terminal tickets; duplicate transitions do not repeat writes/events | [38679521064](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38679521064), 771 tests |
+| [#493](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/pull/493) | Automatic reconciler preserves newer same-status ticket evidence | [38684323706](https://github.com/AJG-SaaS-SOFTWARE/ajg-voyage-funnel/actions/runs/38684323706), 775 tests |
+
+#489–#493 merged only after their exact-head full CI passed. New regressions were first reproduced against the old implementation. Tests execute actual handlers/repository/reconciler with synthetic dependencies: they do not prove live Postgres concurrency, provider repair or a browser customer journey. Timestamp concurrency checks rely on all writers maintaining updated_at.
+
+### Remaining launch gates and owners
+
+| Gate | Current evidence | Next action |
+| --- | --- | --- |
+| Real Stripe sandbox lifecycle → server rights | Injected transitions and signed synthetic webhook passed on prior release; actual provider recipe DEFERRED | Human configures dedicated sandbox-only STRIPE_PROVIDER_E2E_KEY in GitHub Actions; then technical recipe must execute and prove attribution, transitions and cleanup. Never retrieve or paste its value. |
+| Invoice | Two older inspected sandbox invoices had footer=null | Confirm seller legal identity; generate new paid sandbox invoice with approved 293 B footer; inspect complete PDF. Flags alone are not proof. |
+| Customer publication | Prior structural FR/EN recipe; new client control-flow tests | Complete isolated normal-customer account → edit → publish → public page/mobile/rights recipe on current version. This is technical work still open, not a human approval substitute. |
+| Support/RUN/cockpit | Synthetic handler, audit, ordering and failure tests; previous private cockpit reporting | Complete isolated ticket → diagnostic → safe repair/escalation → independently verified result → cockpit closure. Durable audit/report delivery after partial failure remains unproven. |
+| AI costs/rights | Guard tests and missing-evidence checks | Complete isolated account/quotas recipe; real cost and quality measurements require separately authorized bounded inference. No margin claim. |
+| Commercial opening | Remains gated | Human review of legal identity, invoice PDF and live payment configuration after technical gates pass. No price, fiscal or Checkout-opening changes authorized here. |
+
+**Launch assessment:** a small first cohort during the week of 19 October remains possible, not confirmed. If invoice/provider or complete customer/support evidence is missing, retain free beta and keep commercial Checkout closed. Five reliability fixes and a healthy production service do not establish complete business autonomy.
+
+---
+
 ## Scope
 
 Invite 2–3 first customers/testers only after the gates below pass. Preserve the existing offer and server rights. Commercial outreach, autonomous sending, live charges, pricing changes and migrations are outside this technical release. No claim of complete autonomy, proven margin or 98% satisfaction.
