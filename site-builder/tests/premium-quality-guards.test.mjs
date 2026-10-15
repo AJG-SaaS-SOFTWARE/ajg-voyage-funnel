@@ -343,6 +343,19 @@ test("raw Markdown formatting is blocked in visible Premium copy", () => {
   assert.ok(codes(value).includes("markdown_residue"));
 });
 
+test("Premium blocks HTML independently of Markdown in consecutive visible fields", () => {
+  const value = proposal({ heroTitle: "<b>Atelier</b>", heroSubtitle: "<p>**Une approche humaine**</p>" });
+  const issues = deterministicQualityIssues(value);
+  assert.equal(issues.filter(issue => issue.code === "html_residue").length, 2);
+  assert.equal(issues.filter(issue => issue.code === "markdown_residue").length, 1);
+});
+
+test("Premium accepts contact addresses and URLs in angle brackets as plain text", () => {
+  const value = proposal({ heroTitle: "Notre atelier", heroSubtitle: "Contact <a@example.test> ou <https://example.test>" });
+  assert.equal(codes(value).includes("html_residue"), false);
+  assert.equal(codes(value).includes("markdown_residue"), false);
+});
+
 test("plain text with a normal URL is not treated as Markdown", () => {
   const value = proposal({
     aboutText:
