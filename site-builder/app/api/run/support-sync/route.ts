@@ -95,7 +95,11 @@ export async function POST(request: Request) {
     .from("support_tickets")
     .update(patch)
     .eq("id", id)
-    .not("status", "in", '("closed")')
+    // Terminal tickets stay terminal; duplicate deliveries do not rewrite
+    // timestamps or emit another event. The predicate is part of the update.
+    .not("status", "in", status === "resolved"
+      ? '("closed","resolved")'
+      : '("closed","resolved","in_progress")')
     .select("id,status")
     .maybeSingle();
 
