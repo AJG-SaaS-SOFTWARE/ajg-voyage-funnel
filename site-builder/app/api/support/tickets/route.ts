@@ -118,13 +118,15 @@ export async function POST(request: Request) {
       .not("status", "in", '("resolved","closed")')
   ]);
 
-  if (recentError || openError) {
+  if (recentError || openError ||
+    !Number.isSafeInteger(recentCount) || recentCount === null || recentCount < 0 ||
+    !Number.isSafeInteger(openCount) || openCount === null || openCount < 0) {
     return NextResponse.json({ error: tr("Contrôle du support indisponible.", "Support checks unavailable.") }, { status: 503 });
   }
-  if ((recentCount || 0) >= 3) {
+  if (recentCount >= 3) {
     return NextResponse.json({ error: tr("Trop de demandes rapprochées. Réessayez dans une minute.", "Too many requests in a short period. Try again in one minute.") }, { status: 429 });
   }
-  if ((openCount || 0) >= 25) {
+  if (openCount >= 25) {
     return NextResponse.json({ error: tr("Trop de demandes sont déjà ouvertes sur ce compte.", "Too many requests are already open on this account.") }, { status: 429 });
   }
 
