@@ -6,10 +6,10 @@ const source=fs.readFileSync(new URL('../lib/customer-support-e2e.ts',import.met
 const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 async function run(options={}){
  const calls=[];let ticketId='';
- const service={from(table){return {update(){return this;},select(){return this;},eq(){return this;},async single(){return {data:{id:'domain',is_primary:false},error:null};},then(resolve){return Promise.resolve(table==='support_ticket_events'?{data:options.missingAudit?[]:[{event_type:'created',actor_type:'client'},{event_type:'resolution',actor_type:'admin',metadata:{status:'closed'}}],error:null}:{data:[{status:'succeeded',result_code:'managed_domain_primary_repaired'}],error:null}).then(resolve);}};}};
+ const service={from(table){return {update(){return this;},select(){return this;},eq(){return this;},async single(){return {data:{id:'domain',is_primary:false},error:null};},then(resolve){return Promise.resolve(table==='support_ticket_events'?{data:options.missingAudit?[]:[{event_type:'created',actor_type:'client'},{event_type:'diagnostic',actor_type:'system',metadata:{source:'ajg-run-intake',request_id:'req_1234abcd'}},{event_type:'resolution',actor_type:'admin',metadata:{status:'closed'}}],error:null}:{data:[{status:'succeeded',result_code:'managed_domain_primary_repaired'}],error:null}).then(resolve);}};}};
  const fakeFetch=async(url,init)=>{
   const path=new URL(url).pathname;calls.push([path,init.method,init.headers?.Authorization]);const body=init.body?JSON.parse(init.body):null;
-  if(path==='/api/support/tickets'&&init.method==='POST'){ticketId=body.requestId;return Response.json({ticket:{id:ticketId,site_id:'site'},health:{diagnosis:{repairActions:['managed_domain_repair']}}});}
+  if(path==='/api/support/tickets'&&init.method==='POST'){ticketId=body.requestId;return Response.json({runReceipt:options.missingReceipt?{confirmed:false}:{confirmed:true,auditRecorded:true,requestId:'req_1234abcd'},ticket:{id:ticketId,site_id:'site'},health:{diagnosis:{repairActions:['managed_domain_repair']}}});}
   if(path==='/api/support/remediate')return Response.json({result:{status:'succeeded',verified:!options.unverified,audited:true}});
   if(path==='/site/slug')return new Response(options.badPublic?'stale':'updated-marker');
   if(path==='/api/admin/support')return Response.json({ticket:{id:ticketId,status:'closed'}});
@@ -33,4 +33,8 @@ test('missing public content prevents closure even after successful database rep
 });
 test('missing durable audit fails the recipe even if the ticket is already closed',async()=>{
  const {promise}=await run({missingAudit:true});await assert.rejects(promise,/durable_evidence_unconfirmed/);
+});
+
+test('missing central receipt prevents accepting the complete support journey',async()=>{
+ const {calls,promise}=await run({missingReceipt:true});await assert.rejects(promise,/central_receipt_unconfirmed/);assert.equal(calls.some(x=>x[0]==='/api/admin/support'),false);
 });
