@@ -13,7 +13,7 @@ test("private beta login cannot create arbitrary Supabase users", () => {
   assert.match(login, /getPrivateBetaAccess/);
 });
 
-test("Builder admits only active Beta Testers or admins", () => {
+test("Builder admits beta testers, admins or confirmed paid customers", () => {
   assert.match(access, /betaActive \|\| admin/);
   assert.match(access, /get_my_beta_access/);
   assert.match(access, /from\("user_roles"\)/);

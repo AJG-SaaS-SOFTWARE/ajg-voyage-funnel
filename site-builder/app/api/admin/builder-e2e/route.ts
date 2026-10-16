@@ -1,3 +1,4 @@
+import { getPrivateBetaAccessForClient } from "../../../../lib/private-beta-access";
 import { runCustomerSupportE2E } from "../../../../lib/customer-support-e2e";
 import { ordinaryE2EAccount } from "../../../../lib/ordinary-e2e-account";
 import { NextRequest, NextResponse } from "next/server";
@@ -164,6 +165,10 @@ export async function POST(request: NextRequest) {
         signal: AbortSignal.timeout(10000)
       });
       if (denied.status !== 403) throw new Error("ordinary_admin_access_not_denied");
+      const entry = await getPrivateBetaAccessForClient(userClient);
+      if (entry.allowed || entry.paidCustomer || entry.betaActive || entry.admin) {
+        throw new Error("unpaid_customer_entry_not_denied");
+      }
       steps.push({ key: "ordinary_account", label: "Compte client ordinaire", status: "pass",
         detail: "Compte jetable sans rôle admin ni accès bêta, session client réelle ; accès administrateur refusé. Connexion email et interface navigateur non exercées." });
     }
@@ -234,6 +239,15 @@ export async function POST(request: NextRequest) {
         { onConflict: "site_id" }
       );
     if (entitlementError) throw entitlementError;
+
+    if (customerMode) {
+      const entry = await getPrivateBetaAccessForClient(userClient);
+      if (!entry.allowed || !entry.paidCustomer || entry.betaActive || entry.admin) {
+        throw new Error("paid_customer_editor_entry_not_confirmed");
+      }
+      steps.push({ key: "customer_entry", label: "Accès client payé", status: "pass",
+        detail: "Le même contrôle que la connexion et l’éditeur reconnaît le compte payé sans privilèges bêta/admin ; les droits restent injectés pour cette recette." });
+    }
 
     if (includeAi) {
       aiStartedAt = Date.now();
