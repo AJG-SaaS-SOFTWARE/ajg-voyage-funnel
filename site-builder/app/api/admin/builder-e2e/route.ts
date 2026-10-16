@@ -1,3 +1,5 @@
+import { runCustomerSupportE2E } from "../../../../lib/customer-support-e2e";
+import { ordinaryE2EAccount } from "../../../../lib/ordinary-e2e-account";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { siteConfigFromRecoveryExport } from "../../../../lib/site-recovery";
@@ -34,10 +36,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "E2E validation unavailable" }, { status: 503 });
   }
 
-  const token = bearer(request);
+  let token = bearer(request);
+  const adminToken = token;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userClient = createClient(url, publishable, {
+  let userClient = createClient(url, publishable, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
@@ -46,17 +49,17 @@ export async function POST(request: NextRequest) {
   });
 
   const {
-    data: { user },
+    data: { user: adminUser },
     error: userError
   } = await userClient.auth.getUser(token);
-  if (userError || !user) {
+  if (userError || !adminUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { data: role, error: roleError } = await userClient
     .from("user_roles")
     .select("role")
-    .eq("user_id", user.id)
+    .eq("user_id", adminUser.id)
     .maybeSingle();
 
   if (roleError || role?.role !== "admin") {
@@ -65,6 +68,14 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const includeAi = body?.includeAi === true;
+  const customerMode = body?.customerMode === true;
+  if (customerMode && includeAi) {
+    return NextResponse.json({ error: "Customer structural recipe cannot consume paid AI." }, { status: 400 });
+  }
+  let user = adminUser;
+  const ordinary = customerMode ? ordinaryE2EAccount(service, createClient(url, publishable, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  })) : null;
   const locale: "fr" | "en" = body?.locale === "en" ? "en" : "fr";
   const tr = (fr: string, en: string) => locale === "en" ? en : fr;
   const steps: Step[] = [
@@ -142,6 +153,21 @@ export async function POST(request: NextRequest) {
   };
 
   try {
+    if (ordinary) {
+      currentStage = "ordinary-account";
+      const account = await ordinary.provision();
+      user = account.user;
+      token = account.token;
+      userClient = account.client;
+      const denied = await fetch(new URL("/api/admin/builder-e2e", request.url), {
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(10000)
+      });
+      if (denied.status !== 403) throw new Error("ordinary_admin_access_not_denied");
+      steps.push({ key: "ordinary_account", label: "Compte client ordinaire", status: "pass",
+        detail: "Compte jetable sans rôle admin ni accès bêta, session client réelle ; accès administrateur refusé. Connexion email et interface navigateur non exercées." });
+    }
+    currentStage = "site-create";
     const { data: site, error: createError } = await userClient
       .from("sites")
       .insert({
@@ -177,6 +203,18 @@ export async function POST(request: NextRequest) {
 
     if (createError || !site) throw createError || new Error("Temporary site creation failed.");
     siteId = site.id;
+
+    if (customerMode) {
+      currentStage = "unpaid-publication-denial";
+      const denied = await userClient.from("sites").update({ status: "published" })
+        .eq("id", siteId).eq("owner_id", user.id).select("id,status");
+      const unchanged = await userClient.from("sites").select("id,status").eq("id", siteId).single();
+      if (!denied.error || unchanged.error || unchanged.data?.status !== "draft") {
+        throw new Error("unpaid_publication_not_denied");
+      }
+      steps.push({ key: "unpaid_denial", label: "Refus avant paiement", status: "pass",
+        detail: "La base refuse la publication du compte sans paiement ni privilège bêta ; le site reste brouillon." });
+    }
 
     const { error: entitlementError } = await service
       .from("site_subscriptions")
@@ -328,7 +366,7 @@ export async function POST(request: NextRequest) {
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZB7sAAAAASUVORK5CYII=",
       "base64"
     );
-    const { error: uploadError } = await service.storage
+    const { error: uploadError } = await (customerMode ? userClient : service).storage
       .from("site-private-media")
       .upload(privatePath, onePixelPng, {
         contentType: "image/png",
@@ -598,6 +636,14 @@ export async function POST(request: NextRequest) {
       detail: `Archive TAR.GZ réelle générée avec succès (${archive.byteLength} octets), brouillon et version publiée exportés séparément, reconstruction du brouillon validée via la route authentifiée.`
     });
 
+    if (customerMode) {
+      currentStage = "customer-support";
+      const support = await runCustomerSupportE2E({ service, origin: request.url,
+        customerToken: token, adminToken, userId: user.id, siteId, slug,
+        publicMarker: republishMarker });
+      steps.push({ key: "customer_support", label: "Support client réel", status: "pass",
+        detail: `Ticket ${support.ticketId} : diagnostic, réparation sûre, vérification indépendante du domaine et du contenu public, clôture opérateur, relecture client et audit durable. Clôture autonome et cockpit central non prouvés.` });
+    }
     currentStage = "complete";
   } catch (error) {
     // Preserve failure spend too; missing metrics are explicit, never recorded as zero cost.
@@ -630,6 +676,8 @@ export async function POST(request: NextRequest) {
       const { error } = await service.from("sites").delete().eq("id", siteId);
       if (error) cleanupOk = false;
     }
+
+    if (ordinary && !(await ordinary.cleanup())) cleanupOk = false;
 
     const { error: journalError } = await finishJournal(
       cleanupOk ? "failed" : "cleanup_failed",
@@ -665,6 +713,8 @@ export async function POST(request: NextRequest) {
     const { error } = await service.from("sites").delete().eq("id", siteId);
     if (error) cleanupOk = false;
   }
+
+  if (ordinary && !(await ordinary.cleanup())) cleanupOk = false;
 
   if (!cleanupOk) {
     const { error: journalError } = await finishJournal(
@@ -712,6 +762,7 @@ export async function POST(request: NextRequest) {
     {
       ok: true,
       includeAi,
+      customerMode,
       locale,
       deploymentSha,
       journalRunId,
