@@ -8,8 +8,8 @@ const source = fs.readFileSync(
 );
 
 test("Health Center loads site config and verifies both required storage buckets", () => {
-  assert.match(source, /created_at,config/);
-  assert.match(source, /contentHealthFromConfig\(site\.config\)/);
+  assert.match(source, /created_at,design_assets,booking_url,instagram_url,facebook_url/);
+  assert.match(source, /design: site\.design_assets/);
   assert.match(source, /getBucket\("site-media"\)/);
   assert.match(source, /getBucket\("site-private-media"\)/);
   assert.match(source, /safeStorageAvailability\(service\)/);
