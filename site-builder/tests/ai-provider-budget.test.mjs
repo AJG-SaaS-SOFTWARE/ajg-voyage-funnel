@@ -148,3 +148,57 @@ test('Premium Architect worst-case correction path is allowed through provider c
   assert.doesNotMatch(migration, /global_daily_micros\s*=|global_monthly_micros\s*=/);
 });
 
+
+test('already cancelled calls avoid all budget RPCs and provider work', async () => {
+  for (const source of ['context', 'init']) {
+    const h = harness(); let spent = 0;
+    const controller = new AbortController(); controller.abort(new Error('cancelled'));
+    const fetcher = createBudgetedProviderFetch({ ...context(h.service), ...(source === 'context' ? { signal: controller.signal } : {}) }, async () => { spent++; });
+    await assert.rejects(fetcher('https://api.openai.com/v1/responses', { body, ...(source === 'init' ? { signal: controller.signal } : {}) }), /cancelled/);
+    assert.equal(spent, 0); assert.equal(h.calls.length, 0);
+  }
+});
+test('cancellation during admission releases the unused reservation exactly once', async () => {
+  const h = harness(); const controller = new AbortController(); let spent = 0;
+  const original = h.service.rpc;
+  h.service.rpc = async (...args) => { const result = await original(...args); if (args[0].startsWith('reserve')) controller.abort(new Error('cancelled')); return result; };
+  const fetcher = createBudgetedProviderFetch({ ...context(h.service), signal: controller.signal }, async () => { spent++; });
+  await assert.rejects(fetcher('https://api.openai.com/v1/responses', { body }), /cancelled/);
+  assert.equal(spent, 0); assert.equal(h.calls.length, 2);
+  assert.equal(h.calls[1].args.p_cost_micros, 0); assert.equal(h.calls[1].args.p_state, 'settled');
+});
+test('in-flight cancellation remains uncertain and prevents subsequent pipeline calls', async () => {
+  const h = harness(); const controller = new AbortController(); let spent = 0;
+  const fetcher = createBudgetedProviderFetch({ ...context(h.service), signal: controller.signal }, async (_url, init) => {
+    spent++; controller.abort(new Error('cancelled')); init.signal.throwIfAborted();
+  });
+  await assert.rejects(fetcher('https://api.openai.com/v1/responses', { body }), /cancelled/);
+  await assert.rejects(fetcher('https://api.openai.com/v1/responses', { body }), /cancelled/);
+  assert.equal(spent, 1); assert.equal(h.calls.length, 2);
+  assert.equal(h.calls[1].args.p_cost_micros, null); assert.equal(h.calls[1].args.p_state, 'uncertain');
+});
+test('malformed usage cannot release a possibly spent reservation even on a 4xx', async () => {
+  for (const invalid of [
+    { input_tokens: -1, output_tokens: 1 },
+    { input_tokens: 1.5, output_tokens: 1 },
+    { input_tokens: 1, output_tokens: '1' },
+    { input_tokens: Number.MAX_SAFE_INTEGER + 1, output_tokens: 1 },
+    { input_tokens: 10, output_tokens: 1, input_tokens_details: { cached_tokens: -1 } },
+    { input_tokens: 10, output_tokens: 1, input_tokens_details: { cached_tokens: 11 } },
+    { input_tokens: 10, output_tokens: 1, input_tokens_details: { cached_tokens: '10' } }
+  ]) for (const status of [200, 429]) {
+    const h = harness();
+    const fetcher = createBudgetedProviderFetch(context(h.service), async () => Response.json({ usage: invalid }, { status }));
+    await fetcher('https://api.openai.com/v1/responses', { body });
+    assert.equal(h.calls[1].args.p_state, 'uncertain'); assert.equal(h.calls[1].args.p_cost_micros, null);
+  }
+});
+test('non-string provider model stays uncertain while valid cached usage settles normally', async () => {
+  for (const model of [{}, 123, '', 'gpt-5.6-luna']) {
+    const h = harness();
+    const fetcher = createBudgetedProviderFetch(context(h.service), async () => Response.json({ model, usage: { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 50 } } }));
+    await fetcher('https://api.openai.com/v1/responses', { body });
+    assert.equal(h.calls[1].args.p_state, model === 'gpt-5.6-luna' ? 'settled' : 'uncertain');
+    assert.equal(h.calls[1].args.p_cost_micros, model === 'gpt-5.6-luna' ? 35 : null);
+  }
+});

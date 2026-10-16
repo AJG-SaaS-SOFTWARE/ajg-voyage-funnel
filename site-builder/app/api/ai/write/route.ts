@@ -634,7 +634,8 @@ export async function POST(request: Request) {
       planKey: requestPlanKey,
       pool: launchReservation === "ok" ? "launch" : premiumAccessSource === "beta" ? "beta" : "run",
       operation: field,
-      deadlineAt: requestDeadlineAt
+      deadlineAt: requestDeadlineAt,
+      signal: request.signal
     });
   if (field === "siteArchitect" || field === "siteRevision") {
     try {
