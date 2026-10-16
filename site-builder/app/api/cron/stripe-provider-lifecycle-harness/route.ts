@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle(),
       service
         .from("site_billing_states")
-        .select("state,grace_expires_at,failed_at")
+        .select("state,grace_until,grace_started_at")
         .eq("site_id", siteId)
         .maybeSingle(),
       service
@@ -255,8 +255,8 @@ export async function POST(request: NextRequest) {
       billing: billing
         ? {
             state: billing.state,
-            hasFailure: Boolean(billing.failed_at),
-            hasGraceExpiry: Boolean(billing.grace_expires_at)
+            hasFailure: Boolean(billing.grace_started_at),
+            hasGraceExpiry: Boolean(billing.grace_until)
           }
         : null,
       activeAiLaunchEntitlements: activeLaunches
