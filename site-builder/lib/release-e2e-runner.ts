@@ -181,6 +181,7 @@ export async function runReleaseE2EMirror(
           },
           body: JSON.stringify({
             includeAi: mode.includeAi,
+            customerMode: !mode.includeAi,
             locale: plan.locale
           }),
           cache: "no-store",
