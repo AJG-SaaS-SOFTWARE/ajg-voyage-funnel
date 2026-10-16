@@ -107,6 +107,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "support sync failed" }, { status: 503 });
   }
   if (!ticket) {
+    // A no-op is not proof that the ticket or its resolution audit exists.
+    const existing = await service.from("support_tickets").select("id,status")
+      .eq("id", id).maybeSingle();
+    if (existing.error) return NextResponse.json({ ok: false, error: "support sync read unavailable" }, { status: 503 });
+    if (!existing.data) return NextResponse.json({ ok: false, error: "support ticket not found" }, { status: 404 });
+    if (status === "resolved") {
+      if (!["resolved", "closed"].includes(existing.data.status)) {
+        return NextResponse.json({ ok: false, error: "support resolution unconfirmed" }, { status: 409 });
+      }
+      const audit = await service.from("support_ticket_events").select("id")
+        .eq("ticket_id", id).eq("event_type", "resolution")
+        .in("metadata->>status", ["resolved", "closed"]).limit(1);
+      if (audit.error || !audit.data?.length) {
+        return NextResponse.json({ ok: false, changed: false, auditRecorded: false,
+          error: "support sync audit unavailable" }, { status: 503 });
+      }
+      return NextResponse.json({ ok: true, changed: false, status: existing.data.status, auditRecorded: true });
+    }
     return NextResponse.json({ ok: true, changed: false, auditRecorded: null });
   }
 
