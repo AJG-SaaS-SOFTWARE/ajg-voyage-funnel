@@ -46,10 +46,10 @@ test("existing subscription opens the billing portal without another Checkout", 
   assert.ok(!api.calls.some(call => call[0] === "checkout"));
 });
 
-async function loadAccount(billing) {
+async function loadAccount(billing, concurrent = false) {
   const state = { loaded: true, failed: false, billing: { hasStripeSubscription: true } };
   const deps = {
-    siteId: "site", getMySites: async () => [{ id: "site", slug: "fixture" }],
+    loadSequence: { current: 0 }, siteId: "site", getMySites: async () => [{ id: "site", slug: "fixture" }],
     setSites() {}, setSiteId() {}, setCurrent() {}, setAiAccess() {}, setUsage() {}, setStorage() {}, setBetaAccess() {}, setBetaExperienceMode() {},
     setLoaded: value => { state.loaded = value; },
     setLoadFailed: value => { state.failed = value; },
@@ -62,7 +62,13 @@ async function loadAccount(billing) {
   const end = source.indexOf("  useEffect(", start);
   const code = ts.transpileModule(source.slice(start, end), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   const load = new Function(...Object.keys(deps), code + ";return load;")(...Object.values(deps));
-  await load();
+  if (concurrent) {
+    const first = load();
+    await Promise.resolve();
+    const second = load();
+    await second;
+    await first;
+  } else await load();
   return state;
 }
 test("billing read errors block payment without retaining the previous site's billing", async () => {
@@ -81,3 +87,18 @@ test("a verified account completes loading with its current billing state", asyn
   assert.equal(state.loaded, true);
   assert.equal(state.billing, billing);
 });
+
+for (const staleFails of [false, true]) {
+  test("stale billing " + (staleFails ? "error" : "response") + " cannot replace the latest account", async () => {
+    let finish;
+    let count = 0;
+    const latest = { hasStripeSubscription: true };
+    const state = await loadAccount(() => {
+      if (++count === 1) return new Promise((resolve, reject) => { finish = () => staleFails ? reject(new Error("stale")) : resolve({ hasStripeSubscription: false }); });
+      queueMicrotask(finish);
+      return Promise.resolve(latest);
+    }, true);
+    assert.equal(state.billing, latest);
+    assert.equal(state.failed, false);
+  });
+}
