@@ -6,6 +6,13 @@ import {
   quantitativeEvidenceText
 } from "../lib/premium-site-architect.ts";
 
+test("creation guards preserve grouped amounts instead of grounding only their suffix", () => {
+  const invented = proposal({ heroSubtitle: "Des prestations à 500 euros, préparées avec attention." });
+  assert.ok(codes(invented, "Des prestations à 1 500 euros.").includes("unsupported_quantitative_claim"));
+  const equivalent = proposal({ heroSubtitle: "Des prestations à 1500 euros, préparées avec attention." });
+  assert.ok(!codes(equivalent, "Des prestations à 1\u202f500 euros.").includes("unsupported_quantitative_claim"));
+});
+
 function proposal(overrides = {}) {
   const base = {
     heroTagline: "Création attentive",
