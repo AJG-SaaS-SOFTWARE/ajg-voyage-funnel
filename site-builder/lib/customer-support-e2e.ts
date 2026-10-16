@@ -31,6 +31,11 @@ export async function runCustomerSupportE2E(input: {
       !created.health?.diagnosis?.repairActions?.includes("managed_domain_repair")) {
     throw new Error("support_diagnosis_unconfirmed");
   }
+  const intakeId = created?.runReceipt?.requestId;
+  if (created?.runReceipt?.confirmed !== true || created.runReceipt.auditRecorded !== true ||
+      typeof intakeId !== "string" || !/^req_[0-9a-f]{8}$/.test(intakeId)) {
+    throw new Error("support_central_receipt_unconfirmed");
+  }
   const repaired = await call("/api/support/remediate", "POST", {
     siteId, ticketId: id, action: "managed_domain_repair"
   });
@@ -60,10 +65,12 @@ export async function runCustomerSupportE2E(input: {
   ]);
   if (events.error || repairs.error ||
       !events.data?.some(row => row.event_type === "created" && row.actor_type === "client") ||
+      !events.data?.some(row => row.event_type === "diagnostic" && row.actor_type === "system" &&
+        row.metadata?.source === "ajg-run-intake" && row.metadata?.request_id === intakeId) ||
       !events.data?.some(row => row.event_type === "resolution" && row.actor_type === "admin" && row.metadata?.status === "closed") ||
       !repairs.data?.some(row => row.status === "succeeded" && row.result_code === "managed_domain_primary_repaired")) {
     throw new Error("support_durable_evidence_unconfirmed");
   }
-  return { ticketId: id, repairVerified: true, closure: "operator" as const,
+  return { ticketId: id, centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "operator" as const,
     centralCockpitVerified: false, automaticClosureVerified: false };
 }
