@@ -19,7 +19,7 @@ function load(path, dependencies = {}, env = {}) {
 const { readRecoveryRecords } = load("../lib/recovery-records.ts");
 const design = load("../lib/site-design.ts");
 const legal = load("../lib/site-legal.ts");
-const config = load("../lib/site-config.ts", { "./site-design": design, "./site-legal": legal });
+const config = load("../lib/site-config.ts", { "./site-design": design, "./site-legal": legal, "./page-key": load("../lib/page-key.ts") });
 const { siteConfigFromRecoveryExport } = load("../lib/site-recovery.ts", {
   "./site-config": config, "./site-design": design, "./site-legal": legal
 });
