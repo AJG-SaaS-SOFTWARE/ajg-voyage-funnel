@@ -75,3 +75,11 @@ test("assistance rejects suffix amounts and accepts equivalent grouped source am
   assert.ok(issues("Une prestation à 500 euros.").some(issue => issue.code === "unsupported_quantitative_claim"));
   assert.ok(!issues("Une prestation à 1500 €.").some(issue => issue.code === "unsupported_quantitative_claim"));
 });
+
+test("exact decimal grounding never rounds distinct large or precise values together", () => {
+  assert.deepEqual(unsupportedQuantitativeClaims("9007199254740993 clients", "9007199254740992 clients"), ["9007199254740993 clients"]);
+  assert.deepEqual(unsupportedQuantitativeClaims("1,0000000000000001 euros", "1 euros"), ["1,0000000000000001 euros"]);
+  assert.deepEqual(unsupportedQuantitativeClaims("0001,5000 euros", "1.5 €"), []);
+  const huge = "9".repeat(350);
+  assert.deepEqual(unsupportedQuantitativeClaims(huge + " clients", "8".repeat(350) + " clients"), [huge + " clients"]);
+});

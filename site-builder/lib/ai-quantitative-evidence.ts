@@ -14,7 +14,11 @@ function claimKey(claim: string) {
   if (/^24\s*\/\s*7$/.test(text)) return "availability:24/7";
   const number = text.match(claimNumberPattern)?.[0];
   if (!number) return "";
-  const value = String(Number(number.replace(/[ \u00a0\u202f]/g, "").replace(",", ".")));
+  // Compare exact decimal strings: Number would round large supplied values and
+  // could make two different claims appear identical (or both become Infinity).
+  const [whole, fraction = ""] = number.replace(/[ \u00a0\u202f]/g, "").replace(",", ".").split(".");
+  const decimals = fraction.replace(/0+$/, "");
+  const value = whole.replace(/^0+(?=\d)/, "") + (decimals ? "." + decimals : "");
   const unit = text.replace(claimNumberPattern, "").trim();
   if (!unit) return "calendar_year:" + value;
   const aliases: Array<readonly [RegExp, string]> = [
