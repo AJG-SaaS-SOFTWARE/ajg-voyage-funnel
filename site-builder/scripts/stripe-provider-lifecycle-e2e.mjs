@@ -1,4 +1,4 @@
-import { verifyProviderInvoiceFooter } from "./provider-invoice-proof.mjs";
+import { verifyProviderInvoiceFooter, providerE2ECustomerParams } from "./provider-invoice-proof.mjs";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 const STRIPE_VERSION = "2026-08-26.dahlia";
@@ -149,16 +149,7 @@ try {
   }
 
   const customer = await stripe("/customers", {
-    params: {
-      email: `provider-e2e-${fixture.attemptId.slice(0, 12)}@example.invalid`,
-      test_clock: clockId,
-      metadata: {
-        app: "ajg_site_builder",
-        purpose: "provider_billing_e2e",
-        site_id: fixture.siteId,
-        owner_id: fixture.ownerId
-      }
-    }
+    params: providerE2ECustomerParams(fixture, clockId)
   });
   customerId = customer.id;
   if (!customerId || customer.livemode !== false) {

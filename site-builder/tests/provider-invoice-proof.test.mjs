@@ -24,3 +24,16 @@ test("provider lifecycle emits success only after verified footer and successful
   assert.match(source, /cleanupOk: true/);
   assert.doesNotMatch(source, /invoice_settings.*footer|invoice_creation/);
 });
+
+
+test("provider recipe applies its 293 B footer before subscription creation", async () => {
+  const { providerE2ECustomerParams, FRANCHISE_INVOICE_FOOTER } = await import("../scripts/provider-invoice-proof.mjs");
+  const params = providerE2ECustomerParams({ attemptId: "attempt123456789", siteId: "site", ownerId: "owner" }, "clock");
+  assert.equal(params.invoice_settings.footer, FRANCHISE_INVOICE_FOOTER);
+  assert.equal(params.test_clock, "clock");
+  assert.equal(params.metadata.site_id, "site");
+  assert.equal(params.metadata.owner_id, "owner");
+  assert.equal(params.metadata.app, "ajg_site_builder");
+  assert.equal(params.address, undefined);
+  assert.throws(() => providerE2ECustomerParams({}, "clock"), /fixture_invalid/);
+});

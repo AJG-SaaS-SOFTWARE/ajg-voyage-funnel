@@ -16,3 +16,18 @@ export function verifyProviderInvoiceFooter(invoice, { customerId, subscriptionI
   }
   return { invoiceFooterValidated: true, invoiceId: invoice.id };
 }
+
+// Apply the approved franchise mention before Stripe finalizes the first invoice.
+// This does not supply or validate the seller's legal identity.
+export function providerE2ECustomerParams(fixture, clockId) {
+  if (!fixture?.attemptId || !fixture?.siteId || !fixture?.ownerId || !clockId) {
+    throw new Error("provider_customer_fixture_invalid");
+  }
+  return {
+    email: `provider-e2e-${fixture.attemptId.slice(0, 12)}@example.invalid`,
+    test_clock: clockId,
+    invoice_settings: { footer: FRANCHISE_INVOICE_FOOTER },
+    metadata: { app: "ajg_site_builder", purpose: "provider_billing_e2e",
+      site_id: fixture.siteId, owner_id: fixture.ownerId }
+  };
+}
