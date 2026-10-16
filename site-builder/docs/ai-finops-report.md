@@ -12,7 +12,15 @@ Limitations: provider prices are versioned USD estimates, not reconciled invoice
 
 Validation: executable route authorization/error tests, month validation and threshold tests; SQL fixtures covering over 1,000 calls, grouped generation mean/P95, uncertainty, failure cost, UTC month separation and anonymous/authenticated RPC denial, all rolled back. Production release stays on the existing controlled release branch.
 
-## Durable summaries
+## Cost per delivered result
+
+The admin API also reads a bounded root-request cohort from the existing durable cost ledger, with an exact row count. Requests are selected by `root_started_at` in the chosen UTC month; every linked internal call is included even if it was made in a later month. This cohort therefore differs intentionally from calendar-month spend. The cost of failed requests remains in the numerator of `costPerDeliveredMicros`; the denominator is technically completed root requests, not provider calls or human-approved outputs. Corrections are included automatically as internal calls. No prompt, output, email or request identifier is returned by this aggregate.
+
+The metric remains null if no request completed, any outcome is unknown, or any supplier provision is unsettled. Inconsistent root metadata, invalid amounts or unsafe sums make the optional metric unavailable. A count larger than the returned rows marks it truncated and exposes no partial groups. The read is capped at 1,000 ledger rows; large cohorts need a database aggregate before this metric can be made available. This limitation never changes the existing uncapped SQL financial totals. A query failure leaves those totals available. This adds one admin-only read, no schema change and no provider call. Historical rows without a retained root start time are excluded explicitly, rather than assigned a guessed cohort.
+
+Requests without any provider-ledger row (for example refused admissions with no supplier call) are outside this cohort. Their absence must not be interpreted as a measured free successful generation. The existing human-reviewed benchmark remains the source for accepted-result quality/cost comparisons; technical completion alone cannot establish usefulness or a model-quality improvement.
+
+## Durable ledger implementation
 
 Migration `20260930130238_ai_finops_durable_request_statistics.sql` adds invoker triggers with service-only grants, backfills from surviving rows, preserves root outcomes and BUILD capacity in the monetary ledger, and adds the backward-compatible model-aware admission wrapper. The original admission RPC remains available during rolling release. SQL fixtures confirm retained grouped costs after admission removal/anonymization, retained BUILD statistics after entitlement deletion, model persistence, and invalid-model/client-access rejection. All fixtures roll back.
 

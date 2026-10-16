@@ -3,6 +3,60 @@ export type CostDimension = {
   rows: Array<{ key: string; costMicros: number; calls: number; uncertainCalls: number }>;
 };
 
+export type AiRequestEfficiency = {
+  status: "complete" | "truncated" | "unavailable";
+  groups: Array<{
+    operation: string; attempts: number; delivered: number; failed: number;
+    unknownOutcomes: number; calls: number; uncertainCalls: number;
+    chargedMicros: number; failedCostMicros: number;
+    costPerDeliveredMicros: number | null;
+  }>;
+};
+
+// Root-request cohort, not calendar-month spend. All internal calls and failed
+// attempts stay in the numerator; technical delivery is not human acceptance.
+export function summarizeAiRequestEfficiency(rows: unknown, count: unknown): AiRequestEfficiency {
+  const unavailable: AiRequestEfficiency = { status: "unavailable", groups: [] };
+  if (!Array.isArray(rows) || !Number.isSafeInteger(count) || (count as number) < 0) return unavailable;
+  if (rows.length < (count as number)) return { status: "truncated", groups: [] };
+  if (rows.length !== count) return unavailable;
+  const requests = new Map<string, { operation: string; outcome: string | null; cost: number; calls: number; uncertain: number }>();
+  const safe = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  for (const row of rows) {
+    const operation = row?.root_operation ?? row?.operation;
+    if (!row || typeof row.request_id !== "string" || !row.request_id.trim() ||
+        typeof operation !== "string" || !operation.trim() || !safe(row.charged_micros) ||
+        !["settled", "reserved", "uncertain"].includes(row.state) ||
+        ![null, "started", "completed", "failed"].includes(row.root_state)) return unavailable;
+    const previous = requests.get(row.request_id);
+    if (previous && (previous.operation !== operation || previous.outcome !== row.root_state)) return unavailable;
+    const request = previous || { operation, outcome: row.root_state, cost: 0, calls: 0, uncertain: 0 };
+    request.cost += row.charged_micros;
+    if (!safe(request.cost)) return unavailable;
+    request.calls++;
+    if (row.state !== "settled") request.uncertain++;
+    requests.set(row.request_id, request);
+  }
+  const groups = new Map<string, AiRequestEfficiency["groups"][number]>();
+  for (const request of requests.values()) {
+    const group = groups.get(request.operation) || { operation: request.operation, attempts: 0,
+      delivered: 0, failed: 0, unknownOutcomes: 0, calls: 0, uncertainCalls: 0,
+      chargedMicros: 0, failedCostMicros: 0, costPerDeliveredMicros: null };
+    group.attempts++; group.calls += request.calls; group.uncertainCalls += request.uncertain;
+    group.chargedMicros += request.cost;
+    if (request.outcome === "completed") group.delivered++;
+    else if (request.outcome === "failed") { group.failed++; group.failedCostMicros += request.cost; }
+    else group.unknownOutcomes++;
+    if (!safe(group.chargedMicros) || !safe(group.failedCostMicros)) return unavailable;
+    groups.set(request.operation, group);
+  }
+  return { status: "complete", groups: [...groups.values()].sort((a,b) => a.operation.localeCompare(b.operation)).map(group => ({
+    ...group,
+    costPerDeliveredMicros: group.delivered > 0 && !group.uncertainCalls && !group.unknownOutcomes
+      ? group.chargedMicros / group.delivered : null
+  })) };
+}
+
 export type AiFinopsReport = {
   month: string;
   currency: "USD";

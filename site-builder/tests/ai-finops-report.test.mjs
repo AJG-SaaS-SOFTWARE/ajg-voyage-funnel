@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 import { createRequire } from 'node:module';
+import { createClient as createSdkClient } from '@supabase/supabase-js';
 const require = createRequire(import.meta.url);
 function load(path, overrides = {}) {
   const source = fs.readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -43,10 +44,11 @@ test('uncertain costs and legacy calls cannot masquerade as measured complete ge
   assert.deepEqual(alerts.map(a => a.key), ['heavy-paused', 'uncertain', 'legacy']);
 });
 
-function harness({ role = 'admin', authenticated = true, rpcError = null, payload = report, throws = false } = {}) {
+function harness({ role = 'admin', authenticated = true, rpcError = null, payload = report, throws = false, efficiencyRows = [], efficiencyCount = efficiencyRows.length, efficiencyError = false, efficiencyThrows = false, serviceOverride = null } = {}) {
   const calls = [];
   const createClient = (url, key) => {
     calls.push(['client', key]);
+    if (key === 'service' && serviceOverride) return serviceOverride;
     if (key === 'service') return {
       rpc: async (name, args) => {
         calls.push(['rpc', name, args]);
@@ -55,11 +57,17 @@ function harness({ role = 'admin', authenticated = true, rpcError = null, payloa
         return { data: payload, error: rpcError };
       },
       from: (table) => ({
-        select() { return this; },
-        gte() { return this; },
+        efficiency: false,
+        select(_columns, options) { this.efficiency = options?.count === 'exact'; return this; },
+        gte(key, value) { calls.push(['gte', key, value]); return this; },
+        lt(key, value) { calls.push(['lt', key, value]); return this; },
         order() { return this; },
         async limit(value) {
           calls.push(['query', table, value]);
+          if (this.efficiency) {
+            if (efficiencyThrows) throw Error('private query error');
+            return { data: efficiencyRows, count: efficiencyCount, error: efficiencyError };
+          }
           return { data: [], error: null };
         }
       })
@@ -112,4 +120,90 @@ test('admin receives complete SQL aggregate and alerts without browser caching',
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   assert.deepEqual(h.calls.find(c => c[0] === 'rpc'), ['rpc', 'ai_finops_monthly_report', { p_month: '2026-09-01' }]);
   assert.deepEqual((await response.json()).report, report);
+});
+
+const costRow = overrides => ({ request_id: 'request-1', root_operation: 'siteArchitect', operation: 'siteArchitect',
+  root_state: 'completed', state: 'settled', charged_micros: 100, ...overrides });
+test('delivery cost includes all internal calls and the cost of unsuccessful requests', () => {
+  const rows = [costRow({charged_micros:100}), costRow({charged_micros:50}),
+    costRow({request_id:'request-2',root_state:'failed',charged_micros:60}),
+    costRow({request_id:'request-3',charged_micros:30})];
+  const result = reportLib.summarizeAiRequestEfficiency(rows,4);
+  assert.equal(result.status,'complete');
+  assert.deepEqual(result.groups[0], { operation:'siteArchitect', attempts:3, delivered:2, failed:1,
+    unknownOutcomes:0, calls:4, uncertainCalls:0, chargedMicros:240, failedCostMicros:60, costPerDeliveredMicros:120 });
+  assert.doesNotMatch(JSON.stringify(result),/request-[123]/);
+});
+test('uncertain costs and unknown request outcomes cannot produce a final delivery cost', () => {
+  for (const override of [{state:'uncertain'}, {state:'reserved'}, {root_state:'started'}, {root_state:null}]) {
+    const result = reportLib.summarizeAiRequestEfficiency([costRow(override)],1);
+    assert.equal(result.status,'complete'); assert.equal(result.groups[0].costPerDeliveredMicros,null);
+  }
+  assert.equal(reportLib.summarizeAiRequestEfficiency([costRow({root_state:'failed'})],1).groups[0].costPerDeliveredMicros,null);
+  assert.equal(reportLib.summarizeAiRequestEfficiency([costRow({charged_micros:0})],1).groups[0].costPerDeliveredMicros,0);
+  assert.deepEqual(reportLib.summarizeAiRequestEfficiency([],0),{status:'complete',groups:[]});
+});
+test('missing, truncated, malformed or inconsistent evidence never yields a partial financial metric', () => {
+  assert.deepEqual(reportLib.summarizeAiRequestEfficiency([costRow({})],2),{status:'truncated',groups:[]});
+  for (const [rows,count] of [[[],null], [[costRow({})],0], [[costRow({charged_micros:-1})],1],
+    [[costRow({root_state:'other'})],1], [[costRow({request_id:null})],1],
+    [[costRow({}),costRow({root_state:'failed'})],2],
+    [[costRow({}),costRow({root_operation:'heroTitle'})],2],
+    [[costRow({charged_micros:Number.MAX_SAFE_INTEGER}),costRow({})],2],
+    [[costRow({charged_micros:Number.MAX_SAFE_INTEGER}),costRow({request_id:'other'})],2]]) {
+    assert.deepEqual(reportLib.summarizeAiRequestEfficiency(rows,count),{status:'unavailable',groups:[]});
+  }
+});
+test('operations remain separate so a failing operation cannot dilute another delivery metric', () => {
+  const result = reportLib.summarizeAiRequestEfficiency([costRow({}),costRow({request_id:'other',root_operation:'heroTitle',root_state:'failed'})],2);
+  assert.equal(result.groups.find(row=>row.operation==='siteArchitect').costPerDeliveredMicros,100);
+  assert.equal(result.groups.find(row=>row.operation==='heroTitle').costPerDeliveredMicros,null);
+});
+test('admin delivery metric uses the root-request UTC cohort and exposes only aggregates', async () => {
+  const h = harness({efficiencyRows:[costRow({request_id:'private-request-id'})]});
+  const response = await h.route.GET(request('?month=2026-09'));
+  assert.equal(response.status,200);
+  const payload = await response.json();
+  assert.equal(payload.efficiency.groups[0].costPerDeliveredMicros,100);
+  assert.doesNotMatch(JSON.stringify(payload),/private-request-id/);
+  assert.ok(h.calls.some(call=>call[0]==='gte'&&call[1]==='root_started_at'&&call[2]==='2026-09-01T00:00:00.000Z'));
+  assert.ok(h.calls.some(call=>call[0]==='lt'&&call[1]==='root_started_at'&&call[2]==='2026-10-01T00:00:00.000Z'));
+  assert.ok(h.calls.some(call=>call[0]==='query'&&call[2]===1000));
+});
+test('an unavailable or truncated optional delivery metric preserves the existing financial report', async () => {
+  for (const [options,status] of [[{efficiencyError:true},'unavailable'],[{efficiencyThrows:true},'unavailable'],
+    [{efficiencyRows:[costRow({})],efficiencyCount:1001},'truncated']]) {
+    const response = await harness(options).route.GET(request('?month=2026-09'));
+    assert.equal(response.status,200);
+    const payload = await response.json(); assert.deepEqual(payload.report,report);
+    assert.equal(payload.efficiency.status,status); assert.deepEqual(payload.efficiency.groups,[]);
+    assert.equal(response.headers.get('cache-control'),'private, no-store');
+  }
+});
+
+test('real SDK cohort query requests an exact count and detects server-side row truncation', async () => {
+  for (const total of [1,1001]) {
+    const requests=[];
+    const service = createSdkClient('https://synthetic.example.test','test-only',{
+      auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(input,init)=>{
+        const url=new URL(input); requests.push({url,headers:new Headers(init.headers)});
+        if(url.pathname.endsWith('/rpc/ai_finops_monthly_report'))return Response.json(report);
+        if(url.pathname.endsWith('/rpc/get_ai_finops_monitor_status'))return Response.json({items:[],activeAlerts:0,lastRunAt:null});
+        if((url.searchParams.get('select')||'').includes('root_operation')) {
+          assert.equal(new Headers(init.headers).get('prefer'),'count=exact');
+          assert.equal(url.searchParams.get('root_started_at'),'gte.2026-09-01T00:00:00.000Z');
+          assert.ok(url.searchParams.getAll('root_started_at').includes('lt.2026-10-01T00:00:00.000Z'));
+          assert.equal(url.searchParams.get('limit'),'1000');
+          return Response.json([costRow({})],{headers:{'content-range':`0-0/${total}`}});
+        }
+        return Response.json([]);
+      }}
+    });
+    const response=await harness({serviceOverride:service}).route.GET(request('?month=2026-09'));
+    assert.equal(response.status,200);
+    const payload=await response.json();
+    assert.equal(payload.efficiency.status,total===1?'complete':'truncated');
+    assert.equal(payload.efficiency.groups.length,total===1?1:0);
+    assert.equal(requests.length,4);
+  }
 });
