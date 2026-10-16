@@ -54,27 +54,27 @@ export default function PlansPage() {
     setLoadFailed(false);
     setBillingState(null);
     try {
-    const owned = await getMySites();
-    const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
-    setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
-    if (site && !siteId) setSiteId(site.id);
-    const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
-      site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
-      site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
-      getMyAiUsage(),
-      getMyStorageUsage(site?.id),
-      getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
-      site ? getMyBillingState(site.id) : Promise.resolve(null)
-    ]);
-    if (site && !resolvedBilling) throw new Error("billing_account_unavailable");
-    setCurrent(entitlements);
-    setAiAccess(access);
-    setUsage(aiUsage);
-    setStorage(storageUsage);
-    setBetaAccess(beta);
-    if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
-    setBillingState(resolvedBilling);
-    setLoaded(true);
+      const owned = await getMySites();
+      const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
+      setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
+      if (site && !siteId) setSiteId(site.id);
+      const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
+        site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
+        site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
+        getMyAiUsage(),
+        getMyStorageUsage(site?.id),
+        getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
+        site ? getMyBillingState(site.id) : Promise.resolve(null)
+      ]);
+      if (site && !resolvedBilling) throw new Error("billing_account_unavailable");
+      setCurrent(entitlements);
+      setAiAccess(access);
+      setUsage(aiUsage);
+      setStorage(storageUsage);
+      setBetaAccess(beta);
+      if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
+      setBillingState(resolvedBilling);
+      setLoaded(true);
     } catch {
       setLoadFailed(true);
       setLoaded(true);
@@ -90,7 +90,8 @@ export default function PlansPage() {
   }, []);
 
   async function beginPlanChange(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
-    if (!loaded || loadFailed || !siteId || betaAccess.active || checkoutBusy) return;
+    if (!siteId || betaAccess.active) return;
+    if (!loaded || loadFailed || checkoutBusy) return;
     const key = `${planKey}:${billingCycle}`;
     setCheckoutBusy(key);
     setCheckoutMessage("");
@@ -107,7 +108,8 @@ export default function PlansPage() {
   }
 
   async function buyAiLaunch() {
-    if (!loaded || loadFailed || !siteId || betaAccess.active || checkoutBusy) return;
+    if (!siteId || betaAccess.active) return;
+    if (!loaded || loadFailed || checkoutBusy) return;
     setCheckoutBusy("ai_launch");
     setCheckoutMessage("");
     try {
@@ -161,7 +163,7 @@ export default function PlansPage() {
         </section>
       ) : null}
 
-      {loaded ? (
+      {loaded && !loadFailed ? (
         <section className={`account-plan-overview ${betaAccess.active ? "is-beta" : ""}`}>
           <div className="account-plan-overview-copy">
             <div className="account-plan-status-row">
@@ -202,7 +204,7 @@ export default function PlansPage() {
         />
       ) : null}
 
-      {loaded ? (
+      {loaded && !loadFailed ? (
         <section className="account-metrics-grid" aria-label={tr("Capacités et utilisation", "Capabilities and usage")}>
           <article className="account-metric-card">
             <div className="account-metric-heading">
