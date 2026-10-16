@@ -47,7 +47,8 @@ export function prepareAiBenchmarkReview(corpus: BenchmarkCorpus, samples: Bench
   for (const item of corpus.cases) {
     if (!item || typeof item.id !== "string" || !item.id.trim() ||
         !["assistance", "diagnostic", "section", "creation"].includes(item.task) ||
-        !Array.isArray(item.reviewFocus) || item.reviewFocus.some(text => typeof text !== "string")) throw new Error("invalid_benchmark_case");
+        !Array.isArray(item.reviewFocus) || !item.reviewFocus.length || item.reviewFocus.length > 10 ||
+        item.reviewFocus.some(text => typeof text !== "string" || text.length > 500)) throw new Error("invalid_benchmark_case");
     const key = JSON.stringify([item.task, item.id.trim()]);
     if (cases.has(key)) throw new Error("duplicate_benchmark_case");
     fingerprint(item.task, item.input);

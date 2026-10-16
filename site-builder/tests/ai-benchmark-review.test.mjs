@@ -72,6 +72,15 @@ test("unknown/duplicate review IDs, forged reviewer types and inconsistent manif
   assert.throws(()=>mergeAiBenchmarkReviews(mismatch,{version:1,reviews:[]}),/input_mismatch/);
 });
 
+test("non-JSON/deep inputs and oversized repeated review criteria stop before packet creation", () => {
+  const cyclic=samples(); cyclic[0].input.self=cyclic[0].input;
+  assert.throws(()=>prepareAiBenchmarkReview(corpus,cyclic),/benchmark_json/);
+  for(const focus of [[],Array(11).fill("criterion"),["x".repeat(501)]]) {
+    const altered=structuredClone(corpus); altered.cases[0].reviewFocus=focus;
+    assert.throws(()=>prepareAiBenchmarkReview(altered,samples()),/invalid_benchmark_case/);
+  }
+});
+
 test("the versioned synthetic corpus covers both languages across all four task scopes", () => {
   const actual=JSON.parse(fs.readFileSync(new URL("fixtures/ai-benchmark-corpus.json",import.meta.url),"utf8"));
   for(const task of ["assistance","diagnostic","section","creation"]) {
