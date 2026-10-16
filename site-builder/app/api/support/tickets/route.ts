@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     }
   });
 
-  await reportSupportTicketToRun({
+  const runReceipt = await reportSupportTicketToRun({
     category: ticket.category,
     severity: ticket.severity,
     status: ticket.status,
@@ -183,7 +183,16 @@ export async function POST(request: Request) {
     ticketId: String(ticket.id),
   });
 
-  return NextResponse.json({ ticket, health }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
+  const runAuditRecorded = runReceipt.ok && typeof runReceipt.requestId === "string"
+    ? await recordSupportEvent(auth.service, {
+      ticketId: ticket.id, actor: "system", type: "diagnostic",
+      metadata: { source: "ajg-run-intake", request_id: runReceipt.requestId }
+    }) : false;
+
+  return NextResponse.json({ ticket, health,
+    runReceipt: runReceipt.ok ? { confirmed: true, requestId: runReceipt.requestId, auditRecorded: runAuditRecorded }
+      : { confirmed: false, auditRecorded: false }
+  }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
 }
 
 
