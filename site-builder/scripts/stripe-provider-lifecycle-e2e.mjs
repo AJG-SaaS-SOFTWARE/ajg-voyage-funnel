@@ -80,9 +80,19 @@ async function poll(label, check, timeoutMs = 120000, intervalMs = 2000) {
 }
 
 async function attachPaymentMethod(paymentMethod, customer) {
-  return stripe(`/payment_methods/${encodeURIComponent(paymentMethod)}/attach`, {
+  const attached = await stripe(`/payment_methods/${encodeURIComponent(paymentMethod)}/attach`, {
     params: { customer }
   });
+  if (
+    typeof attached?.id !== "string" ||
+    !attached.id.startsWith("pm_") ||
+    attached.id.startsWith("pm_card_") ||
+    attached.customer !== customer ||
+    attached.livemode !== false
+  ) {
+    throw new Error("provider_billing_attached_payment_method_invalid");
+  }
+  return attached.id;
 }
 
 async function setCustomerPaymentMethod(customer, paymentMethod) {
@@ -156,10 +166,7 @@ try {
     throw new Error("provider_billing_customer_invalid");
   }
 
-  const goodPaymentMethod = "pm_card_visa";
-  const failedPaymentMethod = "pm_card_chargeCustomerFail";
-
-  await attachPaymentMethod(goodPaymentMethod, customerId);
+  const goodPaymentMethod = await attachPaymentMethod("pm_card_visa", customerId);
   await setCustomerPaymentMethod(customerId, goodPaymentMethod);
 
   const subscription = await stripe("/subscriptions", {
@@ -205,7 +212,7 @@ try {
       invoice?.parent?.subscription_details?.subscription === subscriptionId)
   ) || null;
 
-  await attachPaymentMethod(failedPaymentMethod, customerId);
+  const failedPaymentMethod = await attachPaymentMethod("pm_card_chargeCustomerFail", customerId);
   await setCustomerPaymentMethod(customerId, failedPaymentMethod);
   await setSubscriptionPaymentMethod(subscriptionId, failedPaymentMethod);
 
