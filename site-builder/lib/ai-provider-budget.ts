@@ -13,6 +13,7 @@ type BudgetContext = {
   pool: "run" | "launch" | "beta";
   operation: string;
   deadlineAt?: number;
+  signal?: AbortSignal;
 };
 
 export function providerCostCeiling(body: string, heavy: boolean) {
@@ -41,6 +42,8 @@ export function createBudgetedProviderFetch(context: BudgetContext, providerFetc
   // One deadline for the whole writer pipeline, including repairs and final review.
   const deadlineAt = context.deadlineAt ?? Date.now() + 80_000;
   return async (url, init) => {
+    context.signal?.throwIfAborted();
+    init?.signal?.throwIfAborted();
     if (Date.now() >= deadlineAt) throw new AiBudgetError("request_time_budget_exhausted");
     if (String(url) !== "https://api.openai.com/v1/responses" || typeof init?.body !== "string") {
       throw new AiBudgetError("invalid_provider_endpoint");
@@ -66,25 +69,32 @@ export function createBudgetedProviderFetch(context: BudgetContext, providerFetc
     };
     try {
       const remainingMs = deadlineAt - Date.now();
-      if (remainingMs <= 0) {
-        // Admission took the remaining time; no provider request was made.
+      if (remainingMs <= 0 || context.signal?.aborted || init.signal?.aborted) {
+        // Cancellation or admission exhausted the budget before any provider request.
         await settle(0, "settled");
+        context.signal?.throwIfAborted();
+        init.signal?.throwIfAborted();
         throw new AiBudgetError("request_time_budget_exhausted");
       }
       const response = await providerFetch(url, {
         ...init,
-        signal: AbortSignal.any([AbortSignal.timeout(Math.min(70_000, remainingMs)), ...(init.signal ? [init.signal] : [])])
+        signal: AbortSignal.any([AbortSignal.timeout(Math.min(70_000, remainingMs)), ...(context.signal ? [context.signal] : []), ...(init.signal ? [init.signal] : [])])
       });
       // Read a clone so existing structured-output and telemetry code keeps its response.
       const data: any = await response.clone().json().catch(() => null);
-      if (data?.usage && Number.isFinite(data.usage.input_tokens) && Number.isFinite(data.usage.output_tokens)) {
-        const cost = estimateAiCostUsdMicros(data.model || ceiling.model, {
+      const validTokens = (value: unknown) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+      const cachedTokens = data?.usage?.input_tokens_details?.cached_tokens ?? 0;
+      if (data?.usage && validTokens(data.usage.input_tokens) && validTokens(data.usage.output_tokens) &&
+          validTokens(cachedTokens) && cachedTokens <= data.usage.input_tokens &&
+          (data.model == null || (typeof data.model === "string" && data.model.trim().length > 0))) {
+        const cost = estimateAiCostUsdMicros(data.model ?? ceiling.model, {
           inputTokens: data.usage.input_tokens,
-          cachedInputTokens: data.usage.input_tokens_details?.cached_tokens || 0,
+          cachedInputTokens: cachedTokens,
           outputTokens: data.usage.output_tokens
         });
-        await settle(cost.known ? cost.micros : null, cost.known ? "settled" : "uncertain");
-      } else if (response.status >= 400 && response.status < 500) {
+        const known = cost.known && Number.isSafeInteger(cost.micros);
+        await settle(known ? cost.micros : null, known ? "settled" : "uncertain");
+      } else if (!data?.usage && response.status >= 400 && response.status < 500) {
         await settle(0, "settled");
       } else {
         // Timeout, malformed success or 5xx may have incurred provider spend.
