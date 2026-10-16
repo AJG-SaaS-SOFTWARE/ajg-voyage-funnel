@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { getMyBillingState, openStripeBillingPortal, startAiLaunchCheckout, startPlanCheckout, type BillingState } from "../../lib/billing-access";
@@ -49,15 +49,19 @@ export default function PlansPage() {
   const [checkoutMessage, setCheckoutMessage] = useState("");
   const [billingState, setBillingState] = useState<BillingState | null>(null);
 
+  const loadSequence = useRef(0);
+
   const load = async (selectedId?: string) => {
+    const sequence = ++loadSequence.current;
     setLoaded(false);
     setLoadFailed(false);
     setBillingState(null);
     try {
       const owned = await getMySites();
+      if (sequence !== loadSequence.current) return;
       const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
       setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
-      if (site && !siteId) setSiteId(site.id);
+      setSiteId(site?.id || "");
       const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
         site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
         site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
@@ -66,6 +70,7 @@ export default function PlansPage() {
         getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
         site ? getMyBillingState(site.id) : Promise.resolve(null)
       ]);
+      if (sequence !== loadSequence.current) return;
       if (site && !resolvedBilling) throw new Error("billing_account_unavailable");
       setCurrent(entitlements);
       setAiAccess(access);
@@ -76,6 +81,7 @@ export default function PlansPage() {
       setBillingState(resolvedBilling);
       setLoaded(true);
     } catch {
+      if (sequence !== loadSequence.current) return;
       setLoadFailed(true);
       setLoaded(true);
     }
