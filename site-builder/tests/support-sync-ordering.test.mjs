@@ -7,8 +7,13 @@ const id = "10000000-0000-4000-8000-000000000001";
 
 function harness(initial = "diagnosed", writeError = false, audit = true) {
   const row = { id, status: initial, resolution_code: initial === "resolved" ? "original-proof" : null, resolved_at: initial === "resolved" ? "2026-10-15T00:00:00Z" : null };
-  const stats = { writes: 0, events: [], clients: 0 };
+  const stats = { writes: 0, events: [], clients: 0, auditExists: initial === "resolved" || initial === "closed" };
   const service = { from(table) {
+    if (table === "support_ticket_events") {
+      const query = { select() { return query; }, eq() { return query; }, in() { return query; },
+        async limit() { return { data: stats.auditExists ? [{ id: "audit" }] : [], error: null }; } };
+      return query;
+    }
     assert.equal(table, "support_tickets");
     const filters = {}; let excluded = [], patch;
     const query = {
@@ -18,6 +23,8 @@ function harness(initial = "diagnosed", writeError = false, audit = true) {
       async maybeSingle() {
         if (writeError) return { data: null, error: { code: "synthetic-write-error" } };
         if (excluded.includes(row.status) || !Object.entries(filters).every(([key, value]) => row[key] === value)) return { data: null, error: null };
+        if (initial === "missing") return { data: null, error: null };
+        if (!patch) return { data: { id, status: row.status }, error: null };
         stats.writes++; Object.assign(row, patch); return { data: { id, status: row.status }, error: null };
       }
     };
@@ -26,7 +33,7 @@ function harness(initial = "diagnosed", writeError = false, audit = true) {
   const deps = {
     "next/server": { NextResponse: { json: (body, init) => Response.json(body, init) } },
     "@supabase/supabase-js": { createClient: () => { stats.clients++; return service; } },
-    "../../../../lib/support-events": { recordSupportEvent: async (_service, event) => { stats.events.push(event); if (audit instanceof Error) throw audit; return audit; } }
+    "../../../../lib/support-events": { recordSupportEvent: async (_service, event) => { stats.events.push(event); if (audit instanceof Error) throw audit; if (audit === true && event.type === "resolution") stats.auditExists = true; return audit; } }
   };
   const module = { exports: {} };
   new Function("require", "module", "exports", "process", code)(name => { assert.ok(name in deps); return deps[name]; }, module, module.exports, { env: { AJG_RUN_TOKEN: "synthetic-token", NEXT_PUBLIC_SUPABASE_URL: "https://synthetic.invalid", SUPABASE_SECRET_KEY: "synthetic-key" } });
@@ -94,7 +101,9 @@ test("unconfirmed callback audit reports the committed state without a false suc
     const replay = await app.sync("resolved");
     const replayBody = await replay.json();
     assert.equal(replayBody.changed, false);
-    assert.equal(replayBody.auditRecorded, null);
+    assert.equal(replay.status, 503);
+    assert.equal(replayBody.ok, false);
+    assert.equal(replayBody.auditRecorded, false);
     assert.equal(app.stats.writes, 1);
     assert.equal(app.stats.events.length, 1);
   }
@@ -105,4 +114,24 @@ test("successful callback explicitly confirms its audit", async () => {
   const response = await app.sync("in_progress");
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), {ok: true, changed: true, status: "in_progress", auditRecorded: true});
+});
+
+
+test("a missing product ticket cannot acknowledge central resolution", async () => {
+  const app = harness("missing");
+  const response = await app.sync("resolved");
+  assert.equal(response.status, 404);
+  assert.equal((await response.json()).ok, false);
+  assert.equal(app.stats.writes, 0);
+});
+
+test("replayed resolution requires a persisted resolution audit", async () => {
+  const app = harness("resolved");
+  app.stats.auditExists = false;
+  assert.equal((await app.sync("resolved")).status, 503);
+  app.stats.auditExists = true;
+  const response = await app.sync("resolved");
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).auditRecorded, true);
+  assert.equal(app.stats.writes, 0);
 });
