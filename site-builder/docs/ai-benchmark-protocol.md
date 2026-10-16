@@ -32,3 +32,39 @@ Le protocole ne lance aucun changement de modèle ou appel payé automatiquement
 
 
 Pour `task: "creation"`, ajouter une preuve humaine de rendu : `"visualReview": {"desktop": true, "mobile": true}`. Omettre la revue visuelle laisse la tentative incomplète, non acceptée et non comparable ; false sur une surface signifie résultat rejeté. Ne pas remplir ces valeurs à partir du quality gate IA ou d'un screenshot automatique seul. `reviewed` compte les revues textuelles, `fullyReviewed` toutes les revues requises ; le taux d'acceptation utilise ces dernières. Le coût final par résultat accepté reste null tant que des tentatives ne sont pas évaluées, ou que des coûts restent inconnus/incertains. Ces gates n'évaluent pas la représentativité ou la taille statistique du corpus.
+
+## Préparer les évaluations en aveugle, sans appel fournisseur
+
+Le corpus synthétique versionné `tests/fixtures/ai-benchmark-corpus.json` contient huit cas FR/EN couvrant assistance, diagnostic, section et création/révision. Il couvre notamment l’injection dans une source, les faits manquants, les contradictions, les droits des médias et la préservation d’une retouche ciblée. C’est un socle de régression, pas une preuve de représentativité ni de satisfaction client. Modifier un brief impose de versionner le corpus ou le cas ; conserver les versions avec les résultats.
+
+Préparer les sorties des candidats séparément, uniquement avec un budget explicitement autorisé si cela nécessite des appels payants. Une ligne par résultat, y compris les échecs avec `output: null` :
+
+```json
+{
+  "candidate": "pipeline-version-modele",
+  "caseId": "assistance-fr-v1",
+  "task": "assistance",
+  "input": { "reprendre": "exactement l’objet input du cas" },
+  "output": "Texte réellement obtenu",
+  "estimatedUsdMicros": null,
+  "uncertainCeilingUsdMicros": 0,
+  "durationMs": 1000
+}
+```
+
+Cet exemple de format est fictif. Les coûts et durées doivent provenir des mesures réelles, tous appels internes et corrections inclus. `input` décrit la source commune transmise aux candidats, hors authentification, identifiants de requête et paramètres propres au candidat. Nommer et conserver la version du pipeline/prompt avec le candidat ; une source identique ne prouve pas que les autres paramètres sont identiques. Ne jamais inclure de clé API, données personnelles réelles ou contenus clients dans ce corpus partagé.
+
+```sh
+npm run benchmark:review -- prepare candidate-samples.json nouveau-dossier
+# ou ajouter un chemin de corpus versionné en dernier argument
+npm run benchmark:review -- merge nouveau-dossier/operator-manifest.json avis-humains.json nouveaux-resultats.json
+npm run benchmark:ai -- nouveaux-resultats.json
+```
+
+La préparation vérifie l’empreinte canonique de chaque entrée contre le corpus : l’ordre des clés JSON est indifférent, mais le texte, les valeurs et l’ordre des tableaux doivent correspondre. Pour chaque tâche évaluée, il faut au moins deux candidats, tous les cas de cette tâche et les mêmes fréquences de cas. Les coûts inconnus peuvent rester null ; ils bloqueront la comparaison financière finale.
+
+Partager uniquement `review-packet.json` et `review-form.json`. Les identifiants sont aléatoires et l’ordre mélangé. Les noms des candidats, coûts et métadonnées racines connues (modèle, usage, audit et intelligence) sont absents du paquet. Les textes des résultats ne sont pas réécrits : ils peuvent encore révéler un indice de modèle ou contenir une erreur que l’évaluateur doit signaler. Garder `operator-manifest.json` séparé et privé ; il contient la correspondance et les mesures. Les fichiers sont créés sans écraser une preuve existante.
+
+Chaque avis reprend l’identifiant du formulaire et une `review` humaine au format ci-dessus. Laisser `review: null` pour un résultat non évalué ; ne pas inventer un avis pour compléter le rapport. La création exige toujours la revue humaine desktop/mobile du rendu : le paquet JSON seul ne l’apporte pas. La fusion refuse les identifiants inconnus ou répétés et les avis déclarés IA. Elle valide le format, pas l’identité de l’évaluateur ni la véracité de sa déclaration ; la collecte et la conservation des avis restent sous responsabilité de l’opérateur. Les sorties et avis des tests unitaires sont synthétiques, jamais présentés comme des mesures de qualité réelle.
+
+Ces commandes ne lisent aucune clé API, n’appellent aucun fournisseur et ne modifient jamais le routage des modèles, les quotas ou les budgets.
