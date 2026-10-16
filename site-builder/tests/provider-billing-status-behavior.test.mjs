@@ -12,7 +12,7 @@ function load({ count = 0, adminMetadata = true } = {}) {
   const service = {
     auth: { admin: { getUserById: async () => ({ data: { user: { app_metadata: adminMetadata ? metadata : {}, user_metadata: metadata } }, error: null }), deleteUser: async () => { deletes++; return { error: null }; } } },
     from(table) { return {
-      select() { return this; }, eq() { return this; },
+      select(columns) { if (table === "site_billing_states") assert.equal(columns, "state,grace_until,grace_started_at"); return this; }, eq() { return this; },
       async maybeSingle() { return { data: table === "sites" ? { id: fixture.siteId, owner_id: fixture.ownerId, brand_name: "ELTARA Provider Billing E2E" } : table === "site_subscriptions" ? subscription : { state: "active" }, error: null }; },
       then(resolve, reject) { return Promise.resolve({ count, error: null }).then(resolve, reject); }
     }; }
