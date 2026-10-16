@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "../../../components/AdminShell";
 import { getAdminAiFinops } from "../../../lib/admin";
-import { usdCost, finopsMonitorLabel, type AiFinopsReport, type FinopsAlert, type FinopsMonitorStatus } from "../../../lib/ai-finops-report";
+import { usdCost, finopsMonitorLabel, type AiFinopsReport, type AiRequestEfficiency, type FinopsAlert, type FinopsMonitorStatus } from "../../../lib/ai-finops-report";
 import type { AiUsageAnomaly } from "../../../lib/ai-usage-anomaly";
 
-type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; anomaly: AiUsageAnomaly; generatedAt: string };
+type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; anomaly: AiUsageAnomaly; efficiency?: AiRequestEfficiency; generatedAt: string };
 const dimensions = { plan: "Par offre", user: "Par compte", site: "Par site", operation: "Par opération demandée", model: "Par modèle demandé", day: "Par jour (UTC)" };
 
 export default function FinopsPage() {
@@ -31,6 +31,7 @@ export default function FinopsPage() {
 
   const report = result?.report;
   const monitor = result?.monitor;
+  const efficiency = result?.efficiency;
   const monitorStale = !monitor?.lastRunAt || Date.parse(result?.generatedAt || "") - Date.parse(monitor.lastRunAt) > 24 * 60 * 60 * 1000;
   return (
     <AdminShell active="finops" eyebrow="FinOps IA" title="Coûts et budgets IA" description="Coûts fournisseur estimés en USD, provisions incluses. Les montants ne sont pas encore rapprochés des factures fournisseur." actions={<button className="button secondary" onClick={() => setRefresh(value => value + 1)} disabled={loading}>Actualiser</button>}>
@@ -77,7 +78,19 @@ export default function FinopsPage() {
         </section>
         {report.calls === 0 ? <section className="panel"><h2>Aucune donnée IA pour ce mois</h2><p>Le coût moyen et le P95 ne peuvent pas encore être évalués. Aucun coût bêta réel n’est déduit d’une absence d’appels.</p></section> : null}
         <section className="panel">
-          <h2>Générations complètes</h2>
+          <h2>Coût par résultat livré, échecs inclus</h2>
+          <p>Demandes avec des appels fournisseur enregistrés, commencées pendant le mois sélectionné. Tous leurs appels internes rattachés sont inclus, même effectués le mois suivant. Le coût des échecs est réparti sur les résultats livrés. Les appels historiques sans début de demande conservé sont exclus de cette cohorte.</p>
+          <p>Un résultat livré est une demande terminée côté serveur ; cela ne remplace pas une évaluation humaine de son utilité. Les coûts restent des estimations fournisseur en USD.</p>
+          {efficiency?.status === "complete" ? <>
+            <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th scope="col">Opération</th><th scope="col">Tentatives</th><th scope="col">Livrés</th><th scope="col">Échecs / inconnus</th><th scope="col">Appels / à rapprocher</th><th scope="col">Coût et provisions</th><th scope="col">Coût par livré</th></tr></thead><tbody>
+              {efficiency.groups.map(row => <tr key={row.operation}><td>{row.operation}</td><td>{row.attempts}</td><td>{row.delivered}</td><td>{row.failed} / {row.unknownOutcomes}</td><td>{row.calls} / {row.uncertainCalls}</td><td>{usdCost(row.chargedMicros)}</td><td>{usdCost(row.costPerDeliveredMicros)}</td></tr>)}
+            </tbody></table></div>
+            {!efficiency.groups.length ? <p>Aucune demande rattachée pour cette cohorte.</p> : null}
+            <p>Le coût par livré reste non mesuré tant qu’un résultat est inconnu, qu’un coût est incertain ou qu’aucune demande n’a abouti.</p>
+          </> : <p>{efficiency?.status === "truncated" ? "Cohorte trop volumineuse pour cette lecture bornée : aucun coût par livré n’est calculé à partir d’un échantillon incomplet." : "Mesure par résultat livré indisponible. Les totaux financiers restent affichés séparément."}</p>}
+        </section>
+        <section className="panel">
+          <h2>Générations complètes réussies</h2>
           <p>Chaque demande regroupe tous ses appels internes. Moyenne et P95 portent sur les succès au coût connu ; les échecs et appels historiques sans rattachement restent comptés dans les coûts globaux. Résultats inconnus : {report.requests.reduce((sum, row) => sum + (row.unknownOutcomes || 0), 0)} demande(s), exclues des succès mesurés.</p>
           <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th scope="col">Opération</th><th scope="col">Tentatives</th><th scope="col">Succès mesurés</th><th scope="col">Moyenne</th><th scope="col">P95</th><th scope="col">Coût des non-succès</th></tr></thead><tbody>
             {report.requests.map(row => <tr key={row.operation}><td>{row.operation}</td><td>{row.attempts}</td><td>{row.measuredSuccesses}</td><td>{usdCost(row.meanMicros)}</td><td>{usdCost(row.p95Micros)}</td><td>{usdCost(row.failedCostMicros)}</td></tr>)}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { finopsAlerts, finopsMonth, type AiFinopsReport } from "../../../../lib/ai-finops-report";
+import { finopsAlerts, finopsMonth, summarizeAiRequestEfficiency, type AiFinopsReport } from "../../../../lib/ai-finops-report";
 import { aiUsageAnomalyMessage, detectAiUsageAnomaly } from "../../../../lib/ai-usage-anomaly";
 
 export const runtime = "nodejs";
@@ -36,7 +36,10 @@ export async function GET(request: Request) {
     // No service-role query is made until the user's server-side role is verified.
     const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const anomalySince = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    const [{ data, error }, status, anomalyRows] = await Promise.all([
+    const cohortStart = month + "-01T00:00:00.000Z";
+    const [year, monthNumber] = month.split("-").map(Number);
+    const cohortEnd = new Date(Date.UTC(year, monthNumber, 1)).toISOString();
+    const [{ data, error }, status, anomalyRows, efficiencyRows] = await Promise.all([
       service.rpc("ai_finops_monthly_report", { p_month: month + "-01" }),
       service.rpc("get_ai_finops_monitor_status"),
       service
@@ -44,7 +47,12 @@ export async function GET(request: Request) {
         .select("created_at,charged_micros")
         .gte("created_at", anomalySince)
         .order("created_at", { ascending: false })
-        .limit(5000)
+        .limit(5000),
+      Promise.resolve(service.from("ai_cost_reservations")
+        .select("request_id,root_operation,operation,root_state,state,charged_micros", { count: "exact" })
+        .gte("root_started_at", cohortStart).lt("root_started_at", cohortEnd)
+        .order("call_id", { ascending: true }).limit(1000))
+        .catch(() => ({ data: null, count: null, error: true }))
     ]);
     if (error || !data?.policy || data.currency !== "USD" || data.month !== month) {
       return response({ error: "Rapport FinOps indisponible. Réessayez après vérification de la base." }, 503);
@@ -63,7 +71,10 @@ export async function GET(request: Request) {
         message: anomalyMessage
       });
     }
-    return response({ report, alerts, monitor, anomaly, generatedAt: new Date().toISOString() });
+    const efficiency = efficiencyRows.error
+      ? summarizeAiRequestEfficiency(null, null)
+      : summarizeAiRequestEfficiency(efficiencyRows.data, efficiencyRows.count);
+    return response({ report, alerts, monitor, anomaly, efficiency, generatedAt: new Date().toISOString() });
   } catch {
     return response({ error: "Rapport FinOps indisponible. Réessayez dans quelques instants." }, 503);
   }
