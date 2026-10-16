@@ -40,6 +40,7 @@ export default function PlansPage() {
   const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
   const [annualIncludesLaunch, setAnnualIncludesLaunch] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [usage, setUsage] = useState<AiUsage>({ today: 0, month: 0 });
   const [storage, setStorage] = useState<StorageUsage>({ usedBytes: 0, limitMb: freeEntitlements.storageMb });
   const [sites, setSites] = useState<Array<{ id: string; slug: string }>>([]);
@@ -49,6 +50,10 @@ export default function PlansPage() {
   const [billingState, setBillingState] = useState<BillingState | null>(null);
 
   const load = async (selectedId?: string) => {
+    setLoaded(false);
+    setLoadFailed(false);
+    setBillingState(null);
+    try {
     const owned = await getMySites();
     const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
     setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
@@ -59,8 +64,9 @@ export default function PlansPage() {
       getMyAiUsage(),
       getMyStorageUsage(site?.id),
       getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
-      site ? getMyBillingState(site.id).catch(() => null) : Promise.resolve(null)
+      site ? getMyBillingState(site.id) : Promise.resolve(null)
     ]);
+    if (site && !resolvedBilling) throw new Error("billing_account_unavailable");
     setCurrent(entitlements);
     setAiAccess(access);
     setUsage(aiUsage);
@@ -69,6 +75,10 @@ export default function PlansPage() {
     if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
     setBillingState(resolvedBilling);
     setLoaded(true);
+    } catch {
+      setLoadFailed(true);
+      setLoaded(true);
+    }
   };
 
   useEffect(() => {
@@ -76,15 +86,11 @@ export default function PlansPage() {
       .then(response => response.ok ? response.json() : null)
       .then(data => setAnnualIncludesLaunch(data?.annualIncludesLaunch === true))
       .catch(() => setAnnualIncludesLaunch(false));
-    void load().catch(() => {
-      setCurrent(freeEntitlements);
-      setAiAccess(emptyAiAccess);
-      setLoaded(true);
-    });
+    void load();
   }, []);
 
   async function beginPlanChange(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
-    if (!siteId || betaAccess.active) return;
+    if (!loaded || loadFailed || !siteId || betaAccess.active || checkoutBusy) return;
     const key = `${planKey}:${billingCycle}`;
     setCheckoutBusy(key);
     setCheckoutMessage("");
@@ -101,7 +107,7 @@ export default function PlansPage() {
   }
 
   async function buyAiLaunch() {
-    if (!siteId || betaAccess.active) return;
+    if (!loaded || loadFailed || !siteId || betaAccess.active || checkoutBusy) return;
     setCheckoutBusy("ai_launch");
     setCheckoutMessage("");
     try {
@@ -217,7 +223,7 @@ export default function PlansPage() {
             </h3>
             <p>{tr("Création ou refonte globale d’une première version du site.", "Create or globally refine a first website version.")}</p>
             {!betaAccess.active && paidPlan && aiAccess.launchOperationsRemaining === 0 ? (
-              <button type="button" className="button secondary account-metric-action" disabled={Boolean(checkoutBusy)} onClick={() => void buyAiLaunch()}>
+              <button type="button" className="button secondary account-metric-action" disabled={!loaded || loadFailed || !siteId || Boolean(checkoutBusy)} onClick={() => void buyAiLaunch()}>
                 {checkoutBusy === "ai_launch" ? tr("Ouverture…", "Opening…") : tr("Ajouter la Création IA · 39 € client actif", "Add AI Creation · €39 active-client price")}
               </button>
             ) : null}
@@ -274,6 +280,16 @@ export default function PlansPage() {
               <span>{Math.round(storageUsagePercent)}%</span>
             </div>
           </article>
+        </section>
+      ) : null}
+
+      {!loaded ? <p className="account-note" role="status">{tr("Chargement de votre site et de sa facturation…", "Loading your website and billing…")}</p> : loadFailed ? (
+        <p className="account-note" role="alert">{tr("Votre compte n’a pas pu être vérifié. Actualisez la page avant de choisir un abonnement.", "Your account could not be verified. Refresh the page before choosing a subscription.")}</p>
+      ) : !siteId && !betaAccess.active ? (
+        <section className="panel" role="status">
+          <h2>{tr("Un site est nécessaire pour choisir un abonnement", "A website is required to choose a subscription")}</h2>
+          <p>{tr("Aucun site n’est associé à votre compte. Contactez le support pour préparer votre accès avant de souscrire.", "No website is linked to your account. Contact support to prepare your access before subscribing.")}</p>
+          <Link className="button secondary" href="/support?topic=billing">{tr("Contacter le support", "Contact support")}</Link>
         </section>
       ) : null}
 
@@ -339,10 +355,10 @@ export default function PlansPage() {
           <p className="plan-status">{betaAccess.active && displayedPlanKey === "essential" ? tr("Mode bêta en cours", "Current beta mode") : loaded && current.planKey === "essential" && !betaAccess.active ? tr("Votre offre actuelle", "Your current plan") : tr("RUN du site", "Website RUN")}</p>
           {!betaAccess.active && current.planKey !== "essential" ? (
             <div className="builder-actions">
-              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("essential", "monthly")}>
+              <button type="button" className="button secondary" disabled={!loaded || loadFailed || !siteId || Boolean(checkoutBusy)} onClick={() => void beginPlanChange("essential", "monthly")}>
                 {checkoutBusy === "essential:monthly" ? tr("Ouverture…", "Opening…") : tr("15 €/mois", "€15/month")}
               </button>
-              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("essential", "annual")}>
+              <button type="button" className="button secondary" disabled={!loaded || loadFailed || !siteId || Boolean(checkoutBusy)} onClick={() => void beginPlanChange("essential", "annual")}>
                 {checkoutBusy === "essential:annual" ? tr("Ouverture…", "Opening…") : tr("150 €/an", "€150/year")}
               </button>
             </div>
@@ -378,10 +394,10 @@ export default function PlansPage() {
           ) : null}
           {!betaAccess.active && current.planKey !== "growth" ? (
             <div className="builder-actions">
-              <button type="button" className="button primary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "monthly")}>
+              <button type="button" className="button primary" disabled={!loaded || loadFailed || !siteId || Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "monthly")}>
                 {checkoutBusy === "growth:monthly" ? tr("Ouverture…", "Opening…") : tr("29 €/mois", "€29/month")}
               </button>
-              <button type="button" className="button secondary" disabled={Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "annual")}>
+              <button type="button" className="button secondary" disabled={!loaded || loadFailed || !siteId || Boolean(checkoutBusy)} onClick={() => void beginPlanChange("growth", "annual")}>
                 {checkoutBusy === "growth:annual" ? tr("Ouverture…", "Opening…") : annualIncludesLaunch ? tr("290 €/an · Création IA incluse", "€290/year · AI Launch included") : tr("290 €/an", "€290/year")}
               </button>
             </div>
