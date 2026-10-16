@@ -1,4 +1,5 @@
 import test from "node:test";
+import { uniquePageKey } from "../lib/page-key.ts";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
@@ -21,6 +22,7 @@ function load(source, localRequire = require) {
 const design = load(designSource);
 const legal = load(legalSource);
 const config = load(configSource, (id) => {
+  if (id === "./page-key") return { uniquePageKey };
   if (id === "./site-design") return design;
   if (id === "./site-legal") return legal;
   return require(id);

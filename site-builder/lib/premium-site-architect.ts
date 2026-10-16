@@ -1,3 +1,4 @@
+import { uniquePageKey } from "./page-key.ts";
 import { hasHtmlMarkup, hasMarkdownMarkup } from "./ai-presentation-markup.ts";
 import { unsupportedQuantitativeClaims } from "./ai-quantitative-evidence.ts";
 
@@ -444,12 +445,18 @@ export function safeAssets(assets: PremiumArchitectAsset[] = []): PremiumArchite
 
 type PremiumArchitectCore = Omit<PremiumArchitectProposal, "intelligence" | "premiumAudit">;
 
-function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumArchitectCore {
+export function normalizePremiumProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumArchitectCore {
   const allowedModules = ["gallery", "faq", "testimonials", "contact", "video", "figures", "benefits"];
   const allowedKinds = ["home", "about", "services", "gallery", "faq", "contact", "custom"];
   const clearedAssetIds = new Set(
     assets
-      .filter((asset) => asset?.publishable && asset?.rights && asset.rights !== "unknown")
+      .filter((asset) => {
+        if (asset?.publishable !== true) return false;
+        if (asset.rights === "owned") return true;
+        if (asset.rights !== "licensed" && asset.rights !== "public-domain") return false;
+        try { return new URL(asset.sourceUrl || "").protocol === "https:"; }
+        catch { return false; }
+      })
       .map((asset) => clean(asset.id, 80))
       .filter(Boolean)
   );
@@ -467,11 +474,7 @@ function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumAr
         else homeSeen = true;
       }
 
-      let id = clean(page?.id, 60) || `page-${index + 1}`;
-      const idBase = id;
-      let idSuffix = 2;
-      while (usedIds.has(id)) id = `${idBase}-${idSuffix++}`.slice(0, 60);
-      usedIds.add(id);
+      const id = uniquePageKey(clean(page?.id, 60) || `page-${index + 1}`, usedIds);
 
       let slug =
         kind === "home"
@@ -485,10 +488,7 @@ function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumAr
               .replace(/^-|-$/g, "") || `page-${index + 1}`;
 
       if (kind !== "home") {
-        const slugBase = slug;
-        let slugSuffix = 2;
-        while (usedSlugs.has(slug)) slug = `${slugBase}-${slugSuffix++}`.slice(0, 60);
-        usedSlugs.add(slug);
+        slug = uniquePageKey(slug, usedSlugs);
       }
 
       const assetIds = [
@@ -511,8 +511,9 @@ function normalizeProposal(raw: any, assets: PremiumArchitectAsset[]): PremiumAr
     });
 
   if (!homeSeen) {
+    if (pages.length === 6) usedIds.delete(pages.pop()!.id);
     pages.unshift({
-      id: "home",
+      id: uniquePageKey("home", usedIds),
       slug: "",
       title: "Accueil",
       kind: "home",
@@ -1418,7 +1419,7 @@ export async function generatePremiumSiteArchitect(
     variationReference
   };
 
-  const creation = normalizeProposal(
+  const creation = normalizePremiumProposal(
     await structuredResponse({
       apiKey: input.apiKey,
       model: premiumModel,
@@ -1513,7 +1514,7 @@ export async function generatePremiumSiteArchitect(
 
   let finalProposal = creation;
   if (shouldRefine) {
-    finalProposal = normalizeProposal(
+    finalProposal = normalizePremiumProposal(
       await structuredResponse({
         apiKey: input.apiKey,
         model: premiumModel,
@@ -1636,7 +1637,7 @@ export async function generatePremiumSiteArchitect(
 
   if (!finalVerified) {
     secondRefinementApplied = true;
-    finalProposal = normalizeProposal(
+    finalProposal = normalizePremiumProposal(
       await structuredResponse({
         apiKey: input.apiKey,
         model: premiumModel,
