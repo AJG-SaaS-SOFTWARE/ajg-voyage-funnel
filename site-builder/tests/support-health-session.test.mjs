@@ -9,14 +9,20 @@ function harness() {
   const stats = { backup: 0, buckets: 0, quota: [], requests: [], publicRequests: [] };
   const state = { clock: 0, storageOk: true, aiEnabled: true, backupStatus: "healthy", backupGate: null, publicOk: true };
   const sites = ["alice", "bob"].map(owner => ({ id: `${owner}-site`, owner_id: owner, slug: owner,
-    status: "draft", public_access_state: "live", config: {} }));
+    status: "draft", public_access_state: "live", created_at: "2026-10-16T00:00:00Z", design_assets: {}, booking_url: "", instagram_url: "", facebook_url: "" }));
   const service = createClient("https://synthetic.example.test", "test-only", {
     auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: async input => {
       const url = new URL(input); stats.requests.push(url);
       const table = url.pathname.split("/").at(-1);
-      if (table === "sites") return Response.json(sites.filter(site =>
+      if (table === "sites") {
+        const selected = (url.searchParams.get("select") || "").split(",");
+        if (selected.some(column => !(column in sites[0]))) {
+          return Response.json({ code: "42703", message: "column does not exist" }, { status: 400 });
+        }
+        return Response.json(sites.filter(site =>
         url.searchParams.get("owner_id") === `eq.${site.owner_id}` &&
         (!url.searchParams.has("id") || url.searchParams.get("id") === `eq.${site.id}`)));
+      }
       if (table === "domains") return Response.json([{ hostname: `${url.searchParams.get("site_id").slice(3)}.example.test`,
         kind: "managed_subdomain", verification_status: "verified", is_primary: true }]);
       if (table === "site_billing_states") return Response.json({ state: "active" });
@@ -119,4 +125,19 @@ test("simultaneous site diagnostics coalesce an in-flight infrastructure read", 
   assert.equal(app.stats.backup, 1); assert.equal(app.stats.buckets, 2);
   release();
   assert.deepEqual((await Promise.all([first, second])).map(result => result.siteId), ["alice-site", "bob-site"]);
+});
+
+ test("support reads actual persisted content fields instead of a nonexistent config column", async () => {
+  const app = harness();
+  app.sites[0].booking_url = "http://invalid.example.test";
+  app.sites[0].design_assets = { modules: { contact: { enabled: true, email: "invalid" }, gallery: { enabled: true, images: [] } },
+    contentLibrary: { assets: [{ kind: "image", publishable: true, url: "" }] } };
+  const result = await app.diagnoseSupportHealth(app.service, "alice", "alice-site");
+  assert.equal(result.siteId, "alice-site");
+  for (const key of ["contact", "images", "content_links"]) {
+    assert.notEqual(result.diagnosis.checks.find(check => check.key === key)?.status, "healthy");
+  }
+  const selected = app.stats.requests.find(url => url.pathname.endsWith("/sites")).searchParams.get("select").split(",");
+  assert.equal(selected.includes("config"), false);
+  for (const column of ["design_assets", "booking_url", "instagram_url", "facebook_url"]) assert.ok(selected.includes(column));
 });

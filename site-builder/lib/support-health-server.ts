@@ -245,7 +245,7 @@ async function diagnoseWithInfrastructure(
 ): Promise<{ siteId: string | null; diagnosis: SupportDiagnosis }> {
   let siteQuery = service
     .from("sites")
-    .select("id,slug,status,public_access_state,owner_id,created_at,config")
+    .select("id,slug,status,public_access_state,owner_id,created_at,design_assets,booking_url,instagram_url,facebook_url")
     .eq("owner_id", userId)
     .order("created_at", { ascending: true })
     .limit(1);
@@ -253,7 +253,7 @@ async function diagnoseWithInfrastructure(
   if (preferredSiteId) {
     siteQuery = service
       .from("sites")
-      .select("id,slug,status,public_access_state,owner_id,created_at,config")
+      .select("id,slug,status,public_access_state,owner_id,created_at,design_assets,booking_url,instagram_url,facebook_url")
       .eq("owner_id", userId)
       .eq("id", preferredSiteId)
       .limit(1);
@@ -285,7 +285,13 @@ async function diagnoseWithInfrastructure(
     };
   }
 
-  const { configuredHttpsLinks, ...contentHealth } = contentHealthFromConfig(site.config);
+  const { configuredHttpsLinks, ...contentHealth } = contentHealthFromConfig({
+    design: site.design_assets,
+    contentLibrary: site.design_assets?.contentLibrary,
+    bookingUrl: site.booking_url,
+    instagramUrl: site.instagram_url,
+    facebookUrl: site.facebook_url
+  });
 
   const [
     { data: domains, error: domainError },
