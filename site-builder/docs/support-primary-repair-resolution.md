@@ -14,6 +14,8 @@ site et propriétaire, postérieur à la version examinée. Elle écrit le statu
 resolved et son événement système dans une même transaction, avec référence
 exacte de réparation et versions avant/après. Elle ne généralise pas le RPC de
 réconciliation horaire existant.
+La version après écriture vient de `UPDATE ... RETURNING updated_at`, après
+application du trigger existant, et non de l'horloge applicative.
 
 Le serveur relit indépendamment le ticket et l'événement exact, y compris leurs
 identités, code de résolution, référence de réparation et timestamps, avant

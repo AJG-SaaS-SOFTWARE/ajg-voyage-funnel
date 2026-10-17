@@ -33,6 +33,7 @@ BEGIN
  SELECT count(*) INTO n FROM public.support_ticket_events WHERE ticket_id=t;
  IF n<>0 OR (SELECT status FROM public.support_tickets WHERE id=t)<>'diagnosed' THEN RAISE EXCEPTION 'rollback_not_atomic'; END IF;
  proof:=public.resolve_verified_primary_support_repair(t,u,s,v,healthy,'example.test');
+ IF proof->>'updatedAt' IS DISTINCT FROM (SELECT to_jsonb(updated_at)#>>'{}' FROM public.support_tickets WHERE id=t) THEN RAISE EXCEPTION 'persisted_version_mismatch'; END IF;
  IF proof IS NULL OR proof->>'repairRunId'<>r::text THEN RAISE EXCEPTION 'proof_uncorrelated'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.support_ticket_events WHERE id=(proof->>'eventId')::bigint AND ticket_id=t AND actor_type='system' AND metadata->>'repair_run_id'=r::text) THEN RAISE EXCEPTION 'audit_missing'; END IF;
  IF public.resolve_verified_primary_support_repair(t,u,s,v,healthy,'example.test') IS NOT NULL THEN RAISE EXCEPTION 'replay_accepted'; END IF;
