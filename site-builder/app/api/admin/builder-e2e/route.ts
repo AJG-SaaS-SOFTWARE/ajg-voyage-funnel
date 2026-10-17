@@ -656,7 +656,7 @@ export async function POST(request: NextRequest) {
         customerToken: token, adminToken, userId: user.id, siteId, slug,
         publicMarker: republishMarker });
       steps.push({ key: "customer_support", label: "Support client réel", status: "pass",
-        detail: `Ticket ${support.ticketId} : diagnostic, réparation sûre, vérification indépendante du domaine et du contenu public, clôture opérateur, relecture client et audit durable. Clôture autonome et cockpit central non prouvés.` });
+        detail: `Ticket ${support.ticketId} : diagnostic, demande centrale relue dans le cockpit, réparation sûre, vérification indépendante du domaine et du contenu public, clôture opérateur, relecture client et audit durable. Clôture autonome et clôture centrale non prouvées.` });
     }
     currentStage = "complete";
   } catch (error) {

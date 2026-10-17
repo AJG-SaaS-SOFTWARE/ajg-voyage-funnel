@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyManagedRepair } from "./support-remediation";
+import { verifySupportTicketInRun } from "./run-intake-reporting";
 
 // One owned disposable site only. No global RUN sweep or unrelated ticket mutation.
 export async function runCustomerSupportE2E(input: {
@@ -36,6 +37,7 @@ export async function runCustomerSupportE2E(input: {
       typeof intakeId !== "string" || !/^req_[0-9a-f]{8}$/.test(intakeId)) {
     throw new Error("support_central_receipt_unconfirmed");
   }
+  if (!(await verifySupportTicketInRun(id, intakeId))) throw new Error("support_central_readback_unconfirmed");
   const repaired = await call("/api/support/remediate", "POST", {
     siteId, ticketId: id, action: "managed_domain_repair"
   });
@@ -72,5 +74,5 @@ export async function runCustomerSupportE2E(input: {
     throw new Error("support_durable_evidence_unconfirmed");
   }
   return { ticketId: id, centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "operator" as const,
-    centralCockpitVerified: false, automaticClosureVerified: false };
+    centralCockpitVerified: true, automaticClosureVerified: false };
 }
