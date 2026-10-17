@@ -7,6 +7,25 @@ type BuilderRunInput = {
   ticketId: string;
 };
 
+export async function verifySupportTicketInRun(ticketId: string, requestId: string) {
+  const token = process.env.AJG_RUN_TOKEN?.trim();
+  if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketId) ||
+      !/^req_[0-9a-f]{8}$/.test(requestId)) return false;
+  try {
+    const query = new URLSearchParams({ ticketId, requestId });
+    const response = await fetch(`https://ajg-infra-cockpit.vercel.app/api/run/intake?${query}`, {
+      headers: { Authorization: `Bearer ${token}` }, cache: "no-store", redirect: "error",
+      signal: AbortSignal.timeout(5_000)
+    });
+    const body = await response.json().catch(() => null);
+    const receipt = body?.receipt;
+    return response.ok && body?.ok === true && receipt?.requestId === requestId &&
+      receipt.ticketId === ticketId && receipt.product === "ELTARA" && receipt.source === "builder-support" &&
+      ["open", "triaged", "resolved"].includes(receipt.status) &&
+      typeof receipt.updatedAt === "string" && Number.isFinite(Date.parse(receipt.updatedAt));
+  } catch { return false; }
+}
+
 export async function reportSupportTicketToRun(input: BuilderRunInput) {
   const token = process.env.AJG_RUN_TOKEN?.trim();
   if (!token) return { ok: false as const, reason: "run intake not configured" };

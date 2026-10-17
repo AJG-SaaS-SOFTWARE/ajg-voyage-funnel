@@ -17,12 +17,12 @@ async function run(options={}){
   throw new Error('unexpected route');
  };
  const m={exports:{}};
- new Function('module','exports','require','fetch',code)(m,m.exports,()=>({verifyManagedRepair:async()=>!options.independentFailure}),fakeFetch);
+ new Function('module','exports','require','fetch',code)(m,m.exports,()=>({verifyManagedRepair:async()=>!options.independentFailure,verifySupportTicketInRun:async()=>!options.missingCentralReadback}),fakeFetch);
  const promise=m.exports.runCustomerSupportE2E({service,origin:'https://eltara.example/api/admin/builder-e2e',customerToken:'customer-token',adminToken:'operator-token',userId:'owner',siteId:'site',slug:'slug',publicMarker:'updated-marker'});
  return {calls,promise};
 }
 test('support recipe uses actual customer/operator boundaries and explicitly limits its claim',async()=>{
- const {calls,promise}=await run();const result=await promise;assert.equal(result.closure,'operator');assert.equal(result.centralCockpitVerified,false);assert.equal(result.automaticClosureVerified,false);
+ const {calls,promise}=await run();const result=await promise;assert.equal(result.closure,'operator');assert.equal(result.centralCockpitVerified,true);assert.equal(result.automaticClosureVerified,false);
  assert.equal(calls.find(x=>x[0]==='/api/admin/support')[2],'Bearer operator-token');assert.equal(calls[0][2],'Bearer customer-token');
 });
 test('failed repair verification prevents operator closure',async()=>{
@@ -37,4 +37,8 @@ test('missing durable audit fails the recipe even if the ticket is already close
 
 test('missing central receipt prevents accepting the complete support journey',async()=>{
  const {calls,promise}=await run({missingReceipt:true});await assert.rejects(promise,/central_receipt_unconfirmed/);assert.equal(calls.some(x=>x[0]==='/api/admin/support'),false);
+});
+
+test('a POST receipt without independent cockpit readback cannot pass the journey',async()=>{
+ const {calls,promise}=await run({missingCentralReadback:true});await assert.rejects(promise,/central_readback_unconfirmed/);assert.equal(calls.some(x=>x[0]==='/api/support/remediate'),false);
 });
