@@ -5,6 +5,7 @@ import {
   type SupportRepairAction
 } from "../../../../lib/support-remediation";
 import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
+import { resolveVerifiedSupportRepair, type RepairTicketSnapshot } from "../../../../lib/support-repair-resolution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const siteId = typeof body?.siteId === "string" ? body.siteId : "";
   const action = typeof body?.action === "string" ? body.action : "";
-  const ticketId = typeof body?.ticketId === "string" ? body.ticketId : null;
+  let ticketId = typeof body?.ticketId === "string" ? body.ticketId : null;
 
   if (!siteId || !actions.has(action as SupportRepairAction)) {
     return NextResponse.json(
@@ -97,10 +98,11 @@ export async function POST(request: Request) {
     );
   }
 
+  let repairTicket: RepairTicketSnapshot | null = null;
   if (ticketId) {
     const { data: ticket, error: ticketError } = await auth.service
       .from("support_tickets")
-      .select("id")
+      .select("id,user_id,site_id,status,category,updated_at,diagnosis")
       .eq("id", ticketId)
       .eq("user_id", auth.user.id)
       .eq("site_id", siteId)
@@ -110,6 +112,18 @@ export async function POST(request: Request) {
         { error: "Ticket de support invalide pour cette correction." },
         { status: 400 }
       );
+    }
+    repairTicket = ticket as RepairTicketSnapshot;
+  } else {
+    // The Health Center repairs a site, not a selected ticket. Attach only a
+    // unique owned technical request; ambiguity never resolves several tickets.
+    const { data: candidates, error } = await auth.service.from("support_tickets")
+      .select("id,user_id,site_id,status,category,updated_at,diagnosis")
+      .eq("user_id", auth.user.id).eq("site_id", siteId).eq("category", "domain")
+      .in("status", ["diagnosed", "waiting_customer"]).limit(2);
+    if (!error && Array.isArray(candidates) && candidates.length === 1) {
+      repairTicket = candidates[0] as RepairTicketSnapshot;
+      ticketId = repairTicket.id;
     }
   }
 
@@ -149,8 +163,11 @@ export async function POST(request: Request) {
     siteId
   );
 
+  const ticketResolution = await resolveVerifiedSupportRepair(auth.service, {
+    ticket: repairTicket, userId: auth.user.id, siteId, repair: result, health,
+  });
   return NextResponse.json(
-    { result, health },
+    { result, health, ticketResolution },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 }

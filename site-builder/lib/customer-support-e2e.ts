@@ -4,13 +4,13 @@ import { verifySupportTicketInRun } from "./run-intake-reporting";
 
 // One owned disposable site only. No global RUN sweep or unrelated ticket mutation.
 export async function runCustomerSupportE2E(input: {
-  service: SupabaseClient; origin: string; customerToken: string; adminToken: string;
+  service: SupabaseClient; origin: string; customerToken: string;
   userId: string; siteId: string; slug: string; publicMarker: string;
 }) {
   const { service, siteId, userId } = input;
-  async function call(path: string, method: string, body: unknown, admin = false) {
+  async function call(path: string, method: string, body: unknown) {
     const response = await fetch(new URL(path, input.origin), {
-      method, headers: { Authorization: `Bearer ${admin ? input.adminToken : input.customerToken}`,
+      method, headers: { Authorization: `Bearer ${input.customerToken}`,
         "Content-Type": "application/json" },
       ...(body ? { body: JSON.stringify(body) } : {}),
       cache: "no-store", signal: AbortSignal.timeout(20000)
@@ -39,7 +39,7 @@ export async function runCustomerSupportE2E(input: {
   }
   if (!(await verifySupportTicketInRun(id, intakeId))) throw new Error("support_central_readback_unconfirmed");
   const repaired = await call("/api/support/remediate", "POST", {
-    siteId, ticketId: id, action: "managed_domain_repair"
+    siteId, action: "managed_domain_repair"
   });
   if (repaired?.result?.status !== "succeeded" || repaired.result.verified !== true ||
       repaired.result.audited !== true || !(await verifyManagedRepair(service, { userId, siteId }))) {
@@ -51,16 +51,12 @@ export async function runCustomerSupportE2E(input: {
   if (!publicResponse.ok || !(await publicResponse.text()).includes(input.publicMarker)) {
     throw new Error("support_public_result_unconfirmed");
   }
-  // Exercise the actual operator closure, only after independent repair/readback.
-  const closed = await call("/api/admin/support", "PATCH", {
-    id, status: "closed", resolutionCode: "e2e_verified_managed_primary_repair"
-  }, true);
-  if (closed?.ticket?.id !== id || closed.ticket.status !== "closed") {
-    throw new Error("support_closure_unconfirmed");
+  if (repaired.ticketResolution?.resolved !== true || repaired.ticketResolution?.audited !== true) {
+    throw new Error("support_automatic_resolution_unconfirmed");
   }
   const customer = await call("/api/support/tickets", "GET", null);
   if (!customer?.tickets?.some((ticket: { id: string; status: string }) =>
-    ticket.id === id && ticket.status === "closed")) throw new Error("support_customer_readback_failed");
+    ticket.id === id && ticket.status === "resolved")) throw new Error("support_customer_readback_failed");
   const [events, repairs] = await Promise.all([
     service.from("support_ticket_events").select("event_type,actor_type,metadata").eq("ticket_id", id),
     service.from("support_remediation_runs").select("status,result_code").eq("ticket_id", id)
@@ -69,10 +65,11 @@ export async function runCustomerSupportE2E(input: {
       !events.data?.some(row => row.event_type === "created" && row.actor_type === "client") ||
       !events.data?.some(row => row.event_type === "diagnostic" && row.actor_type === "system" &&
         row.metadata?.source === "ajg-run-intake" && row.metadata?.request_id === intakeId) ||
-      !events.data?.some(row => row.event_type === "resolution" && row.actor_type === "admin" && row.metadata?.status === "closed") ||
+      !events.data?.some(row => row.event_type === "resolution" && row.actor_type === "system" && row.metadata?.status === "resolved" &&
+        row.metadata?.resolution_code === "auto_verified_managed_primary_repair") ||
       !repairs.data?.some(row => row.status === "succeeded" && row.result_code === "managed_domain_primary_repaired")) {
     throw new Error("support_durable_evidence_unconfirmed");
   }
-  return { ticketId: id, centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "operator" as const,
-    centralCockpitVerified: true, automaticClosureVerified: false };
+  return { ticketId: id, centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "automatic_product_resolution" as const,
+    centralCockpitVerified: true, automaticProductResolutionVerified: true, centralResolutionVerified: false, automaticClosureVerified: false };
 }
