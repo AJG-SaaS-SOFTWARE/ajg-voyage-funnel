@@ -35,11 +35,12 @@ function load(name,dependencies){
     assert.ok(id in dependencies,id);return dependencies[id];
   },module,module.exports);return module.exports;
 }
-function db({count=151,sites=[],tickets=[],healthyDomains=true,repairRuns=[]}={}){
+function db({count=151,sites=[],tickets=[],healthyDomains=true,repairRuns=[],atomicError=false}={}){
   const requests=[];
   const service=createClient("https://synthetic.example.test","synthetic-service",{
     auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(url,init)=>{
-      const u=new URL(url);requests.push({url:u,method:init.method,headers:new Headers(init.headers)});
+      const u=new URL(url);requests.push({url:u,method:init.method,headers:new Headers(init.headers),body:init.body});
+      if(u.pathname.endsWith("/rpc/reconcile_support_ticket_atomic")) return atomicError ? Response.json({message:"synthetic audit failure"},{status:500}) : Response.json(true);
       if(init.method==="HEAD")return new Response(null,{status:200,headers:{"content-range":`*/${count}`}});
       if(init.method==="PATCH")return Response.json({id:u.searchParams.get("id").slice(3)});
       const offset=Number(u.searchParams.get("offset")||0),limit=Number(u.searchParams.get("limit")||50);
@@ -74,7 +75,7 @@ test("real SDK site scans progress past the first 50 rows while avoiding repairs
 });
 test("real SDK ticket reconciliation carries prior evidence, scopes updates and reuses each site's diagnostic",async()=>{
   const tickets=Array.from({length:151},(_,i)=>({id:`ticket-${i}`,user_id:"owner",site_id:"site",category:"domain",
-    created_at:at(0).toISOString(),diagnosis:{checks:[{key:"domain",status:"action"}]}}));
+    created_at:at(0).toISOString(),updated_at:at(0).toISOString(),diagnosis:{checks:[{key:"domain",status:"action"}]}}));
   const app=db({tickets});let diagnoses=0;
   const {runSupportReconciliationSafely}=load("support-reconcile",{
     "./support-reconcile-policy":{supportCustomerAction,supportReconcileDecision},
@@ -86,15 +87,19 @@ test("real SDK ticket reconciliation carries prior evidence, scopes updates and 
     assert.equal(result.ok,true);assert.equal(result.resolved,hour===3?1:50);
   }
   assert.equal(diagnoses,4,"one diagnostic per same-site batch instead of one per ticket");
-  for(const write of app.requests.filter(r=>r.method==="PATCH")){
-    assert.equal(write.url.searchParams.get("user_id"),"eq.owner");
-    assert.equal(write.url.searchParams.get("status"),"eq.waiting_customer");
+  const writes=app.requests.filter(r=>r.url.pathname.endsWith("/rpc/reconcile_support_ticket_atomic"));
+  assert.equal(writes.length,151);
+  for(const write of writes){
+    const body=JSON.parse(write.body);
+    assert.equal(body.p_user_id,"owner");
+    assert.equal(body.p_status,"resolved");
+    assert.equal(body.p_expected_updated_at,at(0).toISOString());
   }
 });
 
 test("a ticket transition with an unconfirmed audit event is not counted as an autonomous success",async()=>{
-  const app=db({count:1,tickets:[{id:"ticket-1",user_id:"owner",site_id:"site",category:"domain",
-    created_at:at(0).toISOString(),diagnosis:{checks:[{key:"domain",status:"action"}]}}]});
+  const app=db({count:1,atomicError:true,tickets:[{id:"ticket-1",user_id:"owner",site_id:"site",category:"domain",
+    created_at:at(0).toISOString(),updated_at:at(0).toISOString(),diagnosis:{checks:[{key:"domain",status:"action"}]}}]});
   const {runSupportReconciliationSafely}=load("support-reconcile",{
     "./support-reconcile-policy":{supportCustomerAction,supportReconcileDecision},
     "./support-health-server":{diagnoseSupportHealth:async()=>({diagnosis:{overall:"healthy",checks:
@@ -102,7 +107,7 @@ test("a ticket transition with an unconfirmed audit event is not counted as an a
     "./support-events":{recordSupportEvent:async()=>false}});
   const result=await runSupportReconciliationSafely(at(0),app.service);
   assert.equal(result.ok,false);assert.equal(result.failed,1);assert.equal(result.resolved,0);
-  assert.equal(app.requests.filter(r=>r.method==="PATCH").length,1,"an uncertain audit must not replay the transition");
+  assert.equal(app.requests.filter(r=>r.url.pathname.endsWith("/rpc/reconcile_support_ticket_atomic")).length,1,"an uncertain commit must not replay the transaction within the same cycle");
 });
 
 test("persistent failed repairs cannot monopolize slots ahead of later customers",async()=>{
