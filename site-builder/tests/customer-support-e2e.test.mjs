@@ -12,26 +12,25 @@ async function run(options={}){
   if(path==='/api/support/tickets'&&init.method==='POST'){ticketId=body.requestId;return Response.json({runReceipt:options.missingReceipt?{confirmed:false}:{confirmed:true,auditRecorded:true,requestId:'req_1234abcd'},ticket:{id:ticketId,site_id:'site'},health:{diagnosis:{repairActions:['managed_domain_repair']}}});}
   if(path==='/api/support/remediate')return Response.json({result:{status:'succeeded',verified:!options.unverified,audited:true},ticketResolution:{resolved:!options.unresolved,audited:true}});
   if(path==='/site/slug')return new Response(options.badPublic?'stale':'updated-marker');
-  if(path==='/api/admin/support')return Response.json({ticket:{id:ticketId,status:'closed'}});
   if(path==='/api/support/tickets')return Response.json({tickets:[{id:ticketId,status:'resolved'}]});
   throw new Error('unexpected route');
  };
  const m={exports:{}};
  new Function('module','exports','require','fetch',code)(m,m.exports,()=>({verifyManagedRepair:async()=>!options.independentFailure,verifySupportTicketInRun:async()=>!options.missingCentralReadback}),fakeFetch);
- const promise=m.exports.runCustomerSupportE2E({service,origin:'https://eltara.example/api/admin/builder-e2e',customerToken:'customer-token',adminToken:'operator-token',userId:'owner',siteId:'site',slug:'slug',publicMarker:'updated-marker'});
+ const promise=m.exports.runCustomerSupportE2E({service,origin:'https://eltara.example/api/admin/builder-e2e',customerToken:'customer-token',userId:'owner',siteId:'site',slug:'slug',publicMarker:'updated-marker'});
  return {calls,promise};
 }
-test('support recipe uses actual customer/operator boundaries and explicitly limits its claim',async()=>{
+test('support recipe verifies automatic product resolution with only the customer token',async()=>{
  const {calls,promise}=await run();const result=await promise;assert.equal(result.closure,'automatic_product_resolution');assert.equal(result.automaticProductResolutionVerified,true);assert.equal(result.centralResolutionVerified,false);assert.equal(result.centralCockpitVerified,true);assert.equal(result.automaticClosureVerified,false);
  assert.equal(calls.some(x=>x[0]==='/api/admin/support'),false);assert.equal(calls[0][2],'Bearer customer-token');
 });
-test('failed repair verification prevents operator closure',async()=>{
+test('failed repair verification prevents accepting the automatic resolution',async()=>{
  for(const options of [{unverified:true},{independentFailure:true}]){const {calls,promise}=await run(options);await assert.rejects(promise,/repair_unconfirmed/);assert.equal(calls.some(x=>x[0]==='/api/admin/support'),false);}
 });
-test('missing public content prevents closure even after successful database repair',async()=>{
+test('missing public content fails the journey even after successful database repair',async()=>{
  const {calls,promise}=await run({badPublic:true});await assert.rejects(promise,/public_result_unconfirmed/);assert.equal(calls.some(x=>x[0]==='/api/admin/support'),false);
 });
-test('missing durable audit fails the recipe even if the ticket is already closed',async()=>{
+test('missing durable audit fails the recipe even if the ticket is already resolved',async()=>{
  const {promise}=await run({missingAudit:true});await assert.rejects(promise,/durable_evidence_unconfirmed/);
 });
 

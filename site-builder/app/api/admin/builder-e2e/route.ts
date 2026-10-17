@@ -653,7 +653,7 @@ export async function POST(request: NextRequest) {
     if (customerMode) {
       currentStage = "customer-support";
       const support = await runCustomerSupportE2E({ service, origin: request.url,
-        customerToken: token, adminToken, userId: user.id, siteId, slug,
+        customerToken: token, userId: user.id, siteId, slug,
         publicMarker: republishMarker });
       steps.push({ key: "customer_support", label: "Support client réel", status: "pass",
         detail: `Ticket ${support.ticketId} : diagnostic, demande centrale relue dans le cockpit, réparation sûre, vérification indépendante du domaine et du contenu public, résolution automatique dans ELTARA, relecture client et audit durable. Clôture centrale non prouvée.` });

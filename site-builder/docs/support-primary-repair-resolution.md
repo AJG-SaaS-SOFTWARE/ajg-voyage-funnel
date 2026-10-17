@@ -6,6 +6,10 @@ vérifié et audité. Le snapshot du ticket est lu côté serveur avant réparat
 propriétaire, site, catégorie domaine, statut diagnosed/waiting_customer et version.
 Le nouveau diagnostic doit confirmer backend, rendu public et domaine sains,
 sans contrôle contradictoire, et la disparition de la cause technique observée.
+Sans ticket explicitement choisi, le Health Center utilise le même endpoint :
+le serveur ne lie qu'une unique demande domaine non terminale du propriétaire
+et du site (lecture bornée à deux candidats). Zéro demande, ambiguïté ou erreur
+de lecture permet la réparation sans résolution automatique d'un ticket.
 
 La fonction SQL réservée à service_role recontrôle propriétaire/version/statut,
 site publié actif et accessible, domaine géré unique vérifié/primaire et absence

@@ -4,7 +4,7 @@ import { verifySupportTicketInRun } from "./run-intake-reporting";
 
 // One owned disposable site only. No global RUN sweep or unrelated ticket mutation.
 export async function runCustomerSupportE2E(input: {
-  service: SupabaseClient; origin: string; customerToken: string; adminToken: string;
+  service: SupabaseClient; origin: string; customerToken: string;
   userId: string; siteId: string; slug: string; publicMarker: string;
 }) {
   const { service, siteId, userId } = input;
@@ -39,7 +39,7 @@ export async function runCustomerSupportE2E(input: {
   }
   if (!(await verifySupportTicketInRun(id, intakeId))) throw new Error("support_central_readback_unconfirmed");
   const repaired = await call("/api/support/remediate", "POST", {
-    siteId, ticketId: id, action: "managed_domain_repair"
+    siteId, action: "managed_domain_repair"
   });
   if (repaired?.result?.status !== "succeeded" || repaired.result.verified !== true ||
       repaired.result.audited !== true || !(await verifyManagedRepair(service, { userId, siteId }))) {

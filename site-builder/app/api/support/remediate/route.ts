@@ -74,7 +74,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const siteId = typeof body?.siteId === "string" ? body.siteId : "";
   const action = typeof body?.action === "string" ? body.action : "";
-  const ticketId = typeof body?.ticketId === "string" ? body.ticketId : null;
+  let ticketId = typeof body?.ticketId === "string" ? body.ticketId : null;
 
   if (!siteId || !actions.has(action as SupportRepairAction)) {
     return NextResponse.json(
@@ -114,6 +114,17 @@ export async function POST(request: Request) {
       );
     }
     repairTicket = ticket as RepairTicketSnapshot;
+  } else {
+    // The Health Center repairs a site, not a selected ticket. Attach only a
+    // unique owned technical request; ambiguity never resolves several tickets.
+    const { data: candidates, error } = await auth.service.from("support_tickets")
+      .select("id,user_id,site_id,status,category,updated_at,diagnosis")
+      .eq("user_id", auth.user.id).eq("site_id", siteId).eq("category", "domain")
+      .in("status", ["diagnosed", "waiting_customer"]).limit(2);
+    if (!error && Array.isArray(candidates) && candidates.length === 1) {
+      repairTicket = candidates[0] as RepairTicketSnapshot;
+      ticketId = repairTicket.id;
+    }
   }
 
   const since = new Date(Date.now() - 60_000).toISOString();
