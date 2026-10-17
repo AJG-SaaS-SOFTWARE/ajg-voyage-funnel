@@ -2,7 +2,6 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createSupportHealthDiagnoser, type diagnoseSupportHealth } from "./support-health-server";
 import { supportCustomerAction, supportReconcileDecision } from "./support-reconcile-policy";
 import { supportScanWindow } from "./support-scan-window";
-import { recordSupportEvent } from "./support-events";
 
 export type SupportReconcileResult = {
   ok: boolean;
@@ -82,44 +81,24 @@ async function reconcileWithClient(
         ageHours
       });
 
-      const patch: Record<string, unknown> = {
-        status: decision.status,
-        diagnosis: health.diagnosis,
-        client_action: supportCustomerAction(ticket.category, health.diagnosis.checks),
-        resolution_code: decision.resolutionCode,
-        resolved_at: decision.resolved ? now.toISOString() : null,
-        updated_at: now.toISOString()
-      };
-      if (decision.severity) patch.severity = decision.severity;
-
-      const { data: updated, error: updateError } = await service
-        .from("support_tickets")
-        .update(patch)
-        .eq("id", ticket.id)
-        .eq("user_id", ticket.user_id)
-        .eq("status", "waiting_customer")
-        .eq("updated_at", ticket.updated_at)
-        .select("id")
-        .maybeSingle();
-
-      if (updateError) throw new Error("support_ticket_update_failed");
-      if (!updated) {
-        continue;
-      }
-
-      const recorded = await recordSupportEvent(service, {
-        ticketId: ticket.id,
-        actor: "system",
-        type: decision.resolved ? "resolution" : "diagnostic",
-        metadata: {
-          previous_status: "waiting_customer",
-          status: decision.status,
-          diagnosis: health.diagnosis.overall,
-          resolution_code: decision.resolutionCode,
-          age_hours: Math.round(ageHours)
+      // The CAS and audit append commit together. An audit failure must leave the
+      // ticket waiting so that the next cycle can safely retry the same work.
+      const { data: committed, error: updateError } = await service.rpc(
+        "reconcile_support_ticket_atomic",
+        {
+          p_ticket_id: ticket.id,
+          p_user_id: ticket.user_id,
+          p_expected_updated_at: ticket.updated_at,
+          p_status: decision.status,
+          p_diagnosis: health.diagnosis,
+          p_client_action: supportCustomerAction(ticket.category, health.diagnosis.checks),
+          p_severity: decision.severity || null,
+          p_age_hours: Math.round(ageHours)
         }
-      });
-      if (!recorded) throw new Error("support_ticket_event_unconfirmed");
+      );
+      if (updateError) throw new Error("support_ticket_commit_failed");
+      if (committed === false) continue; // Another writer owns the newer version.
+      if (committed !== true) throw new Error("support_ticket_commit_unconfirmed");
 
       if (decision.status === "resolved") resolved++;
       else if (decision.status === "diagnosed") escalated++;

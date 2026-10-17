@@ -45,6 +45,6 @@ test("client lifecycle records creation and re-diagnosis without copying ticket 
 
 test("admin and autonomous reconciliation emit lifecycle events", () => {
   assert.match(adminRoute, /actor: "admin"/);
-  assert.match(reconcile, /actor: "system"/);
+  assert.match(reconcile, /"reconcile_support_ticket_atomic"/);
   assert.match(reconcile, /decision\.status/);
 });

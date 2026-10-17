@@ -8,7 +8,17 @@ const code = ts.transpileModule(fs.readFileSync(new URL("../lib/support-reconcil
 function harness({ concurrent = false, auditOk = true, writeError = false } = {}) {
   const rows = [0, 1].map(i => ({ id: `ticket-${i}`, user_id: `user-${i}`, site_id: `site-${i}`, category: "domain", status: "waiting_customer", diagnosis: {}, created_at: "2026-10-14T00:00:00Z", updated_at: "2026-10-14T01:00:00Z" }));
   const stats = { events: [], writes: [] };
-  const service = { from(table) {
+  const service = { async rpc(name, input) {
+    assert.equal(name, "reconcile_support_ticket_atomic");
+    if (writeError || !auditOk) return { data: null, error: { code: "synthetic-transaction-failure" } };
+    const row = rows.find(r => r.id === input.p_ticket_id && r.user_id === input.p_user_id &&
+      r.status === "waiting_customer" && r.updated_at === input.p_expected_updated_at);
+    if (!row) return { data: false, error: null };
+    stats.writes.push(row.id);
+    Object.assign(row, { status: input.p_status, diagnosis: input.p_diagnosis });
+    stats.events.push({ ticketId: row.id });
+    return { data: true, error: null };
+  }, from(table) {
     assert.equal(table, "support_tickets");
     const filters = {}; let counting = false, patch;
     const query = {
@@ -62,10 +72,13 @@ test("unchanged tickets reconcile and audit normally", async () => {
 });
 
 test("unconfirmed audit prevents a successful reconciliation result", async () => {
-  const result = await harness({ auditOk: false }).run();
+  const app = harness({ auditOk: false });
+  const result = await app.run();
   assert.equal(result.ok, false);
   assert.equal(result.resolved, 0);
   assert.equal(result.failed, 2);
+  assert.ok(app.rows.every(x => x.status === "waiting_customer"));
+  assert.deepEqual(app.stats.events, []);
 });
 
 test("write failures preserve tickets and create no resolution event", async () => {

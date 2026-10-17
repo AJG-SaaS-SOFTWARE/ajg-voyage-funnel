@@ -19,9 +19,17 @@ test("automatic reconciliation only scans self-service waiting tickets", () => {
 });
 
 test("ticket update is compare-and-set so manual support work cannot be overwritten", () => {
-  const updates = reconciler.match(/\.eq\("status", "waiting_customer"\)/g) || [];
-  assert.ok(updates.length >= 2);
-  assert.match(reconciler, /\.eq\("id", ticket\.id\)/);
+  assert.match(reconciler, /service\.rpc\(/);
+  assert.match(reconciler, /"reconcile_support_ticket_atomic"/);
+  assert.match(reconciler, /p_expected_updated_at: ticket\.updated_at/);
+  assert.match(reconciler, /p_user_id: ticket\.user_id/);
+  const migration = fs.readFileSync(new URL("../supabase/migrations/20261017161315_support_reconcile_atomic_audit.sql", import.meta.url), "utf8");
+  assert.match(migration, /status = 'waiting_customer' and updated_at = p_expected_updated_at/);
+  assert.match(migration, /security invoker set search_path = ''/);
+  assert.match(migration, /from public, anon, authenticated/);
+  assert.match(migration, /to service_role/);
+  assert.doesNotMatch(migration, /exception when/i); // No swallowed audit failure.
+
 });
 
 test("dedicated authenticated support cron runs the autonomous operations agent", () => {
