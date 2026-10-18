@@ -247,6 +247,14 @@
       sending: 'Sending…',
       submit: 'View presentation times →',
       submitError: 'Something went wrong. Please check your connection and try again.'
+    },
+    es: {
+      choose: 'Selecciona una respuesta para continuar.',
+      contact: 'Introduce tu nombre y una dirección de correo electrónico válida.',
+      step: (current, total) => `Paso ${current} de ${total}`,
+      sending: 'Enviando…',
+      submit: 'Ver horarios disponibles →',
+      submitError: 'No se ha podido enviar el formulario. Comprueba tu conexión e inténtalo de nuevo.'
     }
   }[lang];
 
