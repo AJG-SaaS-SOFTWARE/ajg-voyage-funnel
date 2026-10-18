@@ -38,11 +38,11 @@ test('Spanish form validates and submits successfully with mocked API', async ({
   await page.locator('#discover').scrollIntoViewIfNeeded();
   for (let step = 1; step <= 3; step++) {
     await page.locator(`.form-step[data-step="${step}"] input[type="radio"]`).first().check();
-    await page.locator('#next-step').click();
+    await page.locator('#next-btn').click();
   }
   await page.locator('input[name="prenom"]').fill('Prueba');
   await page.locator('input[name="email"]').fill('prueba@example.com');
-  await page.locator('#submit-lead').click();
+  await page.locator('#submit-btn').click();
   await expect(page).toHaveURL(/\\/es\\/thanks\\.html$/);
   expect(submitted?.language).toBe('es');
 });
