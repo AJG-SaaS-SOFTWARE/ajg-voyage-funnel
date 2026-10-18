@@ -376,7 +376,7 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       trackFunnel('lead_submitted');
 
-      window.location.assign(form.getAttribute('action') || (lang === 'en' ? '/en/thanks.html' : '/merci.html'));
+      window.location.assign(form.getAttribute('action') || ({ fr: '/merci.html', en: '/en/thanks.html', es: '/es/thanks.html' }[lang]));
     } catch (error) {
       console.error('Form submission failed:', error);
       submit.disabled = false;
