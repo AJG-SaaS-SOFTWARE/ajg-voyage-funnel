@@ -53,3 +53,21 @@ test('Spanish pages and internal links load', async ({ page }) => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   }
 });
+
+test('Spanish homepage stays usable on mobile', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'es-ES' });
+  const page = await context.newPage();
+  await page.goto('http://127.0.0.1:4173/es/');
+  await expect(page.locator('#hero-title')).toBeVisible();
+  await expect(page.locator('#lead-form')).toBeVisible();
+  const dimensions = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, viewport: window.innerWidth }));
+  expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.viewport + 2);
+  await context.close();
+});
+test('French and English homepages remain accessible', async ({ page }) => {
+  for (const [path, lang] of [['/', 'fr'], ['/en/', 'en']]) {
+    const response = await page.goto('http://127.0.0.1:4173' + path);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('html')).toHaveAttribute('lang', lang);
+  }
+});
