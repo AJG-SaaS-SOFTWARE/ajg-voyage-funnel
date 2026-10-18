@@ -6,6 +6,8 @@ import { verifySupportTicketInRun } from "./run-intake-reporting";
 export async function runCustomerSupportE2E(input: {
   service: SupabaseClient; origin: string; customerToken: string;
   userId: string; siteId: string; slug: string; publicMarker: string;
+  onPendingCentralResolution?: (ticketId: string) => void;
+  onCentralResolution?: () => void;
 }) {
   const { service, siteId, userId } = input;
   async function call(path: string, method: string, body: unknown) {
@@ -24,6 +26,7 @@ export async function runCustomerSupportE2E(input: {
     .eq("site_id", siteId).eq("kind", "managed_subdomain").select("id,is_primary").single();
   if (changed.error || changed.data?.is_primary !== false) throw new Error("support_fixture_unconfirmed");
   const id = crypto.randomUUID();
+  input.onPendingCentralResolution?.(id);
   const created = await call("/api/support/tickets", "POST", {
     requestId: id, siteId, category: "domain", subject: "Disposable E2E domain repair",
     message: "Isolated technical recipe: verify and repair the temporary site's missing primary domain."
@@ -70,6 +73,11 @@ export async function runCustomerSupportE2E(input: {
       !repairs.data?.some(row => row.status === "succeeded" && row.result_code === "managed_domain_primary_repaired")) {
     throw new Error("support_durable_evidence_unconfirmed");
   }
-  return { ticketId: id, centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "automatic_product_resolution" as const,
-    centralCockpitVerified: true, automaticProductResolutionVerified: true, centralResolutionVerified: false, automaticClosureVerified: false };
+  if (repaired.ticketResolution?.centralResolutionVerified !== true ||
+      !(await verifySupportTicketInRun(id, intakeId, "resolved"))) {
+    throw new Error("support_central_resolution_unconfirmed");
+  }
+  input.onCentralResolution?.();
+  return { ticketId: id, centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "automatic_central_resolution" as const,
+    centralCockpitVerified: true, automaticProductResolutionVerified: true, centralResolutionVerified: true, automaticClosureVerified: true };
 }

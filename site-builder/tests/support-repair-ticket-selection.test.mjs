@@ -10,7 +10,8 @@ async function run(candidates,error=null){
  const deps={ 'next/server':{NextResponse:{json:(body,init)=>Response.json(body,init)}},'@supabase/supabase-js':{createClient:(_url,key)=>key==='public'?{auth:{getUser:async()=>({data:{user:{id:'owner'}},error:null})}}:service},
  '../../../../lib/support-health-server':{diagnoseSupportHealth:async()=>({siteId:'site',diagnosis:{repairActions:['managed_domain_repair'],checks:[]}})},
  '../../../../lib/support-remediation':{runSupportRepair:async(_service,input)=>{stats.repair=input;return {status:'succeeded'};}},
- '../../../../lib/support-repair-resolution':{resolveVerifiedSupportRepair:async(_service,input)=>{stats.resolution=input;return {resolved:false,audited:false};}}};
+ '../../../../lib/support-repair-resolution':{resolveVerifiedSupportRepair:async(_service,input)=>{stats.resolution=input;return {resolved:false,audited:false};}},
+ '../../../../lib/run-intake-reporting':{completeVerifiedSupportRepairInRun:async()=>{throw Error('unverified repair must never signal central completion');}}};
  new Function('require','module','exports',code)(id=>{assert.ok(id in deps,id);return deps[id];},module,module.exports);
  const vars={NEXT_PUBLIC_SUPABASE_URL:'https://example.test',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'public',SUPABASE_SECRET_KEY:'service'};
  const old=Object.fromEntries(Object.keys(vars).map(k=>[k,process.env[k]]));Object.assign(process.env,vars);

@@ -7,7 +7,7 @@ type BuilderRunInput = {
   ticketId: string;
 };
 
-export async function verifySupportTicketInRun(ticketId: string, requestId: string) {
+export async function verifySupportTicketInRun(ticketId: string, requestId: string, expectedStatus?: "resolved") {
   const token = process.env.AJG_RUN_TOKEN?.trim();
   if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketId) ||
       !/^req_[0-9a-f]{8}$/.test(requestId)) return false;
@@ -21,8 +21,40 @@ export async function verifySupportTicketInRun(ticketId: string, requestId: stri
     const receipt = body?.receipt;
     return response.ok && body?.ok === true && receipt?.requestId === requestId &&
       receipt.ticketId === ticketId && receipt.product === "ELTARA" && receipt.source === "builder-support" &&
-      ["open", "triaged", "resolved"].includes(receipt.status) &&
+      (expectedStatus ? receipt.status === expectedStatus && receipt.resolutionVerified === true : ["open", "triaged", "resolved"].includes(receipt.status)) &&
       typeof receipt.updatedAt === "string" && Number.isFinite(Date.parse(receipt.updatedAt));
+  } catch { return false; }
+}
+
+/** Only the persisted intake receipt supplies the central identity; never accept a browser-supplied ID. */
+export async function completeVerifiedSupportRepairInRun(
+  service: import("@supabase/supabase-js").SupabaseClient, ticketId: string,
+) {
+  try {
+    const receipt = await service.from("support_ticket_events").select("metadata")
+      .eq("ticket_id", ticketId).eq("event_type", "diagnostic").eq("metadata->>source", "ajg-run-intake")
+      .order("created_at", { ascending: false }).limit(2);
+    const ids = new Set((receipt.data || []).map(event => event.metadata?.request_id));
+    const requestId = [...ids][0];
+    if (receipt.error || ids.size !== 1 || typeof requestId !== "string" || !/^req_[0-9a-f]{8}$/.test(requestId)) return false;
+    return await resolveSupportTicketInRun(ticketId, requestId);
+  } catch { return false; }
+}
+
+/** Signal completion only after product repair; the cockpit independently reads the product audit. */
+export async function resolveSupportTicketInRun(ticketId: string, requestId: string) {
+  const token = process.env.AJG_RUN_TOKEN?.trim();
+  if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(ticketId) ||
+      !/^req_[0-9a-f]{8}$/.test(requestId)) return false;
+  try {
+    const response = await fetch("https://ajg-infra-cockpit.vercel.app/api/run/intake", {
+      method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "resolve_support", ticketId, requestId }),
+      redirect: "error", cache: "no-store", signal: AbortSignal.timeout(20_000),
+    });
+    const body = await response.json().catch(() => null);
+    return response.ok && body?.ok === true && body.requestId === requestId && body.ticketId === ticketId &&
+      body.status === "resolved" && body.resolutionVerified === true && await verifySupportTicketInRun(ticketId, requestId, "resolved");
   } catch { return false; }
 }
 

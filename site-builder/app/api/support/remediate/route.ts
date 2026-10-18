@@ -6,6 +6,7 @@ import {
 } from "../../../../lib/support-remediation";
 import { diagnoseSupportHealth } from "../../../../lib/support-health-server";
 import { resolveVerifiedSupportRepair, type RepairTicketSnapshot } from "../../../../lib/support-repair-resolution";
+import { completeVerifiedSupportRepairInRun } from "../../../../lib/run-intake-reporting";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -166,8 +167,10 @@ export async function POST(request: Request) {
   const ticketResolution = await resolveVerifiedSupportRepair(auth.service, {
     ticket: repairTicket, userId: auth.user.id, siteId, repair: result, health,
   });
+  const centralResolutionVerified = ticketResolution.resolved && ticketResolution.audited && repairTicket
+    ? await completeVerifiedSupportRepairInRun(auth.service, repairTicket.id) : false;
   return NextResponse.json(
-    { result, health, ticketResolution },
+    { result, health, ticketResolution: { ...ticketResolution, centralResolutionVerified } },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 }

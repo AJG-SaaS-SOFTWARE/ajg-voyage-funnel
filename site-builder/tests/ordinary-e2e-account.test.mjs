@@ -37,3 +37,7 @@ test('sign-in failure retains the created account for cleanup',async()=>{
 test('revocation failure still attempts deletion and does not claim successful cleanup',async()=>{
  for(const options of [{signOutError:{code:'synthetic'}},{deleteError:{code:'synthetic'}}]){const f=fixture(options);await f.account.provision();assert.equal(await f.account.cleanup(),false);assert.deepEqual(f.calls.at(-1),['delete','ordinary']);}
 });
+test('pending central resolution preserves source evidence but revokes the disposable session',async()=>{
+ const f=fixture();await f.account.provision();assert.equal(await f.account.cleanup({preserveAccount:true}),true);
+ assert.deepEqual(f.calls.at(-1),['signout',{scope:'global'}]);assert.equal(f.calls.some(call=>call[0]==='delete'),false);
+});

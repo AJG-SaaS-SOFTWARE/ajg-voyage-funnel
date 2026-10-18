@@ -28,7 +28,44 @@ function ticketId(externalRef: unknown) {
   return match?.[1] ?? null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (request && new URL(request.url).search) {
+    const reply = (value: unknown, status: number) => NextResponse.json(value, {
+      status, headers: { "Cache-Control": "private, no-store" },
+    });
+    if (!authorized(request)) return reply({ ok: false }, 401);
+    const query = new URL(request.url).searchParams;
+    const id = ticketId(`builder-ticket:${query.get("ticketId") || ""}`);
+    const requestId = query.get("requestId") || "";
+    if ([...query].length !== 2 || !id || !/^req_[0-9a-f]{8}$/.test(requestId)) return reply({ ok: false }, 400);
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return reply({ ok: false }, 503);
+    const service = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+    const ticket = await service.from("support_tickets").select("id,status,resolved_at,resolution_code,updated_at").eq("id", id).maybeSingle();
+    if (ticket.error) return reply({ ok: false }, 503);
+    if (!ticket.data) return reply({ ok: false }, 404);
+    if (!["resolved", "closed"].includes(ticket.data.status) ||
+        ticket.data.resolution_code !== "auto_verified_managed_primary_repair" || !ticket.data.resolved_at ||
+        !Number.isFinite(Date.parse(ticket.data.resolved_at))) return reply({ ok: false }, 409);
+    const [receipt, audit] = await Promise.all([
+      service.from("support_ticket_events").select("id").eq("ticket_id", id).eq("event_type", "diagnostic")
+        .eq("metadata->>source", "ajg-run-intake").eq("metadata->>request_id", requestId).limit(1),
+      service.from("support_ticket_events").select("id,metadata").eq("ticket_id", id).eq("event_type", "resolution")
+        .eq("actor_type", "system").eq("metadata->>updated_at", ticket.data.updated_at)
+        .eq("metadata->>resolution_code", ticket.data.resolution_code)
+        .in("metadata->>status", ["resolved", "closed"]).order("created_at", { ascending: false }).limit(1),
+    ]);
+    const event = audit.data?.[0];
+    const code = event?.metadata?.resolution_code;
+    const eventId = String(event?.id ?? "");
+    if (receipt.error || audit.error || !receipt.data?.length ||
+        (typeof event?.id === "number" && !Number.isSafeInteger(event.id)) ||
+        typeof code !== "string" || !/^[a-z][a-z0-9_]{0,119}$/.test(code) ||
+        !/^[1-9][0-9]{0,19}$/.test(eventId)) return reply({ ok: false, auditRecorded: false }, 503);
+    return reply({ ok: true, auditRecorded: true, proof: { ticketId: id, requestId,
+      status: ticket.data.status, resolvedAt: ticket.data.resolved_at, eventId, code } }, 200);
+  }
   const tokenConfigured = Boolean(process.env.AJG_RUN_TOKEN?.trim());
   const databaseConfigured = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -46,6 +83,7 @@ export async function GET() {
         tokenConfigured,
         databaseConfigured,
       },
+      supportResolutionProtocol: 1,
     },
     { status: healthy ? 200 : 503, headers: { "Cache-Control": "no-store" } },
   );
