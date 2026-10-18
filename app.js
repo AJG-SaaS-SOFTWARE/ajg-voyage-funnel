@@ -1,6 +1,6 @@
 (() => {
   const form = document.querySelector('#lead-form');
-  const lang = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'fr';
+  const lang = ['fr', 'en', 'es'].includes(document.documentElement.lang) ? document.documentElement.lang : 'en';
 
   const funnelOnce = new Set();
   const trackFunnel = (eventName, once = false) => {
