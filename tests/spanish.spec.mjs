@@ -43,7 +43,7 @@ test('Spanish form validates and submits successfully with mocked API', async ({
   await page.locator('input[name="prenom"]').fill('Prueba');
   await page.locator('input[name="email"]').fill('prueba@example.com');
   await page.locator('#submit-btn').click();
-  await expect(page).toHaveURL(/\/es\/thanks\\.html$/);
+  await expect(page).toHaveURL(/\/es\/thanks\.html$/);
   expect(submitted?.language).toBe('es');
 });
 test('Spanish pages and internal links load', async ({ page }) => {
