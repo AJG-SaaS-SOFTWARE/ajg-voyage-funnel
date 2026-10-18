@@ -33,13 +33,13 @@ export function ordinaryE2EAccount(service: SupabaseClient, client: SupabaseClie
       }
       return { user, token, client };
     },
-    async cleanup(): Promise<boolean> {
+    async cleanup(options?: { preserveAccount?: boolean }): Promise<boolean> {
       let ok = true;
       if (signedIn) {
         try { if ((await client.auth.signOut({ scope: "global" })).error) ok = false; }
         catch { ok = false; }
       }
-      if (userId) {
+      if (userId && !options?.preserveAccount) {
         try { if ((await service.auth.admin.deleteUser(userId)).error) ok = false; }
         catch { ok = false; }
       }

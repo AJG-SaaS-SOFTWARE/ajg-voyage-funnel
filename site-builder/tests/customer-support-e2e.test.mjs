@@ -5,23 +5,23 @@ import ts from 'typescript';
 const source=fs.readFileSync(new URL('../lib/customer-support-e2e.ts',import.meta.url),'utf8');
 const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 async function run(options={}){
- const calls=[];let ticketId='';
+ const calls=[];let ticketId='';const retention=[];
  const service={from(table){return {update(){return this;},select(){return this;},eq(){return this;},async single(){return {data:{id:'domain',is_primary:false},error:null};},then(resolve){return Promise.resolve(table==='support_ticket_events'?{data:options.missingAudit?[]:[{event_type:'created',actor_type:'client'},{event_type:'diagnostic',actor_type:'system',metadata:{source:'ajg-run-intake',request_id:'req_1234abcd'}},{event_type:'resolution',actor_type:'system',metadata:{status:'resolved',resolution_code:'auto_verified_managed_primary_repair'}}],error:null}:{data:[{status:'succeeded',result_code:'managed_domain_primary_repaired'}],error:null}).then(resolve);}};}};
  const fakeFetch=async(url,init)=>{
   const path=new URL(url).pathname;calls.push([path,init.method,init.headers?.Authorization]);const body=init.body?JSON.parse(init.body):null;
   if(path==='/api/support/tickets'&&init.method==='POST'){ticketId=body.requestId;return Response.json({runReceipt:options.missingReceipt?{confirmed:false}:{confirmed:true,auditRecorded:true,requestId:'req_1234abcd'},ticket:{id:ticketId,site_id:'site'},health:{diagnosis:{repairActions:['managed_domain_repair']}}});}
-  if(path==='/api/support/remediate')return Response.json({result:{status:'succeeded',verified:!options.unverified,audited:true},ticketResolution:{resolved:!options.unresolved,audited:true}});
+  if(path==='/api/support/remediate')return Response.json({result:{status:'succeeded',verified:!options.unverified,audited:true},ticketResolution:{resolved:!options.unresolved,audited:true,centralResolutionVerified:!options.missingCentralResolution}});
   if(path==='/site/slug')return new Response(options.badPublic?'stale':'updated-marker');
   if(path==='/api/support/tickets')return Response.json({tickets:[{id:ticketId,status:'resolved'}]});
   throw new Error('unexpected route');
  };
  const m={exports:{}};
- new Function('module','exports','require','fetch',code)(m,m.exports,()=>({verifyManagedRepair:async()=>!options.independentFailure,verifySupportTicketInRun:async()=>!options.missingCentralReadback}),fakeFetch);
- const promise=m.exports.runCustomerSupportE2E({service,origin:'https://eltara.example/api/admin/builder-e2e',customerToken:'customer-token',userId:'owner',siteId:'site',slug:'slug',publicMarker:'updated-marker'});
- return {calls,promise};
+ new Function('module','exports','require','fetch',code)(m,m.exports,()=>({verifyManagedRepair:async()=>!options.independentFailure,verifySupportTicketInRun:async(_ticket,_request,status)=>status==='resolved'?!options.missingResolvedReadback:!options.missingCentralReadback}),fakeFetch);
+ const promise=m.exports.runCustomerSupportE2E({service,origin:'https://eltara.example/api/admin/builder-e2e',customerToken:'customer-token',userId:'owner',siteId:'site',slug:'slug',publicMarker:'updated-marker',onPendingCentralResolution:id=>retention.push(['pending',id]),onCentralResolution:()=>retention.push(['resolved'])});
+ return {calls,promise,retention};
 }
 test('support recipe verifies automatic product resolution with only the customer token',async()=>{
- const {calls,promise}=await run();const result=await promise;assert.equal(result.closure,'automatic_product_resolution');assert.equal(result.automaticProductResolutionVerified,true);assert.equal(result.centralResolutionVerified,false);assert.equal(result.centralCockpitVerified,true);assert.equal(result.automaticClosureVerified,false);
+ const {calls,promise}=await run();const result=await promise;assert.equal(result.closure,'automatic_central_resolution');assert.equal(result.automaticProductResolutionVerified,true);assert.equal(result.centralResolutionVerified,true);assert.equal(result.centralCockpitVerified,true);assert.equal(result.automaticClosureVerified,true);
  assert.equal(calls.some(x=>x[0]==='/api/admin/support'),false);assert.equal(calls[0][2],'Bearer customer-token');
 });
 test('failed repair verification prevents accepting the automatic resolution',async()=>{
@@ -43,3 +43,15 @@ test('a POST receipt without independent cockpit readback cannot pass the journe
 });
 
 test('missing automatic resolution receipt fails without operator fallback',async()=>{const {calls,promise}=await run({unresolved:true});await assert.rejects(promise,/automatic_resolution_unconfirmed/);assert.equal(calls.some(x=>x[0]==='/api/admin/support'),false);});
+
+test('product resolution alone and a central POST without resolved readback cannot pass before cleanup',async()=>{
+ for(const options of [{missingCentralResolution:true},{missingResolvedReadback:true}]){
+  const {promise}=await run(options);await assert.rejects(promise,/central_resolution_unconfirmed/);
+ }
+});
+test('source cleanup is released only after independently verified central completion',async()=>{
+ const success=await run();await success.promise;assert.equal(success.retention[0][0],'pending');assert.deepEqual(success.retention[1],['resolved']);
+ for(const options of [{missingCentralResolution:true},{missingResolvedReadback:true},{missingReceipt:true},{unverified:true}]){
+  const failure=await run(options);await assert.rejects(failure.promise);assert.equal(failure.retention[0][0],'pending');assert.equal(failure.retention.length,1);
+ }
+});

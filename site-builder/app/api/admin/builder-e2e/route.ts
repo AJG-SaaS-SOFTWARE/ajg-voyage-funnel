@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
   let publicPath = "";
   let currentStage = "site-create";
   let cleanupOk = true;
+  let pendingSupportTicket = "";
   let aiStartedAt = 0;
   let metricsRecorded = false;
   const captureAiMetrics = async () => {
@@ -654,9 +655,11 @@ export async function POST(request: NextRequest) {
       currentStage = "customer-support";
       const support = await runCustomerSupportE2E({ service, origin: request.url,
         customerToken: token, userId: user.id, siteId, slug,
-        publicMarker: republishMarker });
+        publicMarker: republishMarker,
+        onPendingCentralResolution: id => { pendingSupportTicket = id; },
+        onCentralResolution: () => { pendingSupportTicket = ""; } });
       steps.push({ key: "customer_support", label: "Support client réel", status: "pass",
-        detail: `Ticket ${support.ticketId} : diagnostic, demande centrale relue dans le cockpit, réparation sûre, vérification indépendante du domaine et du contenu public, résolution automatique dans ELTARA, relecture client et audit durable. Clôture centrale non prouvée.` });
+        detail: `Ticket ${support.ticketId} : diagnostic, réparation sûre, vérification indépendante du domaine et du contenu public, résolution automatique dans ELTARA avec audit, puis résolution centrale confirmée et relue avant nettoyage.` });
     }
     currentStage = "complete";
   } catch (error) {
@@ -674,24 +677,32 @@ export async function POST(request: NextRequest) {
       steps
     };
 
-    if (feedbackId) {
+    if (pendingSupportTicket) {
+      // Preserve the source and its audit until central completion is proven.
+      // Revoke the disposable session, but do not cascade-delete its account/site.
+      cleanupOk = false;
+      steps.push({ key: "support_retained", label: "Preuve support conservée", status: "skipped",
+        detail: `Ressources temporaires conservées pour le ticket ${pendingSupportTicket} : résolution centrale non confirmée. Nettoyage incomplet, aucune clôture déduite.` });
+      if (ordinary) await ordinary.cleanup({ preserveAccount: true });
+    }
+    if (!pendingSupportTicket && feedbackId) {
       const { error } = await service.from("user_feedback").delete().eq("id", feedbackId);
       if (error) cleanupOk = false;
     }
-    if (privatePath) {
+    if (!pendingSupportTicket && privatePath) {
       const { error } = await service.storage.from("site-private-media").remove([privatePath]);
       if (error) cleanupOk = false;
     }
-    if (publicPath) {
+    if (!pendingSupportTicket && publicPath) {
       const { error } = await service.storage.from("site-media").remove([publicPath]);
       if (error) cleanupOk = false;
     }
-    if (siteId) {
+    if (!pendingSupportTicket && siteId) {
       const { error } = await service.from("sites").delete().eq("id", siteId);
       if (error) cleanupOk = false;
     }
 
-    if (ordinary && !(await ordinary.cleanup())) cleanupOk = false;
+    if (!pendingSupportTicket && ordinary && !(await ordinary.cleanup())) cleanupOk = false;
 
     const { error: journalError } = await finishJournal(
       cleanupOk ? "failed" : "cleanup_failed",
