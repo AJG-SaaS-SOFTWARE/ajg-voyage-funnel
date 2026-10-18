@@ -64,10 +64,13 @@ test('Spanish homepage stays usable on mobile', async ({ browser }) => {
   expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.viewport + 2);
   await context.close();
 });
-test('French and English homepages remain accessible', async ({ page }) => {
-  for (const [path, lang] of [['/', 'fr'], ['/en/', 'en']]) {
+test('French and English homepages remain accessible', async ({ browser }) => {
+  for (const [path, lang, locale] of [['/', 'fr', 'fr-FR'], ['/en/', 'en', 'en-US']]) {
+    const context = await browser.newContext({ locale });
+    const page = await context.newPage();
     const response = await page.goto('http://127.0.0.1:4173' + path);
     expect(response?.status()).toBe(200);
     await expect(page.locator('html')).toHaveAttribute('lang', lang);
+    await context.close();
   }
 });
