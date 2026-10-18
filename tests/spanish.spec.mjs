@@ -6,7 +6,7 @@ for (const locale of locales) {
     const context = await browser.newContext({ locale });
     const page = await context.newPage();
     await page.goto('http://127.0.0.1:4173/');
-    await expect(page).toHaveURL(/\\/es\\/$/);
+    await expect(page).toHaveURL(/\/es\/$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
     await expect(page.locator('#lead-form')).toBeVisible();
     await context.close();
@@ -16,7 +16,7 @@ test('direct Spanish link is preserved in English browser', async ({ browser }) 
   const context = await browser.newContext({ locale: 'en-US' });
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:4173/es/');
-  await expect(page).toHaveURL(/\\/es\\/$/);
+  await expect(page).toHaveURL(/\/es\/$/);
   await context.close();
 });
 test('manual English preference overrides Spanish browser on root', async ({ browser }) => {
@@ -24,7 +24,7 @@ test('manual English preference overrides Spanish browser on root', async ({ bro
   await context.addInitScript(() => localStorage.setItem('ajg_language_preference', 'en'));
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:4173/');
-  await expect(page).toHaveURL(/\\/en\\/$/);
+  await expect(page).toHaveURL(/\/en\/$/);
   await context.close();
 });
 test('Spanish form validates and submits successfully with mocked API', async ({ page }) => {
@@ -43,7 +43,7 @@ test('Spanish form validates and submits successfully with mocked API', async ({
   await page.locator('input[name="prenom"]').fill('Prueba');
   await page.locator('input[name="email"]').fill('prueba@example.com');
   await page.locator('#submit-btn').click();
-  await expect(page).toHaveURL(/\\/es\\/thanks\\.html$/);
+  await expect(page).toHaveURL(/\/es\/thanks\\.html$/);
   expect(submitted?.language).toBe('es');
 });
 test('Spanish pages and internal links load', async ({ page }) => {
