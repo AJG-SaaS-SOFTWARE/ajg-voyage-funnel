@@ -111,6 +111,48 @@ test("OpenAI runtime audit passes a successful read-only provider probe", async 
   }
 });
 
+for (const code of ["credit_balance_exhausted", " insufficient_quota ", "BILLING_HARD_LIMIT_REACHED"]) {
+  test(`OpenAI billing refusal points to credit and limits rather than credential replacement (${code})`, async () => {
+    const previousKey = process.env.OPENAI_API_KEY, previousFetch = globalThis.fetch;
+    process.env.OPENAI_API_KEY = "synthetic-secret";
+    let calls = 0;
+    globalThis.fetch = async () => {
+      calls++;
+      return { ok: false, status: 429, json: async () => ({ error: { code, message: "SENSITIVE PROVIDER MESSAGE" } }) };
+    };
+    try {
+      const result = await loadModule().auditOpenAiRuntime();
+      assert.equal(result.status, "blocker");
+      assert.match(result.detail, /solde|facturation/i);
+      assert.match(result.detail, /rotation de clé ne rétablit pas le crédit/i);
+      assert.doesNotMatch(result.detail, /SENSITIVE PROVIDER MESSAGE|synthetic-secret/);
+      assert.equal(calls, 1);
+    } finally {
+      if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+      else process.env.OPENAI_API_KEY = previousKey;
+      globalThis.fetch = previousFetch;
+    }
+  });
+}
+
+test("OpenAI unclassified 403 requires scope review while an unclassified 429 stays temporary", async () => {
+  const previousKey = process.env.OPENAI_API_KEY, previousFetch = globalThis.fetch;
+  process.env.OPENAI_API_KEY = "synthetic-secret";
+  try {
+    for (const status of [403, 429]) {
+      globalThis.fetch = async () => ({ ok: false, status, json: async () => ({ error: { code: "unknown" } }) });
+      const result = await loadModule().auditOpenAiRuntime();
+      assert.equal(result.status, status === 403 ? "blocker" : "warn");
+      assert.match(result.detail, status === 403 ? /périmètre et les permissions/ : /temporairement/);
+      assert.doesNotMatch(result.detail, /rotation manuelle.*requise/);
+    }
+  } finally {
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+    globalThis.fetch = previousFetch;
+  }
+});
+
 test("AI route and release readiness share the provider-unavailability contract", () => {
   const writer = fs.readFileSync(new URL("../app/api/ai/write/route.ts", import.meta.url), "utf8");
   const readiness = fs.readFileSync(new URL("../app/api/admin/release-readiness/route.ts", import.meta.url), "utf8");

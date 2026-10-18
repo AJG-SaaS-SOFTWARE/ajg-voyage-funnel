@@ -10,11 +10,14 @@ const INVALID_CREDENTIAL_CODES = new Set([
   "authentication_error"
 ]);
 
-const UNAVAILABLE_CODES = new Set([
-  ...INVALID_CREDENTIAL_CODES,
+const BILLING_UNAVAILABLE_CODES = new Set([
   "credit_balance_exhausted",
   "insufficient_quota",
   "billing_hard_limit_reached"
+]);
+const UNAVAILABLE_CODES = new Set([
+  ...INVALID_CREDENTIAL_CODES,
+  ...BILLING_UNAVAILABLE_CODES
 ]);
 
 export function isOpenAiUnavailableError(
@@ -71,11 +74,21 @@ export async function auditOpenAiRuntime(): Promise<OpenAiRuntimeAudit> {
       code = "";
     }
 
+    if (BILLING_UNAVAILABLE_CODES.has(code.trim().toLowerCase())) {
+      return {
+        status: "blocker",
+        detail:
+          "Le solde ou le plafond de facturation OpenAI bloque les générations. Vérifier le crédit et les limites du projet utilisé par ELTARA ; une rotation de clé ne rétablit pas le crédit."
+      };
+    }
+
     if (isOpenAiUnavailableError(code, response.status)) {
       return {
         status: "blocker",
         detail:
-          "La clé OpenAI configurée est refusée ou n’est plus utilisable. Une rotation manuelle du secret serveur est requise."
+          INVALID_CREDENTIAL_CODES.has(code.trim().toLowerCase()) || response.status === 401
+            ? "La clé OpenAI configurée est refusée ou n’est plus utilisable. Une rotation manuelle du secret serveur est requise."
+            : "Le fournisseur refuse l’accès au projet ou à la ressource. Vérifier le périmètre et les permissions de la clé avant toute rotation."
       };
     }
 
