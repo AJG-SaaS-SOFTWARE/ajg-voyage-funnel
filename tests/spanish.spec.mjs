@@ -37,7 +37,7 @@ test('Spanish form validates and submits successfully with mocked API', async ({
   await page.goto('http://127.0.0.1:4173/es/');
   await page.locator('#discover').scrollIntoViewIfNeeded();
   for (let step = 1; step <= 3; step++) {
-    await page.locator(`.form-step[data-step="${step}"] input[type="radio"]`).first().check();
+    await page.locator(`.form-step[data-step="${step}"] label.option-card`).first().click();
     await page.locator('#next-btn').click();
   }
   await page.locator('input[name="prenom"]').fill('Prueba');
