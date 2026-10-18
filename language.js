@@ -30,7 +30,7 @@
     target.hash = window.location.hash;
     window.location.replace(target.toString());
   };
-  if (isHome && path === '/') {
+  if (isHome && homes.fr.includes(path)) {
     const selected = readPreference() || browserLanguage();
     if (selected !== currentLanguage) {
       redirectTo(selected);
