@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { getMyDomains, getMySite, getMySites, removeCustomDomain, requestCustomDomain, syncSiteDomain, type SiteDomain } from "../../lib/supabase-site-repository";
 import { freeEntitlements, getMySiteEntitlements, type SubscriptionEntitlements } from "../../lib/subscription";
 import { useProductLocale } from "../../lib/product-i18n";
 import { domainGuide } from "../../lib/domain-guidance";
 import { CustomerErrorHelp } from "../../components/CustomerErrorHelp";
+import { runDomainAction } from "../../lib/domain-action-result";
 
 export default function DomainsPage() {
   const { locale, tr } = useProductLocale();
@@ -15,13 +16,104 @@ export default function DomainsPage() {
   const [hostname,setHostname]=useState("");
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
+  const [refreshRequired, setRefreshRequired] = useState(false);
+  const [showErrorHelp, setShowErrorHelp] = useState(false);
+  const actionLock = useRef(false);
   const [sites,setSites]=useState<Array<{id:string;slug:string}>>([]);
   const [siteId,setSiteId]=useState("");
-  const refresh=async(selectedId?:string)=>{ const owned=await getMySites(); const chosen=owned.find(s=>s.id===(selectedId||siteId))||owned[0]; setSites(owned.map(s=>({id:s.id,slug:s.slug}))); if(chosen&&!siteId)setSiteId(chosen.id); const [items,entitlements]=await Promise.all([chosen?getMyDomains(chosen.id):Promise.resolve([]),chosen?getMySiteEntitlements(chosen.id):Promise.resolve(freeEntitlements)]); setDomains(items); setPlan(entitlements); };
-  useEffect(()=>{ void refresh().catch((e)=>setMessage(e instanceof Error?e.message:tr("Impossible de charger les domaines. Actualisez la page ; si le problème persiste, ouvrez le Health Center.", "Unable to load domains. Refresh the page; if the issue persists, open the Health Center."))); },[]);
-  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setMessage("");try{const site=await getMySite(siteId);if(!site)throw new Error(tr("Créez d’abord votre site.", "Create your website first."));const domain=await requestCustomDomain(hostname,site.id);const result=await syncSiteDomain(site.id,domain.id);setHostname("");await refresh();setMessage(result.verified?tr("Domaine rattaché et vérifié.", "Domain connected and verified."):tr("Domaine rattaché à Vercel. Configurez les enregistrements DNS demandés puis relancez la vérification.", "Domain connected to Vercel. Configure the requested DNS records, then run verification again."));}catch(error){setMessage(error instanceof Error?error.message:tr("Impossible d’enregistrer ce domaine. Vérifiez le nom saisi et votre connexion, puis réessayez.", "Unable to save this domain. Check the domain name and your connection, then try again."));}finally{setBusy(false);}};
-  const verify=async(domain:SiteDomain)=>{setBusy(true);setMessage("");try{const site=await getMySite(siteId);if(!site)throw new Error(tr("Site introuvable.", "Website not found."));const result=await syncSiteDomain(site.id,domain.id);await refresh();if(result.verified)setMessage(tr("Domaine vérifié, DNS opérationnel et activé.", "Domain verified, DNS operational and activated."));else{const instructions=result.verification.map(item=>[item.type,item.domain,item.value].filter(Boolean).join(" · ")).filter(Boolean);setMessage(instructions.length?`${tr("DNS à configurer :", "DNS to configure:")} ${instructions.join(" | ")}. ${tr("Ajoutez uniquement l’enregistrement recommandé ci-dessus, puis relancez la vérification après propagation.", "Add only the recommended record above, then run verification again after DNS propagation.")}`:result.ownershipVerified?tr("Domaine rattaché à Vercel, mais le DNS public n’est pas encore opérationnel. Contrôlez la configuration DNS puis réessayez.", "Domain connected to Vercel, but public DNS is not operational yet. Check the DNS configuration and try again."):tr("Vérification encore en attente. Contrôlez la configuration DNS puis réessayez.", "Verification is still pending. Check the DNS configuration and try again."));}}catch(error){setMessage(error instanceof Error?error.message:tr("Vérification impossible. Contrôlez les enregistrements DNS affichés puis relancez la vérification après propagation.", "Verification failed. Check the displayed DNS records, then run verification again after propagation."));}finally{setBusy(false);}};
-  const remove=async(id:string)=>{setBusy(true);try{await removeCustomDomain(id);await refresh();}catch(error){setMessage(error instanceof Error?error.message:tr("Suppression impossible. Actualisez la liste puis réessayez ; le domaine reste inchangé tant que l’opération n’a pas réussi.", "Unable to remove domain. Refresh the list and try again; the domain remains unchanged until the operation succeeds."));}finally{setBusy(false);}};
+  const refresh = async (selectedId?: string) => {
+    const owned = await getMySites();
+    const target = selectedId || siteId;
+    const chosen = target ? owned.find(site => site.id === target) : owned[0];
+    if (target && !chosen) throw new Error("domain_site_readback_unconfirmed");
+    const [items, entitlements] = await Promise.all([
+      chosen ? getMyDomains(chosen.id) : Promise.resolve([]),
+      chosen ? getMySiteEntitlements(chosen.id) : Promise.resolve(freeEntitlements)
+    ]);
+    // Commit the whole selected-site view only after both reads succeed.
+    setSites(owned.map(site => ({ id: site.id, slug: site.slug })));
+    setSiteId(chosen?.id || "");
+    setDomains(items);
+    setPlan(entitlements);
+  };
+  useEffect(() => {
+    actionLock.current = true;
+    setBusy(true);
+    void refresh().catch(() => {
+      setRefreshRequired(true);
+      setShowErrorHelp(true);
+      setMessage(tr("Impossible de charger les domaines. Actualisez la page ; si le problème persiste, ouvrez le Health Center.", "Unable to load domains. Refresh the page; if the issue persists, open the Health Center."));
+    }).finally(() => {
+      actionLock.current = false;
+      setBusy(false);
+    });
+  }, []);
+
+  // A read retry is separate from an action retry: it never resubmits a domain.
+  const reload = async (selectedId = siteId) => {
+    if (actionLock.current) return;
+    actionLock.current = true;
+    setBusy(true);
+    try {
+      await refresh(selectedId);
+      setRefreshRequired(false);
+      setShowErrorHelp(false);
+      setMessage(tr("Liste des domaines actualisée. Vérifiez son état avant toute nouvelle action.", "Domain list refreshed. Review its status before taking another action."));
+    } catch {
+      setRefreshRequired(true);
+      setShowErrorHelp(false);
+      setMessage(tr("La liste des domaines reste indisponible. Aucune action n’a été relancée. Ouvrez le Health Center si le problème persiste.", "The domain list is still unavailable. No action was resubmitted. Open the Health Center if the issue persists."));
+    } finally {
+      actionLock.current = false;
+      setBusy(false);
+    }
+  };
+
+  const act = async <T,>(mutate: () => Promise<T>, success: (value: T) => string) => {
+    if (actionLock.current || refreshRequired) return;
+    actionLock.current = true;
+    setBusy(true);
+    setMessage("");
+    setShowErrorHelp(false);
+    try {
+      const result = await runDomainAction({ mutate, refresh: () => refresh(siteId) });
+      if (result.stage === "confirmed") {
+        setMessage(success(result.value));
+      } else {
+        setRefreshRequired(true);
+        setMessage(result.stage === "refresh_failed"
+          ? tr("L’action a été confirmée, mais la liste n’a pas pu être actualisée. Relisez son état avec le bouton ci-dessous, sans relancer l’action.", "The action was confirmed, but the list could not be refreshed. Use the button below to read its status without resubmitting the action.")
+          : tr("Le résultat de l’action n’est pas confirmé. Elle a peut-être été appliquée. Actualisez uniquement la liste avant toute nouvelle tentative.", "The action result is unconfirmed. It may have been applied. Refresh only the list before attempting another action."));
+      }
+    } finally {
+      actionLock.current = false;
+      setBusy(false);
+    }
+  };
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    await act(async () => {
+      const site = await getMySite(siteId);
+      if (!site) throw new Error("website_missing");
+      const domain = await requestCustomDomain(hostname, site.id);
+      setHostname("");
+      return syncSiteDomain(site.id, domain.id);
+    }, result => result.verified
+      ? tr("Domaine rattaché et vérifié.", "Domain connected and verified.")
+      : tr("Domaine rattaché à Vercel. Configurez les enregistrements DNS demandés puis relancez la vérification.", "Domain connected to Vercel. Configure the requested DNS records, then run verification again."));
+  };
+  const verify = async (domain: SiteDomain) => {
+    await act(() => syncSiteDomain(siteId, domain.id), result => {
+      if (result.verified) return tr("Domaine vérifié, DNS opérationnel et activé.", "Domain verified, DNS operational and activated.");
+      const instructions = result.verification.map(item => [item.type, item.domain, item.value].filter(Boolean).join(" · ")).filter(Boolean);
+      return instructions.length
+        ? `${tr("DNS à configurer :", "DNS to configure:")} ${instructions.join(" | ")}. ${tr("Ajoutez uniquement l’enregistrement recommandé ci-dessus, puis relancez la vérification après propagation.", "Add only the recommended record above, then run verification again after DNS propagation.")}`
+        : tr("Vérification encore en attente. Contrôlez la configuration DNS puis réessayez.", "Verification is still pending. Check the DNS configuration and try again.");
+    });
+  };
+  const remove = async (id: string) => {
+    await act(() => removeCustomDomain(id), () => tr("Domaine retiré de la liste.", "Domain removed from the list."));
+  };
 
   const managedDomain = domains.find(domain => domain.kind === "managed_subdomain") || null;
   const customDomain = domains.find(domain => domain.kind === "custom_domain") || null;
@@ -56,11 +148,15 @@ export default function DomainsPage() {
         ))}
       </ol>
     </section>
-    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} onChange={e=>{setSiteId(e.target.value);void refresh(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
-    <section className="domain-list">{domains.map(domain=><article className="domain-row" key={domain.id}><div><b>{domain.hostname}</b><p>{domain.kind==="managed_subdomain"?tr("Sous-domaine ELTARA", "ELTARA subdomain"):tr("Domaine personnalisé", "Custom domain")} · {domain.verificationStatus==="verified"?tr("Vérifié", "Verified"):domain.verificationStatus==="failed"?tr("Échec de vérification", "Verification failed"):tr("En attente de vérification", "Verification pending")}</p></div>{domain.kind==="custom_domain"&&domain.verificationStatus!=="verified"?<div><button className="text-button" disabled={busy} onClick={()=>void verify(domain)}>{tr("Vérifier", "Verify")}</button><button className="text-button" disabled={busy} onClick={()=>void remove(domain.id)}>{tr("Retirer", "Remove")}</button></div>:domain.kind==="managed_subdomain"&&domain.verificationStatus!=="verified"?<small>{tr("Préparation en cours par ELTARA", "ELTARA setup in progress")}</small>:null}</article>)}</section>
-    <form className="domain-form" onSubmit={submit}><div><p className="eyebrow">{tr("Domaine personnalisé", "Custom domain")}</p><h2>{tr("Ajouter votre domaine", "Add your domain")}</h2><p>{plan.customDomain?tr("Votre offre permet cette fonctionnalité.", "Your plan includes this feature."):tr("Disponible avec Essentiel et Growth.", "Available with Essential and Growth.")}</p></div><div className="domain-controls"><input value={hostname} onChange={e=>setHostname(e.target.value)} placeholder={tr("exemple.fr", "example.com")} disabled={!plan.customDomain||busy}/><button className="button primary" disabled={!plan.customDomain||busy||!hostname.trim()}>{busy?tr("Enregistrement…", "Saving…"):tr("Ajouter", "Add")}</button></div></form>
+    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} disabled={busy || refreshRequired} onChange={event => void reload(event.target.value)}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
+    <section className="domain-list">{domains.map(domain=><article className="domain-row" key={domain.id}><div><b>{domain.hostname}</b><p>{domain.kind==="managed_subdomain"?tr("Sous-domaine ELTARA", "ELTARA subdomain"):tr("Domaine personnalisé", "Custom domain")} · {domain.verificationStatus==="verified"?tr("Vérifié", "Verified"):domain.verificationStatus==="failed"?tr("Échec de vérification", "Verification failed"):tr("En attente de vérification", "Verification pending")}</p></div>{domain.kind==="custom_domain"&&domain.verificationStatus!=="verified"?<div><button className="text-button" disabled={busy || refreshRequired} onClick={()=>void verify(domain)}>{tr("Vérifier", "Verify")}</button><button className="text-button" disabled={busy || refreshRequired} onClick={()=>void remove(domain.id)}>{tr("Retirer", "Remove")}</button></div>:domain.kind==="managed_subdomain"&&domain.verificationStatus!=="verified"?<small>{tr("Préparation en cours par ELTARA", "ELTARA setup in progress")}</small>:null}</article>)}</section>
+    <form className="domain-form" onSubmit={submit}><div><p className="eyebrow">{tr("Domaine personnalisé", "Custom domain")}</p><h2>{tr("Ajouter votre domaine", "Add your domain")}</h2><p>{plan.customDomain?tr("Votre offre permet cette fonctionnalité.", "Your plan includes this feature."):tr("Disponible avec Essentiel et Growth.", "Available with Essential and Growth.")}</p></div><div className="domain-controls"><input value={hostname} onChange={e=>setHostname(e.target.value)} placeholder={tr("exemple.fr", "example.com")} disabled={!plan.customDomain||busy||refreshRequired}/><button className="button primary" disabled={!plan.customDomain||busy||refreshRequired||!hostname.trim()}>{busy?tr("Enregistrement…", "Saving…"):tr("Ajouter", "Add")}</button></div></form>
     {message?<p className="account-note" role="status">{message}</p>:null}
-    <CustomerErrorHelp message={message} />
+    <CustomerErrorHelp message={showErrorHelp ? message : null} />
+    {refreshRequired ? <section className="panel" aria-label={tr("Relire l’état des domaines", "Read domain status again")}>
+      <button type="button" className="button secondary" disabled={busy} onClick={() => void reload()}>{tr("Actualiser la liste sans relancer l’action", "Refresh the list without resubmitting the action")}</button>
+      <p><a className="text-link" href="/support">{tr("Ouvrir le Health Center", "Open the Health Center")}</a></p>
+    </section> : null}
     <p className="account-note">{tr("Le sous-domaine ELTARA est administré par la plateforme. Pour un domaine personnel, ELTARA ne le marque jamais comme vérifié au simple enregistrement : le rattachement Vercel et la vérification DNS doivent réussir avant activation.", "The ELTARA subdomain is managed by the platform. For a personal domain, ELTARA never marks it as verified just because it was registered: the Vercel connection and DNS verification must succeed before activation.")}</p>
   </AccountShell>;
 }

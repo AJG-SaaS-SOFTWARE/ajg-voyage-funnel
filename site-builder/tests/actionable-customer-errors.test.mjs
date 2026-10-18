@@ -22,6 +22,8 @@ test("save publish upload and domain fallbacks expose a next action", () => {
   assert.match(builder, /ouvrez le Health Center sans recréer le site/);
   assert.match(content, /vérifiez le fichier et votre connexion puis réessayez/);
   assert.match(domains, /Actualisez la page ; si le problème persiste, ouvrez le Health Center/);
-  assert.match(domains, /Contrôlez les enregistrements DNS affichés puis relancez la vérification/);
-  assert.match(domains, /le domaine reste inchangé tant que l’opération n’a pas réussi/);
+  assert.match(domains, /Ajoutez uniquement l’enregistrement recommandé ci-dessus, puis relancez la vérification après propagation/);
+  assert.match(domains, /Elle a peut-être été appliquée/);
+  assert.match(domains, /Actualisez uniquement la liste avant toute nouvelle tentative/);
+  assert.doesNotMatch(domains, /le domaine reste inchangé tant que l’opération n’a pas réussi/);
 });
