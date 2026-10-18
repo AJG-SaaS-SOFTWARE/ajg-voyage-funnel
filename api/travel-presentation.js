@@ -81,9 +81,11 @@ async function sendNotification(row) {
   const from = process.env.RESEND_FROM_EMAIL;
   if (!apiKey || !to || !from) return;
 
-  const subject = row.language === "en"
-    ? `New AJG Voyage lead — ${row.first_name}`
-    : `Nouveau prospect AJG Voyage — ${row.first_name}`;
+  const subject = row.language === "es"
+    ? `Nuevo contacto AJG Voyage — ${row.first_name}`
+    : row.language === "en"
+      ? `New AJG Voyage lead — ${row.first_name}`
+      : `Nouveau prospect AJG Voyage — ${row.first_name}`;
 
   const lines = [
     `Prénom / First name: ${row.first_name}`,
@@ -160,7 +162,8 @@ export default async function handler(req, res) {
   if (phone && !/^[+()\d\s.-]{6,30}$/.test(phone)) {
     return json(res, 400, { error: "Invalid phone number" });
   }
-  const language = text(body.language, 5) === "en" ? "en" : "fr";
+  const requestedLanguage = text(body.language, 5).toLowerCase();
+  const language = ["fr", "en", "es"].includes(requestedLanguage) ? requestedLanguage : "fr";
   const mainInterest = text(body.interet_principal, 200);
   const travelFrequency = text(body.frequence_voyage, 200);
   const activityGoal = text(body.objectif_activite, 250);

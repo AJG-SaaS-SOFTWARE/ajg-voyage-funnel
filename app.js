@@ -1,6 +1,6 @@
 (() => {
   const form = document.querySelector('#lead-form');
-  const lang = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'fr';
+  const lang = ['fr', 'en', 'es'].includes(document.documentElement.lang) ? document.documentElement.lang : 'en';
 
   const funnelOnce = new Set();
   const trackFunnel = (eventName, once = false) => {
@@ -247,6 +247,14 @@
       sending: 'Sending…',
       submit: 'View presentation times →',
       submitError: 'Something went wrong. Please check your connection and try again.'
+    },
+    es: {
+      choose: 'Selecciona una respuesta para continuar.',
+      contact: 'Introduce tu nombre y una dirección de correo electrónico válida.',
+      step: (current, total) => `Paso ${current} de ${total}`,
+      sending: 'Enviando…',
+      submit: 'Ver horarios disponibles →',
+      submitError: 'No se ha podido enviar el formulario. Comprueba tu conexión e inténtalo de nuevo.'
     }
   }[lang];
 
@@ -368,7 +376,7 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       trackFunnel('lead_submitted');
 
-      window.location.assign(form.getAttribute('action') || (lang === 'en' ? '/en/thanks.html' : '/merci.html'));
+      window.location.assign(form.getAttribute('action') || ({ fr: '/merci.html', en: '/en/thanks.html', es: '/es/thanks.html' }[lang]));
     } catch (error) {
       console.error('Form submission failed:', error);
       submit.disabled = false;

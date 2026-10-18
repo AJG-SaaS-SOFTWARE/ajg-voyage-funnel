@@ -5,7 +5,7 @@
   const readPreference = () => {
     try {
       const value = window.localStorage.getItem(preferenceKey);
-      return value === 'fr' || value === 'en' ? value : null;
+      return value === 'fr' || value === 'en' || value === 'es' ? value : null;
     } catch (_) {
       return null;
     }
@@ -19,7 +19,7 @@
 
   const explicitLanguage = () => {
     const value = (params.get('lang') || '').toLowerCase();
-    return value === 'fr' || value === 'en' ? value : null;
+    return value === 'fr' || value === 'en' || value === 'es' ? value : null;
   };
 
   const browserLanguage = () => {
@@ -27,7 +27,8 @@
       (navigator.languages && navigator.languages[0]) ||
       navigator.language ||
       'en';
-    return primary.toLowerCase().startsWith('fr') ? 'fr' : 'en';
+    const language = primary.toLowerCase();
+    return language.startsWith('fr') ? 'fr' : language.startsWith('es') ? 'es' : 'en';
   };
 
   const explicit = explicitLanguage();
@@ -43,7 +44,7 @@
   if (!params.has('utm_campaign')) params.set('utm_campaign', 'instagram_profile');
   if (!params.has('utm_content')) params.set('utm_content', 'bio');
 
-  const target = new URL(language === 'fr' ? '/' : '/en/', window.location.origin);
+  const target = new URL(language === 'fr' ? '/' : language === 'es' ? '/es/' : '/en/', window.location.origin);
   target.search = params.toString();
   window.location.replace(target.toString());
 })();
