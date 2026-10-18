@@ -1,0 +1,39 @@
+name: Spanish site browser QA
+on:
+  push:
+    branches:
+      - feat/international-spanish-2026-10-18
+  pull_request:
+    paths:
+      - 'es/**'
+      - 'language.js'
+      - 'app.js'
+      - 'tests/spanish.spec.mjs'
+      - '.github/workflows/spanish-qa.yml'
+  workflow_dispatch:
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Start local static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/ajg-site.log 2>&1 &
+          sleep 2
+      - name: Run Spanish browser QA
+        run: npx playwright test tests/spanish.spec.mjs --project=chromium --workers=1
+      - name: Upload failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spanish-qa-failures
+          path: test-results/
+          if-no-files-found: ignore
