@@ -7,10 +7,12 @@ type BuilderRunInput = {
   ticketId: string;
 };
 
-export async function verifySupportTicketInRun(ticketId: string, requestId: string, expectedStatus?: "resolved") {
+export async function readSupportTicketInRun(ticketId: string, requestId: string): Promise<{
+  status: "open" | "triaged" | "resolved"; resolutionVerified: boolean;
+} | null> {
   const token = process.env.AJG_RUN_TOKEN?.trim();
   if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketId) ||
-      !/^req_[0-9a-f]{8}$/.test(requestId)) return false;
+      !/^req_[0-9a-f]{8}$/.test(requestId)) return null;
   try {
     const query = new URLSearchParams({ ticketId, requestId });
     const response = await fetch(`https://ajg-infra-cockpit.vercel.app/api/run/intake?${query}`, {
@@ -19,11 +21,18 @@ export async function verifySupportTicketInRun(ticketId: string, requestId: stri
     });
     const body = await response.json().catch(() => null);
     const receipt = body?.receipt;
-    return response.ok && body?.ok === true && receipt?.requestId === requestId &&
+    const valid = response.ok && body?.ok === true && receipt?.requestId === requestId &&
       receipt.ticketId === ticketId && receipt.product === "ELTARA" && receipt.source === "builder-support" &&
-      (expectedStatus ? receipt.status === expectedStatus && receipt.resolutionVerified === true : ["open", "triaged", "resolved"].includes(receipt.status)) &&
+      ["open", "triaged", "resolved"].includes(receipt.status) &&
+      (receipt.status === "resolved" || receipt.resolutionVerified !== true) &&
       typeof receipt.updatedAt === "string" && Number.isFinite(Date.parse(receipt.updatedAt));
-  } catch { return false; }
+    return valid ? { status: receipt.status, resolutionVerified: receipt.resolutionVerified === true } : null;
+  } catch { return null; }
+}
+
+export async function verifySupportTicketInRun(ticketId: string, requestId: string, expectedStatus?: "resolved") {
+  const receipt = await readSupportTicketInRun(ticketId, requestId);
+  return Boolean(receipt && (!expectedStatus || (receipt.status === expectedStatus && receipt.resolutionVerified)));
 }
 
 /** Only the persisted intake receipt supplies the central identity; never accept a browser-supplied ID. */
@@ -52,10 +61,14 @@ export async function resolveSupportTicketInRun(ticketId: string, requestId: str
       body: JSON.stringify({ action: "resolve_support", ticketId, requestId }),
       redirect: "error", cache: "no-store", signal: AbortSignal.timeout(20_000),
     });
-    const body = await response.json().catch(() => null);
+    const body = await response.json();
     return response.ok && body?.ok === true && body.requestId === requestId && body.ticketId === ticketId &&
       body.status === "resolved" && body.resolutionVerified === true && await verifySupportTicketInRun(ticketId, requestId, "resolved");
-  } catch { return false; }
+  } catch {
+    // A lost response does not prove that persistence failed. Read only; never
+    // issue a second completion POST or repeat the underlying product repair.
+    return verifySupportTicketInRun(ticketId, requestId, "resolved");
+  }
 }
 
 export async function reportSupportTicketToRun(input: BuilderRunInput) {

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyManagedRepair } from "./support-remediation";
 import { verifySupportTicketInRun } from "./run-intake-reporting";
 import { runSupportRemediationSweepForSite } from "./support-remediation-sweep";
+import { reconcileCentralSupportForTicket } from "./support-central-reconcile";
 
 // One owned disposable site only. No global RUN sweep or unrelated ticket mutation.
 export async function runCustomerSupportE2E(input: {
@@ -88,7 +89,15 @@ export async function runCustomerSupportE2E(input: {
       !(await verifySupportTicketInRun(id, intakeId, "resolved"))) {
     throw new Error("support_central_resolution_unconfirmed");
   }
+  if (input.repairMode === "scheduled") {
+    const completion = await reconcileCentralSupportForTicket(service, userId, siteId, id);
+    if (!completion.ok || completion.scanned !== 1 || completion.checked !== 1 || completion.completed !== 0 ||
+        completion.confirmed + completion.alreadyConfirmed !== 1) {
+      throw new Error("support_central_reconciliation_unconfirmed");
+    }
+  }
   input.onCentralResolution?.();
   return { ticketId: id, repairMode: input.repairMode || "customer", centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "automatic_central_resolution" as const,
-    centralCockpitVerified: true, automaticProductResolutionVerified: true, centralResolutionVerified: true, automaticClosureVerified: true };
+    centralCockpitVerified: true, automaticProductResolutionVerified: true, centralResolutionVerified: true, automaticClosureVerified: true,
+    centralReconciliationVerified: input.repairMode === "scheduled" };
 }
