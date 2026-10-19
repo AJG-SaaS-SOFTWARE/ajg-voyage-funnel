@@ -41,3 +41,25 @@ export function managedSlugFromHostname(hostname: string) {
 
   return null;
 }
+
+// A persisted hostname is data, not an authorized fetch destination. Keep the
+// permissive display/routing normalizer above out of this network boundary.
+export function managedCanaryUrl(hostname: unknown): string | null {
+  if (typeof hostname !== "string" || hostname !== hostname.trim()) return null;
+  const normalized = hostname.toLowerCase();
+  const labels = normalized.split(".");
+  const label = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+  if (normalized.length > 253 || !labels.every(part => label.test(part)) ||
+      !/[a-z]/.test(labels.at(-1) || "")) return null;
+  const slug = managedSlugFromHostname(normalized);
+  if (!slug || !label.test(slug)) return null;
+  try {
+    const target = new URL(`https://${normalized}/`);
+    if (target.protocol !== "https:" || target.hostname !== normalized ||
+        target.username || target.password || target.port ||
+        target.pathname !== "/" || target.search || target.hash) return null;
+    return target.href;
+  } catch {
+    return null;
+  }
+}

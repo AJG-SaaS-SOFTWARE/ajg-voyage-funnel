@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { appBaseUrl } from "../../../../lib/app-url";
+import { managedCanaryUrl } from "../../../../lib/published-domain";
 import { getStorageBackupStatus } from "../../../../lib/storage-backup";
 import { commercialConfigurationReadiness } from "../../../../lib/commercial-checkout-readiness";
 import { auditStripeRuntimeCached } from "../../../../lib/stripe-readiness";
@@ -554,9 +555,10 @@ export async function GET(request: Request) {
       .limit(1)
       .maybeSingle();
 
-    if (managedDomain && !managedDomainError) {
+    const canaryUrl = !managedDomainError ? managedCanaryUrl(managedDomain?.hostname) : null;
+    if (canaryUrl) {
       try {
-        const publicResponse = await fetch(`https://${managedDomain.hostname}/`, {
+        const publicResponse = await fetch(canaryUrl, {
           cache: "no-store",
           redirect: "manual",
           signal: AbortSignal.timeout(7000)
@@ -565,11 +567,11 @@ export async function GET(request: Request) {
           key: "managed-subdomains",
           label: "Sous-domaines gérés",
           scope: "beta",
-          status: publicResponse.status >= 200 && publicResponse.status < 400 ? "pass" : "warn",
+          status: publicResponse.ok ? "pass" : "warn",
           detail:
-            publicResponse.status >= 200 && publicResponse.status < 400
-              ? `Domaine canari vérifié et accessible en HTTPS : ${managedDomain.hostname} (HTTP ${publicResponse.status}).`
-              : `Domaine vérifié mais réponse HTTPS inattendue : ${managedDomain.hostname} (HTTP ${publicResponse.status}).`
+            publicResponse.ok
+              ? `Domaine canari vérifié et accessible en HTTPS : ${new URL(canaryUrl).hostname} (HTTP ${publicResponse.status}).`
+              : `Domaine canari géré : réponse HTTPS inattendue (HTTP ${publicResponse.status} ; aucune redirection suivie).`
         });
       } catch {
         checks.push({
@@ -577,7 +579,7 @@ export async function GET(request: Request) {
           label: "Sous-domaines gérés",
           scope: "beta",
           status: "warn",
-          detail: `Domaine primaire vérifié en base mais contrôle HTTPS impossible : ${managedDomain.hostname}.`
+          detail: "Domaine canari géré identifié mais contrôle HTTPS impossible."
         });
       }
     } else {
@@ -586,7 +588,9 @@ export async function GET(request: Request) {
         label: "Sous-domaines gérés",
         scope: "beta",
         status: "warn",
-        detail: "Aucun sous-domaine ELTARA vérifié et primaire n'est encore disponible."
+        detail: managedDomain && !managedDomainError
+          ? "Le domaine canari enregistré ne correspond pas à un hostname géré ELTARA valide ; aucune sonde HTTPS exécutée."
+          : "Aucun sous-domaine ELTARA vérifié et primaire n'est encore disponible."
       });
     }
 
