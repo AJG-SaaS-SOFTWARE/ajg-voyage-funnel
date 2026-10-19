@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { downloadMySiteExport, getMyBillingState, openStripeBillingPortal, type BillingState } from "../../lib/billing-access";
 import { getMySites } from "../../lib/supabase-site-repository";
@@ -19,6 +19,7 @@ export default function BillingPage() {
   const [siteId,setSiteId]=useState("");
   const [billingBusy,setBillingBusy]=useState(false);
   const [loading, setLoading] = useState(true);
+  const billingInFlight = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,13 +61,15 @@ export default function BillingPage() {
   }
 
   async function manageBilling() {
-    if (loading || !siteId) return;
+    if (loading || !siteId || !billing?.hasBillingAccount || billingInFlight.current) return;
+    billingInFlight.current = true;
     setBillingBusy(true);
     setMessage("");
     try {
       await openStripeBillingPortal(siteId);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : tr("Portail Stripe indisponible.", "Stripe portal unavailable."));
+    } catch {
+      setMessage(tr("Portail Stripe indisponible. Aucun changement de paiement n’est confirmé ici. Vous pouvez réessayer l’ouverture manuellement.", "Stripe portal unavailable. No payment change is confirmed here. You can try opening it again manually."));
+      billingInFlight.current = false;
       setBillingBusy(false);
     }
   }
@@ -79,7 +82,7 @@ export default function BillingPage() {
     title={tr("Votre accès ELTARA", "Your ELTARA access")}
     description={tr("Suivez l’état de paiement du site sélectionné, les éventuelles échéances de restriction et vos options de récupération. Un impayé ne déclenche jamais la suppression automatique de vos données.", "Track the selected website’s billing status, any restriction deadlines and your recovery options. A failed payment never triggers automatic deletion of your data.")}
   >
-    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} onChange={e=>{setBilling(null);setLoading(true);setSiteId(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
+    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} disabled={billingBusy} onChange={e=>{if(billingInFlight.current)return;setBilling(null);setLoading(true);setSiteId(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
     {loading ? <p className="account-note" role="status">{tr("Chargement de la facturation…", "Loading billing status…")}</p> : null}
     {message ? <p className="account-note" role="alert">{message}</p> : null}
     {billing ? <section className="panel billing-guide" aria-labelledby="billing-guide-title">
@@ -108,7 +111,7 @@ export default function BillingPage() {
       <div className="builder-actions">
         <button type="button" className="secondary-link" onClick={downloadExport}>{tr("Télécharger l’archive complète", "Download full archive")}</button>
         {billing.hasBillingAccount ? (
-          <button type="button" className="primary-link" disabled={billingBusy} onClick={() => void manageBilling()}>
+          <button type="button" className="primary-link" disabled={loading || billingBusy} onClick={() => void manageBilling()}>
             {billingBusy ? tr("Ouverture de Stripe…", "Opening Stripe…") : limited ? tr("Mettre à jour mon paiement", "Update payment") : tr("Gérer mon abonnement", "Manage subscription")}
           </button>
         ) : null}

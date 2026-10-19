@@ -21,7 +21,12 @@ function harness(getBilling, search = "?siteId=site-b", getSites = async () => s
       if (!(index in state)) state[index] = initial;
       return [state[index], value => { state[index] = value; }];
     },
-    useEffect(callback) { effect = callback; }
+    useEffect(callback) { effect = callback; },
+    useRef(initial) {
+      const index = cursor++;
+      if (!(index in state)) state[index] = { current: initial };
+      return state[index];
+    }
   };
   const code = ts.transpileModule(fs.readFileSync(new URL("../app/billing/page.tsx", import.meta.url), "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX }
