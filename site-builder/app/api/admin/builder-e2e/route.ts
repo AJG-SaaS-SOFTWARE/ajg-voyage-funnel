@@ -656,10 +656,11 @@ export async function POST(request: NextRequest) {
       const support = await runCustomerSupportE2E({ service, origin: request.url,
         customerToken: token, userId: user.id, siteId, slug,
         publicMarker: republishMarker,
+        repairMode: locale === "en" ? "scheduled" : "customer",
         onPendingCentralResolution: id => { pendingSupportTicket = id; },
         onCentralResolution: () => { pendingSupportTicket = ""; } });
       steps.push({ key: "customer_support", label: "Support client réel", status: "pass",
-        detail: `Ticket ${support.ticketId} : diagnostic, réparation sûre, vérification indépendante du domaine et du contenu public, résolution automatique dans ELTARA avec audit, puis résolution centrale confirmée et relue avant nettoyage.` });
+        detail: `Ticket ${support.ticketId} : diagnostic, réparation sûre (${support.repairMode === "scheduled" ? "traitement planifié limité au site jetable" : "parcours client"}), vérification indépendante du domaine et du contenu public, résolution automatique dans ELTARA avec audit, puis résolution centrale confirmée et relue avant nettoyage.` });
     }
     currentStage = "complete";
   } catch (error) {

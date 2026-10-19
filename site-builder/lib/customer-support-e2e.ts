@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyManagedRepair } from "./support-remediation";
 import { verifySupportTicketInRun } from "./run-intake-reporting";
+import { runSupportRemediationSweepForSite } from "./support-remediation-sweep";
 
 // One owned disposable site only. No global RUN sweep or unrelated ticket mutation.
 export async function runCustomerSupportE2E(input: {
@@ -8,6 +9,7 @@ export async function runCustomerSupportE2E(input: {
   userId: string; siteId: string; slug: string; publicMarker: string;
   onPendingCentralResolution?: (ticketId: string) => void;
   onCentralResolution?: () => void;
+  repairMode?: "customer" | "scheduled";
 }) {
   const { service, siteId, userId } = input;
   async function call(path: string, method: string, body: unknown) {
@@ -41,11 +43,19 @@ export async function runCustomerSupportE2E(input: {
     throw new Error("support_central_receipt_unconfirmed");
   }
   if (!(await verifySupportTicketInRun(id, intakeId))) throw new Error("support_central_readback_unconfirmed");
-  const repaired = await call("/api/support/remediate", "POST", {
-    siteId, action: "managed_domain_repair"
-  });
-  if (repaired?.result?.status !== "succeeded" || repaired.result.verified !== true ||
-      repaired.result.audited !== true || !(await verifyManagedRepair(service, { userId, siteId }))) {
+  let repairVerified = false, productResolutionVerified = false, centralResolutionVerified = false;
+  if (input.repairMode === "scheduled") {
+    const sweep = await runSupportRemediationSweepForSite(service, userId, siteId);
+    repairVerified = sweep.scanned === 1 && sweep.attempted === 1 && sweep.succeeded === 1 && sweep.failed === 0;
+    productResolutionVerified = sweep.ticketsResolved === 1;
+    centralResolutionVerified = sweep.centralResolutionsVerified === 1;
+  } else {
+    const repaired = await call("/api/support/remediate", "POST", { siteId, action: "managed_domain_repair" });
+    repairVerified = repaired?.result?.status === "succeeded" && repaired.result.verified === true && repaired.result.audited === true;
+    productResolutionVerified = repaired?.ticketResolution?.resolved === true && repaired.ticketResolution.audited === true;
+    centralResolutionVerified = repaired?.ticketResolution?.centralResolutionVerified === true;
+  }
+  if (!repairVerified || !(await verifyManagedRepair(service, { userId, siteId }))) {
     throw new Error("support_repair_unconfirmed");
   }
   const publicResponse = await fetch(new URL(`/site/${input.slug}`, input.origin), {
@@ -54,7 +64,7 @@ export async function runCustomerSupportE2E(input: {
   if (!publicResponse.ok || !(await publicResponse.text()).includes(input.publicMarker)) {
     throw new Error("support_public_result_unconfirmed");
   }
-  if (repaired.ticketResolution?.resolved !== true || repaired.ticketResolution?.audited !== true) {
+  if (!productResolutionVerified) {
     throw new Error("support_automatic_resolution_unconfirmed");
   }
   const customer = await call("/api/support/tickets", "GET", null);
@@ -62,7 +72,7 @@ export async function runCustomerSupportE2E(input: {
     ticket.id === id && ticket.status === "resolved")) throw new Error("support_customer_readback_failed");
   const [events, repairs] = await Promise.all([
     service.from("support_ticket_events").select("event_type,actor_type,metadata").eq("ticket_id", id),
-    service.from("support_remediation_runs").select("status,result_code").eq("ticket_id", id)
+    service.from("support_remediation_runs").select("status,result_code,trigger_source").eq("ticket_id", id)
   ]);
   if (events.error || repairs.error ||
       !events.data?.some(row => row.event_type === "created" && row.actor_type === "client") ||
@@ -70,14 +80,15 @@ export async function runCustomerSupportE2E(input: {
         row.metadata?.source === "ajg-run-intake" && row.metadata?.request_id === intakeId) ||
       !events.data?.some(row => row.event_type === "resolution" && row.actor_type === "system" && row.metadata?.status === "resolved" &&
         row.metadata?.resolution_code === "auto_verified_managed_primary_repair") ||
-      !repairs.data?.some(row => row.status === "succeeded" && row.result_code === "managed_domain_primary_repaired")) {
+      !repairs.data?.some(row => row.status === "succeeded" && row.result_code === "managed_domain_primary_repaired" &&
+        (input.repairMode !== "scheduled" || row.trigger_source === "system"))) {
     throw new Error("support_durable_evidence_unconfirmed");
   }
-  if (repaired.ticketResolution?.centralResolutionVerified !== true ||
+  if (!centralResolutionVerified ||
       !(await verifySupportTicketInRun(id, intakeId, "resolved"))) {
     throw new Error("support_central_resolution_unconfirmed");
   }
   input.onCentralResolution?.();
-  return { ticketId: id, centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "automatic_central_resolution" as const,
+  return { ticketId: id, repairMode: input.repairMode || "customer", centralReceiptVerified: true, centralRequestId: intakeId, repairVerified: true, closure: "automatic_central_resolution" as const,
     centralCockpitVerified: true, automaticProductResolutionVerified: true, centralResolutionVerified: true, automaticClosureVerified: true };
 }

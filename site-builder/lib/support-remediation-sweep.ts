@@ -63,22 +63,28 @@ function emptyResult(): SupportRemediationSweepResult {
 
 async function sweepWithClient(
   service: SupabaseClient,
-  now: Date
+  now: Date,
+  scope?: CandidateSite
 ): Promise<SupportRemediationSweepResult> {
   const result = emptyResult();
 
-  const { count, error: countError } = await service.from("sites")
+  let countQuery = service.from("sites")
     .select("id", { count: "exact", head: true })
     .eq("status", "published").eq("privacy_state", "active");
+  if (scope) countQuery = countQuery.eq("id", scope.id).eq("owner_id", scope.owner_id);
+  const { count, error: countError } = await countQuery;
   if (countError) throw new Error("remediation_site_count_unavailable");
+  if (scope && count !== 1) throw new Error("support_remediation_scope_unconfirmed");
   const window = supportScanWindow(count, now, MAX_SCAN);
   if (!window.count) return result;
 
-  const { data: siteRows, error: siteError } = await service
+  let sitesQuery = service
     .from("sites")
     .select("id,owner_id")
     .eq("status", "published")
-    .eq("privacy_state", "active")
+    .eq("privacy_state", "active");
+  if (scope) sitesQuery = sitesQuery.eq("id", scope.id).eq("owner_id", scope.owner_id);
+  const { data: siteRows, error: siteError } = await sitesQuery
     .order("id", { ascending: true })
     .limit(MAX_SCAN)
     .range(window.offset, window.end);
@@ -86,6 +92,9 @@ async function sweepWithClient(
   if (siteError) throw new Error("remediation_sites_unavailable");
 
   const sites = (siteRows || []) as CandidateSite[];
+  if (scope && (sites.length !== 1 || sites[0]?.id !== scope.id || sites[0]?.owner_id !== scope.owner_id)) {
+    throw new Error("support_remediation_scope_unconfirmed");
+  }
   result.scanned = sites.length;
   if (!sites.length) return result;
 
@@ -242,6 +251,19 @@ async function sweepWithClient(
 
   result.ok = result.failed === 0 && result.ticketCompletionFailures === 0;
   return result;
+}
+
+/** Server-only controlled recipe entry: the ordinary sweep, restricted to one owned fixture. */
+export async function runSupportRemediationSweepForSite(
+  service: SupabaseClient, userId: string, siteId: string, now = new Date()
+): Promise<SupportRemediationSweepResult> {
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  try {
+    if (!uuid.test(userId) || !uuid.test(siteId)) throw new Error("invalid_scope");
+    return await sweepWithClient(service, now, { id: siteId, owner_id: userId });
+  } catch {
+    return { ...emptyResult(), ok: false, error: "support_remediation_scope_unconfirmed" };
+  }
 }
 
 export async function runSupportRemediationSweepSafely(

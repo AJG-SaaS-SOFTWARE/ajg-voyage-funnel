@@ -15,8 +15,14 @@ The existing scan limit (50), repair limit (10), rotation and cooldown remain. A
 - Behavioral tests execute the real Supabase JS client with synthetic HTTP responses and the real resolution verifier: scoped bounded selection, ordering, audit binding, exact CAS, independent readback, negative evidence, uncertain responses, continuation and linked-work cap.
 - PGlite executes the unchanged resolution migration against isolated synthetic tables. An unlinked system audit cannot resolve the ticket; a matching linked audit can resolve it once. Stale versions, foreign ownership and a newly configured custom domain cause no resolution writes.
 - Full local tests, types, lint and production build are required, followed by CI on the exact PR head.
-- This does not establish the provenance or resolution of historical #525/#526, a live scheduled repair, browser checkout, email login or external DNS repair. The existing structural release recipe exercises customer-triggered completion, not the scheduled scan.
+- This does not establish the provenance or resolution of historical #525/#526, a natural cron repair, browser checkout, email login or external DNS repair.
 - If product resolution succeeds but central completion is unconfirmed, its durable evidence is retained and the cycle reports failure. A later repair sweep does not replay the mutation merely to obtain another completion attempt. Recovery/reconciliation of that pending completion requires its own bounded, evidence-based increment.
+
+## Controlled scheduled recipe
+
+The structural release retains the FR customer-triggered repair and assigns EN to the actual scheduled sweep executor restricted to its one disposable owned site. `runSupportRemediationSweepForSite` constrains both count and site reads by site ID and owner ID, rejects invalid UUIDs and missing/broadened scope, then runs the same eligibility, cooldown, ticket selection, repair and completion implementation used by cron. It exposes no new HTTP endpoint or caller-supplied release target.
+
+The recipe still creates its ticket with the ordinary customer token, verifies the original central intake receipt, independently checks domain/public content and customer-visible resolution, and checks the durable repair's `trigger_source=system` in scheduled mode. Cleanup remains blocked until the independent central resolved readback succeeds. No global sweep is used by the recipe. A passing release proves this scoped system execution, not an hourly cron firing or external DNS repair.
 
 ## Development scheduling
 
