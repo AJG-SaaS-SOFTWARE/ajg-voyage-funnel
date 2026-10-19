@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../lib/supabase-browser";
 import { useProductLocale } from "../../lib/product-i18n";
@@ -33,6 +33,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const sending = useRef(false);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -46,6 +48,7 @@ export default function LoginPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (sending.current || state === "sent") return;
     setError("");
 
     const supabase = getSupabaseBrowserClient();
@@ -54,26 +57,39 @@ export default function LoginPage() {
       return;
     }
 
+    sending.current = true;
     setState("sending");
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin + `/builder?lang=${locale}`,
-        shouldCreateUser: false
-      }
-    });
+    const requestedEmail = email.trim();
+    try {
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: requestedEmail,
+        options: {
+          emailRedirectTo: window.location.origin + `/builder?lang=${locale}`,
+          shouldCreateUser: false
+        }
+      });
 
-    if (authError) {
+      if (authError) {
+        setState("idle");
+        setError(tr(
+          "La demande de connexion n’a pas abouti. Vérifiez votre boîte mail, votre connexion et l’adresse invitée avant de réessayer.",
+          "The sign-in request did not complete. Check your inbox, connection and invited email address before trying again."
+        ));
+        return;
+      }
+      setSubmittedEmail(requestedEmail);
+      setState("sent");
+    } catch {
+      // An interrupted response cannot establish whether the email was sent.
+      // Never retry automatically or expose raw provider details.
       setState("idle");
-      setError(
-        tr(
-          "Le lien de connexion n’a pas pu être envoyé. La bêta privée est accessible sur invitation : vérifiez que vous utilisez exactement l’adresse invitée.",
-          "The sign-in link could not be sent. The private beta is invitation-only: make sure you are using the exact email address that was invited."
-        )
-      );
-      return;
+      setError(tr(
+        "L’envoi n’a pas pu être confirmé. Vérifiez votre boîte mail et les indésirables avant de réessayer.",
+        "We could not confirm that the link was sent. Check your inbox and spam folder before trying again."
+      ));
+    } finally {
+      sending.current = false;
     }
-    setState("sent");
   };
 
   return (
@@ -117,7 +133,7 @@ export default function LoginPage() {
               <span className="success-icon"><MailIcon /></span>
               <div>
                 <b>{tr("Vérifiez votre boîte mail", "Check your inbox")}</b>
-                <p>{tr("Le lien de connexion vient d’être envoyé à", "A sign-in link has been sent to")} {email}.</p>
+                <p>{tr("Si cette adresse est autorisée, vous recevrez un lien de connexion à", "If this address is authorized, you will receive a sign-in link at")} {submittedEmail}. {tr("Pensez à vérifier les indésirables.", "Please also check your spam folder.")}</p>
               </div>
             </div>
           ) : (
@@ -128,6 +144,8 @@ export default function LoginPage() {
                   <MailIcon />
                   <input
                     type="email"
+                    autoComplete="email"
+                    disabled={state === "sending"}
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -135,7 +153,7 @@ export default function LoginPage() {
                   />
                 </div>
               </label>
-              {error ? <p className="form-error">{error}</p> : null}
+              {error ? <p className="form-error" role="alert">{error}</p> : null}
               <button className="button primary auth-submit premium-button" disabled={state === "sending"}>
                 {state === "sending" ? tr("Envoi…", "Sending…") : tr("Recevoir mon lien de connexion", "Send me a sign-in link")}
                 {state !== "sending" ? <span aria-hidden="true">→</span> : null}

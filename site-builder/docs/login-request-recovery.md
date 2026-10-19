@@ -1,0 +1,13 @@
+# Customer login request recovery
+
+The email sign-in form previously allowed an unexpected rejected SDK promise to escape after setting `sending`, leaving its submit button disabled. A repeated submit could also send multiple OTP requests before React committed its disabled state. Three behavioral tests first reproduced those failures and missing email trimming against the prior form.
+
+The form now takes a synchronous in-flight lock, trims the captured email, disables editing while pending and always releases the lock after the request settles. A returned provider error restores the form with a fixed FR/EN message. A thrown error restores it with an explicitly uncertain send result, asking the customer to check inbox/spam before manually trying again. It never retries automatically, logs raw errors or displays provider contents. An accepted response uses conditional wording because acceptance does not establish email delivery or account eligibility. Confirmation uses the submitted address, not a later mutable input value.
+
+The existing `shouldCreateUser: false`, redirect target and server authorization remain. This changes UI failure handling only; no Auth settings, invitations, roles, payment configuration or sales activation are changed. This lock is local to the mounted form, not a cross-tab or distributed rate limiter. A promise which never settles remains pending; there is no timeout/retry that could misrepresent an uncertain send.
+
+## Evidence and remaining customer journey
+
+On 19 October 2026, the production browser reached `/login` and displayed invitation-only access, an email field and a sign-in-link button. No recipe mailbox/invited ordinary customer identity was available for a real delivered email flow. No email was sent and no existing account session was reused. The full email → browser → Stripe sandbox → server rights → publication journey remains unproven. `ordinaryE2EAccount` uses a disposable preconfirmed password session and cannot substitute for that evidence. #525/#526 remain open without their own source resolution proof.
+
+Behavioral tests execute the actual TSX component submit handler and rendered props with synthetic React hooks and an injected auth client. They prove rejected request recovery in FR/EN, a single request during simultaneous submission, manual retry after failure, exact normalized email/locale and the unchanged no-user-creation option. They do not prove browser event scheduling, Supabase delivery, rate limits, login or payment. Full test suite, types, lint, build and exact-head remote CI are required before merging; release/browser results must be recorded separately.

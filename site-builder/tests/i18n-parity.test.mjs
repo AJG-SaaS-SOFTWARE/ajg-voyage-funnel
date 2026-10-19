@@ -256,7 +256,8 @@ test("authentication and beta invitation preserve the chosen locale across email
   const adminPage = read("app/admin/page.tsx");
 
   assert.match(login, /builder\?lang=\$\{locale\}/);
-  assert.match(login, /The sign-in link could not be sent/);
+  assert.match(login, /The sign-in request did not complete/);
+  assert.match(login, /We could not confirm that the link was sent/);
   assert.match(provider, /URLSearchParams\(window\.location\.search\)/);
   assert.match(provider, /explicitLocale/);
   assert.match(betaRoute, /ajg_builder_locale: locale/);

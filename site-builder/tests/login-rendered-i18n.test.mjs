@@ -26,6 +26,7 @@ function loadLoginPage() {
       useState(initial) {
         return [initial, () => undefined];
       },
+      useRef(initial) { return { current: initial }; },
       useEffect() {}
     },
     "react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "fragment" },
