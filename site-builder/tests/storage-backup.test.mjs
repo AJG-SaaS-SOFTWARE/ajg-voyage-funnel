@@ -57,3 +57,28 @@ test("retention defaults to 35 days", () => {
     false
   );
 });
+
+const freshnessNow = Date.parse("2026-10-19T20:00:00.000Z");
+for (const stamp of ["2026-10-19T20:00:00.001Z", "2027-10-19T20:00:00.000Z",
+  1, true, {}, ["2026-10-19T20:00:00.000Z"]]) {
+  test(`backup freshness never treats future or non-string evidence as healthy: ${JSON.stringify(stamp)}`, () => {
+    assert.deepEqual(storageBackupFreshness(stamp, freshnessNow), { status: "unknown", ageHours: null });
+  });
+}
+
+for (const clock of [NaN, Infinity, -Infinity, -1, freshnessNow + 0.5, 8.64e15 + 1, "2026-10-19", null]) {
+  test(`backup freshness refuses an invalid observation clock: ${clock}`, () => {
+    assert.deepEqual(storageBackupFreshness("2026-10-19T20:00:00.000Z", clock), { status: "unknown", ageHours: null });
+  });
+}
+
+test("freshness boundaries retain the existing exact 36h and 72h contract", () => {
+  for (const [age, status] of [[0, "healthy"], [36 * 3_600_000, "healthy"],
+    [36 * 3_600_000 + 1, "warning"], [72 * 3_600_000, "warning"], [72 * 3_600_000 + 1, "critical"]]) {
+    const result = storageBackupFreshness(new Date(freshnessNow - age).toISOString(), freshnessNow);
+    assert.equal(result.status, status);
+    assert.equal(result.ageHours, age / 3_600_000);
+  }
+  assert.deepEqual(storageBackupFreshness(undefined, freshnessNow), { status: "unknown", ageHours: null });
+  assert.deepEqual(storageBackupFreshness("invalid", freshnessNow), { status: "unknown", ageHours: null });
+});

@@ -35,16 +35,18 @@ export function storageBackupFreshness(
   status: BackupFreshness;
   ageHours: number | null;
 } {
-  if (!lastCompletedAt) {
+  if (typeof lastCompletedAt !== "string" || !lastCompletedAt ||
+      !Number.isSafeInteger(now) || now < 0 || now > 8_640_000_000_000_000) {
     return { status: "unknown", ageHours: null };
   }
 
   const timestamp = Date.parse(lastCompletedAt);
-  if (!Number.isFinite(timestamp)) {
+  if (!Number.isFinite(timestamp) || timestamp > now) {
     return { status: "unknown", ageHours: null };
   }
 
-  const ageHours = Math.max(0, (now - timestamp) / (60 * 60 * 1000));
+  // Future completion is unconfirmed evidence, never a zero-age success.
+  const ageHours = (now - timestamp) / (60 * 60 * 1000);
   return {
     status: ageHours <= 36 ? "healthy" : ageHours <= 72 ? "warning" : "critical",
     ageHours
