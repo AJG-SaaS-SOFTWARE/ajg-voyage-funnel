@@ -26,10 +26,28 @@ to reproduce the configuration gap.
 The existing schedule contract test is changed to require structural scheduling
 and absence of the full-AI schedule. It fails against the old manifest and passes
 after removal. Existing workflow tests continue to require manual opt-in/default
-false. Full CI and the isolated production release must succeed on the exact SHA;
-runtime scheduling should be inspected after deployment where the connected
-platform exposes it. Do not infer the removal of a live schedule from local JSON
-alone. The recurring development task is not modified or disabled.
+false. The post-promotion release now independently reads the live project via
+the same authenticated GET `/v9/projects/{id}` already used by preflight. No
+credential is extracted and no cron job is invoked. Up to six read-only attempts
+allow configuration propagation; unconfirmed state fails validation without an
+automatic rollback.
+
+`scripts/verify-deployed-crons.mjs` verifies project/team identity, enabled cron
+metadata, a valid scheduler-origin deployment ID and the exact path/schedule
+multiset against the reviewed manifest. It rejects the paid recipe in either
+manifest or live data, including its query/trailing-slash form. Missing, disabled,
+extra, duplicate or changed definitions fail with fixed diagnostics and no raw
+project metadata in logs. The origin ID is recorded without assuming unchanged
+definitions receive a new ID on every release. This checks configured scheduling,
+not successful natural invocation of every job or absence of future manual calls.
+
+The response fields are documented in the official
+[project API](https://vercel.com/docs/rest-api/projects/find-a-project-by-id-or-name).
+Controlled metadata and CLI tests cover identity, enabled/disabled history,
+missing/changed/duplicate jobs, retained paid jobs and confidential-content
+rejection; workflow tests require the fresh read after promotion. Full exact-SHA
+CI and the isolated release must pass before claiming the live check executed.
+The recurring development task is not modified or disabled.
 
 Baseline main/release/production `05f7602b39f765a53a291d7179e1d5b2ea973157`
 (#538): controlled release 39306429332 succeeded with actual provider sandbox

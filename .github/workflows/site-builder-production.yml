@@ -442,6 +442,25 @@ jobs:
 
           echo "Cockpit successfully validated its private ELTARA reporting credential." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify deployed cron configuration without invoking jobs
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.release.outputs.deployment_id }}
+        run: |
+          for attempt in $(seq 1 6); do
+            if curl --fail --silent --show-error --max-time 15 \
+              "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Accept: application/json" > /tmp/eltara-deployed-crons.json \
+              && node scripts/verify-deployed-crons.mjs /tmp/eltara-deployed-crons.json vercel.json "$VERCEL_PROJECT_ID" "$VERCEL_ORG_ID"; then
+              echo "Live production cron definitions match the reviewed manifest; full-AI recipe is unscheduled. Deployment: $DEPLOYMENT_ID." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$attempt" -lt 6 ]; then sleep 5; fi
+          done
+          echo "::error::Live production cron configuration could not be confirmed. No cron job was invoked and no automatic rollback is requested."
+          exit 1
+
       - name: Run Stripe sandbox mutation smoke
         shell: bash
         run: |
