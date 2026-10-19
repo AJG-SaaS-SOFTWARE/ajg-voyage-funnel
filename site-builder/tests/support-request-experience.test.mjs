@@ -13,13 +13,13 @@ const health = { siteId: null, diagnosis: { overall: "healthy", checks: [] } };
 const response = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
 function harness({ fetch, session = true, locale = "fr" } = {}) {
-  const states = [], refs = [], effects = [], calls = [];
+  const states = [], refs = [], effects = [], calls = [], updates = [];
   let cursor = 0, refCursor = 0;
   const hooks = {
     useState(initial) {
       const slot = cursor++;
       if (!(slot in states)) states[slot] = initial;
-      return [states[slot], (value) => { states[slot] = typeof value === "function" ? value(states[slot]) : value; }];
+      return [states[slot], (value) => { states[slot] = typeof value === "function" ? value(states[slot]) : value; updates.push(states[slot]); }];
     },
     useRef(initial) { const slot = refCursor++; return refs[slot] ??= { current: initial }; },
     useEffect(effect) { if (!effects.length) effects.push(effect); }
@@ -63,11 +63,11 @@ function harness({ fetch, session = true, locale = "fr" } = {}) {
     find("textarea").props.onChange({ target: { value: "Synthetic description for the isolated test." } });
   };
   render();
-  return { calls, render, nodes, find, text: () => text(render()), fill,
+  return { calls, updates, render, nodes, find, text: () => text(render()), fill,
     submit: () => find("form").props.onSubmit({ preventDefault() {} }),
     async mount() { effects[0](); await new Promise(setImmediate); },
     async refresh() {
-      const button = nodes(render()).find((node) => node.type === "button" && ["Actualiser mes demandes", "Diagnostiquer mon site"].includes(node.props.children));
+      const button = nodes(render()).find((node) => node.type === "button" && ["Actualiser mes demandes", "Diagnostiquer mon site", "Refresh my requests", "Diagnose my website"].includes(node.props.children));
       assert.ok(button, "Refresh action must remain accessible");
       button.props.onClick();
       await new Promise(setImmediate);
@@ -321,3 +321,63 @@ test("positive GET confirmation cannot be downgraded by a later failed POST resp
   assert.doesNotMatch(app.text(), /n’a pas pu être confirmé/);
   assert.equal(app.find("input").props.value, "");
 });
+
+for (const outcome of ["old success", "old failure", "old unauthorized", "old rejection"]) {
+  test(`a newer support list cannot be replaced by ${outcome}`, async () => {
+    let finish, reject, reads = 0;
+    const pending = new Promise((resolve, fail) => { finish = resolve; reject = fail; });
+    const app = harness({ fetch: async (_, options) => options.method === "POST"
+      ? response(201, { ticket: { id: JSON.parse(options.body).requestId, status: "diagnosed" } })
+      : ++reads === 1 ? pending : response(200, { health, tickets: [] }) });
+    await app.mount(); app.fill(); await app.submit();
+    if (outcome === "old rejection") reject(new Error("private stale transport detail"));
+    else finish(outcome === "old success"
+      ? response(200, { health, tickets: [{ id: "old", subject: "Old synthetic ticket", message: "Old body", status: "diagnosed", created_at: "2026-10-01" }] })
+      : response(outcome === "old failure" ? 503 : 401, {}));
+    await new Promise(setImmediate);
+    assert.match(app.text(), /Aucune demande ouverte/);
+    assert.doesNotMatch(app.text(), /Old synthetic ticket|Connexion requise|momentanément indisponible|private stale/);
+    assert.match(app.text(), /Ticket enregistré/);
+  });
+}
+
+for (const body of [null, {}, { health: null, tickets: [] }, { health, tickets: null }]) {
+  test(`incomplete HTTP200 support envelope remains unavailable: ${JSON.stringify(body)}`, async () => {
+    const app = harness({ fetch: async () => response(200, body) });
+    await app.mount();
+    assert.match(app.text(), /momentanément indisponible/);
+    assert.doesNotMatch(app.text(), /Aucune demande ouverte/);
+    assert.ok(app.find("form"));
+  });
+}
+
+test("malformed refreshed history preserves confirmed submission and its no-resend guidance", async () => {
+  const app = harness({ fetch: async (_, options) => options.method === "POST"
+    ? response(201, { ticket: { id: JSON.parse(options.body).requestId, status: "diagnosed" } })
+    : response(200, {}) });
+  app.fill(); await app.submit();
+  assert.match(app.text(), /Ticket enregistré/);
+  assert.match(app.text(), /ne l’envoyez pas une seconde fois/);
+  assert.equal(app.find("input").props.value, "");
+});
+
+for (const locale of ["fr", "en"]) {
+  test(`expired manual refresh never records a successful ${locale} diagnosis`, async () => {
+    let reads = 0;
+    const app = harness({ locale, fetch: async () => ++reads === 1
+      ? response(200, { health, tickets: [] }) : response(401, {}) });
+    await app.mount(); await app.refresh();
+    assert.match(app.text(), locale === "fr" ? /Connexion requise/ : /Sign-in required/);
+    assert.ok(!app.updates.some(value => typeof value === "string" && /Diagnostic actualisé|Diagnosis refreshed/.test(value)));
+  });
+
+  test(`failed manual refresh uses a fixed ${locale} message, not provider details`, async () => {
+    let reads = 0;
+    const app = harness({ locale, fetch: async () => ++reads === 1
+      ? response(200, { health, tickets: [] })
+      : response(503, { error: "private synthetic provider detail" }) });
+    await app.mount(); await app.refresh();
+    assert.doesNotMatch(app.text(), /private synthetic provider detail/);
+    assert.match(app.text(), locale === "fr" ? /Nouveau diagnostic impossible/ : /Unable to run a new diagnosis/);
+  });
+}

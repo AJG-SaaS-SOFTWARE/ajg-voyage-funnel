@@ -47,6 +47,7 @@ export default function SupportPage() {
   const submitting = useRef(false);
   const requestIdentity = useRef<{ id: string; payload: string } | null>(null);
   const confirmedRequest = useRef<string | null>(null);
+  const loadVersion = useRef(0);
 
   function draftPayload() {
     return JSON.stringify({ category, subject: subject.trim(), message: message.trim() });
@@ -62,33 +63,48 @@ export default function SupportPage() {
   }
 
   async function load() {
-    const accessToken = await token();
-    if (!accessToken) {
-      setState("guest");
-      return;
-    }
-    const response = await fetch("/api/support/tickets", {
-      headers: { Authorization: "Bearer " + accessToken },
-      cache: "no-store"
-    });
-    const body = await response.json().catch(() => null);
-    if (response.status === 401) {
-      setState("guest");
-      return;
-    }
-    if (!response.ok) throw new Error(body?.error || tr("Support indisponible.", "Support is unavailable."));
-    const pending = requestIdentity.current;
-    if (pending && Array.isArray(body?.tickets) && body.tickets.some((ticket: Ticket) => ticket.id === pending.id)) {
-      confirmedRequest.current = pending.id;
-      requestIdentity.current = null;
-      if (latestDraft.current === pending.payload) {
-        setSubject("");
-        setMessage("");
+    const version = ++loadVersion.current;
+    try {
+      const accessToken = await token();
+      if (version !== loadVersion.current) return false;
+      if (!accessToken) {
+        setState("guest");
+        return false;
       }
-      setNotice(tr("Votre demande a été retrouvée et est enregistrée. Aucun nouvel envoi n’est nécessaire.", "Your request was found and is saved. No new submission is needed."));
+      const response = await fetch("/api/support/tickets", {
+        headers: { Authorization: "Bearer " + accessToken },
+        cache: "no-store"
+      });
+      const body = await response.json().catch(() => null);
+      if (version !== loadVersion.current) return false;
+      if (response.status === 401) {
+        setState("guest");
+        return false;
+      }
+      if (!response.ok || !Array.isArray(body?.tickets) ||
+          !Array.isArray(body?.health?.diagnosis?.checks) ||
+          !["healthy", "action", "incident"].includes(body?.health?.diagnosis?.overall)) {
+        throw new Error("support_read_unconfirmed");
+      }
+      const pending = requestIdentity.current;
+      if (pending && body.tickets.some((ticket: Ticket) => ticket.id === pending.id)) {
+        confirmedRequest.current = pending.id;
+        requestIdentity.current = null;
+        if (latestDraft.current === pending.payload) {
+          setSubject("");
+          setMessage("");
+        }
+        setNotice(tr("Votre demande a été retrouvée et est enregistrée. Aucun nouvel envoi n’est nécessaire.", "Your request was found and is saved. No new submission is needed."));
+      }
+      setPayload(body);
+      setState("ready");
+      return true;
+    } catch {
+      // An older read (including a rejected transport/session read) must not
+      // replace a newer result or downgrade a confirmed submission.
+      if (version !== loadVersion.current) return false;
+      throw new Error(tr("Support indisponible.", "Support is unavailable."));
     }
-    setPayload(body);
-    setState("ready");
   }
 
   useEffect(() => {
@@ -192,13 +208,13 @@ export default function SupportPage() {
     setDiagnosing(true);
     setHealthNotice("");
     try {
-      await load();
+      if (!await load()) return;
       setHealthNotice(tr(
         "Diagnostic actualisé. Les contrôles techniques de votre site viennent d’être relancés.",
         "Diagnosis refreshed. Your website technical checks have just been run again."
       ));
-    } catch (error) {
-      setHealthNotice(error instanceof Error ? error.message : tr(
+    } catch {
+      setHealthNotice(tr(
         "Nouveau diagnostic impossible.",
         "Unable to run a new diagnosis."
       ));
