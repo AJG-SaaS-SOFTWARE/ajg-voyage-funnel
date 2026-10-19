@@ -148,7 +148,7 @@ test("orchestration failures are journaled per mode so retry budgets remain inde
   assert.match(runner, /status: "failed"/);
 });
 
-test("Vercel schedules structural evidence before full AI evidence", () => {
+test("Vercel schedules structural evidence while full AI evidence remains manual", () => {
   const structural = vercel.crons.find(
     (entry) => entry.path === "/api/cron/release-e2e-structural"
   );
@@ -159,8 +159,5 @@ test("Vercel schedules structural evidence before full AI evidence", () => {
     path: "/api/cron/release-e2e-structural",
     schedule: "25 * * * *"
   });
-  assert.deepEqual(full, {
-    path: "/api/cron/release-e2e",
-    schedule: "35 * * * *"
-  });
+  assert.equal(full, undefined, "the full AI recipe must not be an automatic Vercel cron");
 });
