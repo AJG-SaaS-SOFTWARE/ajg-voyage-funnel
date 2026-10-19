@@ -149,20 +149,36 @@ async function openStripeBillingPath(
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session?.access_token) throw new Error(tr("Votre session a expiré.", "Your session has expired."));
 
-  const response = await fetch(path, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-      "X-AJG-Locale": locale
-    },
-    body: JSON.stringify({ siteId, locale, ...payload })
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || typeof result?.url !== "string") {
-    throw new Error(result?.error || tr("Le service de facturation est indisponible.", "The billing service is unavailable."));
+  // Bound both headers and body reading. Aborting the browser request does not
+  // prove the server/Stripe mutation was cancelled, so never retry it here.
+  const deadline = AbortSignal.timeout(60_000);
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+        "X-AJG-Locale": locale
+      },
+      body: JSON.stringify({ siteId, locale, ...payload }),
+      signal: deadline
+    });
+    const result = await response.json().catch(() => ({}));
+    // A late result must not navigate after this attempt has expired.
+    if (deadline.aborted) throw new Error("billing_request_timeout");
+    if (!response.ok || typeof result?.url !== "string") {
+      throw new Error(result?.error || tr("Le service de facturation est indisponible.", "The billing service is unavailable."));
+    }
+    window.location.assign(result.url);
+  } catch (error) {
+    if (deadline.aborted) {
+      throw new Error(tr(
+        "L’ouverture de la facturation n’a pas pu être confirmée. Aucun changement de paiement n’est confirmé ici. Vous pouvez réessayer manuellement.",
+        "The billing page opening could not be confirmed. No payment change is confirmed here. You can try again manually."
+      ));
+    }
+    throw error;
   }
-  window.location.assign(result.url);
 }
 
 export async function startPlanCheckout(
