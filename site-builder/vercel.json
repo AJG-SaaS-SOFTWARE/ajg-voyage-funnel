@@ -24,10 +24,6 @@
     {
       "path": "/api/cron/release-e2e-structural",
       "schedule": "25 * * * *"
-    },
-    {
-      "path": "/api/cron/release-e2e",
-      "schedule": "35 * * * *"
     }
   ],
   "git": {
