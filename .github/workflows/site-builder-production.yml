@@ -637,6 +637,7 @@ jobs:
             exit 1
           fi
 
+          node scripts/verify-release-e2e-result.mjs /tmp/eltara-release-e2e-structural.json "$GITHUB_SHA" structural
           echo "Structural FR/EN release E2E passed or was already validated for $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run full AI FR/EN release E2E for deployed SHA
@@ -661,6 +662,7 @@ jobs:
             exit 1
           fi
 
+          node scripts/verify-release-e2e-result.mjs /tmp/eltara-release-e2e.json "$GITHUB_SHA" full
           echo "Full AI FR/EN release E2E passed or was already validated for $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify managed-domain HTTPS canary when available
