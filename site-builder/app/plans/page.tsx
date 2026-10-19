@@ -50,9 +50,12 @@ export default function PlansPage() {
   const [billingState, setBillingState] = useState<BillingState | null>(null);
 
   const loadSequence = useRef(0);
+  const checkoutInFlight = useRef(false);
+  const checkoutSite = useRef("");
 
   const load = async (selectedId?: string) => {
     const sequence = ++loadSequence.current;
+    checkoutSite.current = "";
     setLoaded(false);
     setLoadFailed(false);
     setBillingState(null);
@@ -79,6 +82,7 @@ export default function PlansPage() {
       setBetaAccess(beta);
       if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
       setBillingState(resolvedBilling);
+      checkoutSite.current = site?.id || "";
       setLoaded(true);
     } catch {
       if (sequence !== loadSequence.current) return;
@@ -97,7 +101,8 @@ export default function PlansPage() {
 
   async function beginPlanChange(planKey: "essential" | "growth", billingCycle: "monthly" | "annual") {
     if (!siteId || betaAccess.active) return;
-    if (!loaded || loadFailed || checkoutBusy) return;
+    if (!loaded || loadFailed || checkoutBusy || checkoutInFlight.current || checkoutSite.current !== siteId) return;
+    checkoutInFlight.current = true;
     const key = `${planKey}:${billingCycle}`;
     setCheckoutBusy(key);
     setCheckoutMessage("");
@@ -107,21 +112,24 @@ export default function PlansPage() {
         return;
       }
       await startPlanCheckout(siteId, planKey, billingCycle);
-    } catch (error) {
-      setCheckoutMessage(error instanceof Error ? error.message : tr("Facturation indisponible.", "Billing unavailable."));
+    } catch {
+      setCheckoutMessage(tr("L’ouverture de la facturation n’a pas pu être confirmée. Aucun changement d’offre n’est confirmé ici. Vous pouvez réessayer manuellement.", "The billing page opening could not be confirmed. No plan change is confirmed here. You can try again manually."));
+      checkoutInFlight.current = false;
       setCheckoutBusy("");
     }
   }
 
   async function buyAiLaunch() {
     if (!siteId || betaAccess.active) return;
-    if (!loaded || loadFailed || checkoutBusy) return;
+    if (!loaded || loadFailed || checkoutBusy || checkoutInFlight.current || checkoutSite.current !== siteId) return;
+    checkoutInFlight.current = true;
     setCheckoutBusy("ai_launch");
     setCheckoutMessage("");
     try {
       await startAiLaunchCheckout(siteId);
-    } catch (error) {
-      setCheckoutMessage(error instanceof Error ? error.message : tr("Paiement Création IA indisponible.", "AI Launch checkout unavailable."));
+    } catch {
+      setCheckoutMessage(tr("L’ouverture du paiement Création IA n’a pas pu être confirmée. Aucun achat n’est confirmé ici. Vous pouvez réessayer manuellement.", "The AI Creation checkout opening could not be confirmed. No purchase is confirmed here. You can try again manually."));
+      checkoutInFlight.current = false;
       setCheckoutBusy("");
     }
   }
@@ -162,7 +170,7 @@ export default function PlansPage() {
         <section className="panel">
           <label>
             {tr("Site", "Website")}
-            <select value={siteId} onChange={(event) => { setSiteId(event.target.value); void load(event.target.value); }}>
+            <select value={siteId} disabled={Boolean(checkoutBusy)} onChange={(event) => { if (checkoutInFlight.current) return; setSiteId(event.target.value); void load(event.target.value); }}>
               {sites.map((site) => <option key={site.id} value={site.id}>{site.slug}</option>)}
             </select>
           </label>
