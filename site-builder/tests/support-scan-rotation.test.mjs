@@ -32,6 +32,9 @@ function load(name,dependencies){
   new Function("require","module","exports",code)(id=>{
     if(id==="@supabase/supabase-js")return {};
     if(id==="./support-scan-window")return {supportScanWindow};
+    if(name==="support-remediation-sweep" && ["./support-health-server","./support-repair-resolution","./run-intake-reporting"].includes(id)) {
+      return new Proxy({}, { get() { return () => { throw new Error("No selected ticket: completion must not run"); }; } });
+    }
     assert.ok(id in dependencies,id);return dependencies[id];
   },module,module.exports);return module.exports;
 }

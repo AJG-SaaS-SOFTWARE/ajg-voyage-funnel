@@ -174,7 +174,7 @@ export async function runSupportOperationsAgentFromEnvironment() {
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
       reconcile: { ok: false, scanned: 0, resolved: 0, escalated: 0, waiting: 0, failed: 0, error: "not_configured" },
-      remediation: { ok: false, scanned: 0, eligible: 0, attempted: 0, succeeded: 0, noChange: 0, failed: 0, skippedCooldown: 0, skippedCustomDomain: 0, skippedAmbiguous: 0, error: "not_configured" },
+      remediation: { ok: false, scanned: 0, eligible: 0, attempted: 0, succeeded: 0, noChange: 0, failed: 0, skippedCooldown: 0, skippedCustomDomain: 0, skippedAmbiguous: 0, ticketsResolved: 0, centralResolutionsVerified: 0, ticketCompletionFailures: 0, skippedTicketBudget: 0, error: "not_configured" },
       platform: { ok: false, status: "failed" as const, repaired: 0, failed: 1, actions: [], backupStatusAfter: null },
       runtime: { checked: false, deploymentId: null, lookbackMinutes: 60, sampledLogs: 0, errorCount: 0, fatalCount: 0, http5xxCount: 0, truncated: false, status: "unknown" as const },
       reportedToRun: false,
