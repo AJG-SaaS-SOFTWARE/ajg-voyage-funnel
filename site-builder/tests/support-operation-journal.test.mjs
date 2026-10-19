@@ -27,6 +27,7 @@ function harness({ initial = { id: 17 }, completion = "ok", cleanupThrows = fals
   });
   const dependencies = {
     "@supabase/supabase-js": {},
+    "./support-central-reconcile": { runSupportCentralReconciliationSafely: async () => ({ ok: true, failed: 0 }) },
     "./platform-self-healing": { runPlatformSelfHealing: async () => {
       operations++;
       if (platformThrows) throw originalFailure;

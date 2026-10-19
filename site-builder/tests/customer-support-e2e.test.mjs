@@ -16,7 +16,7 @@ async function run(options={}){
   throw new Error('unexpected route');
  };
  const m={exports:{}};
- new Function('module','exports','require','fetch',code)(m,m.exports,()=>({verifyManagedRepair:async()=>!options.independentFailure,verifySupportTicketInRun:async(_ticket,_request,status)=>status==='resolved'?!options.missingResolvedReadback:!options.missingCentralReadback,runSupportRemediationSweepForSite:async(db,userId,siteId)=>{assert.equal(db,service);scopes.push({userId,siteId});return {ok:!options.unverified,scanned:options.globalScan?2:1,attempted:1,succeeded:1,failed:options.unverified?1:0,ticketsResolved:options.unresolved?0:1,centralResolutionsVerified:options.missingCentralResolution?0:1};}}),fakeFetch);
+ new Function('module','exports','require','fetch',code)(m,m.exports,()=>({verifyManagedRepair:async()=>!options.independentFailure,verifySupportTicketInRun:async(_ticket,_request,status)=>status==='resolved'?!options.missingResolvedReadback:!options.missingCentralReadback,reconcileCentralSupportForTicket:async(db,userId,siteId,id)=>{assert.equal(db,service);assert.equal(userId,"owner");assert.equal(siteId,"site");assert.equal(id,ticketId);return {ok:!options.reconciliationFailure,scanned:1,checked:1,completed:options.replayedCompletion?1:0,confirmed:1,alreadyConfirmed:0};},runSupportRemediationSweepForSite:async(db,userId,siteId)=>{assert.equal(db,service);scopes.push({userId,siteId});return {ok:!options.unverified,scanned:options.globalScan?2:1,attempted:1,succeeded:1,failed:options.unverified?1:0,ticketsResolved:options.unresolved?0:1,centralResolutionsVerified:options.missingCentralResolution?0:1};}}),fakeFetch);
  const promise=m.exports.runCustomerSupportE2E({service,origin:'https://eltara.example/api/admin/builder-e2e',customerToken:'customer-token',userId:'owner',siteId:'site',slug:'slug',publicMarker:'updated-marker',repairMode:options.scheduled?'scheduled':'customer',onPendingCentralResolution:id=>retention.push(['pending',id]),onCentralResolution:()=>retention.push(['resolved'])});
  return {calls,promise,retention,scopes};
 }
@@ -64,7 +64,7 @@ test('scheduled recipe scopes the real sweep to its fixture and requires the sys
  assert.deepEqual(h.retention[1],['resolved']);
 });
 test('scheduled recipe retains source evidence on broad scans, wrong trigger or incomplete closure',async()=>{
- for(const options of [{globalScan:true},{wrongTrigger:true},{unverified:true},{unresolved:true},{missingCentralResolution:true},{missingResolvedReadback:true}]){
+ for(const options of [{globalScan:true},{wrongTrigger:true},{unverified:true},{unresolved:true},{missingCentralResolution:true},{missingResolvedReadback:true},{reconciliationFailure:true},{replayedCompletion:true}]){
   const h=await run({...options,scheduled:true});await assert.rejects(h.promise);
   assert.equal(h.retention.length,1);assert.equal(h.retention[0][0],'pending');
  }

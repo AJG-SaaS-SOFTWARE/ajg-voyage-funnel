@@ -9,16 +9,17 @@ function harness(options = {}) {
   const calls = [], m = { exports: {} };
   const fetch = async (url, init) => {
     calls.push({ url, init });
-    if (options.lost) throw Error("private-provider-detail");
+    if (options.lost || (options.lostPost && init.method === "POST")) throw Error("private-provider-detail");
     if (init.method === "POST") {
       assert.deepEqual(JSON.parse(init.body), { action: "resolve_support", ticketId, requestId });
+      if (options.brokenAck) return new Response("{", { headers: { "content-type": "application/json" } });
       return Response.json({ ok: true, ticketId, requestId, status: "resolved", resolutionVerified: true, ...options.receipt }, { status: options.status || 200 });
     }
-    return Response.json({ ok: true, receipt: { ticketId, requestId, status: options.unresolved ? "triaged" : "resolved", resolutionVerified: !options.noProof, product: "ELTARA", source: "builder-support", updatedAt: "2026-10-18T16:00:00Z" } });
+    return Response.json({ ok: true, receipt: { ticketId, requestId, status: options.unresolved ? "triaged" : "resolved", resolutionVerified: !options.noProof && !options.unresolved, product: "ELTARA", source: "builder-support", updatedAt: "2026-10-18T16:00:00Z",...options.getReceipt } });
   };
   new Function("require", "module", "exports", "fetch", "process", code)(() => { throw Error("unexpected import"); }, m, m.exports, fetch,
     { env: { AJG_RUN_TOKEN: options.noToken ? "" : "synthetic" } });
-  return { calls, run: () => m.exports.resolveSupportTicketInRun(ticketId, requestId),
+  return { calls, run: () => m.exports.resolveSupportTicketInRun(ticketId, requestId), read: () => m.exports.readSupportTicketInRun(ticketId,requestId),
     notify: async (rows = [{ metadata: { request_id: requestId } }]) => m.exports.completeVerifiedSupportRepairInRun({ from() {
       return { select() { return this; }, eq() { return this; }, order() { return this; }, async limit() { return { data: rows, error: null }; } };
     } }, ticketId) };
@@ -26,6 +27,22 @@ function harness(options = {}) {
 test("central completion requires exact positive persistence and an independent resolved readback", async () => {
   const h = harness(); assert.equal(await h.run(), true); assert.equal(h.calls.length, 2);
   assert.equal(h.calls[0].init.redirect, "error"); assert.equal(h.calls[1].init.cache, "no-store");
+});
+test("a lost completion response is recovered only through a verified read, without a second POST",async()=>{
+  for(const options of [{lostPost:true},{brokenAck:true}]){
+    const h=harness(options);assert.equal(await h.run(),true);
+    assert.equal(h.calls.filter(c=>c.init.method==="POST").length,1);assert.equal(h.calls.length,2);
+  }
+  for(const options of [{lostPost:true,noProof:true},{lostPost:true,unresolved:true}]){
+    assert.equal(await harness(options).run(),false);
+  }
+});
+test("read-only central state preserves pending identity and rejects unrelated or malformed receipts",async()=>{
+  const h=harness({unresolved:true});assert.deepEqual(await h.read(),{status:"triaged",resolutionVerified:false});
+  assert.equal(h.calls.some(c=>c.init.method==="POST"),false);
+  for(const getReceipt of [{ticketId:"other"},{requestId:"other"},{product:"other"},{source:"other"},{status:"unknown"},{updatedAt:"invalid"},{status:"triaged",resolutionVerified:true}]) {
+    assert.equal(await harness({getReceipt}).read(),null);
+  }
 });
 test("mismatched, failed or uncertain completion never becomes a successful recipe", async () => {
   for (const options of [{ receipt: { requestId: "other" } }, { receipt: { ticketId: "other" } },

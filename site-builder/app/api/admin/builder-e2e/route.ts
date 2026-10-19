@@ -660,7 +660,7 @@ export async function POST(request: NextRequest) {
         onPendingCentralResolution: id => { pendingSupportTicket = id; },
         onCentralResolution: () => { pendingSupportTicket = ""; } });
       steps.push({ key: "customer_support", label: "Support client réel", status: "pass",
-        detail: `Ticket ${support.ticketId} : diagnostic, réparation sûre (${support.repairMode === "scheduled" ? "traitement planifié limité au site jetable" : "parcours client"}), vérification indépendante du domaine et du contenu public, résolution automatique dans ELTARA avec audit, puis résolution centrale confirmée et relue avant nettoyage.` });
+        detail: `Ticket ${support.ticketId} : diagnostic, réparation sûre (${support.repairMode === "scheduled" ? "traitement planifié limité au site jetable" : "parcours client"}), vérification indépendante du domaine et du contenu public, résolution automatique dans ELTARA avec audit, puis résolution centrale confirmée et relue avant nettoyage.${support.centralReconciliationVerified ? " Réconciliation centrale confirmée et auditée sans rejouer la réparation ni la clôture." : ""}` });
     }
     currentStage = "complete";
   } catch (error) {

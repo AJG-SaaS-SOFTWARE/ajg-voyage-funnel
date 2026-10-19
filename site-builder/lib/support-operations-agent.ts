@@ -4,6 +4,7 @@ import { runSupportRemediationSweepSafely } from "./support-remediation-sweep";
 import { getRecentRuntimeHealth } from "./vercel-runtime-health";
 import { reportRuntimeIncidentToRun } from "./run-intake-reporting";
 import { runPlatformSelfHealing } from "./platform-self-healing";
+import { runSupportCentralReconciliationSafely } from "./support-central-reconcile";
 
 export type SupportOperationsAgentResult = {
   ok: boolean;
@@ -13,6 +14,7 @@ export type SupportOperationsAgentResult = {
   completedAt: string;
   reconcile: Awaited<ReturnType<typeof runSupportReconciliationSafely>>;
   remediation: Awaited<ReturnType<typeof runSupportRemediationSweepSafely>>;
+  centralCompletion: Awaited<ReturnType<typeof runSupportCentralReconciliationSafely>>;
   platform: Awaited<ReturnType<typeof runPlatformSelfHealing>>;
   runtime: Awaited<ReturnType<typeof getRecentRuntimeHealth>>;
   reportedToRun: boolean;
@@ -23,10 +25,11 @@ export type SupportOperationsAgentResult = {
 function statusFor(input: {
   reconcile: Awaited<ReturnType<typeof runSupportReconciliationSafely>>;
   remediation: Awaited<ReturnType<typeof runSupportRemediationSweepSafely>>;
+  centralCompletion: Awaited<ReturnType<typeof runSupportCentralReconciliationSafely>>;
   platform: Awaited<ReturnType<typeof runPlatformSelfHealing>>;
   runtime: Awaited<ReturnType<typeof getRecentRuntimeHealth>>;
 }) {
-  if (!input.reconcile.ok || !input.remediation.ok || input.platform.status === "failed") return "failed" as const;
+  if (!input.reconcile.ok || !input.remediation.ok || !input.centralCompletion.ok || input.platform.status === "failed") return "failed" as const;
   if (
     input.runtime.status === "incident" ||
     input.runtime.status === "warning" ||
@@ -61,11 +64,13 @@ export async function runSupportOperationsAgent(
     ]);
     // Verify after repair, using the same authenticated service client.
     const reconcile = await runSupportReconciliationSafely(now, service);
+    const centralCompletion = await runSupportCentralReconciliationSafely(service, now);
 
     const errors = [
       runtime.unavailableReason ? `runtime:${runtime.unavailableReason}` : null,
       reconcile.error ? `reconcile:${reconcile.error}` : null,
       remediation.error ? `remediation:${remediation.error}` : null,
+      centralCompletion.error ? `central_completion:${centralCompletion.error}` : null,
       ...platform.actions
         .filter((action) => action.status === "failed")
         .map((action) => `platform:${action.action}:${action.code}`)
@@ -80,7 +85,7 @@ export async function runSupportOperationsAgent(
       source: "builder-support-operations"
     });
 
-    const runStatus = statusFor({ reconcile, remediation, platform, runtime });
+    const runStatus = statusFor({ reconcile, remediation, centralCompletion, platform, runtime });
     const completedAt = new Date().toISOString();
     const reportReason =
       runtime.status === "incident"
@@ -138,6 +143,7 @@ export async function runSupportOperationsAgent(
       completedAt,
       reconcile,
       remediation,
+      centralCompletion,
       platform,
       runtime,
       reportedToRun: report.ok && runtime.status === "incident",
@@ -175,6 +181,7 @@ export async function runSupportOperationsAgentFromEnvironment() {
       completedAt: new Date().toISOString(),
       reconcile: { ok: false, scanned: 0, resolved: 0, escalated: 0, waiting: 0, failed: 0, error: "not_configured" },
       remediation: { ok: false, scanned: 0, eligible: 0, attempted: 0, succeeded: 0, noChange: 0, failed: 0, skippedCooldown: 0, skippedCustomDomain: 0, skippedAmbiguous: 0, ticketsResolved: 0, centralResolutionsVerified: 0, ticketCompletionFailures: 0, skippedTicketBudget: 0, error: "not_configured" },
+      centralCompletion: { ok: false, scanned: 0, checked: 0, confirmed: 0, alreadyConfirmed: 0, completed: 0, failed: 1, error: "not_configured" },
       platform: { ok: false, status: "failed" as const, repaired: 0, failed: 1, actions: [], backupStatusAfter: null },
       runtime: { checked: false, deploymentId: null, lookbackMinutes: 60, sampledLogs: 0, errorCount: 0, fatalCount: 0, http5xxCount: 0, truncated: false, status: "unknown" as const },
       reportedToRun: false,

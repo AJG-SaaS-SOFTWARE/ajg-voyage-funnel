@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
 
-function agent({runtimeStatus="healthy",checked=true,truncated=false,remediationOk=true}={}) {
+function agent({runtimeStatus="healthy",checked=true,truncated=false,remediationOk=true,centralOk=true}={}) {
   const events=[],journal=[];
   const service={from(name){
     assert.equal(name,"support_operations_runs");
@@ -14,6 +14,10 @@ function agent({runtimeStatus="healthy",checked=true,truncated=false,remediation
   }};
   const dependencies={
     "@supabase/supabase-js":{},
+    "./support-central-reconcile":{runSupportCentralReconciliationSafely:async()=>{
+      events.push("central");assert.ok(events.includes("reconcile"));
+      return {ok:centralOk,scanned:1,checked:1,confirmed:centralOk?1:0,failed:centralOk?0:1,
+        ...(centralOk?{}:{error:"support_central_confirmation_unconfirmed"})};}},
     "./support-reconcile":{runSupportReconciliationSafely:async()=>{
       events.push("reconcile");assert.ok(events.includes("repair_complete"));
       return {ok:true,scanned:1,resolved:1,escalated:0,waiting:0,failed:0};}},
@@ -32,7 +36,7 @@ function agent({runtimeStatus="healthy",checked=true,truncated=false,remediation
 
 test("operations verify repairs before reconciling and journal the verified result",async()=>{
   const app=agent();const result=await app.run();
-  assert.deepEqual(app.events,["repair_complete","reconcile"]);
+  assert.deepEqual(app.events,["repair_complete","reconcile","central"]);
   assert.equal(result.runStatus,"healthy");assert.equal(app.journal[0].remediation_succeeded,1);
 });
 test("unavailable or truncated runtime evidence is attention, never healthy",async()=>{
@@ -42,4 +46,9 @@ test("unavailable or truncated runtime evidence is attention, never healthy",asy
 });
 test("a failed repair is visible as a failed operation rather than a healthy run",async()=>{
   const result=await agent({remediationOk:false}).run();assert.equal(result.runStatus,"failed");assert.equal(result.ok,false);
+});
+test("a failed central confirmation is persisted and prevents a healthy support run",async()=>{
+  const app=agent({centralOk:false});const result=await app.run();
+  assert.equal(result.runStatus,"failed");assert.equal(result.centralCompletion.failed,1);
+  assert.deepEqual(app.journal[0].errors,["central_completion:support_central_confirmation_unconfirmed"]);
 });
