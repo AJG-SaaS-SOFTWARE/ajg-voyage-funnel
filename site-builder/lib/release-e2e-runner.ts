@@ -1,11 +1,12 @@
 import "server-only";
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   releaseE2ERunDecision,
   type ReleaseE2ERunSnapshot
 } from "./release-e2e-policy";
 import { auditOpenAiRuntimeCached } from "./openai-readiness";
+import { validBuilderE2ERunId } from "./builder-e2e-journal";
 
 type Locale = "fr" | "en";
 
@@ -20,6 +21,39 @@ export function currentReleaseSha() {
     process.env.VERCEL_GIT_COMMIT_SHA ||
     ""
   ).trim();
+}
+
+async function confirmedRecipeEvidence(
+  service: SupabaseClient,
+  body: unknown,
+  sha: string,
+  locale: Locale,
+  includeAi: boolean
+) {
+  if (!body || typeof body !== "object") return false;
+  const result = body as Record<string, unknown>;
+  if (result.ok !== true || result.deploymentSha !== sha ||
+      result.locale !== locale || result.includeAi !== includeAi ||
+      result.customerMode !== !includeAi || !validBuilderE2ERunId(result.journalRunId)) return false;
+  try {
+    const { data, error } = await service.from("builder_e2e_runs")
+      .select("id,deployment_sha,locale,include_ai,status,completed_at,steps")
+      .eq("id", result.journalRunId)
+      .eq("deployment_sha", sha)
+      .eq("locale", locale)
+      .eq("include_ai", includeAi)
+      .maybeSingle();
+    if (error || !data || data.id !== result.journalRunId || data.deployment_sha !== sha ||
+        data.locale !== locale || data.include_ai !== includeAi || data.status !== "success" ||
+        typeof data.completed_at !== "string" || !Number.isFinite(Date.parse(data.completed_at)) ||
+        !Array.isArray(data.steps)) return false;
+    const cleanup = data.steps.filter((step: unknown) => step && typeof step === "object" &&
+      (step as Record<string, unknown>).key === "cleanup");
+    return cleanup.length === 1 && cleanup[0].status === "pass";
+  } catch {
+    // A lost journal read is uncertain evidence, never a reason to rerun the child.
+    return false;
+  }
 }
 
 export async function runReleaseE2EMirror(
@@ -190,11 +224,18 @@ export async function runReleaseE2EMirror(
       );
 
       const body = await response.json().catch(() => null);
+      const confirmed = response.ok && await confirmedRecipeEvidence(
+        service, body, sha, plan.locale, mode.includeAi
+      );
+      // Reuse the bounded failure journal for uncertain evidence. In particular,
+      // a response from another deployment must not leave this SHA without a
+      // failure record and make the next scheduled invocation an unbounded retry.
+      if (response.ok && !confirmed) throw new Error("release_recipe_evidence_unconfirmed");
       results.push({
         locale: plan.locale,
-        ok: response.ok && body?.ok === true,
+        ok: confirmed,
         status: response.status,
-        detail: response.ok
+        detail: confirmed
           ? "validated"
           : String(body?.error || "E2E validation failed").slice(0, 300)
       });
