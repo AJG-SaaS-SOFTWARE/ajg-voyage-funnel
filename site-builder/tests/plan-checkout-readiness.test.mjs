@@ -8,6 +8,7 @@ function functions(overrides = {}) {
   const state = { loaded: true, loadFailed: false, siteId: "site", betaAccess: { active: false }, checkoutBusy: "", billingState: null, calls: [] };
   const dependencies = {
     ...state, tr: (fr) => fr,
+    checkoutInFlight: { current: false }, checkoutSite: { current: "site" },
     setCheckoutBusy: value => state.calls.push(["busy", value]),
     setCheckoutMessage: value => state.calls.push(["message", value]),
     startPlanCheckout: async (...args) => state.calls.push(["checkout", ...args]),
@@ -49,7 +50,7 @@ test("existing subscription opens the billing portal without another Checkout", 
 async function loadAccount(billing, concurrent = false) {
   const state = { loaded: true, failed: false, billing: { hasStripeSubscription: true } };
   const deps = {
-    loadSequence: { current: 0 }, siteId: "site", getMySites: async () => [{ id: "site", slug: "fixture" }],
+    loadSequence: { current: 0 }, checkoutSite: { current: "" }, siteId: "site", getMySites: async () => [{ id: "site", slug: "fixture" }],
     setSites() {}, setSiteId() {}, setCurrent() {}, setAiAccess() {}, setUsage() {}, setStorage() {}, setBetaAccess() {}, setBetaExperienceMode() {},
     setLoaded: value => { state.loaded = value; },
     setLoadFailed: value => { state.failed = value; },
