@@ -187,9 +187,9 @@ test("missing site or browser client allocates no session deadline and makes no 
   }
 });
 
-test("the retry remains wired once and the SDK call has no abort or auth-config mutation", () => {
+test("both visible recovery states reuse the bounded handler without auth mutation", () => {
   assert.match(source, /onClick={retryPostPublishHealth}/);
-  assert.equal(source.match(/onClick={retryPostPublishHealth}/g)?.length, 1);
+  assert.equal(source.match(/onClick={retryPostPublishHealth}/g)?.length, 2);
   const retryText = retryInitializer.getText(ast);
   assert.match(retryText, /supabase\.auth\.getSession\(\)/);
   assert.doesNotMatch(retryText, /signOut|refreshSession|setSession|updateUser|abort\(/);
