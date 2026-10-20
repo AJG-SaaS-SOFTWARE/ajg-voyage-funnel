@@ -46,6 +46,7 @@ export default function SupportPage() {
   const [topic, setTopic] = useState("");
   const submitting = useRef(false);
   const rechecking = useRef(false);
+  const repairInFlight = useRef(false);
   const requestIdentity = useRef<{ id: string; payload: string } | null>(null);
   const confirmedRequest = useRef<string | null>(null);
   const loadVersion = useRef(0);
@@ -299,13 +300,26 @@ export default function SupportPage() {
   }
 
   async function repair() {
-    const accessToken = await token();
+    if (repairInFlight.current) return;
     const siteId = payload?.health.siteId;
     const action = payload?.health.diagnosis.repairActions?.[0];
-    if (!accessToken || !siteId || !action) return;
+    if (!siteId || !action) return;
+    repairInFlight.current = true;
     setRepairing(true);
     setHealthNotice("");
+    const unconfirmed = () => {
+      setState("error");
+      return new Error(tr(
+        "La correction n’a pas pu être confirmée. Actualisez le diagnostic avant toute nouvelle tentative.",
+        "The repair could not be confirmed. Refresh the diagnosis before making another attempt."
+      ));
+    };
     try {
+      const accessToken = await token();
+      if (!accessToken) {
+        setState("guest");
+        return;
+      }
       const response = await fetch("/api/support/remediate", {
         method: "POST",
         headers: {
@@ -314,18 +328,47 @@ export default function SupportPage() {
         },
         body: JSON.stringify({ siteId, action }),
         cache: "no-store"
-      });
+      }).catch(() => { throw unconfirmed(); });
       const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.error || tr("Correction automatique impossible.", "Automatic repair failed."));
-      setHealthNotice(
-        body?.result?.status === "succeeded"
+      if (!response.ok) {
+        if (response.status === 401) setState("guest");
+        if (response.status >= 500) throw unconfirmed();
+        throw new Error(body?.error || tr("Correction automatique impossible.", "Automatic repair failed."));
+      }
+      const result = body?.result;
+      if (response.status !== 200 || result?.siteId !== siteId || result?.action !== action ||
+          !["succeeded", "no_change", "failed"].includes(result?.status) ||
+          typeof result?.changed !== "boolean" || body?.health?.siteId !== siteId ||
+          !Array.isArray(body?.health?.diagnosis?.checks) ||
+          !["healthy", "action", "incident"].includes(body?.health?.diagnosis?.overall) ||
+          (result.status === "succeeded" && (result.changed !== true || result.verified !== true || result.audited !== true)) ||
+          (result.status === "no_change" && result.changed !== false)) {
+        throw unconfirmed();
+      }
+      const confirmation = result.status === "succeeded"
           ? tr("Correction technique appliquée. Le diagnostic a été actualisé.", "Technical repair applied. The diagnosis has been refreshed.")
-          : tr("La correction automatique n’a pas suffi. Le diagnostic a été actualisé et peut être transmis à l’équipe ELTARA.", "Automatic repair was not sufficient. The diagnosis has been refreshed and can be escalated to the ELTARA team.")
-      );
-      await load();
+          : result.status === "no_change"
+            ? tr("Aucune nouvelle correction n’a été appliquée par cette tentative. Le diagnostic a été actualisé.", "No new repair was applied by this attempt. The diagnosis has been refreshed.")
+            : tr("Cette tentative ne confirme pas une correction réussie. Consultez le diagnostic avant toute nouvelle tentative.", "This attempt does not confirm a successful repair. Review the diagnosis before making another attempt.");
+      setHealthNotice(confirmation);
+      // Retire the old offer until a fresh diagnosis confirms another safe action.
+      // Do not merge arbitrary returned site/ticket fields into client state.
+      setPayload(current => current?.health.siteId === siteId ? {
+        ...current, health: { ...current.health, diagnosis: { ...current.health.diagnosis, repairActions: [] } }
+      } : current);
+      try {
+        if (!await load()) setHealthNotice(confirmation + " " + tr("La liste n’a pas pu être actualisée.", "The list could not be refreshed."));
+      } catch {
+        setState("error");
+        setHealthNotice(confirmation + " " + tr(
+          "La liste n’a pas pu être actualisée. Actualisez le diagnostic sans relancer cette tentative.",
+          "The list could not be refreshed. Refresh the diagnosis without repeating this attempt."
+        ));
+      }
     } catch (error) {
       setHealthNotice(error instanceof Error ? error.message : tr("Correction automatique impossible.", "Automatic repair failed."));
     } finally {
+      repairInFlight.current = false;
       setRepairing(false);
     }
   }
