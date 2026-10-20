@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AdminShell } from "../../../components/AdminShell";
 import { getSupabaseBrowserClient } from "../../../lib/supabase-browser";
 import type { SupportDiagnosis } from "../../../lib/support-diagnostics";
+import type { SupportMetricsSourceStatus } from "../../../lib/support-metrics";
 
 type SupportMetrics = {
   windowDays: 30;
@@ -115,6 +116,7 @@ async function sessionToken() {
 export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<AdminTicket[]>([]);
   const [metrics, setMetrics] = useState<SupportMetrics | null>(null);
+  const [metricsStatus, setMetricsStatus] = useState<SupportMetricsSourceStatus>("unavailable");
   const [platform, setPlatform] = useState<PlatformHealth | null>(null);
   const [agent, setAgent] = useState<SupportOperationsStatus | null>(null);
   const [agentRunning, setAgentRunning] = useState(false);
@@ -140,6 +142,7 @@ export default function AdminSupportPage() {
       : null;
     setTickets(body.tickets || []);
     setMetrics(body.metrics || null);
+    setMetricsStatus(body.metricsStatus === "incomplete" ? "incomplete" : body.metricsStatus === "complete" ? "complete" : "unavailable");
     setPlatform(body.platform || null);
     setAgent(agentBody);
     setState("ready");
@@ -367,7 +370,9 @@ export default function AdminSupportPage() {
             </>
           ) : (
             <section className="panel">
-              <p>Les KPI support sur 30 jours sont temporairement indisponibles. La file de tickets reste accessible.</p>
+              <p>{metricsStatus === "incomplete"
+                ? "Les sources des KPI support sur 30 jours sont incomplètes ou leur couverture n’est pas confirmée. Les indicateurs ne sont pas calculés. La file de tickets reste accessible."
+                : "Les KPI support sur 30 jours sont temporairement indisponibles. La file de tickets reste accessible."}</p>
             </section>
           )}
           {message ? <p role="status">{message}</p> : null}

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { resolveAny } from "node:dns/promises";
 import { createClient } from "@supabase/supabase-js";
 import { recordSupportEvent } from "../../../../lib/support-events";
-import { calculateSupportMetrics } from "../../../../lib/support-metrics";
+import { calculateSupportMetrics, supportMetricsSourceStatus } from "../../../../lib/support-metrics";
 import { getRecentRuntimeHealth } from "../../../../lib/vercel-runtime-health";
 
 export const runtime = "nodejs";
@@ -105,22 +105,22 @@ export async function GET(request: Request) {
       .limit(100),
     auth.service
       .from("support_tickets")
-      .select("id,category,status,resolution_code,created_at")
+      .select("id,category,status,resolution_code,created_at", { count: "exact" })
       .gte("created_at", since)
       .limit(1000),
     auth.service
       .from("support_ticket_events")
-      .select("ticket_id,actor_type,event_type,metadata,created_at")
+      .select("ticket_id,actor_type,event_type,metadata,created_at", { count: "exact" })
       .gte("created_at", since)
       .limit(5000),
     auth.service
       .from("support_remediation_runs")
-      .select("status,result_code,trigger_source,created_at")
+      .select("status,result_code,trigger_source,created_at", { count: "exact" })
       .gte("created_at", since)
       .limit(5000),
     auth.service
       .from("sites")
-      .select("owner_id")
+      .select("owner_id", { count: "exact" })
       .eq("status", "published")
       .eq("privacy_state", "active")
       .limit(5000),
@@ -143,7 +143,13 @@ export async function GET(request: Request) {
     remediations.error ||
     activeSites.error;
 
-  const metrics = metricError
+  const metricsStatus = supportMetricsSourceStatus({
+    tickets: metricTickets,
+    events,
+    remediations,
+    sites: activeSites
+  });
+  const metrics = metricsStatus !== "complete"
     ? null
     : calculateSupportMetrics({
         tickets: (metricTickets.data || []) as any[],
@@ -199,7 +205,7 @@ export async function GET(request: Request) {
   };
 
   return NextResponse.json(
-    { tickets: queue.data || [], metrics, platform },
+    { tickets: queue.data || [], metrics, metricsStatus, platform },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 }
