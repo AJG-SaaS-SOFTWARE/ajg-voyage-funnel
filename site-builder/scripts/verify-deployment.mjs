@@ -8,6 +8,11 @@ if (!baseUrl) {
   process.exit(2);
 }
 
+// A short prefix is not evidence that the requested immutable release is live.
+if (expectedSha && !/^[a-f0-9]{40}$/.test(expectedSha)) {
+  throw new Error("Expected deployment SHA must be a full lowercase 40-character commit SHA.");
+}
+
 async function get(path, expected) {
   const response = await fetch(baseUrl + path, {
     redirect: "manual",
@@ -141,16 +146,20 @@ async function verifyLocalizedNotFound(locale, expectedText) {
 
 const health = await get("/api/health", [200]);
 const payload = await health.json();
-if (!payload?.ok || payload?.database !== "ok") {
+if (payload?.ok !== true || payload?.service !== "ajg-site-builder" || payload?.database !== "ok") {
   throw new Error("Health check did not report a ready database.");
 }
 
-const deployedSha = payload?.deployment?.commitSha || "";
+const reportedSha = payload?.deployment?.commitSha;
+const deployedSha = reportedSha === null || reportedSha === undefined ? "" : reportedSha;
+if (deployedSha !== "" && (typeof deployedSha !== "string" || !/^[a-f0-9]{40}$/.test(deployedSha))) {
+  throw new Error("Deployment SHA is malformed; cannot verify this release.");
+}
 if (expectedSha) {
   if (!deployedSha && !allowUnknownSha) {
     throw new Error("Deployment SHA is unavailable; cannot prove that the requested release is deployed.");
   }
-  if (deployedSha && !deployedSha.startsWith(expectedSha) && !expectedSha.startsWith(deployedSha)) {
+  if (deployedSha && deployedSha !== expectedSha) {
     throw new Error(`Wrong deployment revision: expected ${expectedSha}, got ${deployedSha}`);
   }
 }
@@ -186,6 +195,8 @@ console.log(JSON.stringify({
   url: baseUrl,
   environment: payload.environment,
   commitSha: deployedSha || null,
+  expectedSha: expectedSha || null,
+  revisionVerified: Boolean(expectedSha && deployedSha === expectedSha),
   region: payload.region,
   checkedAt: payload.checkedAt
 }, null, 2));
