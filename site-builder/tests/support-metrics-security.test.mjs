@@ -23,8 +23,10 @@ test("support KPI queries run only after admin authorization", () => {
 });
 
 test("support KPI failure does not hide the operational ticket queue", () => {
-  assert.match(route, /const metrics = metricError\s*\? null/);
+  assert.match(route, /const metrics = metricsStatus !== "complete"\s*\? null/);
   assert.match(route, /tickets: queue\.data \|\| \[\], metrics/);
+  assert.match(page, /metricsStatus === "incomplete"/);
+  assert.match(page, /leur couverture n’est pas confirmée/);
 });
 
 test("admin support shows the explicit human-support target", () => {

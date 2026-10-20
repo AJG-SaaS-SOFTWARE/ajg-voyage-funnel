@@ -25,6 +25,29 @@ export type SupportMetricsSite = {
   owner_id: string;
 };
 
+export type SupportMetricsSourceStatus = "complete" | "incomplete" | "unavailable";
+
+type MetricSource = { data: unknown; count: number | null; error: unknown };
+
+// The API and the caller can both cap rows. An exact filtered count from
+// the same response is required; a successful request alone is not coverage.
+export function supportMetricsSourceStatus(sources: {
+  tickets: MetricSource;
+  events: MetricSource;
+  remediations: MetricSource;
+  sites: MetricSource;
+}): SupportMetricsSourceStatus {
+  const results = Object.values(sources);
+  if (results.some((source) => source.error)) return "unavailable";
+  return results.every((source) =>
+    Array.isArray(source.data) &&
+    typeof source.count === "number" &&
+    Number.isSafeInteger(source.count) &&
+    source.count >= 0 &&
+    source.count === source.data.length
+  ) ? "complete" : "incomplete";
+}
+
 export type SupportMetrics = {
   windowDays: 30;
   activeClients: number;
