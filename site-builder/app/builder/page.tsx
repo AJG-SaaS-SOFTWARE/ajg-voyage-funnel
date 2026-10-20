@@ -291,6 +291,7 @@ export default function BuilderPage() {
   const [changeVersion, setChangeVersion] = useState(0);
   const [growthActionId, setGrowthActionId] = useState("");
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const publicationInFlight = useRef(false);
   const latestVersion = useRef(0);
   const trackedProductEvents = useRef(new Set<string>());
 
@@ -1164,7 +1165,8 @@ export default function BuilderPage() {
   };
 
   const publish = async () => {
-    if (errors.length) return;
+    if (errors.length || publicationInFlight.current) return;
+    publicationInFlight.current = true;
     setBusy(true);
     setSyncError("");
     setPublicationNotice("");
@@ -1249,6 +1251,7 @@ export default function BuilderPage() {
         ));
       }
     } finally {
+      publicationInFlight.current = false;
       setBusy(false);
     }
   };

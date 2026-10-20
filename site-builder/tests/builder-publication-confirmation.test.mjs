@@ -20,7 +20,9 @@ const code = ts.transpileModule(`const publish = ${initializer.getText(ast)};`, 
 
 function fixture({ locale = "fr", remoteMode = true, growthFails = false, cacheFails = false,
   writeFails = false, signedIn = true, validationErrors = [], growth = async () => {},
-  domainReadFails = false, analyticsFails = false, privateMedia = false, mediaFails = false } = {}) {
+  domainReadFails = false, analyticsFails = false, privateMedia = false, mediaFails = false,
+  session = async () => {}, write = async () => {}, media = async () => {},
+  queuedSave = Promise.resolve(), onCache = () => {} } = {}) {
   const state = { published: false, saved: false, busy: false, error: "", notice: "", growth: "action-synthetic" };
   const calls = [];
   const config = { slug: "synthetic", contentLibrary: { assets: privateMedia ? [
@@ -29,13 +31,17 @@ function fixture({ locale = "fr", remoteMode = true, growthFails = false, cacheF
   const setter = key => value => { state[key] = typeof value === "function" ? value(state[key]) : value; };
   const deps = {
     errors: validationErrors, remoteMode, remoteSiteId: "site-synthetic", config, locale,
-    tr: (fr, en) => locale === "en" ? en : fr, saveQueue: { current: Promise.resolve() }, growthActionId: state.growth,
+    tr: (fr, en) => locale === "en" ? en : fr, saveQueue: { current: queuedSave }, growthActionId: state.growth,
+    publicationInFlight: { current: false },
     setBusy: setter("busy"), setSyncError: setter("error"), setPublicationNotice: setter("notice"),
     setSaved: setter("saved"), setPublished: setter("published"), setGrowthActionId: setter("growth"),
     setRemoteSiteId: setter("siteId"), setConfig: setter("config"),
-    getSupabaseBrowserClient: () => ({ auth: { getSession: async () => ({ data: { session: signedIn ? { access_token: "synthetic" } : null } }) } }),
+    getSupabaseBrowserClient: () => ({ auth: { getSession: async () => {
+      calls.push(["session"]); await session();
+      return { data: { session: signedIn ? { access_token: "synthetic" } : null } };
+    } } }),
     async saveMySite(value, publish, id) {
-      calls.push(["write", value, publish, id]);
+      calls.push(["write", value, publish, id]); await write();
       if (writeFails) throw new Error("private-write-marker");
       return { id, status: "published", publishedAt: "2026-10-20T10:00:00Z" };
     },
@@ -44,12 +50,12 @@ function fixture({ locale = "fr", remoteMode = true, growthFails = false, cacheF
       if (growthFails) throw new Error("private-growth-marker");
     },
     async refreshVerifiedPublicUrl(id) { calls.push(["domain-read", id]); if (domainReadFails) throw new Error("private-domain-marker"); },
-    publishDraft(value) { calls.push(["cache", value]); if (cacheFails) throw new Error("private-cache-marker"); },
+    publishDraft(value) { calls.push(["cache", value]); onCache(); if (cacheFails) throw new Error("private-cache-marker"); },
     trackProductEvent(...args) { calls.push(["analytics", ...args]); if (analyticsFails) throw new Error("private-analytics-marker"); },
     runPostPublishHealth(...args) { calls.push(["health", ...args]); },
     async fetch(path, options) {
       assert.equal(privateMedia, true); assert.equal(path, "/api/media/promote");
-      calls.push(["media", JSON.parse(options.body)]);
+      calls.push(["media", JSON.parse(options.body)]); await media();
       assert.equal(options.headers.Authorization, "Bearer synthetic");
       assert.equal(options.headers["X-AJG-Locale"], locale);
       return { ok: !mediaFails, json: async () => mediaFails
@@ -57,7 +63,7 @@ function fixture({ locale = "fr", remoteMode = true, growthFails = false, cacheF
     }
   };
   const publish = new Function(...Object.keys(deps), code + "\nreturn publish;")(...Object.values(deps));
-  return { state, calls, publish, config, count: name => calls.filter(call => call[0] === name).length };
+  return { state, calls, publish, config, lock: deps.publicationInFlight, count: name => calls.filter(call => call[0] === name).length };
 }
 
 for (const locale of ["fr", "en"]) {
@@ -186,4 +192,101 @@ test("confirmed publication keeps promoted media even when both follow-ups fail"
   assert.equal(f.state.published, true);
   assert.equal(f.state.error, "");
   assert.equal(f.count("health"), 1);
+});
+
+function deferred() {
+  let resolve;
+  const promise = new Promise(done => { resolve = done; });
+  return { promise, resolve };
+}
+
+async function flushUntil(predicate) {
+  for (let i = 0; i < 100 && !predicate(); i++) await Promise.resolve();
+}
+
+for (const locale of ["fr", "en"]) {
+  test(`${locale}: duplicate invocation before queued save settles does not start a second publication`, async () => {
+    const barrier = deferred();
+    const f = fixture({ locale, queuedSave: barrier.promise });
+    const first = f.publish();
+    const second = f.publish();
+    await flushUntil(() => f.count("session") > 0);
+    const during = { locked: f.lock.current, sessions: f.count("session"), writes: f.count("write"), busy: f.state.busy };
+    barrier.resolve(); await Promise.all([first, second]);
+    assert.deepEqual(during, { locked: true, sessions: 0, writes: 0, busy: true });
+    assert.equal(f.count("session"), 1); assert.equal(f.count("write"), 1);
+    assert.equal(f.count("growth"), 1); assert.equal(f.count("cache"), 1);
+    assert.equal(f.count("analytics"), 1); assert.equal(f.count("health"), 1);
+    assert.equal(f.lock.current, false); assert.equal(f.state.busy, false);
+  });
+
+  for (const stage of ["session", "media", "write", "growth"]) {
+    test(`${locale}: duplicate publication is blocked while ${stage} is pending`, async () => {
+      const barrier = deferred();
+      const options = { locale, [stage]: () => barrier.promise, privateMedia: stage === "media" };
+      const f = fixture(options);
+      const first = f.publish();
+      await flushUntil(() => f.count(stage) === 1);
+      const reached = f.count(stage);
+      const second = f.publish();
+      await flushUntil(() => f.count(stage) > 1);
+      const during = { locked: f.lock.current, count: f.count(stage), busy: f.state.busy };
+      barrier.resolve(); await Promise.all([first, second]);
+      assert.equal(reached, 1);
+      assert.deepEqual(during, { locked: true, count: 1, busy: true });
+      assert.equal(f.count("write"), 1); assert.equal(f.count("session"), 1);
+      assert.equal(f.count("growth"), 1); assert.equal(f.count("cache"), 1);
+      assert.equal(f.count("analytics"), 1); assert.equal(f.count("health"), 1);
+      assert.equal(f.lock.current, false); assert.equal(f.state.busy, false);
+      assert.equal(f.state.published, true); assert.equal(f.state.error, "");
+    });
+  }
+}
+
+test("local-only cache reentry does not duplicate publication", async () => {
+  let reentered;
+  let f;
+  let cacheEntries = 0;
+  f = fixture({ remoteMode: false, onCache: () => {
+    cacheEntries++;
+    if (cacheEntries === 1) reentered = f.publish();
+  } });
+  await f.publish(); await reentered;
+  assert.equal(f.count("cache"), 1); assert.equal(f.count("analytics"), 1);
+  assert.equal(f.count("session"), 0); assert.equal(f.count("write"), 0);
+  assert.equal(f.state.published, true); assert.equal(f.lock.current, false);
+});
+
+test("a failed attempt releases the local guard for an explicit manual retry", async () => {
+  let attempts = 0;
+  const f = fixture({ write: async () => { if (++attempts === 1) throw new Error("private-attempt-marker"); } });
+  await f.publish();
+  assert.equal(f.lock.current, false); assert.equal(f.state.busy, false);
+  assert.equal(f.state.published, false); assert.equal(f.count("write"), 1);
+  assert.equal(f.count("growth"), 0); assert.equal(f.count("cache"), 0);
+  assert.equal(JSON.stringify(f.state).includes("private-"), false);
+  await f.publish();
+  assert.equal(f.count("write"), 2); assert.equal(f.count("growth"), 1);
+  assert.equal(f.state.published, true); assert.equal(f.state.error, "");
+  assert.equal(f.lock.current, false); assert.equal(f.state.busy, false);
+});
+
+test("validation failure never acquires the local publication guard", async () => {
+  const f = fixture({ validationErrors: [{ message: "required field" }] });
+  await f.publish(); await f.publish();
+  assert.equal(f.lock.current, false); assert.equal(f.state.busy, false);
+  assert.deepEqual(f.calls, []);
+});
+
+test("every existing terminal failure and post-confirmation warning releases the guard", async () => {
+  for (const options of [
+    { signedIn: false }, { writeFails: true }, { privateMedia: true, mediaFails: true },
+    { remoteMode: false, cacheFails: true }, { growthFails: true }, { cacheFails: true },
+    { domainReadFails: true }, { analyticsFails: true },
+    { session: async () => { throw new Error("private-session-marker"); } }
+  ]) {
+    const f = fixture(options); await f.publish();
+    assert.equal(f.lock.current, false); assert.equal(f.state.busy, false);
+    assert.equal(JSON.stringify(f.state).includes("private-"), false);
+  }
 });
