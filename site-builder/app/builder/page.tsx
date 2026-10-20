@@ -33,6 +33,7 @@ import { optimizeBackgroundImage, optimizeImage } from "../../lib/optimize-image
 import { contrastRatio, surfaceInk } from "../../lib/site-design";
 import { legalMissingFields } from "../../lib/site-legal";
 import type { SupportDiagnosis } from "../../lib/support-diagnostics";
+import { readPostPublishDiagnosis } from "../../lib/post-publish-health-result";
 import { supportCheckDisplay } from "../../lib/support-guidance";
 import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
@@ -292,6 +293,7 @@ export default function BuilderPage() {
   const [growthActionId, setGrowthActionId] = useState("");
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const publicationInFlight = useRef(false);
+  const postPublishHealthVersion = useRef(0);
   const latestVersion = useRef(0);
   const trackedProductEvents = useRef(new Set<string>());
 
@@ -1123,24 +1125,29 @@ export default function BuilderPage() {
   }, [config, bookingLinkStatus, tr]);
 
   const runPostPublishHealth = async (siteId: string, accessToken: string) => {
+    const version = ++postPublishHealthVersion.current;
     setPostPublishHealthState("checking");
     setPostPublishHealth(null);
     try {
+      if (!siteId || !accessToken) throw new Error("health_unavailable");
       const response = await fetch(
         `/api/support/health?siteId=${encodeURIComponent(siteId)}`,
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          cache: "no-store"
+          headers: { Authorization: `Bearer ${accessToken}`, "X-AJG-Locale": locale },
+          cache: "no-store",
+          redirect: "error"
         }
       );
       const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.health?.diagnosis) {
-        throw new Error(body?.error || "health_unavailable");
+      if (version !== postPublishHealthVersion.current) return;
+      const diagnosis = readPostPublishDiagnosis(body, siteId);
+      if (response.status !== 200 || !response.ok || response.redirected || !diagnosis) {
+        throw new Error("health_unavailable");
       }
-      setPostPublishHealth(body.health.diagnosis as SupportDiagnosis);
+      setPostPublishHealth(diagnosis);
       setPostPublishHealthState("done");
     } catch {
-      setPostPublishHealthState("error");
+      if (version === postPublishHealthVersion.current) setPostPublishHealthState("error");
     }
   };
 
