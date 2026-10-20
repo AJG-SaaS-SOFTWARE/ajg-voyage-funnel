@@ -123,7 +123,7 @@ test("actual admin route withholds partial KPI but preserves queue, auth and fil
         let clients = 0;
         const route = load("../app/api/admin/support/route.ts", {
           "next/server": { NextResponse: { json: (body, options) => Response.json(body, options) } },
-          "node:dns/promises": { resolveAny: async () => [] },
+          "../../../../lib/admin-platform-probe": { platformProbe: async (host) => ({ host, dns: "ok", https: "ok", httpStatus: 200 }) },
           "@supabase/supabase-js": { createClient: () => ++clients === 1 ? userClient : service },
           "../../../../lib/support-events": {},
           "../../../../lib/support-metrics": metrics,
