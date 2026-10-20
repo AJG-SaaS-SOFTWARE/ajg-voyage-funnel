@@ -54,7 +54,8 @@ function fixture({ locale = "fr", siteId = "site-synthetic", absentClient = fals
   const state = { health: diagnosis(), status: "done" };
   const calls = { factory: 0, session: 0, requests: [] };
   const deps = {
-    locale, remoteSiteId: siteId, postPublishHealthVersion: { current: 0 }, readPostPublishDiagnosis,
+    locale, remoteSiteId: siteId, postPublishHealthRetryInFlight: { current: false },
+    postPublishHealthVersion: { current: 0 }, readPostPublishDiagnosis,
     setPostPublishHealth: value => { state.health = value; },
     setPostPublishHealthState: value => { state.status = value; },
     getSupabaseBrowserClient() {
@@ -118,27 +119,31 @@ test("starting a retry clears the previous diagnosis before session acquisition 
   assert.equal(f.state.status, "done"); assert.equal(f.calls.requests.length, 1);
 });
 
-test("a slow older session success cannot issue a GET after a later retry failed", async () => {
-  const old = deferred(); let count = 0;
-  const f = fixture({ session: async () => ++count === 1 ? old.promise : { data: { session: null } } });
+test("a duplicate retry cannot supersede an in-flight session outcome", async () => {
+  const pending = deferred(); let count = 0;
+  const f = fixture({ session: async () => ++count === 1 ? pending.promise : { data: { session: null } } });
   const first = f.retry();
   await f.retry();
-  old.resolve({ data: { session: { access_token: "synthetic-token" } } });
+  assert.equal(f.calls.session, 1);
+  pending.resolve({ data: { session: { access_token: "synthetic-token" } } });
   await first; await flush();
-  assert.equal(f.state.status, "error"); assert.equal(f.state.health, null);
-  assert.equal(f.calls.requests.length, 0);
+  assert.equal(f.state.status, "done"); assert.equal(f.state.health.overall, "healthy");
+  assert.equal(f.calls.requests.length, 1);
 });
 
-test("a slow older session failure cannot erase a later successful diagnostic", async () => {
-  const old = deferred(); let count = 0;
-  const f = fixture({ session: async () => ++count === 1 ? old.promise
+test("a failed single flight releases the guard for an explicit later recovery", async () => {
+  const pending = deferred(); let count = 0;
+  const f = fixture({ session: async () => ++count === 1 ? pending.promise
     : { data: { session: { access_token: "synthetic-token" } } }, request: async () => response("incident") });
   const first = f.retry();
   await f.retry(); await flush();
-  old.reject(new Error("private-old-session-marker"));
+  assert.equal(f.calls.session, 1);
+  pending.reject(new Error("private-old-session-marker"));
   await first; await flush();
+  assert.equal(f.state.status, "error"); assert.equal(f.calls.requests.length, 0);
+  await f.retry(); await flush();
   assert.equal(f.state.status, "done"); assert.equal(f.state.health.overall, "incident");
-  assert.equal(f.calls.requests.length, 1);
+  assert.equal(f.calls.session, 2); assert.equal(f.calls.requests.length, 1);
 });
 
 test("a successful automatic publication diagnostic supersedes an older session preflight", async () => {
@@ -183,6 +188,30 @@ test("an explicit later retry can recover from a session read failure without a 
   await f.retry(); await flush();
   assert.equal(f.state.status, "done"); assert.equal(f.state.health.overall, "healthy");
   assert.equal(f.calls.session, 2); assert.equal(f.calls.requests.length, 1);
+});
+
+test("concurrent explicit retries share one session preflight and one health request", async () => {
+  const pending = deferred();
+  const f = fixture({ session: () => pending.promise });
+  const first = f.retry();
+  const second = f.retry();
+  await flush();
+
+  assert.equal(f.calls.factory, 1);
+  assert.equal(f.calls.session, 1);
+  assert.equal(f.calls.requests.length, 0);
+  assert.deepEqual({ status: f.state.status, health: f.state.health }, { status: "checking", health: null });
+
+  pending.resolve({ data: { session: { access_token: "synthetic-token" } } });
+  await Promise.all([first, second]);
+  await flush();
+  assert.equal(f.calls.requests.length, 1);
+  assert.equal(f.state.status, "done");
+
+  await f.retry();
+  await flush();
+  assert.equal(f.calls.session, 2);
+  assert.equal(f.calls.requests.length, 2);
 });
 
 test("the retry button is actually wired to the reviewed handler", () => {
