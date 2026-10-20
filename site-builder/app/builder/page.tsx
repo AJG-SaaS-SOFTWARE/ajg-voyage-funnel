@@ -1173,15 +1173,29 @@ export default function BuilderPage() {
     const version = ++postPublishHealthVersion.current;
     setPostPublishHealthState("checking");
     setPostPublishHealth(null);
+    let sessionDeadline: ReturnType<typeof setTimeout> | undefined;
     try {
       if (!remoteSiteId) throw new Error("health_unavailable");
       const supabase = getSupabaseBrowserClient();
-      const { data, error } = supabase ? await supabase.auth.getSession() : { data: { session: null }, error: null };
+      if (!supabase) throw new Error("health_unavailable");
+      const sessionResult = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<never>((_, reject) => {
+          sessionDeadline = setTimeout(() => reject(new Error("health_unavailable")), 15_000);
+        })
+      ]);
+      if (sessionDeadline !== undefined) {
+        clearTimeout(sessionDeadline);
+        sessionDeadline = undefined;
+      }
       if (version !== postPublishHealthVersion.current) return;
+      const { data, error } = sessionResult;
       if (error || !data.session?.access_token) throw new Error("health_unavailable");
       await runPostPublishHealth(remoteSiteId, data.session.access_token);
     } catch {
       if (version === postPublishHealthVersion.current) setPostPublishHealthState("error");
+    } finally {
+      if (sessionDeadline !== undefined) clearTimeout(sessionDeadline);
     }
   };
 
