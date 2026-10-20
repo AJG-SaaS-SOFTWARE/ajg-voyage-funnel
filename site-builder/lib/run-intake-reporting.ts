@@ -176,12 +176,21 @@ export async function reportRuntimeIncidentToRun(input: BuilderRuntimeRunInput) 
         },
         body: JSON.stringify(payload),
         cache: "no-store",
+        redirect: "error",
         signal: AbortSignal.timeout(2_500)
       }
     );
-    return response.ok
-      ? { ok: true as const, skipped: false as const }
-      : { ok: false as const, reason: `HTTP ${response.status}` };
+    if (!response.ok) return { ok: false as const, reason: `HTTP ${response.status}` };
+    const body = await response.json().catch(() => null);
+    const receipt = body?.request;
+    if (response.status !== 201 || body?.ok !== true || !receipt ||
+        receipt.product !== payload.product || receipt.source !== payload.source ||
+        receipt.externalRef !== payload.externalRef || receipt.title !== payload.title ||
+        receipt.kind !== payload.kind || !/^req_[0-9a-f]{8}$/.test(receipt.id || "") ||
+        !["open", "triaged"].includes(receipt.status)) {
+      return { ok: false as const, reason: "run intake receipt unconfirmed" };
+    }
+    return { ok: true as const, skipped: false as const };
   } catch {
     return { ok: false as const, reason: "run intake unavailable" };
   }
