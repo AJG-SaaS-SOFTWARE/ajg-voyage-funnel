@@ -1128,17 +1128,33 @@ export default function BuilderPage() {
     const version = ++postPublishHealthVersion.current;
     setPostPublishHealthState("checking");
     setPostPublishHealth(null);
+    let deadline: ReturnType<typeof setTimeout> | undefined;
     try {
       if (!siteId || !accessToken) throw new Error("health_unavailable");
-      const response = await fetch(
-        `/api/support/health?siteId=${encodeURIComponent(siteId)}`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}`, "X-AJG-Locale": locale },
-          cache: "no-store",
-          redirect: "error"
-        }
-      );
-      const body = await response.json().catch(() => null);
+      const controller = new AbortController();
+      const read = async () => {
+        const response = await fetch(
+          `/api/support/health?siteId=${encodeURIComponent(siteId)}`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}`, "X-AJG-Locale": locale },
+            cache: "no-store",
+            redirect: "error",
+            signal: controller.signal
+          }
+        );
+        const body = await response.json().catch(() => null);
+        if (controller.signal.aborted) throw new Error("health_unavailable");
+        return { response, body };
+      };
+      const { response, body } = await Promise.race([
+        read(),
+        new Promise<never>((_, reject) => {
+          deadline = setTimeout(() => {
+            controller.abort();
+            reject(new Error("health_unavailable"));
+          }, 30_000);
+        })
+      ]);
       if (version !== postPublishHealthVersion.current) return;
       const diagnosis = readPostPublishDiagnosis(body, siteId);
       if (response.status !== 200 || !response.ok || response.redirected || !diagnosis) {
@@ -1148,6 +1164,8 @@ export default function BuilderPage() {
       setPostPublishHealthState("done");
     } catch {
       if (version === postPublishHealthVersion.current) setPostPublishHealthState("error");
+    } finally {
+      if (deadline !== undefined) clearTimeout(deadline);
     }
   };
 
