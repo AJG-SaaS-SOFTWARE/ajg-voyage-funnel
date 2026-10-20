@@ -19,7 +19,7 @@ test("customer AI fallbacks never stop at a generic error", () => {
 
 test("save publish upload and domain fallbacks expose a next action", () => {
   assert.match(builder, /Vérifiez votre connexion puis réessayez/);
-  assert.match(builder, /ouvrez le Health Center sans recréer le site/);
+  assert.match(builder, /Vérifiez le site public et le Health Center avant de relancer/);
   assert.match(content, /vérifiez le fichier et votre connexion puis réessayez/);
   assert.match(domains, /Actualisez la page ; si le problème persiste, ouvrez le Health Center/);
   assert.match(domains, /Ajoutez uniquement l’enregistrement recommandé ci-dessus, puis relancez la vérification après propagation/);

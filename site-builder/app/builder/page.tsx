@@ -198,6 +198,7 @@ export default function BuilderPage() {
   const [ready, setReady] = useState(!remoteMode);
   const [busy, setBusy] = useState(false);
   const [syncError, setSyncError] = useState("");
+  const [publicationNotice, setPublicationNotice] = useState("");
   const [remoteSiteId, setRemoteSiteId] = useState<string | null>(null);
   const [ownedSites,setOwnedSites]=useState<Array<{id:string;slug:string}>>([]);
   const [siteEntitlements, setSiteEntitlements] = useState<SubscriptionEntitlements>(freeEntitlements);
@@ -1145,6 +1146,7 @@ export default function BuilderPage() {
   const save = async () => {
     setBusy(true);
     setSyncError("");
+    setPublicationNotice("");
     try {
       await saveQueue.current;
       saveDraft(config);
@@ -1165,6 +1167,13 @@ export default function BuilderPage() {
     if (errors.length) return;
     setBusy(true);
     setSyncError("");
+    setPublicationNotice("");
+    let remotePublicationConfirmed = false;
+    const notices: string[] = [];
+    const note = (message: string) => {
+      notices.push(message);
+      setPublicationNotice(notices.join(" "));
+    };
     try {
       await saveQueue.current;
       let publishedSiteId = remoteSiteId;
@@ -1192,23 +1201,53 @@ export default function BuilderPage() {
         publishConfig = { ...config, contentLibrary: { assets: promotedAssets } };
         const remote = await saveMySite(publishConfig, true, publishedSiteId || undefined);
         publishedSiteId = remote.id;
-        if (growthActionId && remote.publishedAt) {
-          await markGrowthActionPublished(growthActionId, remote.id, remote.publishedAt);
-          setGrowthActionId("");
-        }
+        // The repository acknowledged publication. Bookkeeping/cache failures
+        // below must not turn this positive result into a request to republish.
+        remotePublicationConfirmed = true;
         setRemoteSiteId(remote.id);
         setConfig(publishConfig);
+        setSaved(true);
+        setPublished(true);
+        if (growthActionId && remote.publishedAt) {
+          try {
+            await markGrowthActionPublished(growthActionId, remote.id, remote.publishedAt);
+            setGrowthActionId("");
+          } catch {
+            note(tr(
+              "Publication confirmée. Le suivi Growth n’a pas pu être actualisé. Consultez Growth avant toute nouvelle action ; il n’est pas nécessaire de republier pour ce message.",
+              "Publication confirmed. Growth tracking could not be updated. Check Growth before taking further action; this message does not require republishing."
+            ));
+          }
+        }
         await refreshVerifiedPublicUrl(remote.id);
       }
-      publishDraft(publishConfig);
+      try {
+        publishDraft(publishConfig);
+      } catch (error) {
+        if (!remotePublicationConfirmed) throw error;
+        note(tr(
+          "Publication confirmée. La copie de travail de ce navigateur n’a pas pu être actualisée. Vérifiez le site public avant de poursuivre vos modifications ; il n’est pas nécessaire de republier pour ce message.",
+          "Publication confirmed. This browser’s working copy could not be updated. Check the public website before continuing your edits; this message does not require republishing."
+        ));
+      }
       setSaved(true);
       setPublished(true);
       void trackProductEvent("publish_success", publishedSiteId);
       if (remoteMode && publishedSiteId && publishAccessToken) {
         void runPostPublishHealth(publishedSiteId, publishAccessToken);
       }
-    } catch (error) {
-      setSyncError(error instanceof Error ? error.message : tr("La publication n’a pas abouti. Relancez la publication ; si le problème persiste, ouvrez le Health Center sans recréer le site.", "Publishing did not complete. Try publishing again; if the issue persists, open the Health Center without recreating the website."));
+    } catch {
+      if (remotePublicationConfirmed) {
+        note(tr(
+          "Publication confirmée. Les vérifications après publication sont incomplètes. Consultez le site public et le Health Center ; il n’est pas nécessaire de republier pour ce message.",
+          "Publication confirmed. Post-publication checks are incomplete. Check the public website and Health Center; this message does not require republishing."
+        ));
+      } else {
+        setSyncError(tr(
+          "La publication n’a pas pu être confirmée. Vérifiez le site public et le Health Center avant de relancer ; vos modifications restent affichées dans ELTARA.",
+          "Publication could not be confirmed. Check the public website and Health Center before trying again; your changes remain visible in ELTARA."
+        ));
+      }
     } finally {
       setBusy(false);
     }
@@ -1349,6 +1388,7 @@ export default function BuilderPage() {
           ) : null}
           <LanguageSwitch compact />
           {ownedSites.length>1?<select aria-label={tr("Site actif", "Active website")} value={remoteSiteId||""} onChange={async e=>{
+            setPublicationNotice("");
             const next=await getMySite(e.target.value);
             if(!next)return;
             if(next.privacyState==="erasure_requested"){router.push("/data");return;}
@@ -1452,6 +1492,7 @@ export default function BuilderPage() {
               </div>
             </div>
             {syncError ? <div className="error-card premium-error-card"><b>{tr("Synchronisation", "Sync")}</b><p>{syncError}</p></div> : null}
+            {published && publicationNotice ? <div className="quality-note" role="status"><p>{publicationNotice}</p></div> : null}
 
             {step === "identity" ? (
               <>
