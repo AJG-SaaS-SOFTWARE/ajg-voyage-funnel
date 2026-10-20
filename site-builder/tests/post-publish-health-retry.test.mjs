@@ -119,27 +119,31 @@ test("starting a retry clears the previous diagnosis before session acquisition 
   assert.equal(f.state.status, "done"); assert.equal(f.calls.requests.length, 1);
 });
 
-test("a slow older session success cannot issue a GET after a later retry failed", async () => {
-  const old = deferred(); let count = 0;
-  const f = fixture({ session: async () => ++count === 1 ? old.promise : { data: { session: null } } });
+test("a duplicate retry cannot supersede an in-flight session outcome", async () => {
+  const pending = deferred(); let count = 0;
+  const f = fixture({ session: async () => ++count === 1 ? pending.promise : { data: { session: null } } });
   const first = f.retry();
   await f.retry();
-  old.resolve({ data: { session: { access_token: "synthetic-token" } } });
+  assert.equal(f.calls.session, 1);
+  pending.resolve({ data: { session: { access_token: "synthetic-token" } } });
   await first; await flush();
-  assert.equal(f.state.status, "error"); assert.equal(f.state.health, null);
-  assert.equal(f.calls.requests.length, 0);
+  assert.equal(f.state.status, "done"); assert.equal(f.state.health.overall, "healthy");
+  assert.equal(f.calls.requests.length, 1);
 });
 
-test("a slow older session failure cannot erase a later successful diagnostic", async () => {
-  const old = deferred(); let count = 0;
-  const f = fixture({ session: async () => ++count === 1 ? old.promise
+test("a failed single flight releases the guard for an explicit later recovery", async () => {
+  const pending = deferred(); let count = 0;
+  const f = fixture({ session: async () => ++count === 1 ? pending.promise
     : { data: { session: { access_token: "synthetic-token" } } }, request: async () => response("incident") });
   const first = f.retry();
   await f.retry(); await flush();
-  old.reject(new Error("private-old-session-marker"));
+  assert.equal(f.calls.session, 1);
+  pending.reject(new Error("private-old-session-marker"));
   await first; await flush();
+  assert.equal(f.state.status, "error"); assert.equal(f.calls.requests.length, 0);
+  await f.retry(); await flush();
   assert.equal(f.state.status, "done"); assert.equal(f.state.health.overall, "incident");
-  assert.equal(f.calls.requests.length, 1);
+  assert.equal(f.calls.session, 2); assert.equal(f.calls.requests.length, 1);
 });
 
 test("a successful automatic publication diagnostic supersedes an older session preflight", async () => {
