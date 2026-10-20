@@ -97,5 +97,7 @@ test("actual uptime steps reject HTML200 and redirects with real isolated HTTP/c
     assert.match(workflow,/persist-credentials: false/);
     assert.match(workflow,/--connect-timeout 5 --max-time 15 --max-filesize 16384/);
     assert.doesNotMatch(blocks.join("\n"),/--location|\s-L\s/);
+    const ci=readFileSync(new URL("../../.github/workflows/site-builder-ci.yml",import.meta.url),"utf8");
+    assert.equal(ci.match(/- "\.github\/workflows\/site-builder-uptime\.yml"/g)?.length,2);
   } finally { server.closeAllConnections(); await new Promise(resolve=>server.close(resolve)); rmSync(dir,{recursive:true,force:true}); }
 });

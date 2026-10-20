@@ -26,6 +26,8 @@ legacy published-canary check remains unchanged. Schedule, time budget, existing
 targets, no-auth public calls and retry counts remain. Checkout uses a pinned
 existing v4 action without persisted credentials; no repository permissions,
 provider configuration, secrets or Auth/RLS setting is changed.
+Uptime-workflow-only changes now trigger dedicated ELTARA CI on PR and main,
+so future edits cannot silently bypass these regression tests.
 
 Tests execute the actual two workflow shell steps with real local HTTP/curl,
 including the old false-green baseline, plus pure/CLI validation and safe output.
