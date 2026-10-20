@@ -45,6 +45,7 @@ export default function SupportPage() {
   const [repairing, setRepairing] = useState(false);
   const [topic, setTopic] = useState("");
   const submitting = useRef(false);
+  const rechecking = useRef(false);
   const requestIdentity = useRef<{ id: string; payload: string } | null>(null);
   const confirmedRequest = useRef<string | null>(null);
   const loadVersion = useRef(0);
@@ -224,14 +225,16 @@ export default function SupportPage() {
   }
 
   async function recheck(ticketId: string) {
-    const accessToken = await token();
-    if (!accessToken) {
-      setState("guest");
-      return;
-    }
+    if (rechecking.current) return;
+    rechecking.current = true;
     setRecheckingId(ticketId);
     setNotice("");
     try {
+      const accessToken = await token();
+      if (!accessToken) {
+        setState("guest");
+        return;
+      }
       const response = await fetch("/api/support/tickets", {
         method: "PATCH",
         headers: {
@@ -240,24 +243,57 @@ export default function SupportPage() {
         },
         body: JSON.stringify({ id: ticketId }),
         cache: "no-store"
+      }).catch(() => {
+        throw new Error(tr(
+          "Le résultat du diagnostic n’a pas été reçu. Actualisez vos demandes pour vérifier leur état avant de relancer.",
+          "The diagnosis result was not received. Refresh your requests to check their status before running it again."
+        ));
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
+        if (response.status === 401) setState("guest");
+        if (response.status >= 500) {
+          throw new Error(tr(
+            "Le résultat du diagnostic n’a pas été confirmé. Actualisez vos demandes pour vérifier leur état avant de relancer.",
+            "The diagnosis result could not be confirmed. Refresh your requests to check their status before running it again."
+          ));
+        }
         throw new Error(body?.error || tr("Nouveau diagnostic impossible.", "Unable to run a new diagnosis."));
       }
-
       const nextStatus = body?.ticket?.status;
-      setNotice(
+      if (response.status !== 200 || body?.ticket?.id !== ticketId ||
+          !["resolved", "diagnosed", "waiting_customer"].includes(nextStatus)) {
+        throw new Error(tr(
+          "Le résultat du diagnostic n’a pas été confirmé. Actualisez vos demandes pour vérifier leur état avant de relancer.",
+          "The diagnosis result could not be confirmed. Refresh your requests to check their status before running it again."
+        ));
+      }
+      const confirmation =
         nextStatus === "resolved"
           ? tr("Le problème diagnostiqué n’est plus détecté : la demande a été résolue automatiquement.", "The diagnosed issue is no longer detected: the request was resolved automatically.")
           : nextStatus === "diagnosed"
-            ? tr("Le problème nécessite maintenant une vérification par l’équipe ELTARA. Votre demande a été escaladée.", "The issue now requires ELTARA team review. Your request has been escalated.")
-            : tr("L’action recommandée reste nécessaire. Le diagnostic a été actualisé.", "The recommended action is still required. The diagnosis has been refreshed.")
-      );
-      await load();
+            ? tr("Diagnostic actualisé. Le problème nécessite une vérification par l’équipe ELTARA.", "Diagnosis refreshed. The issue requires review by the ELTARA team.")
+            : tr("L’action recommandée reste nécessaire. Le diagnostic a été actualisé.", "The recommended action is still required. The diagnosis has been refreshed.");
+      setNotice(confirmation);
+      // Only apply the correlated status, not arbitrary returned ticket fields.
+      // A failed list refresh must not offer an already-confirmed action again.
+      setPayload(current => current ? { ...current, tickets: current.tickets.map(ticket =>
+        ticket.id === ticketId ? { ...ticket, status: nextStatus } : ticket
+      ) } : current);
+      try {
+        const refreshed = await load();
+        if (!refreshed) setNotice(confirmation + " " + tr("La liste n’a pas pu être actualisée.", "The list could not be refreshed."));
+      } catch {
+        setState("error");
+        setNotice(confirmation + " " + tr(
+          "La liste n’a pas pu être actualisée. Le résultat ci-dessus est confirmé : actualisez vos demandes sans relancer ce diagnostic.",
+          "The list could not be refreshed. The result above is confirmed: refresh your requests without running this diagnosis again."
+        ));
+      }
     } catch (error) {
       setNotice(error instanceof Error ? error.message : tr("Nouveau diagnostic impossible.", "Unable to run a new diagnosis."));
     } finally {
+      rechecking.current = false;
       setRecheckingId(null);
     }
   }
@@ -497,7 +533,7 @@ export default function SupportPage() {
                         <button
                           className="button secondary"
                           onClick={() => void recheck(ticket.id)}
-                          disabled={recheckingId === ticket.id}
+                          disabled={recheckingId !== null}
                         >
                           {recheckingId === ticket.id
                             ? tr("Nouveau diagnostic…", "Running diagnosis…")
