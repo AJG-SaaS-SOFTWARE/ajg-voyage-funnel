@@ -5,6 +5,7 @@ import { AdminShell } from "../../../components/AdminShell";
 import { getSupabaseBrowserClient } from "../../../lib/supabase-browser";
 import type { SupportDiagnosis } from "../../../lib/support-diagnostics";
 import type { SupportMetricsSourceStatus } from "../../../lib/support-metrics";
+import { adminRuntimeObservation } from "../../../lib/admin-runtime-observation";
 
 type SupportMetrics = {
   windowDays: 30;
@@ -204,6 +205,7 @@ export default function AdminSupportPage() {
 
   const openCount = tickets.filter((ticket) => !["resolved","closed"].includes(ticket.status)).length;
   const incidentCount = tickets.filter((ticket) => ticket.diagnosis?.overall === "incident" && !["resolved","closed"].includes(ticket.status)).length;
+  const runtimeObservation = adminRuntimeObservation(platform?.runtime);
 
   return (
     <AdminShell
@@ -234,7 +236,7 @@ export default function AdminSupportPage() {
                   <span>sous-domaines clients · {platform.managedDomainCanary.host}</span>
                 </article>
                 <article>
-                  <b>{platform.runtime.status === "healthy" ? "0" : platform.runtime.status === "unknown" ? "—" : platform.runtime.errorCount + platform.runtime.http5xxCount}</b>
+                  <b>{runtimeObservation === "healthy" ? "0" : runtimeObservation === "unknown" ? "—" : platform.runtime.errorCount + platform.runtime.http5xxCount}</b>
                   <span>runtime · erreurs/5xx · {platform.runtime.lookbackMinutes} min{platform.runtime.truncated ? " · échantillon borné" : ""}</span>
                 </article>
                 <article>
