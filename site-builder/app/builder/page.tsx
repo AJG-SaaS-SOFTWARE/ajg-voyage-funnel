@@ -1151,6 +1151,22 @@ export default function BuilderPage() {
     }
   };
 
+  const retryPostPublishHealth = async () => {
+    const version = ++postPublishHealthVersion.current;
+    setPostPublishHealthState("checking");
+    setPostPublishHealth(null);
+    try {
+      if (!remoteSiteId) throw new Error("health_unavailable");
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = supabase ? await supabase.auth.getSession() : { data: { session: null }, error: null };
+      if (version !== postPublishHealthVersion.current) return;
+      if (error || !data.session?.access_token) throw new Error("health_unavailable");
+      await runPostPublishHealth(remoteSiteId, data.session.access_token);
+    } catch {
+      if (version === postPublishHealthVersion.current) setPostPublishHealthState("error");
+    }
+  };
+
   const save = async () => {
     setBusy(true);
     setSyncError("");
@@ -2361,13 +2377,7 @@ export default function BuilderPage() {
                           ) : postPublishHealth.overall !== "healthy" ? (
                             <Link className="button secondary" href="/support">{tr("Ouvrir le Health Center", "Open Health Center")}</Link>
                           ) : null}
-                          <button type="button" className="button secondary" onClick={async () => {
-                            const supabase = getSupabaseBrowserClient();
-                            const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
-                            if (data.session?.access_token && remoteSiteId) {
-                              void runPostPublishHealth(remoteSiteId, data.session.access_token);
-                            }
-                          }}>
+                          <button type="button" className="button secondary" onClick={retryPostPublishHealth}>
                             {tr("Relancer le diagnostic", "Run diagnostic again")}
                           </button>
                         </div>
