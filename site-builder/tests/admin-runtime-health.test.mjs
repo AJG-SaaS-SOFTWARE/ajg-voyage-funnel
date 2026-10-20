@@ -8,7 +8,7 @@ const probe = readFileSync("lib/vercel-runtime-health.ts", "utf8");
 
 test("admin support includes bounded Vercel runtime health", () => {
   assert.match(route, /getRecentRuntimeHealth/);
-  assert.match(route, /runtimeHealth\.status/);
+  assert.match(route, /adminRuntimeObservation\(runtimeHealth\)/);
   assert.match(page, /runtime · erreurs\/5xx/);
 });
 

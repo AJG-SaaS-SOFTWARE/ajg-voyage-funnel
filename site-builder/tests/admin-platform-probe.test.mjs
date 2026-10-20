@@ -195,7 +195,8 @@ test("the actual admin route propagates refused probe evidence without losing th
           "@supabase/supabase-js": { createClient: () => ++clients === 1 ? userClient : service },
           "../../../../lib/support-events": {},
           "../../../../lib/support-metrics": load("../lib/support-metrics.ts", {}),
-          "../../../../lib/vercel-runtime-health": { getRecentRuntimeHealth: async () => ({ status: "healthy", checked: true, truncated: false }) }
+          "../../../../lib/vercel-runtime-health": { getRecentRuntimeHealth: async () => ({ status: "healthy", checked: true, truncated: false }) },
+          "../../../../lib/admin-runtime-observation": load("../lib/admin-runtime-observation.ts", {})
         });
         const denied = await route.GET(new Request("https://synthetic.invalid/api/admin/support"));
         assert.equal(denied.status, 401);

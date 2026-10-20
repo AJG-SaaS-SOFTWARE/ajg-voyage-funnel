@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { recordSupportEvent } from "../../../../lib/support-events";
 import { calculateSupportMetrics, supportMetricsSourceStatus } from "../../../../lib/support-metrics";
 import { getRecentRuntimeHealth } from "../../../../lib/vercel-runtime-health";
+import { adminRuntimeObservation } from "../../../../lib/admin-runtime-observation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -129,9 +130,10 @@ export async function GET(request: Request) {
     || canaryProbe.dns !== "ok"
     || canaryProbe.https !== "ok";
 
-  const runtimeIssue = runtimeHealth.status === "incident"
+  const runtimeObservation = adminRuntimeObservation(runtimeHealth);
+  const runtimeIssue = runtimeObservation === "incident"
     ? "incident"
-    : runtimeHealth.status === "warning"
+    : runtimeObservation !== "healthy"
       ? "warning"
       : null;
 
@@ -146,9 +148,9 @@ export async function GET(request: Request) {
     managedDomainCanary: canaryProbe,
     runtime: runtimeHealth,
     nextAction:
-      runtimeHealth.status === "incident"
+      runtimeObservation === "incident"
         ? "Des erreurs runtime récentes sont détectées sur la production ; inspecter les fonctions/routes concernées avant toute remédiation automatique."
-        : runtimeHealth.status === "warning"
+        : runtimeObservation === "warning"
           ? "Quelques erreurs runtime récentes sont visibles ; surveiller leur répétition et ouvrir un incident si elles persistent."
           :
       publicProbe.dns === "nxdomain" || canaryProbe.dns === "nxdomain"
@@ -157,7 +159,9 @@ export async function GET(request: Request) {
           ? "Le DNS résout mais la réponse attendue n’est pas confirmée ; vérifier le statut HTTP, le health applicatif, le rattachement et le certificat Vercel."
           : appProbe.dns !== "ok" || appProbe.https !== "ok"
             ? "La réponse de santé du secours Vercel n’est pas confirmée ; vérifier le statut HTTP et le health applicatif en priorité."
-            : null
+            : runtimeObservation === "unknown"
+              ? "L’observation runtime est indisponible ou incomplète ; vérifier la collecte des logs avant de conclure à un état sain. Cela ne confirme pas une panne applicative."
+              : null
   };
 
   return NextResponse.json(

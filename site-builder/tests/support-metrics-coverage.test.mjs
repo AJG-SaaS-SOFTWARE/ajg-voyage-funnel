@@ -127,7 +127,8 @@ test("actual admin route withholds partial KPI but preserves queue, auth and fil
           "@supabase/supabase-js": { createClient: () => ++clients === 1 ? userClient : service },
           "../../../../lib/support-events": {},
           "../../../../lib/support-metrics": metrics,
-          "../../../../lib/vercel-runtime-health": { getRecentRuntimeHealth: async () => ({ status: "unknown" }) }
+          "../../../../lib/vercel-runtime-health": { getRecentRuntimeHealth: async () => ({ status: "unknown" }) },
+          "../../../../lib/admin-runtime-observation": load("../lib/admin-runtime-observation.ts", {})
         });
         const request = () => new Request("https://synthetic.invalid/api/admin/support", { headers: { authorization: "Bearer synthetic-token" } });
         const unauthorized = await route.GET(new Request("https://synthetic.invalid/api/admin/support"));
