@@ -2417,6 +2417,9 @@ export default function BuilderPage() {
                     ) : postPublishHealthState === "error" ? (
                       <div className="actions">
                         <Link className="button secondary" href="/support">{tr("Ouvrir le Health Center", "Open Health Center")}</Link>
+                        <button type="button" className="button secondary" onClick={retryPostPublishHealth}>
+                          {tr("Relancer le diagnostic", "Run diagnostic again")}
+                        </button>
                       </div>
                     ) : null}
                   </div>
