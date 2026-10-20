@@ -54,7 +54,8 @@ function fixture({ locale = "fr", siteId = "site-synthetic", absentClient = fals
   const state = { health: diagnosis(), status: "done" };
   const calls = { factory: 0, session: 0, requests: [] };
   const deps = {
-    locale, remoteSiteId: siteId, postPublishHealthVersion: { current: 0 }, readPostPublishDiagnosis,
+    locale, remoteSiteId: siteId, postPublishHealthRetryInFlight: { current: false },
+    postPublishHealthVersion: { current: 0 }, readPostPublishDiagnosis,
     setPostPublishHealth: value => { state.health = value; },
     setPostPublishHealthState: value => { state.status = value; },
     getSupabaseBrowserClient() {
@@ -183,6 +184,30 @@ test("an explicit later retry can recover from a session read failure without a 
   await f.retry(); await flush();
   assert.equal(f.state.status, "done"); assert.equal(f.state.health.overall, "healthy");
   assert.equal(f.calls.session, 2); assert.equal(f.calls.requests.length, 1);
+});
+
+test("concurrent explicit retries share one session preflight and one health request", async () => {
+  const pending = deferred();
+  const f = fixture({ session: () => pending.promise });
+  const first = f.retry();
+  const second = f.retry();
+  await flush();
+
+  assert.equal(f.calls.factory, 1);
+  assert.equal(f.calls.session, 1);
+  assert.equal(f.calls.requests.length, 0);
+  assert.deepEqual({ status: f.state.status, health: f.state.health }, { status: "checking", health: null });
+
+  pending.resolve({ data: { session: { access_token: "synthetic-token" } } });
+  await Promise.all([first, second]);
+  await flush();
+  assert.equal(f.calls.requests.length, 1);
+  assert.equal(f.state.status, "done");
+
+  await f.retry();
+  await flush();
+  assert.equal(f.calls.session, 2);
+  assert.equal(f.calls.requests.length, 2);
 });
 
 test("the retry button is actually wired to the reviewed handler", () => {
