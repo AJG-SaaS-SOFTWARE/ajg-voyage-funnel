@@ -25,6 +25,11 @@ async function get(path, expected) {
   return response;
 }
 
+function safeCanonicalTarget(url) {
+  return url.origin === "https://eltara.ajgsolutionsgroup.com" &&
+    !url.username && !url.password && !url.search && !url.hash;
+}
+
 async function getPublicRoute(path) {
   const response = await get(path, [200, 307, 308]);
   if (response.status === 200) return response;
@@ -46,6 +51,9 @@ async function getPublicRoute(path) {
     throw new Error(
       `${path}: unexpected canonical redirect path ${redirected.pathname}`,
     );
+  }
+  if (!safeCanonicalTarget(redirected)) {
+    throw new Error(`${path}: unsafe canonical redirect target`);
   }
   return response;
 }
@@ -115,10 +123,11 @@ async function verifyLocalizedNotFound(locale, expectedText) {
     }
     if (
       redirected.hostname !== "eltara.ajgsolutionsgroup.com" ||
-      redirected.pathname !== path
+      redirected.pathname !== path ||
+      !safeCanonicalTarget(redirected)
     ) {
       throw new Error(
-        `404 page: unexpected canonical redirect for ${locale}: ${redirected.href}`
+        `404 page: unexpected canonical redirect for ${locale}`
       );
     }
     response = await fetch(redirected, {
