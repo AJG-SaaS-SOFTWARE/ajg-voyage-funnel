@@ -135,34 +135,31 @@ for (const locale of ["fr", "en"]) {
   });
 }
 
-test("an older session timeout cannot erase a newer successful diagnosis", async () => {
-  const old = deferred(); let count = 0;
-  const f = fixture({ session: async () => ++count === 1 ? old.promise
+test("a timed-out single flight releases the guard for a later successful diagnosis", async () => {
+  const pending = deferred(); let count = 0;
+  const f = fixture({ session: async () => ++count === 1 ? pending.promise
     : { data: { session: { access_token: "synthetic-token" } } }, request: async () => response("incident") });
   const first = f.retry(); await flush();
-  await f.retry(); await flush();
-  const snapshot = JSON.stringify(f.state);
   f.expire(1); await first; await flush();
-  assert.equal(JSON.stringify(f.state), snapshot);
+  assert.equal(f.state.status, "error"); assert.equal(f.calls.requests.length, 0);
+  await f.retry(); await flush();
   assert.equal(f.state.status, "done"); assert.equal(f.state.health.overall, "incident");
-  assert.equal(f.calls.requests.length, 1);
-  old.resolve({ data: { session: { access_token: "late-token" } } }); await flush();
+  assert.equal(f.calls.session, 2); assert.equal(f.calls.requests.length, 1);
+  pending.resolve({ data: { session: { access_token: "late-token" } } }); await flush();
   assert.equal(f.calls.requests.length, 1);
 });
 
-test("each concurrent session preflight owns its deadline", async () => {
-  const firstSession = deferred(), secondSession = deferred(); let count = 0;
-  const f = fixture({ session: () => ++count === 1 ? firstSession.promise : secondSession.promise });
+test("duplicate retries share one session deadline", async () => {
+  const pending = deferred();
+  const f = fixture({ session: () => pending.promise });
   const first = f.retry(), second = f.retry(); await flush();
-  assert.deepEqual(f.deadlines, [{ id: 1, ms: 15000 }, { id: 2, ms: 15000 }]);
-  f.expire(1); await first; await flush();
-  assert.equal(f.state.status, "checking"); assert.equal(f.state.health, null);
-  assert.equal(f.timers.has(2), true); assert.equal(f.calls.requests.length, 0);
-  secondSession.resolve({ data: { session: { access_token: "synthetic-token" } } });
-  await second; await flush();
-  assert.equal(f.state.status, "done"); assert.equal(f.calls.requests.length, 1);
-  firstSession.resolve({ data: { session: { access_token: "late-token" } } }); await flush();
-  assert.equal(f.calls.requests.length, 1);
+  assert.deepEqual(f.deadlines, [{ id: 1, ms: 15000 }]);
+  assert.equal(f.calls.session, 1); assert.equal(f.timers.size, 1);
+  f.expire(1); await Promise.all([first, second]); await flush();
+  assert.equal(f.state.status, "error"); assert.equal(f.state.health, null);
+  assert.equal(f.timers.size, 0); assert.equal(f.calls.requests.length, 0);
+  pending.resolve({ data: { session: { access_token: "late-token" } } }); await flush();
+  assert.equal(f.calls.requests.length, 0);
 });
 
 test("fast session outcomes clear the deadline and preserve no private error detail", async () => {
