@@ -118,9 +118,9 @@ export function calculateSupportMetrics(input: {
       .map((ticket) => ticket.id)
   );
 
-  for (const ticketId of autoResolved) {
-    if (!adminTouched.has(ticketId)) selfServiceResolved.add(ticketId);
-  }
+  // The denominator is tickets created in the reporting window. Resolution
+  // events may concern older tickets or a ticket that has since reopened;
+  // neither can add a currently resolved member to that cohort.
 
   const remediationAttempted = input.remediations.length;
   const remediationSucceeded = input.remediations.filter(
