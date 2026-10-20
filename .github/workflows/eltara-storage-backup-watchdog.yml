@@ -35,37 +35,13 @@ jobs:
         id: health
         shell: bash
         run: |
-          STATUS="$(curl --fail-with-body --silent --show-error             "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
+          STATUS="$(curl --fail --silent --show-error --connect-timeout 5 --max-time 15             "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
           printf '%s' "$STATUS" > /tmp/storage-backup-health.json
 
-          node <<'NODE' >> "$GITHUB_OUTPUT"
-          const fs = require("node:fs");
-          const status = JSON.parse(fs.readFileSync("/tmp/storage-backup-health.json", "utf8"));
-          const configured = status?.configured === true;
-          const ageHours = Number(status?.ageHours);
-          const lastCompletedAt =
-            typeof status?.lastCompletedAt === "string" ? status.lastCompletedAt : "";
-
-          console.log(`configured=${configured ? "true" : "false"}`);
-          console.log(`age_hours=${Number.isFinite(ageHours) ? ageHours : ""}`);
-          console.log(`last_completed_at=${lastCompletedAt}`);
-          console.log(
-            `needs_recovery=${
-              configured && (!Number.isFinite(ageHours) || ageHours >= 36)
-                ? "true"
-                : "false"
-            }`
-          );
-          NODE
-
-      - name: Refuse recovery when backup store is not configured
-        if: steps.health.outputs.configured != 'true'
-        run: |
-          echo "::error::ELTARA off-provider backup store is not configured."
-          exit 1
+          node site-builder/scripts/verify-backup-watchdog-evidence.mjs check /tmp/storage-backup-health.json >> "$GITHUB_OUTPUT"
 
       - name: Report healthy backup
-        if: steps.health.outputs.needs_recovery != 'true'
+        if: steps.health.outputs.needs_recovery == 'false'
         run: |
           echo "ELTARA backup is fresh enough; no recovery action required." >> "$GITHUB_STEP_SUMMARY"
           echo "Last completed: ${{ steps.health.outputs.last_completed_at }}" >> "$GITHUB_STEP_SUMMARY"
@@ -86,20 +62,11 @@ jobs:
           PREVIOUS_COMPLETED: ${{ steps.health.outputs.last_completed_at }}
         run: |
           for attempt in $(seq 1 18); do
-            STATUS="$(curl --fail-with-body --silent --show-error               "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
+            STATUS="$(curl --fail --silent --show-error --connect-timeout 5 --max-time 15               "https://$PRODUCTION_ALIAS/api/health/storage-backup")"
             printf '%s' "$STATUS" > /tmp/storage-backup-health-after.json
 
-            NEW_COMPLETED="$(node -e '
-              const x=require("/tmp/storage-backup-health-after.json");
-              process.stdout.write(typeof x?.lastCompletedAt==="string"?x.lastCompletedAt:"");
-            ')"
-            NEW_STATUS="$(node -e '
-              const x=require("/tmp/storage-backup-health-after.json");
-              process.stdout.write(typeof x?.status==="string"?x.status:"unknown");
-            ')"
-
-            if [ -n "$NEW_COMPLETED" ] && [ "$NEW_COMPLETED" != "$PREVIOUS_COMPLETED" ]; then
-              echo "ELTARA backup recovered at $NEW_COMPLETED ($NEW_STATUS)." >> "$GITHUB_STEP_SUMMARY"
+            if node site-builder/scripts/verify-backup-watchdog-evidence.mjs verify /tmp/storage-backup-health-after.json "$PREVIOUS_COMPLETED"; then
+              echo "ELTARA backup recovery has a verified newer, fresh completion." >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
 
@@ -108,5 +75,4 @@ jobs:
           done
 
           echo "::error::Backup recovery was triggered but no newer completed backup became visible."
-          cat /tmp/storage-backup-health-after.json || true
           exit 1

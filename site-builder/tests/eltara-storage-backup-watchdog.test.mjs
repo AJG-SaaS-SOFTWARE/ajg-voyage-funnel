@@ -11,14 +11,18 @@ test("backup watchdog independently verifies ELTARA backup freshness", () => {
   assert.match(workflow, /schedule:/);
   assert.match(workflow, /10 \*\/6 \* \* \*/);
   assert.match(workflow, /api\/health\/storage-backup/);
-  assert.match(workflow, /ageHours >= 36/);
+  assert.match(workflow, /verify-backup-watchdog-evidence\.mjs check/);
+  assert.match(workflow, /needs_recovery == 'false'/);
+  assert.match(workflow, /--connect-timeout 5 --max-time 15/g);
 });
 
 test("backup watchdog only triggers the guarded existing cron when stale", () => {
   assert.match(workflow, /needs_recovery == 'true'/);
   assert.match(workflow, /vercel@60\.1\.3 crons run \/api\/cron\/storage-backup/);
   assert.match(workflow, /PREVIOUS_COMPLETED/);
-  assert.match(workflow, /NEW_COMPLETED.*PREVIOUS_COMPLETED/s);
+  assert.match(workflow, /verify-backup-watchdog-evidence\.mjs verify[^\n]+PREVIOUS_COMPLETED/);
+  assert.doesNotMatch(workflow, /Number\(status\?\.ageHours\)|NEW_COMPLETED.*!=/s);
+  assert.doesNotMatch(workflow, /cat \/tmp\/storage-backup-health/);
   assert.doesNotMatch(workflow, /vercel deploy/);
   assert.doesNotMatch(workflow, /git push/);
 });
