@@ -13,26 +13,32 @@ type Props = {
 
 export default function PublicContactForm({ siteId, pagePath, email, english = false, privacyHref }: Props) {
   const [sending, setSending] = useState(false);
+  const submitting = useRef(false);
   const started = useRef(false);
   const [status, setStatus] = useState<{ state: "idle" | "success" | "error"; message: string }>({ state: "idle", message: "" });
+  const unconfirmedMessage = english
+    ? "We could not confirm the result. Your entries have been kept. Check before sending again."
+    : "Le résultat n’a pas pu être confirmé. Votre saisie est conservée. Vérifiez avant de renvoyer le message.";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (sending) return;
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      siteId,
-      name: String(form.get("name") || "").trim(),
-      email: String(form.get("email") || "").trim(),
-      subject: String(form.get("subject") || "").trim(),
-      message: String(form.get("message") || "").trim(),
-      consent: form.get("consent") === "on",
-      website: String(form.get("website") || "").trim()
-    };
-
-    setSending(true);
-    setStatus({ state: "idle", message: "" });
+    if (submitting.current) return;
+    // React clears currentTarget after dispatch, before the response arrives.
+    const formElement = event.currentTarget;
+    submitting.current = true;
     try {
+      const form = new FormData(formElement);
+      const payload = {
+        siteId,
+        name: String(form.get("name") || "").trim(),
+        email: String(form.get("email") || "").trim(),
+        subject: String(form.get("subject") || "").trim(),
+        message: String(form.get("message") || "").trim(),
+        consent: form.get("consent") === "on",
+        website: String(form.get("website") || "").trim()
+      };
+      setSending(true);
+      setStatus({ state: "idle", message: "" });
       const response = await fetch("/api/public/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,21 +54,36 @@ export default function PublicContactForm({ siteId, pagePath, email, english = f
           site_not_available: ["Ce formulaire n’est pas disponible pour le moment.", "This form is not available right now."],
           contact_disabled: ["Ce formulaire n’est pas activé.", "This form is not enabled."]
         };
-        const message = copy[code] || ["Envoi impossible pour le moment. Vous pouvez utiliser l’e-mail direct ci-dessous.", "Unable to send right now. You can use the direct email link below."];
-        throw new Error(english ? message[1] : message[0]);
+        const message = typeof code === "string" && Object.hasOwn(copy, code)
+          ? copy[code][english ? 1 : 0] : unconfirmedMessage;
+        setStatus({ state: "error", message });
+        return;
       }
-      recordPublicAnalytics(siteId, "form_submit", pagePath, "contact");
-      event.currentTarget.reset();
+      // Suppression intentionally keeps the existing honeypot camouflage;
+      // it is not a stored-message receipt and must not count as one.
+      const suppressed = response.status === 200 && body?.ok === true && body?.notification === "suppressed";
+      const recorded = response.status === 201 && body?.ok === true &&
+        typeof body.id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.id) &&
+        ["sent", "stored"].includes(body.notification);
+      if (!suppressed && !recorded) throw new Error("contact_receipt_unconfirmed");
       setStatus({
         state: "success",
-        message: english ? "Message sent. Thank you — the site publisher can now reply to you." : "Message envoyé. Merci — l’éditeur du site peut maintenant vous répondre."
+        message: suppressed
+          ? (english ? "Thank you. Your request has been processed." : "Merci. Votre demande a été prise en compte.")
+          : (english ? "Message recorded. Thank you — the site publisher can now reply to you." : "Message enregistré. Merci — l’éditeur du site peut maintenant vous répondre.")
       });
-    } catch (error) {
+      // Ancillary UI/analytics failures cannot revoke the accepted receipt.
+      try { formElement.reset(); } catch { /* Keep the confirmed receipt. */ }
+      if (recorded) {
+        try { recordPublicAnalytics(siteId, "form_submit", pagePath, "contact"); } catch { /* Best effort only. */ }
+      }
+    } catch {
       setStatus({
         state: "error",
-        message: error instanceof Error ? error.message : (english ? "Unable to send the message." : "Impossible d’envoyer le message.")
+        message: unconfirmedMessage
       });
     } finally {
+      submitting.current = false;
       setSending(false);
     }
   }
@@ -70,35 +91,36 @@ export default function PublicContactForm({ siteId, pagePath, email, english = f
   return (
     <form
       className="public-contact-form"
+      aria-busy={sending}
       onSubmit={submit}
       onFocusCapture={() => {
         if (started.current) return;
         started.current = true;
-        recordPublicAnalytics(siteId, "form_start", pagePath, "contact");
+        try { recordPublicAnalytics(siteId, "form_start", pagePath, "contact"); } catch { /* Best effort only. */ }
       }}
     >
       <label>
         {english ? "Name" : "Nom"}
-        <input name="name" required maxLength={100} autoComplete="name" />
+        <input name="name" required maxLength={100} autoComplete="name" disabled={sending} />
       </label>
       <label>
         {english ? "Email" : "E-mail"}
-        <input name="email" type="email" required maxLength={254} autoComplete="email" />
+        <input name="email" type="email" required maxLength={254} autoComplete="email" disabled={sending} />
       </label>
       <label className="public-contact-message">
         {english ? "Subject (optional)" : "Objet (facultatif)"}
-        <input name="subject" maxLength={160} />
+        <input name="subject" maxLength={160} disabled={sending} />
       </label>
       <label className="public-contact-message">
         {english ? "Message" : "Message"}
-        <textarea name="message" required minLength={10} maxLength={4000} />
+        <textarea name="message" required minLength={10} maxLength={4000} disabled={sending} />
       </label>
       <label className="public-contact-honeypot" aria-hidden="true">
         Website
-        <input name="website" tabIndex={-1} autoComplete="off" />
+        <input name="website" tabIndex={-1} autoComplete="off" disabled={sending} />
       </label>
       <label className="public-contact-consent">
-        <input name="consent" type="checkbox" required />
+        <input name="consent" type="checkbox" required disabled={sending} />
         <span>
           {english
             ? "I agree that the information entered above is used to send my request to the site publisher and allow a reply."
