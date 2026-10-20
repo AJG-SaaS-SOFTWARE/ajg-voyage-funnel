@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveAny } from "node:dns/promises";
+import { platformProbe } from "../../../../lib/admin-platform-probe";
 import { createClient } from "@supabase/supabase-js";
 import { recordSupportEvent } from "../../../../lib/support-events";
 import { calculateSupportMetrics, supportMetricsSourceStatus } from "../../../../lib/support-metrics";
@@ -12,50 +12,6 @@ const statuses = new Set(["new","diagnosed","waiting_customer","in_progress","re
 
 function bearer(request: Request) {
   return request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
-}
-
-type PlatformProbe = {
-  host: string;
-  dns: "ok" | "nxdomain" | "error";
-  https: "ok" | "unavailable" | "skipped";
-  httpStatus: number | null;
-};
-
-async function platformProbe(host: string, path = "/"): Promise<PlatformProbe> {
-  let dns: PlatformProbe["dns"] = "ok";
-  try {
-    await resolveAny(host);
-  } catch (error: any) {
-    dns = error?.code === "ENOTFOUND" || error?.code === "ENODATA"
-      ? "nxdomain"
-      : "error";
-  }
-
-  if (dns !== "ok") {
-    return { host, dns, https: "skipped", httpStatus: null };
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-  try {
-    const response = await fetch(`https://${host}${path}`, {
-      method: "GET",
-      cache: "no-store",
-      redirect: "manual",
-      signal: controller.signal,
-      headers: { "User-Agent": "ELTARA-Platform-Health/1.0" }
-    });
-    return {
-      host,
-      dns,
-      https: response.status < 500 ? "ok" : "unavailable",
-      httpStatus: response.status
-    };
-  } catch {
-    return { host, dns, https: "unavailable", httpStatus: null };
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 async function requireAdmin(request: Request) {
@@ -198,9 +154,9 @@ export async function GET(request: Request) {
       publicProbe.dns === "nxdomain" || canaryProbe.dns === "nxdomain"
         ? "DNS externe à corriger chez le fournisseur autoritatif : publier les enregistrements ELTARA et wildcard vers Vercel."
         : publicProbe.https !== "ok" || canaryProbe.https !== "ok"
-          ? "Le DNS résout mais HTTPS n'est pas encore opérationnel ; vérifier le rattachement et le certificat Vercel."
+          ? "Le DNS résout mais la réponse attendue n’est pas confirmée ; vérifier le statut HTTP, le health applicatif, le rattachement et le certificat Vercel."
           : appProbe.dns !== "ok" || appProbe.https !== "ok"
-            ? "L'URL de secours Vercel n'est pas joignable ; traiter cet incident applicatif en priorité."
+            ? "La réponse de santé du secours Vercel n’est pas confirmée ; vérifier le statut HTTP et le health applicatif en priorité."
             : null
   };
 

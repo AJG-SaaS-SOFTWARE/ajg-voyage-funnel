@@ -4,9 +4,11 @@ import { readFileSync } from "node:fs";
 
 const api = readFileSync("app/api/admin/support/route.ts", "utf8");
 const page = readFileSync("app/admin/support/page.tsx", "utf8");
+const probe = readFileSync("lib/admin-platform-probe.ts", "utf8");
 
 test("admin support reports application, public-domain and managed-domain health", () => {
-  assert.match(api, /resolveAny/);
+  assert.match(probe, /resolveAny/);
+  assert.match(api, /import \{ platformProbe \}/);
   assert.match(api, /NEXT_PUBLIC_APP_URL/);
   assert.match(api, /NEXT_PUBLIC_PUBLISHED_ROOT_DOMAIN/);
   assert.match(api, /test-julien\.\$\{publishedRoot\}/);
