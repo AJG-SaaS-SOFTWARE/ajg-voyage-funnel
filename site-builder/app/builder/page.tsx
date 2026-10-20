@@ -293,6 +293,7 @@ export default function BuilderPage() {
   const [growthActionId, setGrowthActionId] = useState("");
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const publicationInFlight = useRef(false);
+  const postPublishHealthRetryInFlight = useRef(false);
   const postPublishHealthVersion = useRef(0);
   const latestVersion = useRef(0);
   const trackedProductEvents = useRef(new Set<string>());
@@ -1170,6 +1171,8 @@ export default function BuilderPage() {
   };
 
   const retryPostPublishHealth = async () => {
+    if (postPublishHealthRetryInFlight.current) return;
+    postPublishHealthRetryInFlight.current = true;
     const version = ++postPublishHealthVersion.current;
     setPostPublishHealthState("checking");
     setPostPublishHealth(null);
@@ -1196,6 +1199,7 @@ export default function BuilderPage() {
       if (version === postPublishHealthVersion.current) setPostPublishHealthState("error");
     } finally {
       if (sessionDeadline !== undefined) clearTimeout(sessionDeadline);
+      postPublishHealthRetryInFlight.current = false;
     }
   };
 
