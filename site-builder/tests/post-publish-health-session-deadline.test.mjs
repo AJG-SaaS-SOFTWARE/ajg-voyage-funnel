@@ -49,7 +49,8 @@ function fixture({ locale = "fr", siteId = "site-synthetic", absentClient = fals
   const deadlines = [], cleared = [], timers = new Map();
   let nextTimer = 0;
   const deps = {
-    locale, remoteSiteId: siteId, postPublishHealthVersion: { current: 0 }, readPostPublishDiagnosis,
+    locale, remoteSiteId: siteId, postPublishHealthRetryInFlight: { current: false },
+    postPublishHealthVersion: { current: 0 }, readPostPublishDiagnosis,
     setPostPublishHealth: value => { state.health = value; },
     setPostPublishHealthState: value => { state.status = value; },
     getSupabaseBrowserClient() {
