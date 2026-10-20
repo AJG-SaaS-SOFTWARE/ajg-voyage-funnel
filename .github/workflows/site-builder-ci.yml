@@ -15,11 +15,13 @@ on:
       - "site-builder/**"
       - ".github/workflows/site-builder-ci.yml"
       - ".github/workflows/site-builder-production.yml"
+      - ".github/workflows/site-builder-uptime.yml"
   pull_request:
     paths:
       - "site-builder/**"
       - ".github/workflows/site-builder-ci.yml"
       - ".github/workflows/site-builder-production.yml"
+      - ".github/workflows/site-builder-uptime.yml"
 
 jobs:
   build:
