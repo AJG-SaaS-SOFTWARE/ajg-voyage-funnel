@@ -51,9 +51,10 @@ function fixture(open, { locale = "fr", subscribed = false, readBilling = async 
     "../../lib/product-analytics": { trackProductEvent() { throw new Error("unexpected analytics"); } }
   };
   const module = { exports: {} };
-  new Function("require", "module", "exports", code)(name => {
+  const fakeWindow = { setTimeout: () => 1, clearTimeout() {} };
+  new Function("require", "module", "exports", "window", code)(name => {
     assert.ok(name in dependencies, name); return dependencies[name];
-  }, module, module.exports);
+  }, module, module.exports, fakeWindow);
   function render() { cursor = 0; refCursor = 0; return module.exports.default(); }
   function nodes(node) {
     if (Array.isArray(node)) return node.flatMap(nodes);

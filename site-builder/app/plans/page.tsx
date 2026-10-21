@@ -32,6 +32,25 @@ const emptyAiAccess: SiteAiAccess = {
   launchOperationsRemaining: 0
 };
 
+const ACCOUNT_LOAD_TIMEOUT_MS = 15_000;
+
+async function withAccountLoadDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("account_load_timeout")),
+          ACCOUNT_LOAD_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 export default function PlansPage() {
   const { locale, tr } = useProductLocale();
   const [current, setCurrent] = useState<SubscriptionEntitlements>(freeEntitlements);
@@ -60,29 +79,31 @@ export default function PlansPage() {
     setLoadFailed(false);
     setBillingState(null);
     try {
-      const owned = await getMySites();
+      const snapshot = await withAccountLoadDeadline((async () => {
+        const owned = await getMySites();
+        const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
+        const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
+          site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
+          site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
+          getMyAiUsage(),
+          getMyStorageUsage(site?.id),
+          getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
+          site ? getMyBillingState(site.id) : Promise.resolve(null)
+        ]);
+        if (site && !resolvedBilling) throw new Error("billing_account_unavailable");
+        return { owned, site, entitlements, access, aiUsage, storageUsage, beta, resolvedBilling };
+      })());
       if (sequence !== loadSequence.current) return;
-      const site = owned.find((item) => item.id === (selectedId || siteId)) || owned[0];
-      setSites(owned.map((item) => ({ id: item.id, slug: item.slug })));
-      setSiteId(site?.id || "");
-      const [entitlements, access, aiUsage, storageUsage, beta, resolvedBilling] = await Promise.all([
-        site ? getMySiteEntitlements(site.id) : Promise.resolve(freeEntitlements),
-        site ? getMySiteAiAccess(site.id) : Promise.resolve(emptyAiAccess),
-        getMyAiUsage(),
-        getMyStorageUsage(site?.id),
-        getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null })),
-        site ? getMyBillingState(site.id) : Promise.resolve(null)
-      ]);
-      if (sequence !== loadSequence.current) return;
-      if (site && !resolvedBilling) throw new Error("billing_account_unavailable");
-      setCurrent(entitlements);
-      setAiAccess(access);
-      setUsage(aiUsage);
-      setStorage(storageUsage);
-      setBetaAccess(beta);
-      if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
-      setBillingState(resolvedBilling);
-      checkoutSite.current = site?.id || "";
+      setSites(snapshot.owned.map((item) => ({ id: item.id, slug: item.slug })));
+      setSiteId(snapshot.site?.id || "");
+      setCurrent(snapshot.entitlements);
+      setAiAccess(snapshot.access);
+      setUsage(snapshot.aiUsage);
+      setStorage(snapshot.storageUsage);
+      setBetaAccess(snapshot.beta);
+      if (snapshot.beta.active) setBetaExperienceMode(readBetaExperienceMode());
+      setBillingState(snapshot.resolvedBilling);
+      checkoutSite.current = snapshot.site?.id || "";
       setLoaded(true);
     } catch {
       if (sequence !== loadSequence.current) return;
