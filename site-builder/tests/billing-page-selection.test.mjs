@@ -147,6 +147,29 @@ test("a Checkout return confirms only server-side paid entitlements and tolerate
   assert.equal(page.state[5], false);
 });
 
+test("confirmed Checkout rights survive a billing display refresh failure", async () => {
+  let billingRead = 0;
+  const page = harness(
+    async id => {
+      if (++billingRead === 1) return { state: "active", site: id };
+      throw new Error("private billing refresh failure");
+    },
+    "?checkout=success&siteId=site-b",
+    async () => sites,
+    async () => ({ planKey: "essential", status: "active" })
+  );
+  page.render(); await flush(); page.render(); await flush();
+  assert.equal(page.calls.length, 2);
+  assert.equal(page.state[0].site, "site-b", "keep the last billing snapshot");
+  assert.equal(page.state[6], "", "confirmed rights must not remain retryable");
+  assert.equal(page.retryButton(), undefined);
+  assert.equal(
+    page.state[1],
+    "Vos droits d’abonnement sont confirmés côté serveur, mais l’affichage de facturation n’a pas pu être actualisé. Actualisez la page pour réessayer."
+  );
+  assert.doesNotMatch(page.state[1], /private billing refresh failure/);
+});
+
 test("a Checkout return stays explicitly unconfirmed after the bounded server-rights checks", async () => {
   const page = harness(
     async id => ({ state: "active", site: id }),
@@ -183,6 +206,36 @@ test("a manual recheck is single-flight and refreshes billing only after server 
   assert.equal(page.state[7], false);
   assert.equal(page.state[1], "Vos droits d’abonnement sont confirmés côté serveur.");
   assert.equal(page.retryButton(), undefined);
+});
+
+test("manual confirmation remains successful when only the English billing display refresh fails", async () => {
+  let billingRead = 0;
+  let rightsRead = 0;
+  const page = harness(
+    async id => {
+      if (++billingRead === 1) return { state: "active", site: id };
+      throw new Error("private billing refresh failure");
+    },
+    "?checkout=success&siteId=site-b",
+    async () => sites,
+    async () => (++rightsRead <= 4
+      ? { planKey: "free", status: "active" }
+      : { planKey: "growth", status: "active" }),
+    "en"
+  );
+  page.render(); await flush(); page.render(); await flush();
+  page.retryButton().props.onClick();
+  await flush();
+  assert.equal(page.calls.length, 2);
+  assert.equal(page.state[0].site, "site-b", "keep the last billing snapshot");
+  assert.equal(page.state[6], "");
+  assert.equal(page.state[7], false);
+  assert.equal(page.retryButton(), undefined);
+  assert.equal(
+    page.state[1],
+    "Your subscription entitlements are confirmed server-side, but the billing display could not be refreshed. Refresh the page to try again."
+  );
+  assert.doesNotMatch(page.state[1], /private billing refresh failure/);
 });
 
 test("forged or unrelated URL targets never trigger Checkout entitlement confirmation", async () => {
