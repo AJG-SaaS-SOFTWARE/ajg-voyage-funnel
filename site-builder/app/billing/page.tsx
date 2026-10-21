@@ -15,6 +15,7 @@ function date(value: string | null, locale: string) {
 const CHECKOUT_CONFIRMATION_ATTEMPTS = 4;
 const CHECKOUT_CONFIRMATION_DELAY_MS = 1_500;
 const CHECKOUT_CONFIRMATION_READ_TIMEOUT_MS = 5_000;
+const BILLING_STATE_READ_TIMEOUT_MS = 10_000;
 
 function hasConfirmedPaidRights(rights: Awaited<ReturnType<typeof getMySiteEntitlements>>) {
   return (
@@ -32,6 +33,23 @@ async function readConfirmedPaidRights(siteId: string) {
         timeoutId = window.setTimeout(
           () => resolve(false),
           CHECKOUT_CONFIRMATION_READ_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
+async function readBillingState(siteId: string) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      getMyBillingState(siteId),
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("billing_state_read_timeout")),
+          BILLING_STATE_READ_TIMEOUT_MS
         );
       })
     ]);
@@ -94,7 +112,7 @@ export default function BillingPage() {
         return;
       }
 
-      let state = await getMyBillingState(chosen.id);
+      let state = await readBillingState(chosen.id);
       const verifyCheckoutReturn =
         search.get("checkout") === "success" &&
         requestedSiteId === chosen.id;
@@ -106,7 +124,7 @@ export default function BillingPage() {
         if (cancelled) return;
         if (rightsConfirmed) {
           try {
-            state = await getMyBillingState(chosen.id);
+            state = await readBillingState(chosen.id);
           } catch {
             billingRefreshFailedAfterConfirmation = true;
           }
@@ -168,7 +186,7 @@ export default function BillingPage() {
       }
       setCheckoutVerificationSiteId("");
       try {
-        const state = await getMyBillingState(expectedSiteId);
+        const state = await readBillingState(expectedSiteId);
         if (selectedSiteIdRef.current !== expectedSiteId) return;
         setBilling(state);
         setMessage(tr(
