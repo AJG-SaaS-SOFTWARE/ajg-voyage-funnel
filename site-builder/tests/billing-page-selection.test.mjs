@@ -119,6 +119,22 @@ test("current read failures show a recoverable error, while obsolete failures ar
   assert.equal(page.state[0], null);
 });
 
+test("a hung billing read times out and a late response cannot overwrite the recoverable error", async () => {
+  const late = deferred();
+  const page = harness(() => late.promise);
+  page.render(); await flush(); page.render(); await flush();
+  assert.deepEqual(page.calls, ["site-b"]);
+  assert.equal(page.state[0], null);
+  assert.equal(page.state[5], false);
+  assert.equal(page.state[1], "Impossible de charger l’état de facturation.");
+  assert.deepEqual(page.timers, [10_000]);
+
+  late.resolve({ state: "active", site: "site-b" });
+  await flush();
+  assert.equal(page.state[0], null);
+  assert.equal(page.state[1], "Impossible de charger l’état de facturation.");
+});
+
 test("unowned URL targets never trigger a billing read and empty accounts finish loading", async () => {
   const page = harness(async id => ({ state: "active", site: id }), "?siteId=not-owned");
   page.render(); await flush(); page.render(); await flush();
@@ -142,7 +158,7 @@ test("a Checkout return confirms only server-side paid entitlements and tolerate
   );
   page.render(); await flush(); page.render(); await flush();
   assert.deepEqual(page.rightsCalls, ["site-b", "site-b", "site-b"]);
-  assert.deepEqual(page.timers, [5_000, 1_500, 5_000, 1_500, 5_000]);
+  assert.deepEqual(page.timers, [10_000, 5_000, 1_500, 5_000, 1_500, 5_000, 10_000]);
   assert.equal(page.state[0].site, "site-b");
   assert.equal(page.state[1], "Vos droits d’abonnement sont confirmés côté serveur.");
   assert.equal(page.state[5], false);
@@ -178,7 +194,7 @@ test("a Checkout return stays explicitly unconfirmed after the bounded server-ri
   );
   page.render(); await flush(); page.render(); await flush();
   assert.equal(page.rightsCalls.length, 4);
-  assert.deepEqual(page.timers, [5_000, 1_500, 5_000, 1_500, 5_000, 1_500, 5_000]);
+  assert.deepEqual(page.timers, [10_000, 5_000, 1_500, 5_000, 1_500, 5_000, 1_500, 5_000]);
   assert.match(page.state[1], /pas encore confirmés/);
   assert.doesNotMatch(page.state[1], /paiement (réussi|confirmé)/i);
   assert.equal(page.state[5], false);
@@ -269,7 +285,7 @@ test("forged or unrelated URL targets never trigger Checkout entitlement confirm
     const page = harness(async id => ({ state: "active", site: id }), search);
     page.render(); await flush(); page.render(); await flush();
     assert.deepEqual(page.rightsCalls, []);
-    assert.deepEqual(page.timers, []);
+    assert.deepEqual(page.timers, [10_000]);
   }
 });
 
