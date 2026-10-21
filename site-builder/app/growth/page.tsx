@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
@@ -31,6 +31,25 @@ import type { AnalyticsOpportunity } from "../../lib/site-analytics";
 
 type GrowthState = "loading" | "guest" | "locked" | "no_site" | "draft" | "ready" | "error";
 type SiteOption = { id: string; slug: string; status: string; publishedAt: string | null };
+
+const GROWTH_LOAD_TIMEOUT_MS = 15_000;
+
+async function withGrowthLoadDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("growth_load_timeout")),
+          GROWTH_LOAD_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 const groupLabels: Record<GrowthHealthGroupKey, { fr: string; en: string; detailFr: string; detailEn: string }> = {
   availability: {
@@ -73,6 +92,7 @@ export default function GrowthPage() {
   const [analyticsRows, setAnalyticsRows] = useState<SiteAnalyticsRow[]>([]);
   const [growthActions, setGrowthActions] = useState<GrowthAction[]>([]);
   const [actionBusy, setActionBusy] = useState(false);
+  const loadSequence = useRef(0);
 
   async function sessionToken() {
     const supabase = getSupabaseBrowserClient();
@@ -82,86 +102,86 @@ export default function GrowthPage() {
   }
 
   async function load(selectedId?: string, forcedMode?: BetaExperienceMode) {
+    const sequence = ++loadSequence.current;
     setRunning(true);
     setNotice("");
+    setState("loading");
     try {
-      const accessToken = await sessionToken();
-      if (!accessToken) {
-        setState("guest");
-        return;
-      }
+      const snapshot = await withGrowthLoadDeadline((async () => {
+        const accessToken = await sessionToken();
+        if (!accessToken) return { state: "guest" as const };
 
-      const owned = await getMySites();
-      const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt }));
-      setSites(options);
-      if (!options.length) {
+        const owned = await getMySites();
+        const options = owned.map((site) => ({ id: site.id, slug: site.slug, status: site.status, publishedAt: site.publishedAt }));
+        if (!options.length) return { state: "no_site" as const, options };
+
+        const selected = options.find((site) => site.id === (selectedId || siteId)) || options[0];
+        const [entitlements, beta] = await Promise.all([
+          getMySiteEntitlements(selected.id),
+          getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
+        ]);
+        const resolvedMode = beta.active ? (forcedMode || readBetaExperienceMode()) : "growth";
+        const paidGrowth = entitlements.planKey === "growth" && ["active", "trialing"].includes(entitlements.status);
+        const common = { options, selected, betaActive: beta.active, resolvedMode };
+
+        if (!(beta.active ? resolvedMode === "growth" : paidGrowth)) {
+          return { state: "locked" as const, ...common };
+        }
+        if (selected.status !== "published") {
+          return { state: "draft" as const, ...common };
+        }
+
+        const [response, rows, actions] = await Promise.all([
+          fetch("/api/support/health?siteId=" + encodeURIComponent(selected.id), {
+            headers: { Authorization: "Bearer " + accessToken },
+            cache: "no-store"
+          }),
+          getMySiteAnalytics(selected.id, 180).catch(() => [] as SiteAnalyticsRow[]),
+          getMyGrowthActions(selected.id).catch(() => [] as GrowthAction[])
+        ]);
+        const body = await response.json().catch(() => null);
+        if (response.status === 401) return { state: "guest" as const };
+        if (!response.ok || !body?.health?.diagnosis) {
+          throw new Error(body?.error || "growth_health_unavailable");
+        }
+        return { state: "ready" as const, diagnosis: body.health.diagnosis as SupportDiagnosis, rows, actions, ...common };
+      })());
+      if (sequence !== loadSequence.current) return;
+
+      if (snapshot.state === "guest") {
+        setSites([]);
         setSiteId("");
-        setDiagnosis(null);
-        setAnalyticsRows([]);
-        setGrowthActions([]);
-        setState("no_site");
-        return;
+        setBetaActive(false);
+      } else if (snapshot.state === "no_site") {
+        setSites(snapshot.options);
+        setSiteId("");
+        setBetaActive(false);
+      } else {
+        setSites(snapshot.options);
+        setSiteId(snapshot.selected.id);
+        setBetaActive(snapshot.betaActive);
+        if (snapshot.betaActive) setBetaExperienceMode(snapshot.resolvedMode);
       }
-
-      const selected = options.find((site) => site.id === (selectedId || siteId)) || options[0];
-      setSiteId(selected.id);
-
-      const [entitlements, beta] = await Promise.all([
-        getMySiteEntitlements(selected.id),
-        getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
-      ]);
-      const resolvedMode = beta.active ? (forcedMode || readBetaExperienceMode()) : "growth";
-      setBetaActive(beta.active);
-      if (beta.active) setBetaExperienceMode(resolvedMode);
-
-      const paidGrowth =
-        entitlements.planKey === "growth" &&
-        ["active", "trialing"].includes(entitlements.status);
-      const growthExperienceEnabled = beta.active ? resolvedMode === "growth" : paidGrowth;
-
-      if (!growthExperienceEnabled) {
-        setDiagnosis(null);
-        setAnalyticsRows([]);
-        setGrowthActions([]);
-        setState("locked");
-        return;
-      }
-
-      if (selected.status !== "published") {
-        setDiagnosis(null);
-        setAnalyticsRows([]);
-        setGrowthActions([]);
-        setState("draft");
-        return;
-      }
-
-      const analyticsPromise = getMySiteAnalytics(selected.id, 180).catch(() => [] as SiteAnalyticsRow[]);
-      const growthActionsPromise = getMyGrowthActions(selected.id).catch(() => [] as GrowthAction[]);
-      const response = await fetch("/api/support/health?siteId=" + encodeURIComponent(selected.id), {
-        headers: { Authorization: "Bearer " + accessToken },
-        cache: "no-store"
-      });
-      const body = await response.json().catch(() => null);
-      if (response.status === 401) {
-        setState("guest");
-        return;
-      }
-      if (!response.ok || !body?.health?.diagnosis) {
-        throw new Error(body?.error || tr("Pilotage Growth indisponible.", "Growth cockpit is unavailable."));
-      }
-      setDiagnosis(body.health.diagnosis);
-      const [rows, actions] = await Promise.all([analyticsPromise, growthActionsPromise]);
-      setAnalyticsRows(rows);
-      setGrowthActions(actions);
-      if (beta.active && resolvedMode === "growth") {
+      setDiagnosis(snapshot.state === "ready" ? snapshot.diagnosis : null);
+      setAnalyticsRows(snapshot.state === "ready" ? snapshot.rows : []);
+      setGrowthActions(snapshot.state === "ready" ? snapshot.actions : []);
+      setState(snapshot.state);
+      if (snapshot.state === "ready" && snapshot.betaActive && snapshot.resolvedMode === "growth") {
+        const selected = snapshot.selected;
         void trackProductEvent("beta_growth_cockpit_opened", selected.id);
       }
-      setState("ready");
-    } catch (error) {
+    } catch {
+      if (sequence !== loadSequence.current) return;
+      setDiagnosis(null);
+      setAnalyticsRows([]);
+      setGrowthActions([]);
       setState("error");
-      setNotice(error instanceof Error ? error.message : tr("Pilotage Growth indisponible.", "Growth cockpit is unavailable."));
+      setNotice(tr(
+        "Le chargement du cockpit Growth n’a pas pu être confirmé. Aucun diagnostic nouveau n’est confirmé. Vous pouvez réessayer.",
+        "The Growth cockpit load could not be confirmed. No new diagnosis is confirmed. You can try again."
+      ));
     } finally {
-      setRunning(false);
+      if (sequence === loadSequence.current) setRunning(false);
     }
   }
 
@@ -181,6 +201,8 @@ export default function GrowthPage() {
     if (mode === "growth") {
       void load(siteId || undefined, mode);
     } else {
+      loadSequence.current += 1;
+      setRunning(false);
       setDiagnosis(null);
       setState("locked");
     }
