@@ -6,9 +6,20 @@ import { downloadMySiteExport, getMyBillingState, openStripeBillingPortal, type 
 import { getMySites } from "../../lib/supabase-site-repository";
 import { useProductLocale } from "../../lib/product-i18n";
 import { billingGuide, billingStateLabel } from "../../lib/billing-guidance";
+import { getMySiteEntitlements } from "../../lib/subscription";
 
 function date(value: string | null, locale: string) {
   return value ? new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { dateStyle: "long" }).format(new Date(value)) : "—";
+}
+
+const CHECKOUT_CONFIRMATION_ATTEMPTS = 4;
+const CHECKOUT_CONFIRMATION_DELAY_MS = 1_500;
+
+function hasConfirmedPaidRights(rights: Awaited<ReturnType<typeof getMySiteEntitlements>>) {
+  return (
+    (rights.planKey === "essential" || rights.planKey === "growth") &&
+    (rights.status === "active" || rights.status === "trialing")
+  );
 }
 
 export default function BillingPage() {
@@ -26,7 +37,9 @@ export default function BillingPage() {
     setLoading(true);
     setBilling(null);
     setMessage("");
-    const selectedId = siteId || new URLSearchParams(window.location.search).get("siteId") || "";
+    const search = new URLSearchParams(window.location.search);
+    const requestedSiteId = search.get("siteId") || "";
+    const selectedId = siteId || requestedSiteId;
     void (async () => {
       const owned = await getMySites();
       const chosen = owned.find(site => site.id === selectedId) || owned[0];
@@ -40,9 +53,42 @@ export default function BillingPage() {
         setSiteId(chosen.id);
         return;
       }
-      const state = await getMyBillingState(chosen.id);
+
+      let state = await getMyBillingState(chosen.id);
+      const verifyCheckoutReturn =
+        search.get("checkout") === "success" &&
+        requestedSiteId === chosen.id;
+      let rightsConfirmed = false;
+
+      if (verifyCheckoutReturn) {
+        for (let attempt = 0; attempt < CHECKOUT_CONFIRMATION_ATTEMPTS; attempt += 1) {
+          try {
+            rightsConfirmed = hasConfirmedPaidRights(await getMySiteEntitlements(chosen.id));
+          } catch {
+            rightsConfirmed = false;
+          }
+          if (rightsConfirmed || attempt === CHECKOUT_CONFIRMATION_ATTEMPTS - 1) break;
+          await new Promise<void>(resolve => window.setTimeout(resolve, CHECKOUT_CONFIRMATION_DELAY_MS));
+          if (cancelled) return;
+        }
+        if (rightsConfirmed) {
+          state = await getMyBillingState(chosen.id);
+        }
+      }
+
       if (cancelled) return;
       setBilling(state);
+      if (verifyCheckoutReturn) {
+        setMessage(rightsConfirmed
+          ? tr(
+              "Vos droits d’abonnement sont confirmés côté serveur.",
+              "Your subscription entitlements are confirmed server-side."
+            )
+          : tr(
+              "Retour du parcours de paiement détecté, mais vos droits serveur ne sont pas encore confirmés. Actualisez la page dans quelques instants.",
+              "Payment flow return detected, but your server-side entitlements are not confirmed yet. Refresh the page in a few moments."
+            ));
+      }
       setLoading(false);
     })().catch(() => {
       if (cancelled) return;
