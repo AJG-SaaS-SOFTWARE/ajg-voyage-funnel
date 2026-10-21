@@ -43,7 +43,7 @@ function harness(
   const dependencies = {
     react: hooks,
     "react/jsx-runtime": jsx,
-    "../../components/AccountShell": { AccountShell: () => null },
+    "../../components/AccountShell": { AccountShell: ({ children }) => jsx.jsx("account-shell", { children }) },
     "../../lib/billing-access": { getMyBillingState: id => { calls.push(id); return getBilling(id); } },
     "../../lib/supabase-site-repository": { getMySites: getSites },
     "../../lib/product-i18n": { useProductLocale: () => ({ locale, tr: (fr, en) => locale === "en" ? en : fr }) },
@@ -61,9 +61,20 @@ function harness(
       return timers.length;
     }
   });
+  function nodes(node) {
+    if (Array.isArray(node)) return node.flatMap(nodes);
+    if (!node || typeof node !== "object") return [];
+    return [node, ...nodes(node.props?.children)];
+  }
   return {
     state, calls, rightsCalls, timers,
     render() { cleanup?.(); cursor = 0; loaded.exports.default(); cleanup = effect(); },
+    tree() { cursor = 0; return loaded.exports.default(); },
+    retryButton() {
+      return nodes(this.tree()).find(node =>
+        node.type === "button" && node.props["data-action"] === "verify-checkout-entitlements"
+      );
+    },
     select(id) { state[3] = id; this.render(); },
     unmount() { cleanup?.(); }
   };
@@ -147,6 +158,31 @@ test("a Checkout return stays explicitly unconfirmed after the bounded server-ri
   assert.match(page.state[1], /pas encore confirmés/);
   assert.doesNotMatch(page.state[1], /paiement (réussi|confirmé)/i);
   assert.equal(page.state[5], false);
+  assert.equal(page.state[6], "site-b");
+  assert.equal(page.retryButton().props.disabled, false);
+});
+
+test("a manual recheck is single-flight and refreshes billing only after server rights are confirmed", async () => {
+  let read = 0;
+  const page = harness(
+    async id => ({ state: "active", site: id }),
+    "?checkout=success&siteId=site-b",
+    async () => sites,
+    async () => (++read <= 4
+      ? { planKey: "free", status: "active" }
+      : { planKey: "growth", status: "active" })
+  );
+  page.render(); await flush(); page.render(); await flush();
+  const retry = page.retryButton();
+  retry.props.onClick();
+  retry.props.onClick();
+  await flush();
+  assert.deepEqual(page.rightsCalls, ["site-b", "site-b", "site-b", "site-b", "site-b"]);
+  assert.equal(page.calls.length, 2, "refresh billing once after confirmed rights");
+  assert.equal(page.state[6], "");
+  assert.equal(page.state[7], false);
+  assert.equal(page.state[1], "Vos droits d’abonnement sont confirmés côté serveur.");
+  assert.equal(page.retryButton(), undefined);
 });
 
 test("forged or unrelated URL targets never trigger Checkout entitlement confirmation", async () => {
@@ -162,7 +198,7 @@ test("forged or unrelated URL targets never trigger Checkout entitlement confirm
 test("English Checkout return copy distinguishes confirmed server rights from an uncertain return", async () => {
   for (const [rights, expected] of [
     [{ planKey: "growth", status: "active" }, "Your subscription entitlements are confirmed server-side."],
-    [{ planKey: "free", status: "active" }, "Payment flow return detected, but your server-side entitlements are not confirmed yet. Refresh the page in a few moments."]
+    [{ planKey: "free", status: "active" }, "Payment flow return detected, but your server-side entitlements are not confirmed yet. You can check again in a few moments."]
   ]) {
     const page = harness(
       async id => ({ state: "active", site: id }),

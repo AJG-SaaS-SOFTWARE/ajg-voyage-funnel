@@ -22,6 +22,20 @@ function hasConfirmedPaidRights(rights: Awaited<ReturnType<typeof getMySiteEntit
   );
 }
 
+async function confirmPaidRights(siteId: string, shouldStop: () => boolean) {
+  for (let attempt = 0; attempt < CHECKOUT_CONFIRMATION_ATTEMPTS; attempt += 1) {
+    try {
+      if (hasConfirmedPaidRights(await getMySiteEntitlements(siteId))) return true;
+    } catch {
+      // A transient read failure must never be presented as a confirmed payment.
+    }
+    if (attempt === CHECKOUT_CONFIRMATION_ATTEMPTS - 1 || shouldStop()) break;
+    await new Promise<void>(resolve => window.setTimeout(resolve, CHECKOUT_CONFIRMATION_DELAY_MS));
+    if (shouldStop()) break;
+  }
+  return false;
+}
+
 export default function BillingPage() {
   const { locale, tr } = useProductLocale();
   const [billing, setBilling] = useState<BillingState | null>(null);
@@ -30,13 +44,21 @@ export default function BillingPage() {
   const [siteId,setSiteId]=useState("");
   const [billingBusy,setBillingBusy]=useState(false);
   const [loading, setLoading] = useState(true);
+  const [checkoutVerificationSiteId, setCheckoutVerificationSiteId] = useState("");
+  const [checkoutVerificationBusy, setCheckoutVerificationBusy] = useState(false);
   const billingInFlight = useRef(false);
+  const checkoutVerificationInFlight = useRef(false);
+  const selectedSiteIdRef = useRef(siteId);
+  selectedSiteIdRef.current = siteId;
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setBilling(null);
     setMessage("");
+    setCheckoutVerificationSiteId("");
+    setCheckoutVerificationBusy(false);
+    checkoutVerificationInFlight.current = false;
     const search = new URLSearchParams(window.location.search);
     const requestedSiteId = search.get("siteId") || "";
     const selectedId = siteId || requestedSiteId;
@@ -61,16 +83,8 @@ export default function BillingPage() {
       let rightsConfirmed = false;
 
       if (verifyCheckoutReturn) {
-        for (let attempt = 0; attempt < CHECKOUT_CONFIRMATION_ATTEMPTS; attempt += 1) {
-          try {
-            rightsConfirmed = hasConfirmedPaidRights(await getMySiteEntitlements(chosen.id));
-          } catch {
-            rightsConfirmed = false;
-          }
-          if (rightsConfirmed || attempt === CHECKOUT_CONFIRMATION_ATTEMPTS - 1) break;
-          await new Promise<void>(resolve => window.setTimeout(resolve, CHECKOUT_CONFIRMATION_DELAY_MS));
-          if (cancelled) return;
-        }
+        rightsConfirmed = await confirmPaidRights(chosen.id, () => cancelled);
+        if (cancelled) return;
         if (rightsConfirmed) {
           state = await getMyBillingState(chosen.id);
         }
@@ -79,14 +93,15 @@ export default function BillingPage() {
       if (cancelled) return;
       setBilling(state);
       if (verifyCheckoutReturn) {
+        setCheckoutVerificationSiteId(rightsConfirmed ? "" : chosen.id);
         setMessage(rightsConfirmed
           ? tr(
               "Vos droits d’abonnement sont confirmés côté serveur.",
               "Your subscription entitlements are confirmed server-side."
             )
           : tr(
-              "Retour du parcours de paiement détecté, mais vos droits serveur ne sont pas encore confirmés. Actualisez la page dans quelques instants.",
-              "Payment flow return detected, but your server-side entitlements are not confirmed yet. Refresh the page in a few moments."
+              "Retour du parcours de paiement détecté, mais vos droits serveur ne sont pas encore confirmés. Vous pouvez vérifier à nouveau dans quelques instants.",
+              "Payment flow return detected, but your server-side entitlements are not confirmed yet. You can check again in a few moments."
             ));
       }
       setLoading(false);
@@ -97,6 +112,52 @@ export default function BillingPage() {
     });
     return () => { cancelled = true; };
   }, [siteId, tr]);
+
+  async function verifyCheckoutRights() {
+    const expectedSiteId = checkoutVerificationSiteId;
+    if (
+      loading ||
+      !expectedSiteId ||
+      expectedSiteId !== selectedSiteIdRef.current ||
+      checkoutVerificationInFlight.current
+    ) return;
+
+    checkoutVerificationInFlight.current = true;
+    setCheckoutVerificationBusy(true);
+    setMessage(tr("Vérification des droits serveur…", "Checking server-side entitlements…"));
+    try {
+      const confirmed = await confirmPaidRights(
+        expectedSiteId,
+        () => selectedSiteIdRef.current !== expectedSiteId
+      );
+      if (selectedSiteIdRef.current !== expectedSiteId) return;
+      if (!confirmed) {
+        setMessage(tr(
+          "Vos droits serveur ne sont pas encore confirmés. Vous pouvez vérifier à nouveau dans quelques instants.",
+          "Your server-side entitlements are not confirmed yet. You can check again in a few moments."
+        ));
+        return;
+      }
+      const state = await getMyBillingState(expectedSiteId);
+      if (selectedSiteIdRef.current !== expectedSiteId) return;
+      setBilling(state);
+      setCheckoutVerificationSiteId("");
+      setMessage(tr(
+        "Vos droits d’abonnement sont confirmés côté serveur.",
+        "Your subscription entitlements are confirmed server-side."
+      ));
+    } catch {
+      if (selectedSiteIdRef.current === expectedSiteId) {
+        setMessage(tr(
+          "Impossible de vérifier les droits serveur pour le moment. Vous pouvez réessayer.",
+          "Unable to check server-side entitlements right now. You can try again."
+        ));
+      }
+    } finally {
+      checkoutVerificationInFlight.current = false;
+      if (selectedSiteIdRef.current === expectedSiteId) setCheckoutVerificationBusy(false);
+    }
+  }
 
   async function downloadExport() {
     if (loading || !siteId) return;
@@ -128,9 +189,20 @@ export default function BillingPage() {
     title={tr("Votre accès ELTARA", "Your ELTARA access")}
     description={tr("Suivez l’état de paiement du site sélectionné, les éventuelles échéances de restriction et vos options de récupération. Un impayé ne déclenche jamais la suppression automatique de vos données.", "Track the selected website’s billing status, any restriction deadlines and your recovery options. A failed payment never triggers automatic deletion of your data.")}
   >
-    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} disabled={billingBusy} onChange={e=>{if(billingInFlight.current)return;setBilling(null);setLoading(true);setSiteId(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
+    {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} disabled={billingBusy || checkoutVerificationBusy} onChange={e=>{if(billingInFlight.current || checkoutVerificationInFlight.current)return;setBilling(null);setLoading(true);setSiteId(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
     {loading ? <p className="account-note" role="status">{tr("Chargement de la facturation…", "Loading billing status…")}</p> : null}
     {message ? <p className="account-note" role="alert">{message}</p> : null}
+    {checkoutVerificationSiteId === siteId ? <div className="builder-actions">
+      <button
+        type="button"
+        className="secondary-link"
+        data-action="verify-checkout-entitlements"
+        disabled={loading || checkoutVerificationBusy}
+        onClick={() => void verifyCheckoutRights()}
+      >
+        {checkoutVerificationBusy ? tr("Vérification…", "Checking…") : tr("Vérifier à nouveau", "Check again")}
+      </button>
+    </div> : null}
     {billing ? <section className="panel billing-guide" aria-labelledby="billing-guide-title">
       <p className="eyebrow">{tr("Parcours guidé", "Guided flow")}</p>
       <h2 id="billing-guide-title">{tr("Comprendre et gérer votre accès", "Understand and manage your access")}</h2>
