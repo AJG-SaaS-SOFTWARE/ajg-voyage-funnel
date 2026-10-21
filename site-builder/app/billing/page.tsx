@@ -14,6 +14,7 @@ function date(value: string | null, locale: string) {
 
 const CHECKOUT_CONFIRMATION_ATTEMPTS = 4;
 const CHECKOUT_CONFIRMATION_DELAY_MS = 1_500;
+const CHECKOUT_CONFIRMATION_READ_TIMEOUT_MS = 5_000;
 
 function hasConfirmedPaidRights(rights: Awaited<ReturnType<typeof getMySiteEntitlements>>) {
   return (
@@ -22,10 +23,27 @@ function hasConfirmedPaidRights(rights: Awaited<ReturnType<typeof getMySiteEntit
   );
 }
 
+async function readConfirmedPaidRights(siteId: string) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      getMySiteEntitlements(siteId).then(hasConfirmedPaidRights),
+      new Promise<boolean>(resolve => {
+        timeoutId = window.setTimeout(
+          () => resolve(false),
+          CHECKOUT_CONFIRMATION_READ_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 async function confirmPaidRights(siteId: string, shouldStop: () => boolean) {
   for (let attempt = 0; attempt < CHECKOUT_CONFIRMATION_ATTEMPTS; attempt += 1) {
     try {
-      if (hasConfirmedPaidRights(await getMySiteEntitlements(siteId))) return true;
+      if (await readConfirmedPaidRights(siteId)) return true;
     } catch {
       // A transient read failure must never be presented as a confirmed payment.
     }
