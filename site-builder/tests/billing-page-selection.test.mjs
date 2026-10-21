@@ -5,7 +5,7 @@ import ts from "typescript";
 import * as jsx from "react/jsx-runtime";
 
 const sites = [{ id: "site-a", slug: "a" }, { id: "site-b", slug: "b" }];
-const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+const flush = async () => { for (let i = 0; i < 32; i++) await Promise.resolve(); };
 const deferred = () => {
   let resolve, reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
