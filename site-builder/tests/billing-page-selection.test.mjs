@@ -15,7 +15,8 @@ function harness(
   getBilling,
   search = "?siteId=site-b",
   getSites = async () => sites,
-  getEntitlements = async () => ({ planKey: "free", status: "active" })
+  getEntitlements = async () => ({ planKey: "free", status: "active" }),
+  locale = "fr"
 ) {
   const state = [];
   let cursor, effect, cleanup;
@@ -45,7 +46,7 @@ function harness(
     "../../components/AccountShell": { AccountShell: () => null },
     "../../lib/billing-access": { getMyBillingState: id => { calls.push(id); return getBilling(id); } },
     "../../lib/supabase-site-repository": { getMySites: getSites },
-    "../../lib/product-i18n": { useProductLocale: () => ({ locale: "fr", tr: fr => fr }) },
+    "../../lib/product-i18n": { useProductLocale: () => ({ locale, tr: (fr, en) => locale === "en" ? en : fr }) },
     "../../lib/billing-guidance": { billingGuide: () => [], billingStateLabel: value => value },
     "../../lib/subscription": { getMySiteEntitlements: id => { rightsCalls.push(id); return getEntitlements(id); } }
   };
@@ -154,5 +155,23 @@ test("forged or unrelated URL targets never trigger Checkout entitlement confirm
     page.render(); await flush(); page.render(); await flush();
     assert.deepEqual(page.rightsCalls, []);
     assert.deepEqual(page.timers, []);
+  }
+});
+
+
+test("English Checkout return copy distinguishes confirmed server rights from an uncertain return", async () => {
+  for (const [rights, expected] of [
+    [{ planKey: "growth", status: "active" }, "Your subscription entitlements are confirmed server-side."],
+    [{ planKey: "free", status: "active" }, "Payment flow return detected, but your server-side entitlements are not confirmed yet. Refresh the page in a few moments."]
+  ]) {
+    const page = harness(
+      async id => ({ state: "active", site: id }),
+      "?checkout=success&siteId=site-b",
+      async () => sites,
+      async () => rights,
+      "en"
+    );
+    page.render(); await flush(); page.render(); await flush();
+    assert.equal(page.state[1], expected);
   }
 });
