@@ -41,7 +41,8 @@ function fixture(openPortal, { locale = "fr", billingAccount = true, loading = f
     },
     "../../lib/supabase-site-repository": { getMySites() { throw new Error("unexpected site read"); } },
     "../../lib/product-i18n": { useProductLocale: () => ({ locale, tr: (fr, en) => locale === "en" ? en : fr }) },
-    "../../lib/billing-guidance": { billingGuide: () => [], billingStateLabel: value => value }
+    "../../lib/billing-guidance": { billingGuide: () => [], billingStateLabel: value => value },
+    "../../lib/subscription": { getMySiteEntitlements() { throw new Error("unexpected entitlement read"); } }
   };
   const module = { exports: {} };
   new Function("require", "module", "exports", code)(name => {
