@@ -59,7 +59,8 @@ function harness(
       timers.push(delay);
       queueMicrotask(callback);
       return timers.length;
-    }
+    },
+    clearTimeout() {}
   });
   function nodes(node) {
     if (Array.isArray(node)) return node.flatMap(nodes);
@@ -141,7 +142,7 @@ test("a Checkout return confirms only server-side paid entitlements and tolerate
   );
   page.render(); await flush(); page.render(); await flush();
   assert.deepEqual(page.rightsCalls, ["site-b", "site-b", "site-b"]);
-  assert.deepEqual(page.timers, [1_500, 1_500]);
+  assert.deepEqual(page.timers, [5_000, 1_500, 5_000, 1_500, 5_000]);
   assert.equal(page.state[0].site, "site-b");
   assert.equal(page.state[1], "Vos droits d’abonnement sont confirmés côté serveur.");
   assert.equal(page.state[5], false);
@@ -177,12 +178,37 @@ test("a Checkout return stays explicitly unconfirmed after the bounded server-ri
   );
   page.render(); await flush(); page.render(); await flush();
   assert.equal(page.rightsCalls.length, 4);
-  assert.deepEqual(page.timers, [1_500, 1_500, 1_500]);
+  assert.deepEqual(page.timers, [5_000, 1_500, 5_000, 1_500, 5_000, 1_500, 5_000]);
   assert.match(page.state[1], /pas encore confirmés/);
   assert.doesNotMatch(page.state[1], /paiement (réussi|confirmé)/i);
   assert.equal(page.state[5], false);
   assert.equal(page.state[6], "site-b");
   assert.equal(page.retryButton().props.disabled, false);
+});
+
+test("hung entitlement reads time out and release both automatic and manual checks", async () => {
+  const never = new Promise(() => {});
+  const page = harness(
+    async id => ({ state: "active", site: id }),
+    "?checkout=success&siteId=site-b",
+    async () => sites,
+    async () => never
+  );
+  page.render(); await flush(); page.render(); await flush(); await flush();
+  assert.equal(page.rightsCalls.length, 4);
+  assert.equal(page.state[5], false);
+  assert.equal(page.state[6], "site-b");
+  assert.equal(page.retryButton().props.disabled, false);
+  assert.equal(page.timers.filter(delay => delay === 5_000).length, 4);
+
+  page.retryButton().props.onClick();
+  await flush(); await flush();
+  assert.equal(page.rightsCalls.length, 8);
+  assert.equal(page.state[7], false);
+  assert.equal(page.state[6], "site-b");
+  assert.equal(page.retryButton().props.disabled, false);
+  assert.match(page.state[1], /pas encore confirmés/);
+  assert.equal(page.timers.filter(delay => delay === 5_000).length, 8);
 });
 
 test("a manual recheck is single-flight and refreshes billing only after server rights are confirmed", async () => {
