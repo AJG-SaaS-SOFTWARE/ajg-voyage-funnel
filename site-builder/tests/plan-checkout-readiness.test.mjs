@@ -58,6 +58,7 @@ async function loadAccount(billing, concurrent = false) {
     getMySiteEntitlements: async () => ({}), getMySiteAiAccess: async () => ({}),
     getMyAiUsage: async () => ({}), getMyStorageUsage: async () => ({}),
     getMyBetaAccess: async () => ({ active: false }), getMyBillingState: billing,
+    withAccountLoadDeadline: async work => work,
   };
   const start = source.indexOf("  const load = async");
   const end = source.indexOf("  useEffect(", start);
