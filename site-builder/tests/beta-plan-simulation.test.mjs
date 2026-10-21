@@ -130,5 +130,5 @@ test("beta mission only validates Growth exploration after real Growth and Analy
   assert.match(analyticsLib, /beta_analytics_opened/);
   assert.match(analyticsLib, /growthExplored:growthCockpitOpened&&analyticsOpened/);
   assert.match(growthPage, /trackProductEvent\("beta_growth_cockpit_opened", selected\.id\)/);
-  assert.match(analyticsPage, /trackProductEvent\("beta_analytics_opened", selected\.id\)/);
+  assert.match(analyticsPage, /trackProductEvent\("beta_analytics_opened", snapshot\.selected\.id\)/);
 });
