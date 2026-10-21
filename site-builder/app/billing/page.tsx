@@ -81,12 +81,17 @@ export default function BillingPage() {
         search.get("checkout") === "success" &&
         requestedSiteId === chosen.id;
       let rightsConfirmed = false;
+      let billingRefreshFailedAfterConfirmation = false;
 
       if (verifyCheckoutReturn) {
         rightsConfirmed = await confirmPaidRights(chosen.id, () => cancelled);
         if (cancelled) return;
         if (rightsConfirmed) {
-          state = await getMyBillingState(chosen.id);
+          try {
+            state = await getMyBillingState(chosen.id);
+          } catch {
+            billingRefreshFailedAfterConfirmation = true;
+          }
         }
       }
 
@@ -95,10 +100,15 @@ export default function BillingPage() {
       if (verifyCheckoutReturn) {
         setCheckoutVerificationSiteId(rightsConfirmed ? "" : chosen.id);
         setMessage(rightsConfirmed
-          ? tr(
-              "Vos droits d’abonnement sont confirmés côté serveur.",
-              "Your subscription entitlements are confirmed server-side."
-            )
+          ? billingRefreshFailedAfterConfirmation
+            ? tr(
+                "Vos droits d’abonnement sont confirmés côté serveur, mais l’affichage de facturation n’a pas pu être actualisé. Actualisez la page pour réessayer.",
+                "Your subscription entitlements are confirmed server-side, but the billing display could not be refreshed. Refresh the page to try again."
+              )
+            : tr(
+                "Vos droits d’abonnement sont confirmés côté serveur.",
+                "Your subscription entitlements are confirmed server-side."
+              )
           : tr(
               "Retour du parcours de paiement détecté, mais vos droits serveur ne sont pas encore confirmés. Vous pouvez vérifier à nouveau dans quelques instants.",
               "Payment flow return detected, but your server-side entitlements are not confirmed yet. You can check again in a few moments."
@@ -138,14 +148,23 @@ export default function BillingPage() {
         ));
         return;
       }
-      const state = await getMyBillingState(expectedSiteId);
-      if (selectedSiteIdRef.current !== expectedSiteId) return;
-      setBilling(state);
       setCheckoutVerificationSiteId("");
-      setMessage(tr(
-        "Vos droits d’abonnement sont confirmés côté serveur.",
-        "Your subscription entitlements are confirmed server-side."
-      ));
+      try {
+        const state = await getMyBillingState(expectedSiteId);
+        if (selectedSiteIdRef.current !== expectedSiteId) return;
+        setBilling(state);
+        setMessage(tr(
+          "Vos droits d’abonnement sont confirmés côté serveur.",
+          "Your subscription entitlements are confirmed server-side."
+        ));
+      } catch {
+        if (selectedSiteIdRef.current === expectedSiteId) {
+          setMessage(tr(
+            "Vos droits d’abonnement sont confirmés côté serveur, mais l’affichage de facturation n’a pas pu être actualisé. Actualisez la page pour réessayer.",
+            "Your subscription entitlements are confirmed server-side, but the billing display could not be refreshed. Refresh the page to try again."
+          ));
+        }
+      }
     } catch {
       if (selectedSiteIdRef.current === expectedSiteId) {
         setMessage(tr(
