@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { useProductLocale } from "../../lib/product-i18n";
@@ -18,6 +18,25 @@ import {
 import { trackProductEvent } from "../../lib/product-analytics";
 
 type LoadState = "loading" | "ready" | "error";
+
+const ANALYTICS_LOAD_TIMEOUT_MS = 15_000;
+
+async function withAnalyticsLoadDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("analytics_load_timeout")),
+          ANALYTICS_LOAD_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 const sourceLabel = (source: string, tr: (fr: string, en: string) => string) => {
   const labels: Record<string, string> = {
@@ -80,41 +99,58 @@ export default function AnalyticsPage() {
   const [growthExperience, setGrowthExperience] = useState(false);
   const [betaActive, setBetaActive] = useState(false);
   const [betaMode, setBetaMode] = useState<BetaExperienceMode>("essential");
+  const loadSequence = useRef(0);
 
   async function load(selectedId?: string, forcedMode?: BetaExperienceMode) {
+    const sequence = ++loadSequence.current;
     setState("loading");
     setNotice("");
     try {
-      const owned = await getMySites();
-      setSites(owned);
-      const selected = owned.find((site) => site.id === (selectedId || siteId)) || owned[0];
-      if (!selected) {
-        setSiteId("");
-        setRows([]);
-        setState("ready");
-        return;
-      }
-      setSiteId(selected.id);
+      const snapshot = await withAnalyticsLoadDeadline((async () => {
+        const owned = await getMySites();
+        const selected = owned.find((site) => site.id === (selectedId || siteId)) || owned[0];
+        if (!selected) return { owned, selected: null, analyticsRows: [] as SiteAnalyticsRow[] };
 
-      const [analyticsRows, entitlements, beta] = await Promise.all([
-        getMySiteAnalytics(selected.id, 180),
-        getMySiteEntitlements(selected.id),
-        getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
-      ]);
+        const [analyticsRows, entitlements, beta] = await Promise.all([
+          getMySiteAnalytics(selected.id, 180),
+          getMySiteEntitlements(selected.id),
+          getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
+        ]);
+        const resolvedMode = beta.active ? (forcedMode || readBetaExperienceMode()) : "growth";
+        const paidGrowth = entitlements.planKey === "growth" && ["active", "trialing"].includes(entitlements.status);
+        return {
+          owned,
+          selected,
+          analyticsRows,
+          betaActive: beta.active,
+          resolvedMode,
+          growthExperience: beta.active ? resolvedMode === "growth" : paidGrowth
+        };
+      })());
+      if (sequence !== loadSequence.current) return;
 
-      const resolvedMode = beta.active ? (forcedMode || readBetaExperienceMode()) : "growth";
-      const paidGrowth = entitlements.planKey === "growth" && ["active", "trialing"].includes(entitlements.status);
-      setRows(analyticsRows);
-      setBetaActive(beta.active);
-      if (beta.active) setBetaMode(resolvedMode);
-      setGrowthExperience(beta.active ? resolvedMode === "growth" : paidGrowth);
-      if (beta.active && resolvedMode === "growth") {
-        void trackProductEvent("beta_analytics_opened", selected.id);
+      setSites(snapshot.owned);
+      setSiteId(snapshot.selected?.id || "");
+      setRows(snapshot.analyticsRows);
+      if (snapshot.selected) {
+        setBetaActive(snapshot.betaActive);
+        if (snapshot.betaActive) setBetaMode(snapshot.resolvedMode);
+        setGrowthExperience(snapshot.growthExperience);
+        if (snapshot.betaActive && snapshot.resolvedMode === "growth") {
+          void trackProductEvent("beta_analytics_opened", snapshot.selected.id);
+        }
+      } else {
+        setBetaActive(false);
+        setGrowthExperience(false);
       }
       setState("ready");
-    } catch (error) {
+    } catch {
+      if (sequence !== loadSequence.current) return;
       setState("error");
-      setNotice(error instanceof Error ? error.message : tr("Analytics momentanément indisponibles.", "Analytics are temporarily unavailable."));
+      setNotice(tr(
+        "Le chargement des analytics n’a pas pu être confirmé. Aucun nouvel indicateur n’est affiché. Vous pouvez réessayer.",
+        "The analytics load could not be confirmed. No new metric is displayed. You can try again."
+      ));
     }
   }
 
@@ -182,7 +218,14 @@ export default function AnalyticsPage() {
       </section>
 
       {state === "loading" ? <p className="account-note">{tr("Chargement des analytics…", "Loading analytics…")}</p> : null}
-      {state === "error" ? <p className="account-note">{notice}</p> : null}
+      {state === "error" ? (
+        <div className="account-note" role="alert">
+          <p>{notice}</p>
+          <button className="button secondary" type="button" onClick={() => void load(siteId || undefined)}>
+            {tr("Réessayer", "Try again")}
+          </button>
+        </div>
+      ) : null}
 
       {state === "ready" && !selectedSite ? (
         <section className="panel analytics-empty">
