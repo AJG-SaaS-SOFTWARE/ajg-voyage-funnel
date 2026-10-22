@@ -9,6 +9,25 @@ import { domainGuide } from "../../lib/domain-guidance";
 import { CustomerErrorHelp } from "../../components/CustomerErrorHelp";
 import { runDomainAction } from "../../lib/domain-action-result";
 
+const DOMAINS_LOAD_TIMEOUT_MS = 15_000;
+
+async function withDomainsLoadDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("domains_load_timeout")),
+          DOMAINS_LOAD_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 export default function DomainsPage() {
   const { locale, tr } = useProductLocale();
   const [domains,setDomains]=useState<SiteDomain[]>([]);
@@ -19,34 +38,49 @@ export default function DomainsPage() {
   const [refreshRequired, setRefreshRequired] = useState(false);
   const [showErrorHelp, setShowErrorHelp] = useState(false);
   const actionLock = useRef(false);
+  const loadSequence = useRef(0);
   const [sites,setSites]=useState<Array<{id:string;slug:string}>>([]);
   const [siteId,setSiteId]=useState("");
   const refresh = async (selectedId?: string) => {
-    const owned = await getMySites();
-    const target = selectedId || siteId;
-    const chosen = target ? owned.find(site => site.id === target) : owned[0];
-    if (target && !chosen) throw new Error("domain_site_readback_unconfirmed");
-    const [items, entitlements] = await Promise.all([
-      chosen ? getMyDomains(chosen.id) : Promise.resolve([]),
-      chosen ? getMySiteEntitlements(chosen.id) : Promise.resolve(freeEntitlements)
-    ]);
+    const sequence = ++loadSequence.current;
+    const snapshot = await withDomainsLoadDeadline((async () => {
+      const owned = await getMySites();
+      const target = selectedId || siteId;
+      const chosen = target ? owned.find(site => site.id === target) : owned[0];
+      if (target && !chosen) throw new Error("domain_site_readback_unconfirmed");
+      const [items, entitlements] = await Promise.all([
+        chosen ? getMyDomains(chosen.id) : Promise.resolve([]),
+        chosen ? getMySiteEntitlements(chosen.id) : Promise.resolve(freeEntitlements)
+      ]);
+      return { owned, chosen, items, entitlements };
+    })());
+    if (sequence !== loadSequence.current) return false;
     // Commit the whole selected-site view only after both reads succeed.
-    setSites(owned.map(site => ({ id: site.id, slug: site.slug })));
-    setSiteId(chosen?.id || "");
-    setDomains(items);
-    setPlan(entitlements);
+    setSites(snapshot.owned.map(site => ({ id: site.id, slug: site.slug })));
+    setSiteId(snapshot.chosen?.id || "");
+    setDomains(snapshot.items);
+    setPlan(snapshot.entitlements);
+    return true;
   };
   useEffect(() => {
+    let active = true;
     actionLock.current = true;
     setBusy(true);
     void refresh().catch(() => {
+      if (!active) return;
       setRefreshRequired(true);
       setShowErrorHelp(true);
-      setMessage(tr("Impossible de charger les domaines. Actualisez la page ; si le problème persiste, ouvrez le Health Center.", "Unable to load domains. Refresh the page; if the issue persists, open the Health Center."));
+      setMessage(tr("Le chargement des domaines n’a pas pu être confirmé. Aucune information partielle n’est affichée. Actualisez la page ; si le problème persiste, ouvrez le Health Center. Aucune action DNS ne sera relancée.", "The domain load could not be confirmed. No partial information is displayed. Refresh the page; if the issue persists, open the Health Center. No DNS action will be resubmitted."));
     }).finally(() => {
+      if (!active) return;
       actionLock.current = false;
       setBusy(false);
     });
+    return () => {
+      active = false;
+      loadSequence.current += 1;
+      actionLock.current = false;
+    };
   }, []);
 
   // A read retry is separate from an action retry: it never resubmits a domain.
@@ -54,8 +88,10 @@ export default function DomainsPage() {
     if (actionLock.current) return;
     actionLock.current = true;
     setBusy(true);
+    setMessage(tr("Chargement des domaines…", "Loading domains…"));
     try {
-      await refresh(selectedId);
+      const committed = await refresh(selectedId);
+      if (!committed) return;
       setRefreshRequired(false);
       setShowErrorHelp(false);
       setMessage(tr("Liste des domaines actualisée. Vérifiez son état avant toute nouvelle action.", "Domain list refreshed. Review its status before taking another action."));
@@ -76,7 +112,7 @@ export default function DomainsPage() {
     setMessage("");
     setShowErrorHelp(false);
     try {
-      const result = await runDomainAction({ mutate, refresh: () => refresh(siteId) });
+      const result = await runDomainAction({ mutate, refresh: async () => { await refresh(siteId); } });
       if (result.stage === "confirmed") {
         setMessage(success(result.value));
       } else {
@@ -149,6 +185,7 @@ export default function DomainsPage() {
       </ol>
     </section>
     {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} disabled={busy || refreshRequired} onChange={event => void reload(event.target.value)}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
+    {busy && !message ? <p className="account-note" role="status">{tr("Chargement des domaines…", "Loading domains…")}</p> : null}
     <section className="domain-list">{domains.map(domain=><article className="domain-row" key={domain.id}><div><b>{domain.hostname}</b><p>{domain.kind==="managed_subdomain"?tr("Sous-domaine ELTARA", "ELTARA subdomain"):tr("Domaine personnalisé", "Custom domain")} · {domain.verificationStatus==="verified"?tr("Vérifié", "Verified"):domain.verificationStatus==="failed"?tr("Échec de vérification", "Verification failed"):tr("En attente de vérification", "Verification pending")}</p></div>{domain.kind==="custom_domain"&&domain.verificationStatus!=="verified"?<div><button className="text-button" disabled={busy || refreshRequired} onClick={()=>void verify(domain)}>{tr("Vérifier", "Verify")}</button><button className="text-button" disabled={busy || refreshRequired} onClick={()=>void remove(domain.id)}>{tr("Retirer", "Remove")}</button></div>:domain.kind==="managed_subdomain"&&domain.verificationStatus!=="verified"?<small>{tr("Préparation en cours par ELTARA", "ELTARA setup in progress")}</small>:null}</article>)}</section>
     <form className="domain-form" onSubmit={submit}><div><p className="eyebrow">{tr("Domaine personnalisé", "Custom domain")}</p><h2>{tr("Ajouter votre domaine", "Add your domain")}</h2><p>{plan.customDomain?tr("Votre offre permet cette fonctionnalité.", "Your plan includes this feature."):tr("Disponible avec Essentiel et Growth.", "Available with Essential and Growth.")}</p></div><div className="domain-controls"><input value={hostname} onChange={e=>setHostname(e.target.value)} placeholder={tr("exemple.fr", "example.com")} disabled={!plan.customDomain||busy||refreshRequired}/><button className="button primary" disabled={!plan.customDomain||busy||refreshRequired||!hostname.trim()}>{busy?tr("Enregistrement…", "Saving…"):tr("Ajouter", "Add")}</button></div></form>
     {message?<p className="account-note" role="status">{message}</p>:null}
