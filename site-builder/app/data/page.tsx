@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { CustomerErrorHelp } from "../../components/CustomerErrorHelp";
 import { useProductLocale } from "../../lib/product-i18n";
@@ -17,6 +17,25 @@ import {
   saveMySite,
   type RemoteSite
 } from "../../lib/supabase-site-repository";
+
+const DATA_AREA_LOAD_TIMEOUT_MS = 15_000;
+
+async function withDataAreaLoadDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("data_area_load_timeout")),
+          DATA_AREA_LOAD_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 export default function DataRightsPage() {
   const { locale, tr } = useProductLocale();
@@ -35,24 +54,67 @@ export default function DataRightsPage() {
   const [message, setMessage] = useState(tr("Chargement…", "Loading…"));
   const [refreshSuccess, setRefreshSuccess] = useState("");
   const [showErrorHelp, setShowErrorHelp] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const loadSequence = useRef(0);
 
   const load = useCallback(async () => {
-    const [user, ownedSites, erasureRequests] = await Promise.all([
-      getCurrentUser(),
-      getMySites(),
-      getMyErasureRequests()
-    ]);
+    const sequence = ++loadSequence.current;
+    const [user, ownedSites, erasureRequests] = await withDataAreaLoadDeadline(
+      Promise.all([
+        getCurrentUser(),
+        getMySites(),
+        getMyErasureRequests()
+      ])
+    );
+    if (sequence !== loadSequence.current) return false;
     setEmail(user?.email || "");
     setSites(ownedSites);
     setRequests(erasureRequests);
+    return true;
   }, []);
 
   useEffect(() => {
-    void load().then(() => setMessage("")).catch(() => {
+    let active = true;
+    void load().then((committed) => {
+      if (!active || !committed) return;
+      setLoadFailed(false);
+      setMessage("");
+    }).catch(() => {
+      if (!active) return;
+      setLoadFailed(true);
       setShowErrorHelp(true);
-      setMessage(tr("Impossible de charger votre espace de données.", "Unable to load your data area."));
+      setMessage(tr(
+        "Le chargement de votre espace de données n’a pas pu être confirmé. Aucune information partielle n’est affichée. Vous pouvez réessayer.",
+        "Your data area load could not be confirmed. No partial information is displayed. You can try again."
+      ));
     });
+    return () => {
+      active = false;
+      loadSequence.current += 1;
+    };
   }, [load, tr]);
+
+  async function retryInitialLoad() {
+    if (busyKey || !loadFailed) return;
+    setBusyKey("initial-refresh");
+    setShowErrorHelp(false);
+    setMessage(tr("Chargement…", "Loading…"));
+    try {
+      const committed = await load();
+      if (!committed) return;
+      setLoadFailed(false);
+      setMessage("");
+    } catch {
+      setLoadFailed(true);
+      setShowErrorHelp(true);
+      setMessage(tr(
+        "Votre espace de données reste indisponible. Aucune information partielle n’est affichée. Réessayez plus tard ou ouvrez le Health Center.",
+        "Your data area is still unavailable. No partial information is displayed. Try again later or open the Health Center."
+      ));
+    } finally {
+      setBusyKey("");
+    }
+  }
 
   const openSiteRequests = useMemo(
     () =>
@@ -251,6 +313,9 @@ export default function DataRightsPage() {
       description={tr("Exportez vos données ou demandez leur effacement. Une demande d’effacement reste distincte d’un impayé : un problème de paiement ne supprime jamais automatiquement vos sites.", "Export your data or request erasure. An erasure request is separate from a failed payment: payment issues never automatically delete your websites.")}
     >
       {message ? <p className="account-note" role="status">{message}</p> : null}
+      {loadFailed ? <button type="button" className="button secondary" disabled={Boolean(busyKey)} onClick={() => void retryInitialLoad()}>
+        {tr("Réessayer le chargement", "Try loading again")}
+      </button> : null}
       {refreshSuccess ? <button type="button" className="button secondary" disabled={Boolean(busyKey)} onClick={() => void retryRefresh()}>
         {tr("Réessayer l’actualisation", "Retry refresh")}
       </button> : null}
