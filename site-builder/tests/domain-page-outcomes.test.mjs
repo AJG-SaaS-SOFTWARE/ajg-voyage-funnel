@@ -51,7 +51,12 @@ function harness(locale = "fr") {
     }
   };
   const module = { exports: {} };
-  new Function("require", "module", "exports", compiled)(name => imports[name] ?? require(name), module, module.exports);
+  new Function("require", "module", "exports", "window", compiled)(
+    name => imports[name] ?? require(name),
+    module,
+    module.exports,
+    { setTimeout, clearTimeout }
+  );
   const render = () => { index = 0; return module.exports.default(); };
   const button = (tree, label) => nodes(tree, node => node.type === "button" && text(node) === label)[0];
   return { state, render, button, ErrorHelp, async mount() {
