@@ -18,13 +18,19 @@ function words(value) {
 }
 function harness() {
   const state = [];
+  const refs = [];
   const writes = [];
-  let cursor = 0, effect, started = false, failRefresh = false, failWrite = false, reads = 0;
+  let cursor = 0, refCursor = 0, effect, started = false, failRefresh = false, failWrite = false, reads = 0;
   const hooks = {
     useState(initial) {
       const index = cursor++;
       if (!(index in state)) state[index] = initial;
       return [state[index], value => { state[index] = typeof value === "function" ? value(state[index]) : value; }];
+    },
+    useRef(initial) {
+      const index = refCursor++;
+      if (!(index in refs)) refs[index] = { current: initial };
+      return refs[index];
     },
     useCallback: callback => callback,
     useMemo: callback => callback(),
@@ -53,12 +59,12 @@ function harness() {
   };
   new Function("require", "module", "exports", "window", code)(name => {
     assert.ok(name in dependencies, name); return dependencies[name];
-  }, loaded, loaded.exports, { confirm: () => true });
+  }, loaded, loaded.exports, { confirm: () => true, setTimeout, clearTimeout });
   let tree;
   return {
     state, writes, reads: () => reads,
     failRefresh(value) { failRefresh = value; }, failWrite(value) { failWrite = value; },
-    render() { cursor = 0; tree = loaded.exports.default(); if (!started) { started = true; effect(); } return tree; },
+    render() { cursor = 0; refCursor = 0; tree = loaded.exports.default(); if (!started) { started = true; effect(); } return tree; },
     button(label) { return nodes(tree).find(node => node.type === "button" && words(node) === label); },
     help() { return nodes(tree).find(node => node.type?.name === "CustomerErrorHelp")?.props.message; },
     file() { return nodes(tree).find(node => node.type === "input" && node.props.type === "file"); },
