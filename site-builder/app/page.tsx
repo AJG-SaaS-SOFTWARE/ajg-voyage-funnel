@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { loadDraft, resetDraft, type BuilderDraft } from "../lib/site-store";
 import { isSupabaseConfigured } from "../lib/supabase-browser";
 import { getCurrentUser, getMySite } from "../lib/supabase-site-repository";
@@ -14,6 +14,25 @@ import { deriveOnboardingCreationPath, deriveOnboardingProgress } from "../lib/o
 import { getMyBetaAccess, getMyEntitlements, getMySiteAiAccess, getMySiteEntitlements, type BetaAccess } from "../lib/subscription";
 import { getMyBetaJourneyProgress, trackProductEvent, type BetaJourneyProgress } from "../lib/product-analytics";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../lib/beta-experience-mode";
+
+const HOME_CONTEXT_TIMEOUT_MS = 15_000;
+
+async function withHomeContextDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("home_context_timeout")),
+          HOME_CONTEXT_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 function LockIcon() {
   return (
@@ -56,7 +75,7 @@ function LayersIcon() {
 export default function Home() {
   const { locale, tr } = useProductLocale();
   const [draft, setDraft] = useState<BuilderDraft | null>(null);
-  const [remoteStatus, setRemoteStatus] = useState<"checking" | "guest" | "authenticated" | "local">("checking");
+  const [remoteStatus, setRemoteStatus] = useState<"checking" | "guest" | "authenticated" | "local" | "error">("checking");
   const [email, setEmail] = useState("");
   const [planKey, setPlanKey] = useState<"free" | "essential" | "growth">("free");
   const [entitlementActive, setEntitlementActive] = useState(false);
@@ -74,29 +93,26 @@ export default function Home() {
     published: false,
     feedbackSent: false
   });
+  const loadSequence = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadHomeContext = useCallback(async () => {
+    const sequence = ++loadSequence.current;
+    const local = loadDraft();
+    setRemoteStatus("checking");
 
-    const load = async () => {
-      const local = loadDraft();
-
-      if (!isSupabaseConfigured()) {
-        if (!cancelled) {
-          setDraft(local);
-          setRemoteStatus("local");
-        }
-        return;
+    if (!isSupabaseConfigured()) {
+      if (sequence === loadSequence.current) {
+        setDraft(local);
+        setRemoteStatus("local");
       }
+      return;
+    }
 
-      try {
+    try {
+      const snapshot = await withHomeContextDeadline((async () => {
         const user = await getCurrentUser();
         if (!user) {
-          if (!cancelled) {
-            setDraft(local);
-            setRemoteStatus("guest");
-          }
-          return;
+          return { kind: "guest" as const };
         }
 
         const [remote, resolvedBetaAccess] = await Promise.all([
@@ -125,46 +141,63 @@ export default function Home() {
           // Onboarding remains usable even when entitlement details are temporarily unavailable.
         }
 
-        if (!cancelled) {
-          setEmail(user.email || "");
-          setRemoteStatus("authenticated");
-          setPlanKey(resolvedPlanKey);
-          setEntitlementActive(resolvedEntitlementActive);
-          setCanCreateWithAi(resolvedCanCreateWithAi);
-          setRemoteSiteId(remote?.id || null);
-          setBetaAccess(resolvedBetaAccess);
-          if (resolvedBetaAccess.active) {
-            setBetaExperienceMode(readBetaExperienceMode());
-            void getMyBetaJourneyProgress(remote?.id || null)
-              .then((progress) => {
-                if (!cancelled) setBetaJourney(progress);
-              })
-              .catch(() => undefined);
-          }
-          setDraft(
-            remote
-              ? {
-                  config: remote.config,
-                  status: remote.status === "published" ? "published" : "draft",
-                  updatedAt: remote.updatedAt,
-                  publishedAt: remote.publishedAt || undefined
-                }
-              : local
-          );
-        }
-      } catch {
-        if (!cancelled) {
-          setDraft(local);
-          setRemoteStatus("guest");
-        }
-      }
-    };
+        return {
+          kind: "authenticated" as const,
+          user,
+          remote,
+          resolvedBetaAccess,
+          resolvedPlanKey,
+          resolvedEntitlementActive,
+          resolvedCanCreateWithAi
+        };
+      })());
+      if (sequence !== loadSequence.current) return;
 
-    void load();
-    return () => {
-      cancelled = true;
-    };
+      if (snapshot.kind === "guest") {
+        setDraft(local);
+        setRemoteStatus("guest");
+        return;
+      }
+
+      const { user, remote, resolvedBetaAccess, resolvedPlanKey, resolvedEntitlementActive, resolvedCanCreateWithAi } = snapshot;
+      setEmail(user.email || "");
+      setRemoteStatus("authenticated");
+      setPlanKey(resolvedPlanKey);
+      setEntitlementActive(resolvedEntitlementActive);
+      setCanCreateWithAi(resolvedCanCreateWithAi);
+      setRemoteSiteId(remote?.id || null);
+      setBetaAccess(resolvedBetaAccess);
+      if (resolvedBetaAccess.active) {
+        setBetaExperienceMode(readBetaExperienceMode());
+        void getMyBetaJourneyProgress(remote?.id || null)
+          .then((progress) => {
+            if (sequence === loadSequence.current) setBetaJourney(progress);
+          })
+          .catch(() => undefined);
+      }
+      setDraft(
+        remote
+          ? {
+              config: remote.config,
+              status: remote.status === "published" ? "published" : "draft",
+              updatedAt: remote.updatedAt,
+              publishedAt: remote.publishedAt || undefined
+            }
+          : local
+      );
+    } catch {
+      if (sequence !== loadSequence.current) return;
+      setDraft(local);
+      setRemoteStatus("error");
+    }
   }, []);
+
+  useEffect(() => {
+    void loadHomeContext();
+    return () => {
+      loadSequence.current += 1;
+    };
+  }, [loadHomeContext]);
 
   const reset = () => {
     resetDraft();
@@ -277,7 +310,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="connection-banner premium-connection">
+      <section className="connection-banner premium-connection" aria-live="polite">
         <span className={"connection-icon " + remoteStatus}><LockIcon /></span>
         <div>
           <b>
@@ -287,6 +320,8 @@ export default function Home() {
                 ? tr("Mode prototype local", "Local prototype mode")
                 : remoteStatus === "guest"
                   ? tr("Connexion nécessaire", "Sign-in required")
+                  : remoteStatus === "error"
+                    ? tr("Connexion momentanément indisponible", "Connection temporarily unavailable")
                   : tr("Vérification…", "Checking…")}
           </b>
           <p>
@@ -294,6 +329,8 @@ export default function Home() {
               ? tr("Vos données peuvent être sauvegardées dans Supabase", "Your data can be saved to Supabase") + (email ? " · " + email : "") + "."
               : remoteStatus === "guest"
                 ? tr("Connectez-vous pour sauvegarder un vrai site et envoyer des photos.", "Sign in to save a real website and upload photos.")
+                : remoteStatus === "error"
+                  ? tr("Votre session n’est pas considérée comme déconnectée. Le brouillon local reste disponible pendant que vous réessayez.", "Your session is not treated as signed out. Your local draft remains available while you try again.")
                 : remoteStatus === "local"
                   ? tr("ELTARA fonctionne, mais les données restent sur cet appareil.", "ELTARA works, but data stays on this device.")
                   : tr("Connexion au backend en cours.", "Connecting to backend.")}
@@ -307,6 +344,10 @@ export default function Home() {
             <Link className="button primary premium-button" href="/login">
               {tr("Se connecter", "Sign in")} <span aria-hidden="true">→</span>
             </Link>
+          ) : remoteStatus === "error" ? (
+            <button className="button primary premium-button" type="button" onClick={() => void loadHomeContext()}>
+              {tr("Réessayer", "Try again")}
+            </button>
           ) : null}
         </div>
       </section>
