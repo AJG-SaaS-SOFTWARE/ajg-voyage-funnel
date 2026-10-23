@@ -126,6 +126,7 @@ test("preview shows the local draft immediately, expires a hung remote read, and
   assert.ok(retry);
   retry.props.onClick();
   await flush();
+  assert.equal(reads, 2, "retry performs exactly one additional read");
   assert.equal(page.state[0].brandName, "Remote draft");
   assert.equal(page.state[1], "remote");
 
