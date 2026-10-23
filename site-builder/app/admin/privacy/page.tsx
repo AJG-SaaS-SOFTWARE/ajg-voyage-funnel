@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdminShell } from "../../../components/AdminShell";
 import { isCurrentUserAdmin } from "../../../lib/admin";
 import { getSupabaseBrowserClient } from "../../../lib/supabase-browser";
@@ -19,6 +19,27 @@ type PrivacyRequest = {
   systemsProcessed: string[];
   hasProcessingError: boolean;
 };
+
+type LoadState = "loading" | "denied" | "ready" | "error";
+
+const PRIVACY_LOAD_TIMEOUT_MS = 15_000;
+
+async function withPrivacyLoadDeadline<T>(work: Promise<T>, onTimeout: () => void) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(() => {
+          onTimeout();
+          reject(new Error("privacy_load_timeout"));
+        }, PRIVACY_LOAD_TIMEOUT_MS);
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 function statusLabel(status: PrivacyRequest["status"]) {
   if (status === "processing") return "Traitement à reprendre";
@@ -39,34 +60,57 @@ async function authToken() {
 
 export default function AdminPrivacyPage() {
   const [requests, setRequests] = useState<PrivacyRequest[]>([]);
-  const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
+  const [state, setState] = useState<LoadState>("loading");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState("");
   const [e2eBusy, setE2eBusy] = useState(false);
+  const loadSequence = useRef(0);
+  const loadAbort = useRef<AbortController | null>(null);
 
   const load = async () => {
-    if (!await isCurrentUserAdmin()) {
-      setState("denied");
-      return;
+    const sequence = ++loadSequence.current;
+    loadAbort.current?.abort();
+    const controller = new AbortController();
+    loadAbort.current = controller;
+    setRequests([]);
+    setState("loading");
+    setMessage("");
+    try {
+      const snapshot = await withPrivacyLoadDeadline((async () => {
+        if (!await isCurrentUserAdmin()) return { authorized: false as const, requests: [] };
+        const token = await authToken();
+        const response = await fetch("/api/admin/privacy-erasure", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+          signal: controller.signal
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(result?.error || "Demandes RGPD indisponibles.");
+        }
+        return { authorized: true as const, requests: (result.requests || []) as PrivacyRequest[] };
+      })(), () => controller.abort());
+      if (sequence !== loadSequence.current) return;
+      if (!snapshot.authorized) {
+        setState("denied");
+        return;
+      }
+      setRequests(snapshot.requests);
+      setState("ready");
+    } catch {
+      if (sequence !== loadSequence.current) return;
+      setMessage("Le registre RGPD n’a pas pu être lu de façon fiable. Aucune demande n’est affichée. Vérifiez votre session, puis réessayez.");
+      setState("error");
+    } finally {
+      if (sequence === loadSequence.current && loadAbort.current === controller) {
+        loadAbort.current = null;
+      }
     }
-    const token = await authToken();
-    const response = await fetch("/api/admin/privacy-erasure", {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store"
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(result?.error || "Demandes RGPD indisponibles.");
-    }
-    setRequests(result.requests || []);
-    setState("ready");
   };
 
   useEffect(() => {
-    void load().catch((error) => {
-      setMessage(error instanceof Error ? error.message : "Erreur.");
-      setState("denied");
-    });
+    void load();
+    return () => loadAbort.current?.abort();
   }, []);
 
   async function runPrivacyE2E() {
@@ -170,6 +214,22 @@ export default function AdminPrivacyPage() {
         description="Cette zone est réservée aux comptes disposant du rôle administrateur."
       >
         {message ? <p className="admin-flash" role="alert">{message}</p> : null}
+      </AdminShell>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <AdminShell
+        active="privacy"
+        eyebrow="Administration · RGPD"
+        title="Registre temporairement indisponible"
+        description="Aucune demande d’effacement n’est affichée tant que la lecture complète n’est pas confirmée."
+      >
+        <p className="admin-flash" role="alert">{message}</p>
+        <button type="button" className="button secondary" onClick={() => void load()}>
+          Réessayer
+        </button>
       </AdminShell>
     );
   }
