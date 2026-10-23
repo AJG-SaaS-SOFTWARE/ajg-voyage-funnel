@@ -16,6 +16,7 @@ const CHECKOUT_CONFIRMATION_ATTEMPTS = 4;
 const CHECKOUT_CONFIRMATION_DELAY_MS = 1_500;
 const CHECKOUT_CONFIRMATION_READ_TIMEOUT_MS = 5_000;
 const BILLING_STATE_READ_TIMEOUT_MS = 10_000;
+const BILLING_SITES_READ_TIMEOUT_MS = 15_000;
 
 function hasConfirmedPaidRights(rights: Awaited<ReturnType<typeof getMySiteEntitlements>>) {
   return (
@@ -58,6 +59,23 @@ async function readBillingState(siteId: string) {
   }
 }
 
+async function readBillingSites() {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      getMySites(),
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("billing_sites_read_timeout")),
+          BILLING_SITES_READ_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 async function confirmPaidRights(siteId: string, shouldStop: () => boolean) {
   for (let attempt = 0; attempt < CHECKOUT_CONFIRMATION_ATTEMPTS; attempt += 1) {
     try {
@@ -82,6 +100,8 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutVerificationSiteId, setCheckoutVerificationSiteId] = useState("");
   const [checkoutVerificationBusy, setCheckoutVerificationBusy] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadVersion, setLoadVersion] = useState(0);
   const billingInFlight = useRef(false);
   const checkoutVerificationInFlight = useRef(false);
   const selectedSiteIdRef = useRef(siteId);
@@ -94,12 +114,13 @@ export default function BillingPage() {
     setMessage("");
     setCheckoutVerificationSiteId("");
     setCheckoutVerificationBusy(false);
+    setLoadFailed(false);
     checkoutVerificationInFlight.current = false;
     const search = new URLSearchParams(window.location.search);
     const requestedSiteId = search.get("siteId") || "";
     const selectedId = siteId || requestedSiteId;
     void (async () => {
-      const owned = await getMySites();
+      const owned = await readBillingSites();
       const chosen = owned.find(site => site.id === selectedId) || owned[0];
       if (cancelled) return;
       setSites(owned.map(site => ({ id: site.id, slug: site.slug })));
@@ -154,10 +175,11 @@ export default function BillingPage() {
     })().catch(() => {
       if (cancelled) return;
       setMessage(tr("Impossible de charger l’état de facturation.", "Unable to load billing status."));
+      setLoadFailed(true);
       setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [siteId, tr]);
+  }, [siteId, tr, loadVersion]);
 
   async function verifyCheckoutRights() {
     const expectedSiteId = checkoutVerificationSiteId;
@@ -247,6 +269,16 @@ export default function BillingPage() {
     {sites.length>1?<section className="panel"><label>{tr("Site", "Website")}<select value={siteId} disabled={billingBusy || checkoutVerificationBusy} onChange={e=>{if(billingInFlight.current || checkoutVerificationInFlight.current)return;setBilling(null);setLoading(true);setSiteId(e.target.value);}}>{sites.map(site=><option key={site.id} value={site.id}>{site.slug}</option>)}</select></label></section>:null}
     {loading ? <p className="account-note" role="status">{tr("Chargement de la facturation…", "Loading billing status…")}</p> : null}
     {message ? <p className="account-note" role="alert">{message}</p> : null}
+    {loadFailed ? <div className="builder-actions">
+      <button
+        type="button"
+        className="secondary-link"
+        data-action="retry-billing-load"
+        onClick={() => setLoadVersion(version => version + 1)}
+      >
+        {tr("Réessayer le chargement", "Retry loading")}
+      </button>
+    </div> : null}
     {checkoutVerificationSiteId === siteId ? <div className="builder-actions">
       <button
         type="button"
