@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccountShell } from "../../components/AccountShell";
 import { useProductLocale } from "../../lib/product-i18n";
 import {
@@ -11,6 +11,25 @@ import {
   type RemoteSite
 } from "../../lib/supabase-site-repository";
 
+const MESSAGES_LOAD_TIMEOUT_MS = 15_000;
+
+async function withMessagesLoadDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("messages_load_timeout")),
+          MESSAGES_LOAD_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 export default function MessagesPage() {
   const { locale, tr } = useProductLocale();
   const [sites, setSites] = useState<RemoteSite[]>([]);
@@ -18,41 +37,40 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [notice, setNotice] = useState("");
+  const loadSequence = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    void getMySites()
-      .then((items) => {
-        if (cancelled) return;
-        setSites(items);
-        setSiteId((current) => current || items[0]?.id || "");
-      })
-      .catch(() => {
-        if (!cancelled) setState("error");
-      });
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (!siteId) {
-      setMessages([]);
-      if (sites.length === 0) setState("ready");
-      return;
-    }
-    let cancelled = false;
+  const load = useCallback(async (selectedId?: string) => {
+    const sequence = ++loadSequence.current;
     setState("loading");
     setNotice("");
-    void getMyContactMessages(siteId)
-      .then((items) => {
-        if (cancelled) return;
-        setMessages(items);
-        setState("ready");
-      })
-      .catch(() => {
-        if (!cancelled) setState("error");
-      });
-    return () => { cancelled = true; };
-  }, [siteId, sites.length]);
+    setMessages([]);
+    if (selectedId) setSiteId(selectedId);
+    try {
+      const snapshot = await withMessagesLoadDeadline((async () => {
+        const owned = await getMySites();
+        const selected = owned.find((site) => site.id === selectedId) || owned[0] || null;
+        const items = selected ? await getMyContactMessages(selected.id) : [];
+        return { owned, selected, items };
+      })());
+      if (sequence !== loadSequence.current) return;
+      setSites(snapshot.owned);
+      setSiteId(snapshot.selected?.id || "");
+      setMessages(snapshot.items);
+      setState("ready");
+    } catch {
+      if (sequence !== loadSequence.current) return;
+      setState("error");
+      setNotice(tr(
+        "Le chargement des messages n’a pas pu être confirmé. Aucun message n’est affiché. Vous pouvez réessayer.",
+        "The message load could not be confirmed. No message is displayed. You can try again."
+      ));
+    }
+  }, [tr]);
+
+  useEffect(() => {
+    void load();
+    return () => { loadSequence.current += 1; };
+  }, [load]);
 
   const selectedSite = useMemo(() => sites.find((site) => site.id === siteId) || null, [sites, siteId]);
 
@@ -85,7 +103,7 @@ export default function MessagesPage() {
       <div className="contact-inbox-toolbar">
         <label>
           {tr("Site", "Website")}
-          <select value={siteId} onChange={(event) => setSiteId(event.target.value)} disabled={!sites.length}>
+          <select value={siteId} onChange={(event) => void load(event.target.value)} disabled={!sites.length || state === "loading"}>
             {sites.length ? sites.map((site) => (
               <option key={site.id} value={site.id}>{site.config.brandName || site.slug}</option>
             )) : <option value="">{tr("Aucun site", "No website")}</option>}
@@ -96,9 +114,16 @@ export default function MessagesPage() {
         </span>
       </div>
 
-      {notice ? <p className="account-note" role="status">{notice}</p> : null}
+      {notice && state !== "error" ? <p className="account-note" role="status">{notice}</p> : null}
       {state === "loading" ? <p className="account-note">{tr("Chargement des messages…", "Loading messages…")}</p> : null}
-      {state === "error" ? <p className="account-note">{tr("Impossible de charger les messages. Réessayez dans quelques instants.", "Unable to load messages. Please try again shortly.")}</p> : null}
+      {state === "error" ? (
+        <div className="account-note" role="alert">
+          <p>{notice}</p>
+          <button className="button secondary" type="button" onClick={() => void load(siteId || undefined)}>
+            {tr("Réessayer", "Try again")}
+          </button>
+        </div>
+      ) : null}
 
       {state === "ready" && selectedSite && messages.length === 0 ? (
         <div className="contact-message-empty">
