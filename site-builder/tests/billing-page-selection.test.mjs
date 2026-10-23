@@ -27,7 +27,9 @@ function harness(
     useState(initial) {
       const index = cursor++;
       if (!(index in state)) state[index] = initial;
-      return [state[index], value => { state[index] = value; }];
+      return [state[index], value => {
+        state[index] = typeof value === "function" ? value(state[index]) : value;
+      }];
     },
     useEffect(callback) { effect = callback; },
     useRef(initial) {
@@ -74,6 +76,11 @@ function harness(
     retryButton() {
       return nodes(this.tree()).find(node =>
         node.type === "button" && node.props["data-action"] === "verify-checkout-entitlements"
+      );
+    },
+    loadRetryButton() {
+      return nodes(this.tree()).find(node =>
+        node.type === "button" && node.props["data-action"] === "retry-billing-load"
       );
     },
     select(id) { state[3] = id; this.render(); },
@@ -127,12 +134,46 @@ test("a hung billing read times out and a late response cannot overwrite the rec
   assert.equal(page.state[0], null);
   assert.equal(page.state[5], false);
   assert.equal(page.state[1], "Impossible de charger l’état de facturation.");
-  assert.deepEqual(page.timers, [10_000]);
+  assert.deepEqual(page.timers, [15_000, 15_000, 10_000]);
 
   late.resolve({ state: "active", site: "site-b" });
   await flush();
   assert.equal(page.state[0], null);
   assert.equal(page.state[1], "Impossible de charger l’état de facturation.");
+});
+
+test("a hung website read times out, offers a localized retry, and ignores its late response", async () => {
+  const late = deferred();
+  let siteRead = 0;
+  const page = harness(
+    async id => ({ state: "active", site: id }),
+    "?siteId=site-b",
+    () => ++siteRead === 1 ? late.promise : Promise.resolve(sites),
+    undefined,
+    "en"
+  );
+
+  page.render();
+  await flush();
+  assert.equal(page.state[5], false);
+  assert.equal(page.state[8], true);
+  assert.equal(page.state[1], "Unable to load billing status.");
+  assert.equal(page.loadRetryButton().props.children, "Retry loading");
+
+  page.loadRetryButton().props.onClick();
+  page.render();
+  await flush();
+  page.render();
+  await flush();
+  assert.equal(page.state[0].site, "site-b");
+  assert.equal(page.state[5], false);
+  assert.equal(page.state[8], false);
+  assert.equal(page.loadRetryButton(), undefined);
+
+  late.resolve([{ id: "site-late", slug: "late" }]);
+  await flush();
+  assert.equal(page.state[0].site, "site-b");
+  assert.equal(page.state[3], "site-b");
 });
 
 test("unowned URL targets never trigger a billing read and empty accounts finish loading", async () => {
@@ -158,7 +199,7 @@ test("a Checkout return confirms only server-side paid entitlements and tolerate
   );
   page.render(); await flush(); page.render(); await flush();
   assert.deepEqual(page.rightsCalls, ["site-b", "site-b", "site-b"]);
-  assert.deepEqual(page.timers, [10_000, 5_000, 1_500, 5_000, 1_500, 5_000, 10_000]);
+  assert.deepEqual(page.timers, [15_000, 15_000, 10_000, 5_000, 1_500, 5_000, 1_500, 5_000, 10_000]);
   assert.equal(page.state[0].site, "site-b");
   assert.equal(page.state[1], "Vos droits d’abonnement sont confirmés côté serveur.");
   assert.equal(page.state[5], false);
@@ -194,7 +235,7 @@ test("a Checkout return stays explicitly unconfirmed after the bounded server-ri
   );
   page.render(); await flush(); page.render(); await flush();
   assert.equal(page.rightsCalls.length, 4);
-  assert.deepEqual(page.timers, [10_000, 5_000, 1_500, 5_000, 1_500, 5_000, 1_500, 5_000]);
+  assert.deepEqual(page.timers, [15_000, 15_000, 10_000, 5_000, 1_500, 5_000, 1_500, 5_000, 1_500, 5_000]);
   assert.match(page.state[1], /pas encore confirmés/);
   assert.doesNotMatch(page.state[1], /paiement (réussi|confirmé)/i);
   assert.equal(page.state[5], false);
@@ -285,7 +326,7 @@ test("forged or unrelated URL targets never trigger Checkout entitlement confirm
     const page = harness(async id => ({ state: "active", site: id }), search);
     page.render(); await flush(); page.render(); await flush();
     assert.deepEqual(page.rightsCalls, []);
-    assert.deepEqual(page.timers, [10_000]);
+    assert.deepEqual(page.timers, [15_000, 15_000, 10_000]);
   }
 });
 
