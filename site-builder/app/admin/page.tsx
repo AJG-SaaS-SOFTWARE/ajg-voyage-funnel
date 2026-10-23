@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "../../components/AdminShell";
 import {
   adminBootstrapPrivateStorage,
@@ -66,6 +66,78 @@ const standardAiOperationLabel: Record<string, string> = {
 };
 
 type BetaOpsFilter = "all" | "followup" | "unresponsive" | "blocked" | "active" | "complete";
+type AdminOverviewSnapshot =
+  | { access: "denied" }
+  | { access: "stale" }
+  | {
+      access: "ready";
+      rows: AdminSiteRow[];
+      metrics: AdminMetrics;
+      feedback: AdminFeedback[];
+      readiness: ReleaseReadiness | null;
+      betaMetrics: AdminBetaMetrics | null;
+      betaCohort: AdminBetaCohort | null;
+      betaAgentStatus: AdminBetaOperationsStatus | null;
+      managedDomains: AdminManagedDomain[];
+      backupStatus: AdminStorageBackupStatus | null;
+      visualReview: AdminVisualReviewStatus | null;
+    };
+
+const ADMIN_OVERVIEW_LOAD_TIMEOUT_MS = 15_000;
+
+async function withAdminOverviewDeadline<T>(work: Promise<T>, onTimeout: () => void) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(() => {
+          onTimeout();
+          reject(new Error("admin_overview_load_timeout"));
+        }, ADMIN_OVERVIEW_LOAD_TIMEOUT_MS);
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
+async function readAdminOverview(isCurrent: () => boolean): Promise<AdminOverviewSnapshot> {
+  if (!await isCurrentUserAdmin()) return { access: "denied" };
+  if (!isCurrent()) return { access: "stale" };
+
+  const [rows, metrics, feedback] = await Promise.all([
+    getAdminSites(),
+    getAdminMetrics(),
+    getAdminFeedback()
+  ]);
+  if (!isCurrent()) return { access: "stale" };
+
+  const [readiness, betaMetrics, betaCohort, betaAgentStatus, managedDomains, backupStatus, visualReview] = await Promise.all([
+    getReleaseReadiness().catch(() => null),
+    getAdminBetaMetrics().catch(() => null),
+    getAdminBetaCohort().catch(() => null),
+    getAdminBetaOperationsStatus().catch(() => null),
+    getAdminManagedDomains().catch(() => []),
+    getAdminStorageBackupStatus().catch(() => null),
+    getAdminVisualReview().catch(() => null)
+  ]);
+  if (!isCurrent()) return { access: "stale" };
+
+  return {
+    access: "ready",
+    rows,
+    metrics,
+    feedback,
+    readiness,
+    betaMetrics,
+    betaCohort,
+    betaAgentStatus,
+    managedDomains,
+    backupStatus,
+    visualReview
+  };
+}
 
 function betaMemberBlocked(item: AdminBetaCohortMember) {
   return !item.cohortConsistent || !item.accessActive;
@@ -146,49 +218,53 @@ export default function AdminPage() {
   const [builderE2EError, setBuilderE2EError] = useState("");
   const [visualReview, setVisualReview] = useState<AdminVisualReviewStatus | null>(null);
   const [visualReviewBusy, setVisualReviewBusy] = useState<string | null>(null);
-  const [state, setState] = useState<"loading" | "denied" | "ready">("loading");
+  const [state, setState] = useState<"loading" | "denied" | "error" | "ready">("loading");
+  const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
+  const loadRequest = useRef(0);
 
   const load = async () => {
-    if (!await isCurrentUserAdmin()) {
-      setState("denied");
-      return;
+    const requestId = ++loadRequest.current;
+    setState("loading");
+    setLoadError("");
+    try {
+      const snapshot = await withAdminOverviewDeadline(
+        readAdminOverview(() => loadRequest.current === requestId),
+        () => {
+          if (loadRequest.current !== requestId) return;
+          loadRequest.current += 1;
+          setLoadError("La vue d’administration n’a pas pu être lue de façon fiable. Aucune donnée opérationnelle n’est affichée. Vérifiez votre session, puis réessayez.");
+          setState("error");
+        }
+      );
+      if (loadRequest.current !== requestId || snapshot.access === "stale") return false;
+      if (snapshot.access === "denied") {
+        setState("denied");
+        return false;
+      }
+      setRows(snapshot.rows);
+      setMetrics(snapshot.metrics);
+      setFeedback(snapshot.feedback);
+      setReadiness(snapshot.readiness);
+      setBetaMetrics(snapshot.betaMetrics);
+      setBetaCohort(snapshot.betaCohort);
+      setBetaAgentStatus(snapshot.betaAgentStatus);
+      setManagedDomains(snapshot.managedDomains);
+      setBackupStatus(snapshot.backupStatus);
+      setVisualReview(snapshot.visualReview);
+      setState("ready");
+      return true;
+    } catch {
+      if (loadRequest.current !== requestId) return false;
+      setLoadError("La vue d’administration n’a pas pu être lue de façon fiable. Aucune donnée opérationnelle n’est affichée. Vérifiez votre session, puis réessayez.");
+      setState("error");
+      return false;
     }
-
-    const [sites, nextMetrics, nextFeedback] = await Promise.all([
-      getAdminSites(),
-      getAdminMetrics(),
-      getAdminFeedback()
-    ]);
-    setRows(sites);
-    setMetrics(nextMetrics);
-    setFeedback(nextFeedback);
-
-    const [nextReadiness, nextBetaMetrics, nextBetaCohort, nextBetaAgentStatus, nextManagedDomains, nextBackupStatus, nextVisualReview] = await Promise.all([
-      getReleaseReadiness().catch(() => null),
-      getAdminBetaMetrics().catch(() => null),
-      getAdminBetaCohort().catch(() => null),
-      getAdminBetaOperationsStatus().catch(() => null),
-      getAdminManagedDomains().catch(() => []),
-      getAdminStorageBackupStatus().catch(() => null),
-      getAdminVisualReview().catch(() => null)
-    ]);
-    setReadiness(nextReadiness);
-    setBetaMetrics(nextBetaMetrics);
-    setBetaCohort(nextBetaCohort);
-    setBetaAgentStatus(nextBetaAgentStatus);
-    setManagedDomains(nextManagedDomains);
-    setBackupStatus(nextBackupStatus);
-    setVisualReview(nextVisualReview);
-
-    setState("ready");
   };
 
   useEffect(() => {
-    void load().catch((error) => {
-      setMessage(error instanceof Error ? error.message : "Erreur.");
-      setState("denied");
-    });
+    void load();
+    return () => { loadRequest.current += 1; };
   }, []);
 
   const bootstrapPrivateStorage = async () => {
@@ -563,6 +639,20 @@ export default function AdminPage() {
       }
     >
       {state === "loading" ? <p>Chargement…</p> : null}
+      {state === "error" ? (
+        <section className="panel admin-access-denied">
+          <h2>Vue d’administration indisponible</h2>
+          <p role="alert">{loadError}</p>
+          <div className="actions">
+            <button className="button primary" type="button" onClick={() => void load()}>
+              Réessayer la lecture
+            </button>
+            <Link className="button secondary" href="/">
+              Retour au tableau de bord
+            </Link>
+          </div>
+        </section>
+      ) : null}
       {state === "denied" ? (
         <section className="panel admin-access-denied">
           <h2>Accès restreint</h2>
