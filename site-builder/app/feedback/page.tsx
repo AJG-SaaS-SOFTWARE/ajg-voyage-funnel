@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { submitFeedback, trackProductEvent, type FeedbackCategory } from "../../lib/product-analytics";
 import { useProductLocale } from "../../lib/product-i18n";
 import { getMySite } from "../../lib/supabase-site-repository";
@@ -9,6 +9,25 @@ import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { BetaExperienceSwitch } from "../../components/BetaExperienceSwitch";
 import { getMyBetaAccess } from "../../lib/subscription";
 import { readBetaExperienceMode, writeBetaExperienceMode, type BetaExperienceMode } from "../../lib/beta-experience-mode";
+
+const FEEDBACK_CONTEXT_TIMEOUT_MS = 15_000;
+
+async function withFeedbackContextDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("feedback_context_timeout")),
+          FEEDBACK_CONTEXT_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 export default function FeedbackPage() {
   const { tr } = useProductLocale();
@@ -20,22 +39,42 @@ export default function FeedbackPage() {
   const [siteId, setSiteId] = useState<string | null>(null);
   const [betaActive, setBetaActive] = useState(false);
   const [betaExperienceMode, setBetaExperienceMode] = useState<BetaExperienceMode>("essential");
+  const [contextState, setContextState] = useState<"loading" | "ready" | "error">("loading");
+  const [contextNotice, setContextNotice] = useState("");
+  const contextSequence = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.all([
-      getMySite().catch(() => null),
-      getMyBetaAccess().catch(() => ({ active: false, startsAt: null, expiresAt: null }))
-    ]).then(([site, beta]) => {
-      if (cancelled) return;
+  const loadContext = useCallback(async () => {
+    const sequence = ++contextSequence.current;
+    setContextState("loading");
+    setContextNotice("");
+    try {
+      const [site, beta] = await withFeedbackContextDeadline(Promise.all([
+        getMySite(),
+        getMyBetaAccess()
+      ]));
+      if (sequence !== contextSequence.current) return;
       setSiteId(site?.id || null);
       setBetaActive(beta.active);
       if (beta.active) setBetaExperienceMode(readBetaExperienceMode());
-    });
+      setContextState("ready");
+    } catch {
+      if (sequence !== contextSequence.current) return;
+      setSiteId(null);
+      setBetaActive(false);
+      setContextState("error");
+      setContextNotice(tr(
+        "Le contexte du site n’a pas pu être confirmé. Aucun retour ne sera envoyé tant que vous n’aurez pas réessayé.",
+        "The website context could not be confirmed. No feedback will be sent until you try again."
+      ));
+    }
+  }, [tr]);
+
+  useEffect(() => {
+    void loadContext();
     return () => {
-      cancelled = true;
+      contextSequence.current += 1;
     };
-  }, []);
+  }, [loadContext]);
 
   const changeBetaExperienceMode = (mode: BetaExperienceMode) => {
     setBetaExperienceMode(mode);
@@ -50,6 +89,13 @@ export default function FeedbackPage() {
 
   const send = async (event: FormEvent) => {
     event.preventDefault();
+    if (contextState !== "ready") {
+      setStatus(tr(
+        "Le contexte du site doit être confirmé avant l’envoi.",
+        "The website context must be confirmed before sending."
+      ));
+      return;
+    }
     setBusy(true);
     setStatus("");
     try {
@@ -62,10 +108,15 @@ export default function FeedbackPage() {
       await submitFeedback({ category, rating, message, siteId });
       setMessage("");
       setStatus(
-        tr(
-          "Merci. Votre retour est enregistré et rattaché au site concerné pour faciliter le diagnostic.",
-          "Thank you. Your feedback has been recorded and linked to the relevant website to make diagnosis easier."
-        )
+        siteId
+          ? tr(
+              "Merci. Votre retour est enregistré et rattaché au site concerné pour faciliter le diagnostic.",
+              "Thank you. Your feedback has been recorded and linked to the relevant website to make diagnosis easier."
+            )
+          : tr(
+              "Merci. Votre retour est enregistré. Aucun site n’était disponible pour le rattacher.",
+              "Thank you. Your feedback has been recorded. No website was available to link it to."
+            )
       );
     } catch (error) {
       setStatus(
@@ -112,13 +163,28 @@ export default function FeedbackPage() {
           {tr(
             betaActive
               ? `Indiquez ce que vous cherchiez à faire, ce que vous attendiez, puis ce qui vous a surpris ou ralenti. Votre retour sera analysé dans le contexte du parcours ${betaExperienceMode === "growth" ? "Growth" : "Essentiel"} ; aucun contenu de votre site n’est ajouté automatiquement.`
-              : "Indiquez ce que vous cherchiez à faire, ce que vous attendiez, puis ce qui vous a surpris ou ralenti. Le site est relié au retour uniquement par son identifiant technique.",
+              : "Indiquez ce que vous cherchiez à faire, ce que vous attendiez, puis ce qui vous a surpris ou ralenti. Lorsqu’un site est disponible, il est relié au retour uniquement par son identifiant technique.",
             betaActive
               ? `Tell us what you were trying to do, what you expected, and what surprised or slowed you down. Your feedback will be analyzed in the context of the ${betaExperienceMode === "growth" ? "Growth" : "Essential"} journey; no website content is added automatically.`
-              : "Tell us what you were trying to do, what you expected, and what surprised or slowed you down. The website is linked to the feedback only through its technical identifier."
+              : "Tell us what you were trying to do, what you expected, and what surprised or slowed you down. When a website is available, it is linked to the feedback only through its technical identifier."
           )}
         </p>
       </section>
+
+      {contextState === "loading" ? (
+        <p className="plans-note" role="status">
+          {tr("Vérification du contexte du site…", "Checking the website context…")}
+        </p>
+      ) : null}
+
+      {contextState === "error" ? (
+        <div className="plans-note" role="alert">
+          <p>{contextNotice}</p>
+          <button className="button secondary" type="button" onClick={() => void loadContext()}>
+            {tr("Réessayer", "Try again")}
+          </button>
+        </div>
+      ) : null}
 
       <form className="feedback-form" onSubmit={send}>
         <label>
@@ -155,7 +221,7 @@ export default function FeedbackPage() {
           />
         </label>
 
-        <button className="button primary" disabled={busy || message.trim().length < 3}>
+        <button className="button primary" disabled={busy || contextState !== "ready" || message.trim().length < 3}>
           {busy ? tr("Envoi…", "Sending…") : tr("Envoyer mon retour", "Send feedback")}
         </button>
       </form>
