@@ -8,6 +8,24 @@ import type { AiUsageAnomaly } from "../../../lib/ai-usage-anomaly";
 
 type ReportResult = { report: AiFinopsReport; alerts: FinopsAlert[]; monitor: FinopsMonitorStatus | null; anomaly: AiUsageAnomaly; efficiency?: AiRequestEfficiency; generatedAt: string };
 const dimensions = { plan: "Par offre", user: "Par compte", site: "Par site", operation: "Par opération demandée", model: "Par modèle demandé", day: "Par jour (UTC)" };
+const FINOPS_LOAD_TIMEOUT_MS = 15_000;
+
+async function withFinopsLoadDeadline<T>(work: Promise<T>, onTimeout: () => void) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(() => {
+          onTimeout();
+          reject(new Error("finops_load_timeout"));
+        }, FINOPS_LOAD_TIMEOUT_MS);
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 export default function FinopsPage() {
   const [month, setMonth] = useState("");
@@ -18,15 +36,22 @@ export default function FinopsPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    let disposed = false;
     setLoading(true);
     setError("");
     setResult(null);
-    getAdminAiFinops(month || undefined, controller.signal).then(data => {
-      if (!controller.signal.aborted) setResult(data);
+    withFinopsLoadDeadline(
+      getAdminAiFinops(month || undefined, controller.signal),
+      () => controller.abort()
+    ).then(data => {
+      if (!disposed) setResult(data);
     }).catch(() => {
-      if (!controller.signal.aborted) setError("Rapport indisponible ou accès administrateur requis. Vérifiez votre session, puis réessayez.");
-    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
+      if (!disposed) setError("Le rapport FinOps n’a pas pu être lu de façon fiable. Aucune donnée financière n’est affichée. Vérifiez votre session, puis réessayez.");
+    }).finally(() => { if (!disposed) setLoading(false); });
+    return () => {
+      disposed = true;
+      controller.abort();
+    };
   }, [month, refresh]);
 
   const report = result?.report;
