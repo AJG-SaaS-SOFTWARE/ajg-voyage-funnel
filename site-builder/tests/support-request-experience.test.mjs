@@ -12,7 +12,7 @@ const code = ts.transpileModule(source, {
 const health = { siteId: null, diagnosis: { overall: "healthy", checks: [] } };
 const response = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
-function harness({ fetch, session = true, locale = "fr" } = {}) {
+function harness({ fetch, session = true, locale = "fr", timers = {} } = {}) {
   const states = [], refs = [], effects = [], calls = [], updates = [];
   let cursor = 0, refCursor = 0;
   const hooks = {
@@ -51,7 +51,11 @@ function harness({ fetch, session = true, locale = "fr" } = {}) {
     (name) => { assert.ok(name in dependencies, `Unexpected dependency: ${name}`); return dependencies[name]; },
     module, module.exports,
     async (url, options) => { calls.push({ url, ...options }); return fetch(url, options); },
-    { location: { search: "" } },
+    {
+      location: { search: "" },
+      setTimeout: timers.setTimeout || globalThis.setTimeout,
+      clearTimeout: timers.clearTimeout || globalThis.clearTimeout
+    },
     { randomUUID: () => `00000000-0000-4000-8000-${String(++identitySequence).padStart(12, "0")}` }
   );
   const render = () => { cursor = 0; refCursor = 0; return module.exports.default(); };
@@ -87,6 +91,56 @@ test("initial GET failure keeps the request form and a refresh action", async ()
   await app.mount();
   assert.ok(app.find("form"));
   assert.match(app.text(), /Actualiser mes demandes/);
+});
+
+test("a stalled initial read expires, retries safely and ignores its late response", async () => {
+  let finishFirstRead;
+  let readCount = 0;
+  let timerCount = 0;
+  const pendingRead = new Promise((resolve) => { finishFirstRead = resolve; });
+  const currentTicket = {
+    id: "current-ticket",
+    category: "bug",
+    severity: "normal",
+    subject: "Current synthetic ticket",
+    message: "Current synthetic description",
+    status: "diagnosed",
+    diagnosis: health.diagnosis,
+    client_action: null,
+    created_at: "2026-10-24T00:00:00Z"
+  };
+  const staleTicket = { ...currentTicket, id: "stale-ticket", subject: "Stale synthetic ticket" };
+  const app = harness({
+    fetch: async () => ++readCount === 1
+      ? pendingRead
+      : response(200, { health, tickets: [currentTicket] }),
+    timers: {
+      setTimeout(callback, delay) {
+        if (++timerCount === 1) {
+          queueMicrotask(callback);
+          return 1;
+        }
+        return globalThis.setTimeout(callback, delay);
+      },
+      clearTimeout: (timer) => globalThis.clearTimeout(timer)
+    }
+  });
+
+  await app.mount();
+  await new Promise(setImmediate);
+  assert.match(app.text(), /Actualiser mes demandes/);
+  assert.equal(app.calls.length, 1);
+
+  await app.refresh();
+  assert.match(app.text(), /Current synthetic ticket/);
+  assert.doesNotMatch(app.text(), /Stale synthetic ticket/);
+  assert.equal(app.calls.length, 2);
+  assert.equal(app.calls.filter((call) => call.method === "POST" || call.method === "PATCH").length, 0);
+
+  finishFirstRead(response(200, { health, tickets: [staleTicket] }));
+  await new Promise(setImmediate);
+  assert.match(app.text(), /Current synthetic ticket/);
+  assert.doesNotMatch(app.text(), /Stale synthetic ticket/);
 });
 
 test("confirmed POST remains saved when the subsequent GET fails", async () => {

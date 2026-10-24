@@ -30,6 +30,25 @@ type SupportPayload = {
   tickets: Ticket[];
 };
 
+const SUPPORT_READ_TIMEOUT_MS = 15_000;
+
+async function withSupportReadDeadline<T>(work: Promise<T>) {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("support_read_timeout")),
+          SUPPORT_READ_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 export default function SupportPage() {
   const { locale, tr } = useProductLocale();
   const [payload, setPayload] = useState<SupportPayload | null>(null);
@@ -67,27 +86,29 @@ export default function SupportPage() {
   async function load() {
     const version = ++loadVersion.current;
     try {
-      const accessToken = await token();
+      const snapshot = await withSupportReadDeadline((async () => {
+        const accessToken = await token();
+        if (!accessToken) return { kind: "guest" as const };
+        const response = await fetch("/api/support/tickets", {
+          headers: { Authorization: "Bearer " + accessToken },
+          cache: "no-store"
+        });
+        const body = await response.json().catch(() => null);
+        if (response.status === 401) return { kind: "guest" as const };
+        if (!response.ok || !Array.isArray(body?.tickets) ||
+            !Array.isArray(body?.health?.diagnosis?.checks) ||
+            !["healthy", "action", "incident"].includes(body?.health?.diagnosis?.overall)) {
+          throw new Error("support_read_unconfirmed");
+        }
+        return { kind: "ready" as const, body: body as SupportPayload };
+      })());
       if (version !== loadVersion.current) return false;
-      if (!accessToken) {
+      if (snapshot.kind === "guest") {
+        setPayload(null);
         setState("guest");
         return false;
       }
-      const response = await fetch("/api/support/tickets", {
-        headers: { Authorization: "Bearer " + accessToken },
-        cache: "no-store"
-      });
-      const body = await response.json().catch(() => null);
-      if (version !== loadVersion.current) return false;
-      if (response.status === 401) {
-        setState("guest");
-        return false;
-      }
-      if (!response.ok || !Array.isArray(body?.tickets) ||
-          !Array.isArray(body?.health?.diagnosis?.checks) ||
-          !["healthy", "action", "incident"].includes(body?.health?.diagnosis?.overall)) {
-        throw new Error("support_read_unconfirmed");
-      }
+      const body = snapshot.body;
       const pending = requestIdentity.current;
       if (pending && body.tickets.some((ticket: Ticket) => ticket.id === pending.id)) {
         confirmedRequest.current = pending.id;
