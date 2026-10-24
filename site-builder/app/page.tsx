@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadDraft, resetDraft, type BuilderDraft } from "../lib/site-store";
 import { isSupabaseConfigured } from "../lib/supabase-browser";
@@ -110,7 +111,11 @@ export default function Home() {
 
     try {
       const snapshot = await withHomeContextDeadline((async () => {
-        const user = await getCurrentUser();
+        const user = await getCurrentUser().catch((error: unknown) => {
+          // A first-time visitor has no session; this is not a service outage.
+          if (isAuthSessionMissingError(error)) return null;
+          throw error;
+        });
         if (!user) {
           return { kind: "guest" as const };
         }
