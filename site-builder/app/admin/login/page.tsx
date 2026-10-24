@@ -2,10 +2,29 @@
 
 import Link from "next/link";
 import { EltaraBrand } from "../../../components/EltaraBrand";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../../../lib/supabase-browser";
 import { isCurrentUserAdmin } from "../../../lib/admin";
+
+const ADMIN_AUTH_TIMEOUT_MS = 15_000;
+
+async function withAdminAuthDeadline<T>(work: Promise<T>): Promise<T> {
+  let timeout: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<T>((_, reject) => {
+        timeout = window.setTimeout(
+          () => reject(new Error("admin_auth_timeout")),
+          ADMIN_AUTH_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeout !== undefined) window.clearTimeout(timeout);
+  }
+}
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,21 +32,27 @@ export default function AdminLoginPage() {
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [message, setMessage] = useState("");
   const [hasSession, setHasSession] = useState(false);
+  const sending = useRef(false);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
-    void supabase.auth.getSession().then(async ({ data }) => {
-      setHasSession(Boolean(data.session));
-      if (!data.session) return;
-      const admin = await isCurrentUserAdmin().catch(() => false);
-      if (admin) router.replace("/admin");
-    });
+    void withAdminAuthDeadline(supabase.auth.getSession())
+      .then(async ({ data }) => {
+        setHasSession(Boolean(data.session));
+        if (!data.session) return;
+        const admin = await withAdminAuthDeadline(isCurrentUserAdmin()).catch(() => false);
+        if (admin) router.replace("/admin");
+      })
+      .catch(() => {
+        // Session inspection is advisory here. A stalled read must not block a manual login.
+      });
   }, [router]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (sending.current || state === "sent") return;
     setMessage("");
 
     const supabase = getSupabaseBrowserClient();
@@ -36,35 +61,52 @@ export default function AdminLoginPage() {
       return;
     }
 
+    sending.current = true;
     setState("sending");
+    const requestedEmail = email.trim();
+    let linkRequestStarted = false;
 
     // A different user may already be connected on this browser.
     // Sign out before requesting the admin magic link so the next session is unambiguous.
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) {
-      setState("idle");
-      setMessage("Impossible de changer de compte pour le moment. Réessayez.");
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo: window.location.origin + "/admin",
-        shouldCreateUser: false
+    try {
+      const { error: signOutError } = await withAdminAuthDeadline(supabase.auth.signOut());
+      if (signOutError) {
+        setState("idle");
+        setMessage(
+          "Le changement de compte n’a pas pu être confirmé. Aucun nouveau lien administrateur n’a été demandé. Réessayez manuellement."
+        );
+        return;
       }
-    });
 
-    if (error) {
+      setHasSession(false);
+      linkRequestStarted = true;
+      const { error } = await withAdminAuthDeadline(supabase.auth.signInWithOtp({
+        email: requestedEmail,
+        options: {
+          emailRedirectTo: window.location.origin + "/admin",
+          shouldCreateUser: false
+        }
+      }));
+
+      if (error) {
+        setState("idle");
+        setMessage(
+          "La demande de lien administrateur n’a pas abouti. Vérifiez votre boîte mail, votre connexion et l’adresse autorisée avant de réessayer."
+        );
+        return;
+      }
+
+      setEmail(requestedEmail);
+      setState("sent");
+    } catch {
       setState("idle");
-      setMessage(
-        "Le lien administrateur n’a pas pu être envoyé. Utilisez l’adresse du compte auquel le rôle administrateur a été attribué."
+      setMessage(linkRequestStarted
+        ? "L’envoi du lien administrateur n’a pas pu être confirmé. Vérifiez votre boîte mail et les indésirables avant de réessayer."
+        : "Le changement de compte n’a pas pu être confirmé. Aucun nouveau lien administrateur n’a été demandé. Réessayez manuellement."
       );
-      return;
+    } finally {
+      sending.current = false;
     }
-
-    setHasSession(false);
-    setState("sent");
   };
 
   return (
@@ -127,6 +169,7 @@ export default function AdminLoginPage() {
                   type="email"
                   required
                   autoComplete="email"
+                  disabled={state === "sending"}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="admin@exemple.fr"
