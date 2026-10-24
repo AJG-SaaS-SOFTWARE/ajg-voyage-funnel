@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
+import * as supabaseSdk from "@supabase/supabase-js";
 
 const source = fs.readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const code = ts.transpileModule(source, {
@@ -24,7 +25,8 @@ const flush = async () => {
   for (let index = 0; index < 30; index += 1) await Promise.resolve();
 };
 
-function fixture({ readSession }) {
+function fixture({ readSession, locale = "en" }) {
+  const downstreamReads = [];
   const state = [];
   const refs = [];
   const effects = [];
@@ -58,10 +60,11 @@ function fixture({ readSession }) {
     },
     "react/jsx-runtime": { Fragment: "fragment", jsx: element, jsxs: element },
     "next/link": { default: "link" },
+    "@supabase/supabase-js": supabaseSdk,
     "../lib/site-store": { loadDraft: () => localDraft, resetDraft: () => undefined },
     "../lib/supabase-browser": { isSupabaseConfigured: () => true },
-    "../lib/supabase-site-repository": { getCurrentUser: readSession, getMySite: async () => remoteSite },
-    "../lib/product-i18n": { useProductLocale: () => ({ locale: "en", tr: (_fr, en) => en }) },
+    "../lib/supabase-site-repository": { getCurrentUser: readSession, getMySite: async () => { downstreamReads.push("site"); return remoteSite; } },
+    "../lib/product-i18n": { useProductLocale: () => ({ locale, tr: (fr, en) => locale === "en" ? en : fr }) },
     "../lib/product-plan-label": { productPlanLabel: key => key },
     "../components/LanguageSwitch": { LanguageSwitch: "language-switch" },
     "../components/EltaraBrand": { EltaraMark: "eltara-mark" },
@@ -71,7 +74,7 @@ function fixture({ readSession }) {
       deriveOnboardingProgress: () => null
     },
     "../lib/subscription": {
-      getMyBetaAccess: async () => ({ active: false, startsAt: null, expiresAt: null }),
+      getMyBetaAccess: async () => { downstreamReads.push("beta"); return { active: false, startsAt: null, expiresAt: null }; },
       getMyEntitlements: async () => ({ planKey: "free", status: "inactive" }),
       getMySiteAiAccess: async () => ({ canCreateSite: false }),
       getMySiteEntitlements: async () => ({ planKey: "essential", status: "active" })
@@ -106,7 +109,7 @@ function fixture({ readSession }) {
     return module.exports.default();
   }
 
-  return { effects, render, state, timers, trackedEvents };
+  return { effects, render, state, timers, trackedEvents, downstreamReads };
 }
 
 function find(node, predicate) {
@@ -182,3 +185,128 @@ test("a backend failure is not presented as an unauthenticated session", async (
   await flush();
   assert.equal(signedOut.state[1], "guest");
 });
+
+// Exercise the unchanged repository wrapper with the installed SDK. No live
+// project, token, mailbox, storage credentials or provider requests are used.
+function readCurrentUserWith(client) {
+  const repositorySource = fs.readFileSync(new URL("../lib/supabase-site-repository.ts", import.meta.url), "utf8");
+  const repositoryCode = ts.transpileModule(repositorySource, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
+  }).outputText;
+  const dependencies = {
+    "./site-config": {},
+    "./supabase-browser": { getSupabaseBrowserClient: () => client },
+    "./site-design": {},
+    "./site-legal": {},
+    "./product-i18n": {},
+    "./published-domain": {}
+  };
+  const module = { exports: {} };
+  new Function("require", "module", "exports", repositoryCode)(name => {
+    assert.ok(name in dependencies, name);
+    return dependencies[name];
+  }, module, module.exports);
+  return module.exports.getCurrentUser;
+}
+
+for (const locale of ["fr", "en"]) {
+  test(`an empty SDK session renders the ${locale} guest journey without reading account data`, async () => {
+    let fetches = 0;
+    const client = supabaseSdk.createClient("https://recipe.example.invalid", "fixture-public-key", {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
+        storage: { getItem: () => null, setItem() {}, removeItem() {} } },
+      global: { fetch: async () => { fetches += 1; throw new Error("unexpected provider request"); } }
+    });
+    try {
+      const readSession = readCurrentUserWith(client);
+      await assert.rejects(readSession(), error => supabaseSdk.isAuthSessionMissingError(error));
+      const page = fixture({ readSession, locale });
+      page.render();
+      page.effects[0]();
+      // A real SDK session read includes asynchronous initialization and locking.
+      for (let index = 0; index < 10; index += 1) await flush();
+      assert.equal(page.state[1], "guest");
+      assert.equal(page.state[0], localDraft);
+      assert.equal(page.state[4], false, "no entitlement is granted");
+      assert.equal(page.state[5], false, "no AI capability is granted");
+      assert.equal(page.state[6], null);
+      assert.deepEqual(page.downstreamReads, []);
+      assert.deepEqual(page.trackedEvents, []);
+      assert.equal(fetches, 0);
+      const tree = page.render();
+      assert.ok(find(tree, node => node.props?.href === "/login" &&
+        textContent(node).includes(locale === "en" ? "Sign in" : "Se connecter")));
+      assert.match(textContent(tree), locale === "en" ? /Sign-in required/ : /Connexion nécessaire/);
+      assert.doesNotMatch(textContent(tree), /Connection temporarily unavailable|Connexion momentanément indisponible/);
+    } finally {
+      await client.auth.stopAutoRefresh();
+    }
+  });
+}
+
+const impostor = new Error("Auth session missing!");
+impostor.name = "AuthSessionMissingError";
+for (const [label, error] of [
+  ["network", new TypeError("Failed to fetch")],
+  ["invalid JWT", new supabaseSdk.AuthApiError("invalid JWT", 401, "bad_jwt")],
+  ["missing refresh token", new supabaseSdk.AuthApiError("refresh missing", 400, "refresh_token_not_found")],
+  ["provider outage", new supabaseSdk.AuthApiError("unavailable", 503, "unexpected_failure")],
+  ["same error name without SDK type", impostor]
+]) {
+  test(`${label} remains an error on the guest-capable home page`, async () => {
+    const page = fixture({ readSession: async () => { throw error; } });
+    page.render();
+    page.effects[0]();
+    await flush();
+    assert.equal(page.state[1], "error");
+    assert.deepEqual(page.downstreamReads, []);
+    assert.ok(find(page.render(), node => node.type === "button" && textContent(node).includes("Try again")));
+    assert.equal(page.state[0], localDraft);
+  });
+}
+
+for (const [code, status, expected] of [
+  ["session_not_found", 401, "guest"],
+  ["bad_jwt", 401, "error"],
+  ["refresh_token_not_found", 400, "error"],
+  ["unexpected_failure", 503, "error"]
+]) {
+  test(`the real SDK maps provider ${code} to the ${expected} home state`, async () => {
+    let fetches = 0;
+    const session = {
+      access_token: "synthetic-token", refresh_token: "synthetic-refresh",
+      expires_at: Math.floor(Date.now() / 1000) + 3600, token_type: "bearer",
+      user: { id: "synthetic-user", aud: "authenticated" }
+    };
+    const client = supabaseSdk.createClient("https://recipe.example.invalid", "fixture-public-key", {
+      auth: { persistSession: true, autoRefreshToken: false, detectSessionInUrl: false,
+        storage: {
+          getItem: key => key === "sb-recipe-auth-token" ? JSON.stringify(session) : null,
+          setItem() {}, removeItem() {}
+        } },
+      global: { fetch: async (_url, init) => {
+        assert.equal(init.method, "GET");
+        fetches += 1;
+        return new Response(JSON.stringify({ code, message: code }), {
+          status, headers: { "content-type": "application/json", "x-supabase-api-version": "2024-01-01" }
+        });
+      } }
+    });
+    try {
+      const page = fixture({ readSession: readCurrentUserWith(client) });
+      page.render();
+      page.effects[0]();
+      // Yield once for Response.json() and the real SDK's asynchronous lock.
+      await new Promise(resolve => setImmediate(resolve));
+      await flush();
+      assert.equal(page.state[1], expected);
+      assert.equal(fetches, 1, "one mocked GET and no repair, logout or refresh request");
+      assert.deepEqual(page.downstreamReads, []);
+      assert.deepEqual(page.trackedEvents, []);
+      assert.equal(page.state[4], false);
+      assert.equal(page.state[5], false);
+    } finally {
+      await client.auth.stopAutoRefresh();
+    }
+  });
+}
