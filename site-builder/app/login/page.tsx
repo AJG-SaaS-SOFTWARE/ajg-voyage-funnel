@@ -9,6 +9,25 @@ import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { EltaraBrand } from "../../components/EltaraBrand";
 import { getPrivateBetaAccess } from "../../lib/private-beta-access";
 
+const CLIENT_AUTH_TIMEOUT_MS = 15_000;
+
+async function withClientAuthDeadline<T>(work: Promise<T>): Promise<T> {
+  let timeout: number | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<T>((_, reject) => {
+        timeout = window.setTimeout(
+          () => reject(new Error("client_auth_timeout")),
+          CLIENT_AUTH_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    if (timeout !== undefined) window.clearTimeout(timeout);
+  }
+}
+
 function MailIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -39,11 +58,21 @@ export default function LoginPage() {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) return;
-      const access = await getPrivateBetaAccess().catch(() => null);
-      router.replace(access?.allowed ? "/builder" : "/beta-access");
-    });
+    let active = true;
+
+    void withClientAuthDeadline(supabase.auth.getSession())
+      .then(async ({ data }) => {
+        if (!active || !data.session) return;
+        const access = await withClientAuthDeadline(getPrivateBetaAccess()).catch(() => null);
+        if (active && access) router.replace(access.allowed ? "/builder" : "/beta-access");
+      })
+      .catch(() => {
+        // Session inspection is advisory. A stalled read must not block manual login.
+      });
+
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   const submit = async (event: FormEvent) => {
@@ -61,13 +90,13 @@ export default function LoginPage() {
     setState("sending");
     const requestedEmail = email.trim();
     try {
-      const { error: authError } = await supabase.auth.signInWithOtp({
+      const { error: authError } = await withClientAuthDeadline(supabase.auth.signInWithOtp({
         email: requestedEmail,
         options: {
           emailRedirectTo: window.location.origin + `/builder?lang=${locale}`,
           shouldCreateUser: false
         }
-      });
+      }));
 
       if (authError) {
         setState("idle");
