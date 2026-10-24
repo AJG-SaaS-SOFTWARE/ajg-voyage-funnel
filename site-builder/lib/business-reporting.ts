@@ -1,5 +1,6 @@
 import "server-only";
 import { supportAgentStatus } from "./support-agent-status";
+import { betaAgentEvidence } from "./beta-agent-evidence";
 
 import { authorizedReportingRequest } from "./cockpit-reporting-auth";
 import { billingServiceClient } from "./server-billing";
@@ -157,9 +158,11 @@ export async function buildBuilderBusinessReport() {
     .limit(1)
     .maybeSingle();
 
-  const betaOperations = betaRunError || !latestBetaRun
+  const betaEvidence = betaRunError || !latestBetaRun ? null : betaAgentEvidence(latestBetaRun);
+  const betaOperations = !betaEvidence || !latestBetaRun
     ? {
         status: "unavailable" as const,
+        evidence: "unavailable" as const,
         activeTesterCount: 0,
         followUpCandidates: 0,
         awaitingResume: 0,
@@ -168,12 +171,8 @@ export async function buildBuilderBusinessReport() {
         checkedAt: null
       }
     : {
-        status:
-          latestBetaRun.status === "failed"
-            ? ("failed" as const)
-            : latestBetaRun.status === "attention"
-              ? ("attention" as const)
-              : ("healthy" as const),
+        status: betaEvidence.status,
+        evidence: betaEvidence.evidence,
         activeTesterCount: latestBetaRun.active_tester_count || 0,
         followUpCandidates: latestBetaRun.follow_up_candidates || 0,
         awaitingResume: latestBetaRun.awaiting_resume || 0,
@@ -373,6 +372,10 @@ export async function buildBuilderBusinessReport() {
     detail = `Validation E2E miroir en attente : ${betaRuntime.validatedLocales}/${betaRuntime.requiredLocales} locale(s) validée(s).`;
   } else if (betaRuntime.e2eMirror === "unavailable") {
     detail = "L’état E2E miroir du déploiement courant est indisponible.";
+  } else if (betaOperations.status === "attention" && betaOperations.evidence !== "follow_up_required") {
+    detail = betaOperations.evidence === "stale"
+      ? "Le dernier cycle de l’agent bêta ELTARA est trop ancien pour confirmer son fonctionnement. Consultez le journal avant toute reprise."
+      : "La preuve d’exécution de l’agent bêta ELTARA est incomplète ou incohérente. Consultez le journal avant toute reprise.";
   } else if (betaOperations.status === "attention") {
     detail = `${betaOperations.followUpCandidates} relance(s) Beta Tester à préparer · ${betaOperations.unresponsiveAfterFollowUp} sans reprise après relance.`;
   } else if (betaOperations.status === "unavailable") {

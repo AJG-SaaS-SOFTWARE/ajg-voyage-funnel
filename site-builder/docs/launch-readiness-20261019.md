@@ -1,5 +1,10 @@
 # ELTARA — limited launch target, week of 19 October 2026
 
+> État historique conservé. Pour l’audit consolidé des agents et les limites
+> opérationnelles au 24 octobre, lire [business-autonomy-20261024.md](business-autonomy-20261024.md).
+> Les anciennes mentions provider/recettes différées ci-dessous ne décrivent pas
+> les exécutions ultérieures vérifiées dans les PR de release.
+
 Updated: 15 October 2026. Conditional target; no approval to open Checkout.
 
 ## Consolidated evidence — 15 October 2026, 05:58 UTC
