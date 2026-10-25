@@ -1,0 +1,215 @@
+name: ELTARA Autonomous Developer
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "GitHub issue number to process"
+        required: true
+        type: string
+  schedule:
+    - cron: "17 * * * *"
+
+concurrency:
+  group: eltara-autodev
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  resolve-task:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'issues' && github.event.label.name == 'agent:ready')
+    runs-on: ubuntu-latest
+    outputs:
+      issue_number: ${{ steps.task.outputs.issue_number }}
+      issue_title: ${{ steps.task.outputs.issue_title }}
+      issue_body_b64: ${{ steps.task.outputs.issue_body_b64 }}
+      should_run: ${{ steps.task.outputs.should_run }}
+    steps:
+      - id: task
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            let number = null;
+
+            if (context.eventName === 'issues') {
+              number = context.payload.issue.number;
+            } else if (context.eventName === 'workflow_dispatch') {
+              number = Number(context.payload.inputs.issue_number);
+            } else {
+              const { data } = await github.rest.issues.listForRepo({
+                owner, repo,
+                state: 'open',
+                labels: 'agent:ready',
+                sort: 'created',
+                direction: 'asc',
+                per_page: 20
+              });
+              const candidate = data.find(i => !i.pull_request);
+              if (candidate) number = candidate.number;
+            }
+
+            if (!number) {
+              core.setOutput('should_run', 'false');
+              return;
+            }
+
+            const { data: issue } = await github.rest.issues.get({
+              owner, repo, issue_number: number
+            });
+
+            const labels = issue.labels.map(l => typeof l === 'string' ? l : l.name);
+            if (!labels.includes('agent:ready')) {
+              core.setOutput('should_run', 'false');
+              return;
+            }
+
+            core.setOutput('issue_number', String(issue.number));
+            core.setOutput('issue_title', issue.title);
+            core.setOutput('issue_body_b64', Buffer.from(issue.body || '', 'utf8').toString('base64'));
+            core.setOutput('should_run', 'true');
+
+  develop:
+    needs: resolve-task
+    if: needs.resolve-task.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      ISSUE_NUMBER: ${{ needs.resolve-task.outputs.issue_number }}
+      ISSUE_TITLE: ${{ needs.resolve-task.outputs.issue_title }}
+      ISSUE_BODY_B64: ${{ needs.resolve-task.outputs.issue_body_b64 }}
+      BRANCH_NAME: agent/eltara-${{ needs.resolve-task.outputs.issue_number }}-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Mark task as working
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels"             -f labels[]='agent:working' >/dev/null || true
+
+      - name: Create work branch
+        run: |
+          git config user.name "eltara-autodev[bot]"
+          git config user.email "eltara-autodev[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH_NAME"
+
+      - name: Install dependencies
+        working-directory: site-builder
+        run: npm ci
+
+      - name: Prepare task prompt
+        run: |
+          python - <<'PY'
+          import base64, os, pathlib
+          body = base64.b64decode(os.environ["ISSUE_BODY_B64"]).decode("utf-8")
+          prompt = f"""You are the autonomous development agent for ELTARA.
+
+          GitHub issue #{os.environ["ISSUE_NUMBER"]}
+          Title: {os.environ["ISSUE_TITLE"]}
+
+          Request:
+          {body}
+
+          Follow AGENTS.md exactly. Work only in site-builder/.
+          Inspect the existing implementation before changing anything.
+          Implement the smallest robust production-quality solution.
+          Add or update tests for the changed behavior.
+          Do not commit, push, deploy, edit .github/, or alter secrets.
+          At the end, leave all code changes in the working tree and give a concise summary.
+          """
+          pathlib.Path("/tmp/eltara-task.md").write_text(prompt, encoding="utf-8")
+          PY
+
+      - name: Run Codex autonomous development
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          working-directory: site-builder
+          prompt-file: /tmp/eltara-task.md
+
+      - name: Enforce protected paths
+        run: |
+          if git diff --name-only | grep -E '^(\.github/|AGENTS\.md$|\.env|.*\.pem$|.*\.key$)'; then
+            echo "Protected path modified; refusing autonomous PR."
+            exit 1
+          fi
+
+      - name: Quality gates
+        working-directory: site-builder
+        run: |
+          npm test
+          npm run lint
+          npm run build
+
+      - name: Commit and push
+        id: commit
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git add site-builder
+          git commit -m "fix(eltara): autonomous task #$ISSUE_NUMBER"
+          git push origin "$BRANCH_NAME"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEX_SUMMARY: ${{ steps.codex.outputs.final-message }}
+        run: |
+          cat > /tmp/pr-body.md <<EOF
+          Automated ELTARA development for #$ISSUE_NUMBER.
+
+          ## Agent summary
+          $CODEX_SUMMARY
+
+          ## Quality gates
+          - npm test
+          - npm run lint
+          - npm run build
+
+          Closes #$ISSUE_NUMBER
+          EOF
+          gh pr create             --base main             --head "$BRANCH_NAME"             --title "ELTARA: $ISSUE_TITLE"             --body-file /tmp/pr-body.md
+
+      - name: Mark ready for review
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels/agent%3Aready" >/dev/null || true
+          gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels/agent%3Aworking" >/dev/null || true
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels"             -f labels[]='agent:review' >/dev/null || true
+
+      - name: No-code result
+        if: steps.commit.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEX_SUMMARY: ${{ steps.codex.outputs.final-message }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Autonomous run produced no code change. Agent report:
+
+          $CODEX_SUMMARY"
+
+      - name: Failure recovery note
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Autonomous ELTARA run failed or was interrupted. The issue remains the persistent source of truth and can be retried automatically. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
