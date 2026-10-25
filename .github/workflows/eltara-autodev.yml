@@ -1,6 +1,11 @@
 name: ELTARA Autonomous Developer
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/eltara-autodev.yml"
+      - "AGENTS.md"
   issues:
     types: [labeled]
   workflow_dispatch:
@@ -22,6 +27,28 @@ permissions:
   pull-requests: write
 
 jobs:
+  setup-labels:
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const wanted = [
+              { name: 'agent:ready', color: '0e8a16', description: 'Authorized for autonomous ELTARA development' },
+              { name: 'agent:working', color: 'fbca04', description: 'Currently being processed by ELTARA autonomous developer' },
+              { name: 'agent:review', color: '1d76db', description: 'Autonomous change is ready for PR review' },
+              { name: 'agent:blocked', color: 'd93f0b', description: 'Autonomous task needs human input or an external dependency' }
+            ];
+            const existing = await github.paginate(github.rest.issues.listLabelsForRepo, { owner, repo, per_page: 100 });
+            const names = new Set(existing.map(l => l.name));
+            for (const label of wanted) {
+              if (!names.has(label.name)) {
+                await github.rest.issues.createLabel({ owner, repo, ...label });
+              }
+            }
+
   resolve-task:
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -97,7 +124,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels"             -f labels[]='agent:working' >/dev/null || true
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels" -f labels[]='agent:working' >/dev/null || true
 
       - name: Create work branch
         run: |
@@ -129,7 +156,7 @@ jobs:
           Do not commit, push, deploy, edit .github/, or alter secrets.
           At the end, leave all code changes in the working tree and give a concise summary.
           """
-          pathlib.Path("/tmp/eltara-task.md").write_text(prompt, encoding="utf-8")
+          pathlib.Path(".eltara-agent-task.md").write_text(prompt, encoding="utf-8")
           PY
 
       - name: Run Codex autonomous development
@@ -139,11 +166,12 @@ jobs:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           permission-profile: ":workspace"
           working-directory: site-builder
-          prompt-file: /tmp/eltara-task.md
+          prompt-file: .eltara-agent-task.md
 
       - name: Enforce protected paths
         run: |
-          if git diff --name-only | grep -E '^(\.github/|AGENTS\.md$|\.env|.*\.pem$|.*\.key$)'; then
+          git status --porcelain | sed -E 's/^.. //' > /tmp/changed-paths.txt
+          if grep -E '^(.github/|AGENTS.md$|.env|.*.pem$|.*.key$)' /tmp/changed-paths.txt; then
             echo "Protected path modified; refusing autonomous PR."
             exit 1
           fi
@@ -158,6 +186,7 @@ jobs:
       - name: Commit and push
         id: commit
         run: |
+          rm -f .eltara-agent-task.md
           if git diff --quiet && git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -186,7 +215,7 @@ jobs:
 
           Closes #$ISSUE_NUMBER
           EOF
-          gh pr create             --base main             --head "$BRANCH_NAME"             --title "ELTARA: $ISSUE_TITLE"             --body-file /tmp/pr-body.md
+          gh pr create --base main --head "$BRANCH_NAME" --title "ELTARA: $ISSUE_TITLE" --body-file /tmp/pr-body.md
 
       - name: Mark ready for review
         if: steps.commit.outputs.changed == 'true'
@@ -195,7 +224,7 @@ jobs:
         run: |
           gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels/agent%3Aready" >/dev/null || true
           gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels/agent%3Aworking" >/dev/null || true
-          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels"             -f labels[]='agent:review' >/dev/null || true
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels" -f labels[]='agent:review' >/dev/null || true
 
       - name: No-code result
         if: steps.commit.outputs.changed == 'false'
@@ -212,4 +241,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Autonomous ELTARA run failed or was interrupted. The issue remains the persistent source of truth and can be retried automatically. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
+          gh issue comment "$ISSUE_NUMBER" --body "Autonomous ELTARA run failed or was interrupted. The issue remains queued and can be retried automatically. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
